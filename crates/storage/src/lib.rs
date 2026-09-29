@@ -210,6 +210,65 @@ impl LocalStore {
         Ok(())
     }
 
+    /// Copy saved metadata transactionally without loading the collection into
+    /// Rust or copying any media, account data, history, or preferences.
+    pub fn duplicate_playlist(
+        &mut self,
+        source: LocalPlaylistId,
+        name: &str,
+    ) -> Result<LocalPlaylistId> {
+        validate_text(name)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let exists: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM local_playlists WHERE id=?1)",
+            [source.0],
+            |row| row.get(0),
+        )?;
+        if !exists {
+            return Err(StorageError::NotFound);
+        }
+        tx.execute("INSERT INTO local_playlists(name) VALUES (?1)", [name])?;
+        let destination = LocalPlaylistId(tx.last_insert_rowid());
+        tx.execute("INSERT INTO local_playlist_items(playlist_id,video_id,title,channel_name,channel_id,duration_seconds)
+            SELECT ?1,video_id,title,channel_name,channel_id,duration_seconds FROM local_playlist_items WHERE playlist_id=?2 ORDER BY id", params![destination.0, source.0])?;
+        tx.commit()?;
+        Ok(destination)
+    }
+
+    /// Copy or move one exact saved membership. A destination conflict updates
+    /// metadata without duplicating membership. Failed copies never remove the
+    /// source; a move's insert/update and removal share the same transaction.
+    pub fn transfer_playlist_video(
+        &mut self,
+        source: LocalPlaylistId,
+        destination: LocalPlaylistId,
+        video: &VideoId,
+        move_item: bool,
+    ) -> Result<()> {
+        if source == destination {
+            return Err(StorageError::InvalidInput);
+        }
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let copied = tx.execute("INSERT INTO local_playlist_items(playlist_id,video_id,title,channel_name,channel_id,duration_seconds)
+            SELECT ?1,video_id,title,channel_name,channel_id,duration_seconds FROM local_playlist_items WHERE playlist_id=?2 AND video_id=?3
+            ON CONFLICT(playlist_id,video_id) DO UPDATE SET title=excluded.title,channel_name=excluded.channel_name,channel_id=excluded.channel_id,duration_seconds=excluded.duration_seconds", params![destination.0, source.0, video.as_str()])?;
+        if copied != 1 {
+            return Err(StorageError::NotFound);
+        }
+        if move_item {
+            tx.execute(
+                "DELETE FROM local_playlist_items WHERE playlist_id=?1 AND video_id=?2",
+                params![source.0, video.as_str()],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Cascades only this local playlist's items, never remote resources.
     pub fn delete_playlist(&self, id: LocalPlaylistId) -> Result<bool> {
         Ok(self

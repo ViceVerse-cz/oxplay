@@ -21,6 +21,30 @@ The shared `ui/library.slint` page and `src/library_ui.rs` adapter expose the SQ
 - Collection deletion, history clearing, and local-data clearing require a confirmation in the shared UI. Other library controls are disabled while that confirmation is visible, and collection deletion names the selected collection.
 - Import/export/backup use explicit asynchronous native file pickers; selected paths remain PathBuf values without lossy conversion. File reading, serialization, SQLite, and file writing run on the storage worker. Export and backup refuse existing destinations. Import/export transfer only the local interchange format, never account credentials; SQLite backup contains local preferences/history as well as collections.
 - Clearing local data does not disconnect the YouTube account or erase protected session storage. Account disconnection does not erase local collections.
+- **Duplicate playlist** opens a separate name editor and copies saved metadata
+  into a new local collection in one transaction. SQLite performs the copy without
+  loading the whole playlist into the UI or downloading media. Only a committed
+  new ID is revealed through the existing bounded collection window; failures
+  leave neither an empty duplicate nor a partial collection.
+- Each saved-video row offers **Copy / Move…**. The organizer pins the source
+  playlist and video identity, shows their names, and offers independently paged
+  destination playlists (at most 100 per read). The source is excluded and no
+  destination is selected implicitly. Copy and Move require their own explicit
+  button after choosing a destination. The UI names both playlists and explains
+  that Move removes the source entry. A transaction copies/upserts destination
+  metadata before deleting the source membership; any failure rolls both back.
+  An already-saved destination video is updated, not duplicated. The current
+  filtered source page refreshes only after commit, with no optimistic removal.
+  Leaving/reopening the local view retires the organizer draft; accepted writes
+  still complete, but stale destination responses cannot revive a closed form.
+  These operations change local collections only, never account collections.
+
+The duplication/transfer source pass added focused synthetic storage regressions
+for membership isolation, conflict updates, missing identities and rollback at
+both insertion and deletion. They were authored but not executed during this
+pass. Native keyboard/visual validation of the organizer is still open; older
+functional evidence does not qualify these newly added controls.
+
 - Volume changes from the shared slider/keyboard controls persist after 250 ms
   without another change. Closing the event loop flushes a pending debounce.
   Accepted local writes drain during shutdown even after the result receiver

@@ -8,6 +8,8 @@ use serein_storage::{
 use slint::ComponentHandle;
 #[path = "library_model.rs"]
 mod library_model;
+#[path = "library_organization.rs"]
+mod organization;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -224,6 +226,7 @@ impl Pagination {
 }
 #[derive(Default)]
 pub struct State {
+    organization: organization::State,
     filter: RefCell<String>,
     pending_filter: RefCell<Option<PendingFilter>>,
     rename_target: RefCell<Option<RenameTarget>>,
@@ -540,7 +543,8 @@ fn follow_target(item: &LocalSubscription) -> Result<String, serein_core::Provid
 }
 fn complete(app: &App, s: &UiState) {
     let outstanding = s.library_ui.pending_save.borrow().is_some()
-        || s.library_ui.reads.borrow().pending.is_some();
+        || s.library_ui.reads.borrow().pending.is_some()
+        || s.library_ui.organization.pending();
     s.library_ui.pending.set(outstanding);
     app.global::<LibraryUi>()
         .set_busy(s.caption_cache.active() || outstanding);
@@ -1061,6 +1065,7 @@ pub fn record_playback(s: &UiState, video: &VideoSummary, position: Duration) {
     }
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
+    organization::bind(app, state);
     let names = slint::ModelRc::from(state.library_ui.collection_names.clone());
     app.set_playlists(names.clone());
     app.global::<LibraryUi>().set_collections(names);
@@ -1072,6 +1077,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else { return };
         while let Some(response) = s.library.take() {
             match response {
+                library::Response::Organization { ticket, result } => organization::receive(&app, &s, ticket, result),
                 library::Response::Home { ticket, result } => crate::home_ui::receive(&app, &s, ticket, result),
                 library::Response::Library(items, prefs, chosen) => {
                     crate::home_ui::changed(&app, &s);
@@ -1320,6 +1326,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     crate::home_ui::cleared(&app, &s);
                     cancel_name(&app,&s);
                     reset_filter(&app, &s);
+                    organization::reset(&app, &s);
                     s.library_ui.name_write.borrow_mut().take();
                     app.global::<LibraryUi>().set_name_draft("".into());
                     // Install the committed defaults before reopening admission:
@@ -1401,6 +1408,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         s.library_ui.route_epoch.set(epoch);
         cancel_name(&app, &s);
         reset_filter(&app, &s);
+        organization::reset(&app, &s);
         app.set_selected_playlist(index);
         app.global::<LibraryUi>().set_selected(index);
         *s.library_ui.pages.borrow_mut() = Pagination::default();
@@ -1569,6 +1577,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else {
             return;
         };
+        organization::reset(&app, &s);
         if let Some(write) = s.library_ui.name_write.borrow_mut().as_mut() {
             write.create_context = None;
             if let Some(target) = s.library_ui.rename_target.borrow_mut().as_mut() {
@@ -1921,6 +1930,7 @@ pub fn open_tab(app: &App, state: &UiState, tab: i32) -> bool {
     state.library_ui.route_epoch.set(epoch);
     cancel_name(app, state);
     reset_filter(app, state);
+    organization::reset(app, state);
     ui.set_tab(tab);
     if route_changed {
         *state.library_ui.pages.borrow_mut() = Pagination::default();

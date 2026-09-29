@@ -4,14 +4,23 @@ import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle, VideoC
 import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
 import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
 import { CaptionSelector, CaptionsUi } from "captions.slint";
+import { ChapterPanel, ChaptersUi } from "chapters.slint";
+import { JumpDialog, JumpUi } from "jump.slint";
 import { StatusMessage } from "status.slint";
-export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi }
+export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 export component App inherits Window {
     title: root.picture-in-picture ? "Serein — Picture in picture" : "Serein";
     always-on-top: root.picture-in-picture;
     no-frame: root.window-borderless;
     in-out property <bool> window-borderless;
     callback pip-drag();
+    in property <bool> local-file-busy;
+    in property <bool> local-file-cancellable;
+    in property <bool> local-subtitle-available;
+    callback open-video-file();
+    callback load-subtitle-file();
+    callback cancel-local-file();
+    callback local-file-wake();
     public function show-video-details() { root.prepare-native-overlay(); video-details.show(); }
     private property <string> message-text;
     private property <int> message-recovery-serial;
@@ -49,6 +58,12 @@ export component App inherits Window {
     callback share-closed();
     private property <bool> share-open: share-popup.is-open;
     changed share-open => { if !root.share-open { root.share-closed(); } }
+    private property <bool> jump-open: jump-popup.is-open;
+    changed jump-open => { if !root.jump-open { JumpUi.cancel(); } }
+    public function close-jump() { JumpUi.cancel(); jump-popup.close(); }
+    function show-jump() {
+        if JumpUi.begin() { root.prepare-native-overlay(); jump-popup.show(); }
+    }
     public function close-share() { share-popup.close(); }
     function show-share() {
         if root.share-begin() {
@@ -72,7 +87,7 @@ export component App inherits Window {
     out property <length> native-clip-y: watch.y;
     out property <length> native-clip-width: watch.visible-width;
     out property <length> native-clip-height: watch.visible-height;
-    private property <bool> native-overlay-open: share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
+    private property <bool> native-overlay-open: jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
     out property <bool> native-child-visible: native-video-child && watching && loaded && (!show-info || fullscreen-active) && !native-overlay-open;
     callback native-child-hide();
     function prepare-native-overlay() { if root.native-video-child { root.native-child-hide(); } }
@@ -165,7 +180,7 @@ export component App inherits Window {
     // Only transport interaction is observed; cursor coordinates never enter
     // application models. Focused controls and open editors cannot disappear.
     out property <bool> controls-held: transport-hover.has-hover || seek-control.has-focus
-        || play-control.has-focus || mute-control.has-focus || (volume-control.visible && volume-control.has-focus)
+        || play-control.has-focus || elapsed-control.has-focus || mute-control.has-focus || (volume-control.visible && volume-control.has-focus)
         || captions-control.has-focus || settings-control.has-focus || pip-control.has-focus
         || (fullscreen-control.visible && fullscreen-control.has-focus) || native-overlay-open || TextInputInterface.text-input-focused;
     callback controls-activity();
@@ -358,10 +373,15 @@ export component App inherits Window {
         // commands while any editor/IME owns focus. Popup default handling stays
         // in Slint because rejected events continue through its normal path.
         if TextInputInterface.text-input-focused { return reject; }
+        if (event.modifiers.control || event.modifiers.meta) && !event.modifiers.alt && event.text == "o" {
+            if !root.native-video-child && !root.local-file-busy { root.open-video-file(); }
+            return accept;
+        }
         if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
         if event.text == "/" { if !root.picture-in-picture && !root.native-video-child { search.focus(); } return accept; }
         if root.watching {
             if event.text == " " || event.text == "k" { root.toggle-pause(); return accept; }
+            if event.text == "g" { root.show-jump(); return accept; }
             if event.text == "j" { root.relative-seek(-10); return accept; }
             if event.text == "l" { root.relative-seek(10); return accept; }
             if event.text == Key.LeftArrow { root.relative-seek(-5); return accept; }
@@ -436,7 +456,13 @@ export component App inherits Window {
                     x: 8px; y: 26px; width: parent.width - 16px; height: 40px; spacing: 4px;
                     play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
 
-                    Text { text: transport.width < 580px ? root.elapsed : root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: #ffffff; width: transport.width < 580px ? 48px : 124px; horizontal-stretch: 0; vertical-alignment: center; }
+                    elapsed-control := Action {
+                        on-video: true; compact: true;
+                        label: "Jump to time · Elapsed " + root.elapsed + ", remaining " + root.remaining;
+                        width: transport.width < 580px ? 48px : 124px; horizontal-stretch: 0;
+                        enabled: JumpUi.available; clicked => { root.show-jump(); }
+                        Text { text: transport.width < 580px ? root.elapsed : root.elapsed + " / −" + root.remaining; color: #ffffff; width: parent.width; height: parent.height; horizontal-alignment: center; vertical-alignment: center; }
+                    }
                     mute-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
                     // Keep the primary row usable at the narrow watch breakpoint.
                     // Volume remains available in settings when this slider is absent.
@@ -480,6 +506,7 @@ export component App inherits Window {
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
                 Rectangle { horizontal-stretch: 1; }
                 if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
                 share-button := Action { width: 72px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
                 Action { width: 96px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
@@ -531,6 +558,12 @@ export component App inherits Window {
                 clicked => { root.select-video(index); }
             }
         }
+    }
+    jump-popup := PopupWindow {
+        forward-focus: jump-dialog;
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(390px, root.width - 24px); height: min(255px, root.height - 24px);
+        jump-dialog := JumpDialog { width: parent.width; height: parent.height; dismissed => { root.close-jump(); root.focus-video-mode(); } }
     }
     share-popup := PopupWindow {
         forward-focus: share-address;
@@ -588,6 +621,7 @@ export component App inherits Window {
                     Slider { accessible-label: "Volume percent"; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
                     Text { text: "Playback speed"; color: Colors.text; }
                     ConfirmedChoice { accessible-label: "Playback speed"; model: ["0.5×", "1×", "1.5×", "2×"]; acknowledged-index: root.speed-index; enabled: !root.speed-busy; choose(index) => { root.speed((index + 1) * 0.5); } }
+                    if !root.remote-video: Action { label: "Load subtitle file…"; icon-name: "captions"; enabled: root.local-subtitle-available && !root.local-file-busy; clicked => { playback-settings.close(); root.load-subtitle-file(); } }
                     Text { text: "Maximum video quality"; color: Colors.text; }
                     ConfirmedChoice { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; acknowledged-index: root.quality-index; enabled: root.remote-video && !root.busy; choose(index) => { root.quality(index); } }
                     Text { text: root.remote-video ? "Uses the best available stream within this limit." : "Quality selection applies to YouTube videos."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
@@ -625,6 +659,8 @@ export component App inherits Window {
             Action { icon-name: "users"; label: "Local subscriptions"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
             Action { icon-name: "list-video"; label: "Local playlists"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
             if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
+            Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; compact: root.sidebar-width < 100px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
+            if root.local-file-cancellable: Action { label: "Cancel file selection"; icon-name: "chevron-left"; compact: root.sidebar-width < 100px; clicked => { root.cancel-local-file(); } }
             if root.loaded: Action { icon-name: "play"; label: "Now playing"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
             Rectangle { height: 1px; background: Colors.border; }
             Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
@@ -706,6 +742,11 @@ export component App inherits Window {
             Rectangle { horizontal-stretch: 1; }
         }
     }
+    chapters-popup := PopupWindow {
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(420px, root.width - 48px); height: min(400px, root.height - 48px);
+        ChapterPanel { width: parent.width; height: parent.height; close => { chapters-popup.close(); root.focus-video-mode(); } }
+    }
     captions-popup := PopupWindow {
         x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
         width: min(440px, root.width - 48px); height: 200px;
@@ -753,7 +794,7 @@ export component App inherits Window {
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 18px; height: 26px; }
-            Text { text: "/  Focus search\nSpace or K  Play / pause\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Ctrl / Cmd + O  Open video file\n/  Focus search\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "About Serein"; color: Colors.text; font-size: 18px; height: 26px; }
@@ -826,7 +867,7 @@ export component App inherits Window {
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.
-    if share-popup.is-open || save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
+    if jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
         x: 0px; y: 0px; width: root.width; height: root.height;
         background: #00000070;
     }

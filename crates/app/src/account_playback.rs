@@ -218,6 +218,7 @@ pub fn clear(app: &App, state: &Rc<UiState>) {
         app.set_busy(false);
     }
     crate::caption_ui::clear_local(app, state);
+    crate::chapters_ui::clear(app, state);
     crate::comments_ui::clear_local(app, state);
     app.global::<CaptionsUi>()
         .set_status("Account playback stopped; no guest captions were requested.".into());

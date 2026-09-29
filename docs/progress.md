@@ -6,7 +6,38 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current feature slice adds three shared-UI workflows: public channel handles,
+The current batch adds six user-facing workflows: in-app local video opening,
+local subtitle attachment, playlist duplication, copy/move between local
+playlists, timestamped YouTube playback, and chapter/precise-time navigation.
+Three agents implemented independent slices while the primary agent integrated
+and reviewed media policy, lifecycle ownership and the time dialog. See
+[local media](local-media.md), [local input policy](local-media-policy.md),
+[playlist organization](local-library-ui.md), [timestamp links](timestamp-links.md),
+[chapters](video-chapters.md), and [Jump to time](time-navigation.md).
+
+Picker validation runs on a bounded worker. Installing a local file retires
+remote authority and waits for the existing native stop barrier. Clearing local
+data synchronously cancels file selection and blocks new admission. Local native
+loads get an explicit lavf container/subtitle whitelist; remote transport policy
+is unchanged. Playlist writes use SQLite transactions with pinned identities and
+paged destination selection. Timestamp intent travels with its resolution/retry;
+chapter and time-dialog seeks recheck the current native load and account lease.
+Dismissed time dialogs revoke their pending action. No dependency, lockfile,
+framework feature or asset change was required.
+
+Initial compilation caught two ambiguous collection types; strict linting caught
+one collapsible conditional. Those were corrected. Final `cargo fmt --all -- --check`,
+`cargo clippy --workspace --all-targets --locked -- -D warnings` and
+`cargo build --workspace --locked` all passed.
+Ten focused regression tests were authored for parsing, retry routing, storage
+rollback and chapter admission; they are compiled, not executed. No test suite,
+native diagnostic, live provider/account operation, release build, or performance/
+usage measurement is part of this user-requested fast implementation pass.
+Native picker, popup/keyboard, subtitle, chapter, malformed-file/egress and
+account-to-local transitions still require functional qualification. The product
+and all additional platforms remain unqualified for production release.
+
+The preceding feature slice adds three shared-UI workflows: public channel handles,
 local playlist search, and explicit video-link sharing. A handle resolves through
 the existing guest worker, then its real stable channel ID owns subsequent
 navigation. Playlist search uses literal, parameterized title/channel matching

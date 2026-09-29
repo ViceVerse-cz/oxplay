@@ -39,7 +39,7 @@ impl RequestKind {
                 _,
             ) => Some(Self::Channel),
             Request::Catalog(CatalogRequest::Playlist { .. }, _) => Some(Self::Playlist),
-            Request::Resolve(..) => Some(Self::Video),
+            Request::Resolve(..) | Request::ResolveAt(..) => Some(Self::Video),
             _ => None,
         }
     }
@@ -196,7 +196,7 @@ fn kind(index: i32) -> SearchKind {
     }
 }
 enum Input {
-    Video(VideoId),
+    Video(serein_core::VideoLink),
     Catalog(CatalogRequest),
 }
 fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, ProviderError> {
@@ -206,8 +206,8 @@ fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, Pro
     }
     if input.contains("://") || input.starts_with("https:") {
         // A watch URL remains a video action even when it contains a playlist.
-        if let Ok(id) = VideoId::from_url(input) {
-            return Ok(Input::Video(id));
+        if VideoId::from_url(input).is_ok() {
+            return Ok(Input::Video(serein_core::VideoLink::from_url(input)?));
         }
         if let Ok(id) = ChannelId::from_url(input) {
             return Ok(Input::Catalog(CatalogRequest::Channel {
@@ -631,9 +631,11 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         // Invalid input and failed video extraction must retain its navigation;
         // load() clears it only when an actual catalog navigation is admitted.
         match request_from_input(query.as_str(), kind(app.get_search_kind())) {
-            Ok(Input::Video(id)) => {
+            Ok(Input::Video(link)) => {
                 let quality = crate::library_ui::desired_preferences(&s).playback.quality;
-                s.worker.borrow_mut().submit(Request::Resolve(id, quality));
+                s.worker
+                    .borrow_mut()
+                    .submit(Request::ResolveAt(link.id, quality, link.start));
                 s.focus_intent.arm(
                     crate::focus_intent::Scope::Guest(s.worker.borrow().generation()),
                     app.get_search_active(),
@@ -846,6 +848,21 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn timestamped_watch_urls_cannot_fall_back_to_playlist_on_invalid_time() {
+        assert!(
+            request_from_input(
+                "https://www.youtube.com/watch?v=abcdefghijk&list=PLsynthetic&t=-1",
+                SearchKind::All
+            )
+            .is_err()
+        );
+        assert!(
+            matches!(request_from_input("https://youtu.be/abcdefghijk?t=90", SearchKind::All),
+            Ok(Input::Video(link)) if link.start.seconds() == 90)
+        );
+    }
 
     #[test]
     fn handle_input_is_a_channel_but_mentions_with_search_terms_remain_searches() {
@@ -1135,7 +1152,7 @@ mod tests {
             )
             .unwrap()
             {
-                Input::Video(id) => assert_eq!(id.as_str(), video),
+                Input::Video(link) => assert_eq!(link.id.as_str(), video),
                 _ => panic!("watch URL lost its video identity"),
             }
             assert!(

@@ -150,6 +150,7 @@ pub fn guest_retry_video(state: &UiState, load: u64) -> Option<serein_core::Vide
 /// Returns whether this coordinator owned a pending UI busy state. A caller
 /// must release that state without clearing unrelated guest-worker activity.
 pub fn clear_local(state: &UiState) -> bool {
+    state.chapters_ui.invalidate();
     if let Some(token) = state.playback_ui.clear() {
         state.player.cancel_resume_position(token);
         true
@@ -169,6 +170,7 @@ pub fn selected(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
     }
     state.playback_ui.position_timeout.stop();
     state.playback_ui.refresh_job.set(None);
+    crate::chapters_ui::install(app, state, item);
     remember(app, state, item);
 }
 fn remember(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
@@ -493,6 +495,7 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot
                     state,
                     serein_core::QualityCeiling::ALL[index],
                 );
+            crate::chapters_ui::install(app, state, &pending.item);
             remember(app, state, &pending.item);
             app.set_status(
                 match pending.reason {

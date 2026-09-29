@@ -37,6 +37,8 @@ fn text(value: &Value, key: &str, limit: usize) -> Option<String> {
         .filter(|s| !s.trim().is_empty())
 }
 pub(crate) fn details(value: &Value) -> VideoDetails {
+    let chapters = crate::chapters::parse(value);
+    let chapters_unavailable = chapters.is_err();
     VideoDetails {
         description: text(value, "description", 20_000),
         upload_date: value
@@ -47,6 +49,8 @@ pub(crate) fn details(value: &Value) -> VideoDetails {
         view_count: value.get("view_count").and_then(Value::as_u64),
         like_count: value.get("like_count").and_then(Value::as_u64),
         comment_count: value.get("comment_count").and_then(Value::as_u64),
+        chapters: chapters.unwrap_or_default(),
+        chapters_unavailable,
     }
 }
 impl YtDlp {

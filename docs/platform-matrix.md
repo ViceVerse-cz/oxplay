@@ -1,5 +1,11 @@
 # Platform qualification
 
+The latest local-file picker, playlist organization, timestamp links, chapter
+navigation and Jump to time additions have source/compile validation only. No
+new native picker, popup/keyboard, malformed-file or account test has run on any
+platform for this batch; older evidence below retains its exact source scope.
+See [progress](progress.md).
+
 All targets are experimental. A native compile/run is not release support.
 
 The local-first Home slice passed debug/release functional checks on the same

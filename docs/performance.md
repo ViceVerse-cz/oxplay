@@ -1,5 +1,11 @@
 # Performance qualification
 
+The local-file, playlist organization and time/chapter navigation feature batch
+adds no performance or resource measurements. All earlier results retain their
+recorded binary/source scope; these additions do not pass or change any budget.
+Performance testing remains deferred at the user’s explicit request.
+
+
 Numbers in SPEC remain contract targets/ceilings, not results. Reference host:
 Apple M1 (7 GPU cores), 16 GiB, macOS 27.0, built-in 2560×1600 Retina, AC power,
 low-power mode off. Release build, no debug logging. Sampling script:

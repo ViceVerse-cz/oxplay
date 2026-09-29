@@ -72,6 +72,7 @@ pub fn begin(app: &App, state: &Rc<UiState>) {
         }
     };
     state.caption_cache.phase.set(Some(Phase::Files(id)));
+    crate::local_media_ui::cancel(app, state);
     crate::home_ui::cancel(app, state);
     crate::account_playback::clear(app, state);
     state.worker.borrow_mut().set_blocked(true);

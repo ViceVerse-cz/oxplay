@@ -3,6 +3,7 @@
 pub mod account;
 pub mod captions;
 pub mod catalog;
+mod chapters;
 pub mod comments;
 mod supervisor;
 use serde_json::Value;

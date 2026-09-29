@@ -6,6 +6,7 @@ mod caption_cache;
 mod caption_files;
 mod caption_ui;
 mod catalog;
+mod chapters_ui;
 mod clear_smoke;
 mod cli;
 mod clock_ui;
@@ -24,12 +25,14 @@ mod handoff_smoke;
 mod helper_paths;
 mod home_smoke;
 mod home_ui;
+mod jump_ui;
 pub mod library;
 mod library_fixture;
 mod library_keyboard_smoke;
 mod library_resource_smoke;
 mod library_smoke;
 mod library_ui;
+mod local_media_ui;
 mod media_network;
 mod model;
 mod motion_smoke;
@@ -79,6 +82,8 @@ struct UiState {
     progress: Timer,
     controls_ui: controls_ui::State,
     share_ui: share_ui::State,
+    jump_ui: jump_ui::State,
+    local_media: local_media_ui::State,
     clock_ui: clock_ui::State,
     hidden: Cell<bool>,
     model: Rc<CatalogModel<VideoRow>>,
@@ -91,6 +96,7 @@ struct UiState {
     playback_preferences: playback_preferences::State,
     comments_ui: comments_ui::State,
     caption_ui: caption_ui::State,
+    chapters_ui: chapters_ui::State,
     caption_cache: caption_cache::State,
     playback_ui: playback_ui::State,
     thumbnails: RefCell<thumbnails::Worker>,
@@ -144,10 +150,12 @@ fn update(app: &App, state: &Rc<UiState>) {
     account_playback::observe(app, state);
     let snapshot = state.player.drain_events();
     share_ui::observe(app, state, &snapshot);
+    jump_ui::observe(app, state, &snapshot);
     playback_preferences::observe(app, state, &snapshot);
     caption_ui::observe(app, state, &snapshot);
     playback_ui::observe(app, state, &snapshot);
     guest_playback::observe(app, state, &snapshot);
+    local_media_ui::observe(app, state, &snapshot);
     let playback_status = playback_ui::status(
         &snapshot,
         app.get_loaded(),
@@ -868,7 +876,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         presentation_retry: Cell::new(false),
         progress: Timer::default(),
         controls_ui: controls_ui::State::default(),
+        chapters_ui: chapters_ui::State::default(),
         share_ui: share_ui::State::default(),
+        jump_ui: jump_ui::State::default(),
+        local_media: local_media_ui::State::new(app.as_weak())?,
         clock_ui: clock_ui::State::new(options.stage_progress),
         hidden: Cell::new(false),
         model: Rc::new(CatalogModel::default()),
@@ -1071,6 +1082,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     controls_ui::connect(&app, &state);
     share_ui::connect(&app, &state);
+    jump_ui::connect(&app, &state);
+    local_media_ui::bind(&app, &state);
+    chapters_ui::bind(&app, &state);
     let weak = app.as_weak();
     let s = state.clone();
     app.on_toggle_controls(move || {
@@ -1168,9 +1182,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(Response::Caption(video, index, result)) => {
                 caption_ui::receive(&app, &s, video, index, result)
             }
-            Ok(Response::Resolved(item, quality)) => {
+            Ok(Response::Resolved(item, quality, start)) => {
                 guest_ui::resolution_finished(&app, &s, s.worker.borrow().generation());
-                guest_playback::receive(&app, &s, item, quality);
+                guest_playback::receive(&app, &s, item, quality, start);
             }
             Ok(Response::QualityResolved(item, max_height)) => {
                 playback_ui::resolved(&app, &s, item, max_height);
@@ -2021,6 +2035,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     library_ui::flush_volume_save(&app, &state);
     state.account_ui.stop_picker();
     state.library_ui.stop_picker();
+    state.local_media.stop_picker();
     state.progress.stop();
     state.clock_ui.invalidate();
     native_child::hide(&state);

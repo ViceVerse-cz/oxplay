@@ -9,6 +9,9 @@ use std::{
 };
 use url::Url;
 
+mod video_link;
+pub use video_link::{VideoLink, VideoStart};
+
 const MAX_URL_BYTES: usize = 16_384;
 
 // Bound untrusted text before the URL parser allocates or canonicalizes it.
@@ -497,7 +500,14 @@ pub struct ResolvedPlayback {
     /// Guest resolver never supplies cookies or arbitrary extractor-provided headers.
     pub guest: bool,
 }
-/// Optional public metadata; absence never implies zero counts or an empty description.
+pub const MAX_VIDEO_CHAPTERS: usize = 200;
+#[derive(Clone, Debug)]
+pub struct VideoChapter {
+    pub title: Option<String>,
+    pub start: Duration,
+    pub end: Duration,
+}
+/// Optional metadata; absence never implies zero counts or an empty description.
 #[derive(Clone, Debug, Default)]
 pub struct VideoDetails {
     pub description: Option<String>,
@@ -505,6 +515,9 @@ pub struct VideoDetails {
     pub view_count: Option<u64>,
     pub like_count: Option<u64>,
     pub comment_count: Option<u64>,
+    pub chapters: Vec<VideoChapter>,
+    /// Present but malformed/oversized chapter metadata was rejected as a set.
+    pub chapters_unavailable: bool,
 }
 /// Read-only public top-level comment. No provider JSON or account write capability.
 #[derive(Clone)]

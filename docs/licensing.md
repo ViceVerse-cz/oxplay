@@ -308,3 +308,9 @@ GPL-3.0-only. It is excluded from the production normal/build dependency graph.
 Its test metadata and mock backend do not change the application's license or
 qualify any binary distribution. No icon, font, helper or native-media dependency
 was replaced by this test addition.
+
+The local media, playlist organization and time/chapter navigation additions use
+the existing application GPL-3.0-or-later headers and compiled shared Slint UI.
+No new third-party code, font or icon was vendored in this batch; chapter controls
+reuse the existing attributed Lucide list-video asset. Dependency and native
+distribution qualification remain as recorded above.

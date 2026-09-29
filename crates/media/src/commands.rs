@@ -50,10 +50,30 @@ pub(super) unsafe fn loadfile(
         cstring("replace")?,
         cstring("-1")?,
     ];
-    // At most three keys/values. -append deliberately treats the complete input
+    // -append deliberately treats the complete input
     // as one filename (m_option.c:separate_input_param, OP_APPEND separator=0).
     let mut keys = vec![c"start"];
     let mut value_strings = vec![cstring(start)?];
+    if std::path::Path::new(path).is_absolute() {
+        // Local inputs must stay within file containers, including when a
+        // selected file is replaced after the host's header validation. Force
+        // lavf so mpv's playlist/EDL/image-sequence demuxers cannot take over.
+        // access-references=no additionally rejects lavf nested io_open calls.
+        // Subtitle files inherit this entry's options: allow their formats but
+        // never force the primary video's specific format onto a subtitle.
+        // mpv 0.41 m_option.c:read_subparam accepts [quoted,comma,values].
+        for (key, value) in [
+            (c"demuxer", "lavf"),
+            (c"sub-demuxer", "lavf"),
+            (
+                c"demuxer-lavf-o",
+                "format_whitelist=[mov,matroska,webm,avi,wav,flac,mp3,ogg,srt,ass,webvtt]",
+            ),
+        ] {
+            keys.push(key);
+            value_strings.push(cstring(value)?);
+        }
+    }
     if let Some(audio) = audio {
         keys.push(c"audio-files-append");
         value_strings.push(cstring(audio)?);

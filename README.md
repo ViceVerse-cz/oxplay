@@ -54,7 +54,7 @@ yt-dlp package supplies Python, Deno and packaged EJS challenge scripts.
 Search or paste a supported HTTPS YouTube URL in the centered field. Filter real
 results by videos, channels, or playlists. Select a video to play, a channel to
 browse its public tabs, or a playlist to browse its videos. Canonical `/channel/UC…`
-and `/playlist?list=…` URLs are supported; channel handles are not yet resolved. The initial resolver selects up to 1080p,
+and `/playlist?list=…` URLs, standalone `@handles`, and channel-handle URLs are supported. The initial resolver selects up to 1080p,
 preferring H.264 at equal resolution/frame rate. No network work occurs on clean
 launch. History, autoplay, previews, telemetry, and background refresh are off.
 
@@ -87,11 +87,23 @@ recommendations. Save videos to a local playlist to populate it; local collectio
 stay separate from your YouTube account. See [local Home](docs/local-home.md).
 Local playlists also offer **Search this playlist**, with Apply/Enter and Clear,
 to find saved titles and channel names beyond the visible page without network
-access. See [local library](docs/local-library-ui.md).
+access. **Duplicate** creates a named metadata-only copy of a playlist; each saved
+video offers **Copy / Move** to another explicitly selected local playlist.
+See [local library](docs/local-library-ui.md).
 
 **Share** on the watch page offers a public video link or a link at the current
 playback time. It copies neither signed media URLs nor account credentials, and
 sends nothing automatically. See [sharing](docs/sharing.md).
+
+**Open video file** (Ctrl/Cmd+O) selects a local MP4/MOV or Matroska/WebM file.
+**Load subtitle file** attaches a selected UTF-8 SRT/WebVTT file to the current
+local video. These paths are not saved to history. See [local media](docs/local-media-policy.md).
+
+Timestamped YouTube links retain their requested initial position. Click the
+elapsed time or press **G** for **Jump to time**. Resolved online videos with
+chapter metadata expose a bounded list through **Video chapters**. These additions
+have compile/lint validation; native interaction qualification remains pending.
+See [time navigation](docs/time-navigation.md) and [timestamp links](docs/timestamp-links.md).
 
 The picture-in-picture button or **P** switches the same window into a borderless floating
 player with controls inside the video; **P**, **Escape** or closing that compact window restores browsing.

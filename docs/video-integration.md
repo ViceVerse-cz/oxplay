@@ -1,5 +1,12 @@
 # Video integration — experimental macOS path
 
+The in-app [local media picker](local-media.md) now routes explicit selections
+through the existing stop barrier before loading the same player. Entry-scoped
+[local demux restrictions](local-media-policy.md) supplement worker header checks.
+[Chapter navigation](video-chapters.md) and [Jump to time](time-navigation.md) use
+exact native-load ownership and existing asynchronous seeks. These additions
+have not yet received native interaction or resource qualification.
+
 The [picture-in-picture mode](picture-in-picture.md) reuses this window's
 existing presenter and decoder. Its nine-stage local lifecycle test preserved
 native window, media-load and presenter identities across compact resize and

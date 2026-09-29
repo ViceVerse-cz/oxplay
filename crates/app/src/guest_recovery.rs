@@ -14,7 +14,7 @@ use std::{
 #[derive(Clone)]
 enum Target {
     Catalog(CatalogRequest, Option<CatalogCursor>),
-    Video(VideoId, QualityCeiling),
+    Video(VideoId, QualityCeiling, serein_core::VideoStart),
 }
 impl Target {
     fn from_request(request: &Request) -> Option<Self> {
@@ -22,7 +22,12 @@ impl Target {
             Request::Catalog(request, cursor) => {
                 Some(Self::Catalog(request.clone(), cursor.clone()))
             }
-            Request::Resolve(id, quality) => Some(Self::Video(id.clone(), *quality)),
+            Request::Resolve(id, quality) => {
+                Some(Self::Video(id.clone(), *quality, Default::default()))
+            }
+            Request::ResolveAt(id, quality, start) => {
+                Some(Self::Video(id.clone(), *quality, *start))
+            }
             // Comments, captions and replacements have their own ownership and
             // recovery rules. An account request cannot enter this worker.
             _ => None,
@@ -31,14 +36,17 @@ impl Target {
     fn request(self) -> Request {
         match self {
             Self::Catalog(request, cursor) => Request::Catalog(request, cursor),
-            Self::Video(id, quality) => Request::Resolve(id, quality),
+            Self::Video(id, quality, start) if start == Default::default() => {
+                Request::Resolve(id, quality)
+            }
+            Self::Video(id, quality, start) => Request::ResolveAt(id, quality, start),
         }
     }
     fn label(&self) -> &'static str {
         match self {
             Self::Catalog(CatalogRequest::Search { .. }, _) => "Retry search",
             Self::Catalog(_, _) => "Retry catalog",
-            Self::Video(_, _) => "Retry video",
+            Self::Video(..) => "Retry video",
         }
     }
 }
@@ -137,12 +145,15 @@ impl Ledger {
         page: i32,
     ) -> Option<i32> {
         let job = self.job.as_ref()?;
-        let Target::Video(failed_id, failed_quality) = &job.target else {
+        let Target::Video(failed_id, failed_quality, start) = &job.target else {
             return None;
         };
         let serial = job.failure.as_ref()?.serial;
-        (failed_id == id && *failed_quality == quality && self.matches(serial, scope, page))
-            .then_some(serial)
+        (failed_id == id
+            && *failed_quality == quality
+            && *start == Default::default()
+            && self.matches(serial, scope, page))
+        .then_some(serial)
     }
     fn ready(&self, serial: i32, scope: Scope, page: i32, now: Instant) -> bool {
         self.remaining(serial, scope, page, now) == Some(Duration::ZERO)
@@ -318,15 +329,17 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             return false;
         };
         let video = match &target {
-            Target::Video(id, quality) => Some((id.clone(), *quality)),
+            Target::Video(id, quality, start) => Some((id.clone(), *quality, *start)),
             Target::Catalog(..) => None,
         };
         state.worker.borrow_mut().submit(target.request());
         if let Some(job) = state.guest_recovery.ledger.borrow_mut().job.as_mut() {
             job.attempt = attempt;
         }
-        if let Some((id, quality)) = video {
-            crate::guest_playback::retry_submitted(&state, &id, quality);
+        if let Some((id, quality, start)) = video {
+            if start == Default::default() {
+                crate::guest_playback::retry_submitted(&state, &id, quality);
+            }
             state.focus_intent.arm(
                 crate::focus_intent::Scope::Guest(state.worker.borrow().generation()),
                 app.get_search_active(),
@@ -356,6 +369,7 @@ mod tests {
         Target::Video(
             VideoId::new("aqz-KE-bpKQ").unwrap(),
             QualityCeiling::default(),
+            Default::default(),
         )
     }
     #[test]
@@ -458,6 +472,30 @@ mod tests {
                 }
             ))
             .is_none()
+        );
+    }
+    #[test]
+    fn timestamp_retry_keeps_its_position_without_becoming_failed_file_restart() {
+        let link =
+            serein_core::VideoLink::from_url("https://youtu.be/aqz-KE-bpKQ?t=1m30s").unwrap();
+        let quality = QualityCeiling::default();
+        let target =
+            Target::from_request(&Request::ResolveAt(link.id.clone(), quality, link.start))
+                .unwrap();
+        let now = Instant::now();
+        let mut ledger = Ledger::default();
+        ledger.begin(Some(target), scope());
+        let (serial, wait, _) = ledger
+            .fail(scope(), 2, ProviderError::Offline, now)
+            .unwrap();
+        assert_eq!(
+            ledger.video_failure_serial(&link.id, quality, scope(), 2),
+            None
+        );
+        let (retry, _) = ledger.take(serial, scope(), 2, now + wait).unwrap();
+        assert!(
+            matches!(retry.request(), Request::ResolveAt(id, retained, start)
+            if id == link.id && retained == quality && start.seconds() == 90)
         );
     }
     #[test]

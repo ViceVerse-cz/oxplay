@@ -164,6 +164,7 @@ struct Pending {
     generation: u64,
     item: Box<ResolvedPlayback>,
     quality: serein_core::QualityCeiling,
+    start: serein_core::VideoStart,
 }
 #[derive(Default)]
 pub struct State {
@@ -186,6 +187,7 @@ pub fn receive(
     state: &Rc<UiState>,
     item: Box<ResolvedPlayback>,
     quality: serein_core::QualityCeiling,
+    start: serein_core::VideoStart,
 ) {
     if !item.guest || item.session_generation != 0 {
         state.focus_intent.cancel(crate::focus_intent::Scope::Guest(
@@ -204,7 +206,7 @@ pub fn receive(
         account_playback::clear(app, state);
     }
     if !state.player.snapshot().stop_pending {
-        publish(app, state, *item, quality);
+        publish(app, state, *item, quality, start);
         return;
     }
     cancel(app, state);
@@ -213,6 +215,7 @@ pub fn receive(
         generation,
         item,
         quality,
+        start,
     });
     app.set_busy(true);
     app.set_status("Stopping previous playback before starting guest playback…".into());
@@ -237,7 +240,7 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot
     state.guest_playback.deadline.stop();
     app.set_busy(false);
     if pending.generation == state.worker.borrow().generation() && !state.caption_cache.active() {
-        publish(app, state, *pending.item, pending.quality);
+        publish(app, state, *pending.item, pending.quality, pending.start);
     }
 }
 fn publish(
@@ -245,6 +248,7 @@ fn publish(
     state: &Rc<UiState>,
     item: ResolvedPlayback,
     quality: serein_core::QualityCeiling,
+    start: serein_core::VideoStart,
 ) {
     let focus_scope = crate::focus_intent::Scope::Guest(state.worker.borrow().generation());
     let restart = state.guest_playback.retry.borrow().attempt;
@@ -267,7 +271,7 @@ fn publish(
     // still start playing. Terminal snapshots are not fresh resume positions,
     // so explicit recovery continues to restart from zero.
     let paused = restart.is_some() && state.player.user_pause_intent();
-    if let Err(error) = load_remote(state, &item, 0., paused) {
+    if let Err(error) = load_remote(state, &item, f64::from(start.seconds()), paused) {
         state.focus_intent.cancel(focus_scope);
         app.set_status(error.into());
         return;

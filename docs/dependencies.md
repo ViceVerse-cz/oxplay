@@ -269,3 +269,12 @@ restricted to debug-assertion builds. Native release checks remain separate.
 the testing backend is absent, as are Qt, Skia, the software renderer and the
 interpreter. This is selected dependency-graph evidence, not a binary-size or
 resource measurement. Runtime Winit/FemtoVG/accessibility features are unchanged.
+
+## Local media and navigation feature batch
+
+The picker, playlist organization, timestamp links, chapter list and time dialog
+reuse the locked rfd, SQLite, Slint and media dependencies. No dependency,
+framework revision, Cargo feature or lockfile change is introduced. The new
+local per-entry options were source-reviewed against official mpv v0.41.0 and
+FFmpeg n8.0; see [local media policy](local-media-policy.md). This does not advance
+or replace the installed native build inventory or its pending qualifications.

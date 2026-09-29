@@ -48,7 +48,29 @@ pub enum PageResult {
         retention_days: u16,
     },
 }
+pub enum OrganizationRequest {
+    Duplicate {
+        source: LocalPlaylistId,
+        name: String,
+    },
+    Destinations(PlaylistWindow),
+    Transfer {
+        source: LocalPlaylistId,
+        destination: LocalPlaylistId,
+        video: VideoId,
+        move_item: bool,
+    },
+}
+pub enum OrganizationResult {
+    Duplicated(LocalPlaylistId),
+    Destinations(PlaylistWindowPage),
+    Transferred,
+}
 pub enum Request {
+    Organize {
+        ticket: u64,
+        action: OrganizationRequest,
+    },
     Load,
     Create(String),
     DeleteEmpty(LocalPlaylistId),
@@ -84,6 +106,10 @@ pub enum Request {
     ClearLocalData,
 }
 pub enum Response {
+    Organization {
+        ticket: u64,
+        result: Result<OrganizationResult, String>,
+    },
     /// The write committed; selecting its bounded window is a separate read.
     Created(LocalPlaylistId),
     Library(
@@ -157,12 +183,22 @@ impl Worker {
                 } else {
                     None
                 };
+                let organization = if let Request::Organize { ticket, .. } = &request {
+                    Some(*ticket)
+                } else {
+                    None
+                };
                 let response = match &mut store {
                     Ok(store) => handle(store, request),
                     Err(error) => Err(*error),
                 }
                 .unwrap_or_else(|e| {
-                    if let Some(ticket) = home {
+                    if let Some(ticket) = organization {
+                        Response::Organization {
+                            ticket,
+                            result: Err(e.to_string()),
+                        }
+                    } else if let Some(ticket) = home {
                         Response::Home {
                             ticket,
                             result: Err(e.to_string()),
@@ -254,6 +290,29 @@ fn read_page(store: &LocalStore, page: PageQuery) -> serein_storage::Result<Page
 }
 fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Response> {
     match request {
+        Request::Organize { ticket, action } => {
+            let result = (|| {
+                Ok(match action {
+                    OrganizationRequest::Duplicate { source, name } => {
+                        OrganizationResult::Duplicated(store.duplicate_playlist(source, &name)?)
+                    }
+                    OrganizationRequest::Destinations(window) => OrganizationResult::Destinations(
+                        store.playlist_window(window, MAX_PAGE_SIZE)?,
+                    ),
+                    OrganizationRequest::Transfer {
+                        source,
+                        destination,
+                        video,
+                        move_item,
+                    } => {
+                        store.transfer_playlist_video(source, destination, &video, move_item)?;
+                        OrganizationResult::Transferred
+                    }
+                })
+            })()
+            .map_err(|error: StorageError| error.to_string());
+            Ok(Response::Organization { ticket, result })
+        }
         Request::Load => summary(store, None),
         Request::Create(name) => {
             let item = store.create_playlist(&name)?;

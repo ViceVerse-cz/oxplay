@@ -10,6 +10,11 @@ use std::sync::{Arc, Condvar, Mutex};
 pub enum Request {
     Catalog(CatalogRequest, Option<CatalogCursor>),
     Resolve(VideoId, serein_core::QualityCeiling),
+    ResolveAt(
+        VideoId,
+        serein_core::QualityCeiling,
+        serein_core::VideoStart,
+    ),
     Comments(VideoId, Option<CommentCursor>),
     Caption(
         VideoId,
@@ -21,7 +26,11 @@ pub enum Request {
 }
 pub enum Response {
     Catalog(Box<CatalogPage>),
-    Resolved(Box<ResolvedPlayback>, serein_core::QualityCeiling),
+    Resolved(
+        Box<ResolvedPlayback>,
+        serein_core::QualityCeiling,
+        serein_core::VideoStart,
+    ),
     Comments(VideoId, Result<CommentPage, ProviderError>),
     Caption(
         VideoId,
@@ -136,7 +145,17 @@ impl Worker {
                                 },
                                 &op,
                             )
-                            .map(|r| Response::Resolved(Box::new(r), quality)),
+                            .map(|r| Response::Resolved(Box::new(r), quality, Default::default())),
+                        Request::ResolveAt(id, quality, start) => provider
+                            .resolve_with_policy(
+                                &id,
+                                ResolutionPolicy {
+                                    max_height: quality.height(),
+                                    prefer_h264: true,
+                                },
+                                &op,
+                            )
+                            .map(|r| Response::Resolved(Box::new(r), quality, start)),
                         Request::ResolveQuality(id, policy) => provider
                             .resolve_with_policy(&id, policy, &op)
                             .map(|r| Response::QualityResolved(Box::new(r), policy.max_height)),

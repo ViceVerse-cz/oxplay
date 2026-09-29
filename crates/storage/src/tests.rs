@@ -730,6 +730,141 @@ fn playlist_search_is_literal_scoped_and_keeps_filtered_keyset_pages() {
 }
 
 #[test]
+fn duplicate_and_transfer_preserve_local_membership_and_commit_atomically() {
+    let mut store = LocalStore::in_memory().unwrap();
+    let source = store.create_playlist("Source fixture").unwrap();
+    let target = store.create_playlist("Target fixture").unwrap();
+    store.save_video(source, &video(1)).unwrap();
+    store.save_video(source, &video(2)).unwrap();
+    let duplicate = store.duplicate_playlist(source, "Copied fixture").unwrap();
+    assert_ne!(duplicate, source);
+    assert_eq!(
+        store
+            .playlist_videos(duplicate, None, 100)
+            .unwrap()
+            .items
+            .iter()
+            .map(|item| item.id.clone())
+            .collect::<Vec<_>>(),
+        vec![video(1).id, video(2).id]
+    );
+    let mut old = video(1);
+    old.title = "Old target metadata".into();
+    store.save_video(target, &old).unwrap();
+    store
+        .transfer_playlist_video(source, target, &video(1).id, false)
+        .unwrap();
+    let items = store.playlist_videos(target, None, 100).unwrap().items;
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].title, video(1).title);
+    assert!(items[0].thumbnail_url.is_none());
+    assert_eq!(
+        store
+            .playlist_videos(source, None, 100)
+            .unwrap()
+            .items
+            .len(),
+        2
+    );
+    store
+        .transfer_playlist_video(source, target, &video(1).id, true)
+        .unwrap();
+    assert_eq!(
+        store.playlist_videos(source, None, 100).unwrap().items[0].id,
+        video(2).id
+    );
+    assert_eq!(
+        store
+            .playlist_videos(target, None, 100)
+            .unwrap()
+            .items
+            .len(),
+        1
+    );
+    assert!(
+        store
+            .transfer_playlist_video(source, source, &video(2).id, true)
+            .is_err()
+    );
+    assert!(
+        store
+            .transfer_playlist_video(source, target, &video(99).id, true)
+            .is_err()
+    );
+    store.delete_playlist(target).unwrap();
+    assert!(
+        store
+            .transfer_playlist_video(source, target, &video(2).id, true)
+            .is_err()
+    );
+    assert_eq!(
+        store
+            .playlist_videos(source, None, 100)
+            .unwrap()
+            .items
+            .len(),
+        1
+    );
+    assert_eq!(
+        store.duplicate_playlist(target, "Missing source"),
+        Err(StorageError::NotFound)
+    );
+    assert_eq!(store.playlists(None, 100).unwrap().items.len(), 2);
+}
+
+#[test]
+fn duplicate_rolls_back_new_collection_and_move_rolls_back_copy_on_failure() {
+    let mut store = LocalStore::in_memory().unwrap();
+    let source = store.create_playlist("Source fixture").unwrap();
+    let target = store.create_playlist("Target fixture").unwrap();
+    store.save_video(source, &video(1)).unwrap();
+    store.connection.execute_batch("CREATE TRIGGER reject_copy BEFORE INSERT ON local_playlist_items BEGIN SELECT RAISE(ABORT,'synthetic failure'); END;").unwrap();
+    assert!(store.duplicate_playlist(source, "Must roll back").is_err());
+    assert!(
+        store
+            .transfer_playlist_video(source, target, &video(1).id, true)
+            .is_err()
+    );
+    assert_eq!(store.playlists(None, 100).unwrap().items.len(), 2);
+    assert_eq!(
+        store
+            .playlist_videos(source, None, 100)
+            .unwrap()
+            .items
+            .len(),
+        1
+    );
+    assert!(
+        store
+            .playlist_videos(target, None, 100)
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    store.connection.execute_batch("DROP TRIGGER reject_copy; CREATE TRIGGER reject_remove BEFORE DELETE ON local_playlist_items BEGIN SELECT RAISE(ABORT,'synthetic failure'); END;").unwrap();
+    assert!(
+        store
+            .transfer_playlist_video(source, target, &video(1).id, true)
+            .is_err()
+    );
+    assert_eq!(
+        store
+            .playlist_videos(source, None, 100)
+            .unwrap()
+            .items
+            .len(),
+        1
+    );
+    assert!(
+        store
+            .playlist_videos(target, None, 100)
+            .unwrap()
+            .items
+            .is_empty()
+    );
+}
+
+#[test]
 fn backup_is_consistent_and_never_overwrites() {
     let directory = tempfile::tempdir().unwrap();
     let backup = directory.path().join("backup.sqlite3");
