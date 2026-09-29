@@ -23,6 +23,23 @@ fn wait(player: &Player, condition: impl Fn(&Snapshot) -> bool) {
         std::thread::sleep(Duration::from_millis(5));
     }
 }
+// FILE_LOADED identifies the file but can arrive before PLAYBACK_RESTART.
+// Wait for the paused fixture to become usable, not just for its metadata/load
+// count; add_subtitle correctly refuses startup Buffering.
+fn wait_for_paused_caption_load(player: &Player) {
+    let request = player.snapshot().load_request_id;
+    assert_ne!(request, 0, "fixture load must have been accepted");
+    wait(player, |s| {
+        s.file_loads == 1
+            && s.load_request_id == request
+            && s.active_load_request_id == request
+            && s.playback_restarted
+            && s.state == PlaybackState::Paused
+            && s.paused
+            && !s.stop_pending
+            && player.inner.pause_intent.borrow().settled(s.paused)
+    });
+}
 fn fixture() -> Fixture {
     static NEXT: AtomicU64 = AtomicU64::new(0);
     let path = std::env::temp_dir().join(format!(
@@ -103,9 +120,7 @@ fn exact_caption_selection_off_race_and_cached_reselection_are_observed() {
     let second = fixture.0.join("second.vtt");
     let player = player();
     player.load_local_at(&media, 0., true).unwrap();
-    wait(&player, |s| {
-        s.file_loads == 1 && s.active_load_request_id == s.load_request_id
-    });
+    wait_for_paused_caption_load(&player);
     player
         .add_subtitle(&first, "First", "en", Arc::new(()))
         .unwrap();
@@ -153,9 +168,7 @@ fn attached_caption_lease_survives_off_until_native_end_file() {
     player
         .load_local_at(&fixture.0.join("silent.wav"), 0., true)
         .unwrap();
-    wait(&player, |s| {
-        s.file_loads == 1 && s.active_load_request_id == s.load_request_id
-    });
+    wait_for_paused_caption_load(&player);
     let lease = Arc::new(());
     let weak = Arc::downgrade(&lease);
     let path = fixture.0.join("first.vtt");
@@ -192,9 +205,7 @@ fn pending_caption_blocks_replacement_and_retains_lease_until_stop_reply_and_unl
     let player = player();
     let media = fixture.0.join("silent.wav");
     player.load_local_at(&media, 0., true).unwrap();
-    wait(&player, |s| {
-        s.file_loads == 1 && s.active_load_request_id == s.load_request_id
-    });
+    wait_for_paused_caption_load(&player);
     let lease = Arc::new(());
     let weak = Arc::downgrade(&lease);
     player
@@ -219,9 +230,7 @@ fn engine_destruction_releases_attached_caption_after_termination() {
     player
         .load_local_at(&fixture.0.join("silent.wav"), 0., true)
         .unwrap();
-    wait(&player, |s| {
-        s.file_loads == 1 && s.active_load_request_id == s.load_request_id
-    });
+    wait_for_paused_caption_load(&player);
     let lease = Arc::new(());
     let weak = Arc::downgrade(&lease);
     let path = fixture.0.join("first.vtt");

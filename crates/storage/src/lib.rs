@@ -76,6 +76,30 @@ pub struct Page<T> {
     pub next: Option<PageCursor>,
 }
 
+/// Collection navigation queries returned by `playlist_window`. Keep each
+/// opaque boundary with its direction; backward bounds are inclusive so an
+/// empty trailing page can return to the row used for its forward cursor.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PlaylistWindow {
+    #[default]
+    First,
+    After(PageCursor),
+    BeforeOrAt(PageCursor),
+    /// Reveal an existing selected collection and up to `limit - 1` predecessors.
+    EndingAt(LocalPlaylistId),
+}
+
+#[derive(Debug)]
+pub struct PlaylistWindowPage {
+    /// Always ordered by increasing collection ID, including backward queries.
+    pub items: Vec<LocalPlaylist>,
+    /// Canonical refresh query; a nonempty window never retains an EndingAt
+    /// identity which could subsequently be deleted.
+    pub current: PlaylistWindow,
+    pub previous: Option<PlaylistWindow>,
+    pub next: Option<PlaylistWindow>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
     System,
@@ -211,6 +235,93 @@ impl LocalStore {
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(finish_page(rows, limit))
+    }
+
+    /// A bounded, bidirectional collection window. A creation can reveal its
+    /// new ID without loading or fabricating all preceding page cursors. Rows
+    /// and neighboring-page checks share one SQLite read snapshot. Returned
+    /// boundaries remain usable after deletion; pages themselves are live reads.
+    /// `EndingAt` requires that exact collection to exist, or returns NotFound.
+    pub fn playlist_window(
+        &self,
+        window: PlaylistWindow,
+        limit: u32,
+    ) -> Result<PlaylistWindowPage> {
+        let (_, fetch) = page_bounds(None, limit)?;
+        let snapshot = self.connection.unchecked_transaction()?;
+        let (boundary, backward) = match window {
+            PlaylistWindow::First => (0, false),
+            PlaylistWindow::After(cursor) => (cursor.0, false),
+            PlaylistWindow::BeforeOrAt(cursor) => (cursor.0, true),
+            PlaylistWindow::EndingAt(id) => {
+                let exists: bool = snapshot.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM local_playlists WHERE id=?1)",
+                    [id.0],
+                    |row| row.get(0),
+                )?;
+                if !exists {
+                    return Err(StorageError::NotFound);
+                }
+                (id.0, true)
+            }
+        };
+        let mut items = {
+            let mut statement = snapshot.prepare(if backward {
+                "SELECT id,name FROM local_playlists WHERE id<=?1 ORDER BY id DESC LIMIT ?2"
+            } else {
+                "SELECT id,name FROM local_playlists WHERE id>?1 ORDER BY id LIMIT ?2"
+            })?;
+            statement
+                .query_map(params![boundary, fetch], |row| {
+                    Ok(LocalPlaylist {
+                        id: LocalPlaylistId(row.get(0)?),
+                        name: row.get(1)?,
+                    })
+                })?
+                .collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        items.truncate(limit as usize);
+        if backward {
+            items.reverse();
+        }
+        let (current, previous, next) =
+            if let (Some(first), Some(last)) = (items.first(), items.last()) {
+                let (predecessor, has_next): (Option<i64>, bool) = snapshot.query_row(
+                    "SELECT (SELECT MAX(id) FROM local_playlists WHERE id<?1),
+                        EXISTS(SELECT 1 FROM local_playlists WHERE id>?2)",
+                    params![first.id.0, last.id.0],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                (
+                    predecessor.map_or(PlaylistWindow::First, |id| {
+                        PlaylistWindow::After(PageCursor(id))
+                    }),
+                    predecessor.map(|id| PlaylistWindow::BeforeOrAt(PageCursor(id))),
+                    has_next.then_some(PlaylistWindow::After(PageCursor(last.id.0))),
+                )
+            } else {
+                // The last row of a visited page may have been deleted along with
+                // its successors. Keep a real escape direction even for this empty
+                // result; don't strand the user or omit the inclusive boundary row.
+                let (has_previous, has_next): (bool, bool) = snapshot.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM local_playlists WHERE id<=?1),
+                        EXISTS(SELECT 1 FROM local_playlists WHERE id>?1)",
+                    [boundary],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                (
+                    window,
+                    has_previous.then_some(PlaylistWindow::BeforeOrAt(PageCursor(boundary))),
+                    has_next.then_some(PlaylistWindow::After(PageCursor(boundary))),
+                )
+            };
+        snapshot.commit()?;
+        Ok(PlaylistWindowPage {
+            items,
+            current,
+            previous,
+            next,
+        })
     }
 
     /// Saving the same video again updates its title without changing row identity.
@@ -469,5 +580,7 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
+mod playlist_window_tests;
 #[cfg(test)]
 mod tests;

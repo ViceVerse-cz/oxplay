@@ -83,8 +83,8 @@ bounded Next/Previous pages. It starts without fetching thumbnails or remote
 recommendations. Save videos to a local playlist to populate it; local collections
 stay separate from your YouTube account. See [local Home](docs/local-home.md).
 
-The picture-in-picture button or **P** switches the same window into a floating
-player; **P**, **Escape** or closing that compact window restores browsing.
+The picture-in-picture button or **P** switches the same window into a borderless floating
+player with controls inside the video; **P**, **Escape** or closing that compact window restores browsing.
 It has been functionally exercised on the development Mac; native Wayland and
 the experimental child presenter keep it disabled. See [PiP details](docs/picture-in-picture.md).
 The account page explains session import and its risks before enabling an explicit

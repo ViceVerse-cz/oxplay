@@ -135,10 +135,9 @@ now requires a complete newline-terminated PID, with process-reaping assertions
 unchanged. The integrated workspace suite then passed 414 Rust tests (four
 external integrations ignored). No resource/usage benchmark was run.
 
-A separate remaining issue is creation beyond the first 100 playlists: the
-current summary omits the new ID and selection falls back to an older playlist.
-The next fix requires bounded bidirectional collection pages and a correlated
-read containing the created ID. Actual queue-saturation rejection and video-page
+At that checkpoint, creation beyond the first 100 playlists remained broken:
+the summary omitted the new ID and selection fell back to an older playlist.
+The bounded-window fix is documented below. Actual queue-saturation rejection and video-page
 rename cancellation still need dedicated native interaction cases; the finite
 selector check injects a rejecting callback rather than saturating the worker.
 
@@ -153,3 +152,51 @@ cargo build --workspace --release --locked
 
 It exits after 38 seconds and returns an error if any stage fails or never completes.
 The screenshot is an explicit one-shot capture; normal presentation is unchanged.
+
+## Created playlist windows beyond the first page
+
+The worker now acknowledges Create with its committed typed playlist ID. A later
+read failure cannot turn a committed write into an apparent failed creation.
+The UI requests a bounded window ending at that ID only while the originating
+playlist editor context remains current. The preferred ID is correlated with
+that read ticket and checked again before publication. Leaving during either
+operation keeps the acknowledged window/selection and does not request focus or
+navigate back. The current window is refreshed to expose any newly available
+Next page without selecting an off-page creation.
+
+Collection navigation uses a constant-size window state instead of a stack of
+previously visited cursors. Storage returns at most 100 ascending rows, with typed
+forward/backward requests computed in the same SQLite read snapshot. A backward
+request includes its opaque boundary, so an empty trailing page can return to
+its surviving boundary row. Empty collection windows retain navigation controls.
+The existing forward-only storage API remains available to exports and other
+callers; content/history pagination is unchanged.
+
+A revealed page gets a canonical refresh request based on its lower boundary,
+not the created ID. Rename and deletion can therefore refresh that window even
+when the originally revealed playlist no longer exists. These are live keyset
+windows: inserts/deletes can change the number of rows or backfill a refreshed
+page. No catalog-sized rank scan, page-offset table or fabricated cursor history
+is needed. A change of selected collection retires the previous video's rows
+before its new read, so a failed read cannot leave old rows actionable under the
+new identity.
+
+Storage and worker regressions cover creation beyond 100, bounded bidirectional
+traversal, deleted boundaries, empty pages, correlated failures and canonical
+refresh after rename/deletion. The complete workspace suite passed 428 Rust tests
+(four explicitly ignored integrations). The debug 14-stage native diagnostic
+passed bounded 206-collection navigation, same-ID rename, deletion and an accepted
+creation while Settings/search retained focus. Post-exit read-only SQL confirmed
+206 playlists, created 207 present, deleted 206 absent and history off. The labeled
+1000×800 dark capture was inspected (`artifacts/collections-debug-v1`). This uses
+real worker/application callbacks, not physical pointer/keyboard interaction or
+resource measurement.
+
+The final locked release passed the same fourteen stages at 760×600 in the light
+theme (`artifacts/collections-release-v1`). Its capture was inspected, exit was 0,
+and owned processes were reaped. Read-only SQL again confirmed 206 final
+playlists, created 207 present, deleted 206 absent and history disabled. Release
+executable SHA256:
+`784dae0bed05a158a386b827866dac7c3c41c21bc3fb615ff04f9b35cc1add1e`.
+The final diagnostic reports zero remote thumbnail starts and media loads; it
+is not a whole-process egress audit. Hosted checks are tracked in [CI notes](ci-release.md).

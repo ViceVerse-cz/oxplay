@@ -2,7 +2,9 @@
 //! Bounded local-library pages. SQLite and selected-file I/O stay on the worker.
 use crate::{App, LibraryRow, LibraryUi, SaveUi, UiState, library};
 use serein_core::{ChannelId, VideoSummary};
-use serein_storage::{HistoryCursor, HistoryEntry, LocalPlaylistId, LocalSubscription, PageCursor};
+use serein_storage::{
+    HistoryCursor, HistoryEntry, LocalPlaylistId, LocalSubscription, PageCursor, PlaylistWindow,
+};
 use slint::ComponentHandle;
 #[path = "library_model.rs"]
 mod library_model;
@@ -111,10 +113,45 @@ enum NameKind {
     Create,
     Rename,
 }
+#[derive(Clone, Copy)]
+struct CreateContext {
+    route_epoch: u64,
+    collection_epoch: u64,
+    visible: bool,
+}
+impl CreateContext {
+    fn matches(self, route_epoch: u64, collection_epoch: u64, visible: bool) -> bool {
+        self.visible
+            && visible
+            && self.route_epoch == route_epoch
+            && self.collection_epoch == collection_epoch
+    }
+}
+struct CreatedSelection {
+    ticket: u64,
+    id: LocalPlaylistId,
+    context: CreateContext,
+}
+#[derive(Clone, Default)]
+struct CollectionWindow {
+    current: PlaylistWindow,
+    previous: Option<PlaylistWindow>,
+    next: Option<PlaylistWindow>,
+}
+impl CollectionWindow {
+    fn advance(&mut self, forward: bool) -> bool {
+        let Some(query) = (if forward { self.next } else { self.previous }) else {
+            return false;
+        };
+        self.current = query;
+        true
+    }
+}
 struct NameWrite {
     kind: NameKind,
     draft: slint::SharedString,
     rename_identity: Option<(LocalPlaylistId, u64)>,
+    create_context: Option<CreateContext>,
 }
 fn playlist_name(draft: &str) -> Result<String, &'static str> {
     let name = draft.trim();
@@ -192,14 +229,15 @@ pub struct State {
     collection_epoch: Cell<u64>,
     reads: RefCell<Reads>,
     last_page_read: Cell<Option<u64>>,
-    collection_origin: RefCell<Option<(u64, Pagination)>>,
+    collection_origin: RefCell<Option<(u64, CollectionWindow)>>,
+    created_selection: RefCell<Option<CreatedSelection>>,
     row_changes: Cell<u64>,
     collection_changes: Cell<u64>,
     row_resets: Cell<u64>,
     collection_replacements: Cell<u64>,
     items: RefCell<Vec<Item>>,
     pages: RefCell<Pagination>,
-    collections: RefCell<Pagination>,
+    collections: RefCell<CollectionWindow>,
     pending: Cell<bool>,
     requested_preferences: Cell<Option<library::PreferenceWrite>>,
     preference_serial: Cell<u64>,
@@ -304,7 +342,7 @@ fn cancel_name(app: &App, state: &UiState) {
     }
     ui.set_renaming(false);
 }
-fn finish_name(app: &App, state: &UiState, kind: NameKind) {
+fn finish_name(app: &App, state: &UiState, kind: NameKind) -> Option<NameWrite> {
     let completed = {
         let mut pending = state.library_ui.name_write.borrow_mut();
         if pending.as_ref().is_some_and(|write| write.kind == kind) {
@@ -313,9 +351,7 @@ fn finish_name(app: &App, state: &UiState, kind: NameKind) {
             None
         }
     };
-    let Some(write) = completed else {
-        return;
-    };
+    let write = completed?;
     let ui = app.global::<LibraryUi>();
     if kind == NameKind::Rename {
         let current = state
@@ -325,7 +361,7 @@ fn finish_name(app: &App, state: &UiState, kind: NameKind) {
             .as_ref()
             .map(|target| (target.id, target.epoch));
         if current != write.rename_identity {
-            return;
+            return Some(write);
         }
         cancel_name(app, state);
     } else if ui.get_name_draft() == write.draft {
@@ -339,6 +375,7 @@ fn finish_name(app: &App, state: &UiState, kind: NameKind) {
             "Playlist renamed."
         },
     );
+    Some(write)
 }
 pub fn desired_preferences(state: &UiState) -> serein_storage::LocalPreferences {
     state
@@ -765,15 +802,75 @@ pub fn accepted_page_read(state: &UiState) -> Option<u64> {
     state.library_ui.last_page_read.get()
 }
 fn collections(app: &App, s: &UiState) {
-    let after = s.library_ui.collections.borrow().page();
+    let window = s.library_ui.collections.borrow().current;
     read_page(
         app,
         s,
         Route::Collections(s.library_ui.collection_epoch.get()),
-        library::PageQuery::Collections(after),
+        library::PageQuery::Collections(window),
     );
 }
-fn restore_collection_page(state: &State, origin: Option<(u64, Pagination)>) {
+fn create_context(app: &App, state: &UiState) -> CreateContext {
+    CreateContext {
+        route_epoch: state.library_ui.route_epoch.get(),
+        collection_epoch: state.library_ui.collection_epoch.get(),
+        visible: app.get_page() == 1 && app.global::<LibraryUi>().get_tab() == 0,
+    }
+}
+fn context_matches(app: &App, state: &UiState, expected: CreateContext) -> bool {
+    let current = create_context(app, state);
+    expected.matches(
+        current.route_epoch,
+        current.collection_epoch,
+        current.visible,
+    )
+}
+fn take_created_selection(state: &State, ticket: u64) -> Option<CreatedSelection> {
+    let mut pending = state.created_selection.borrow_mut();
+    if pending
+        .as_ref()
+        .is_some_and(|selection| selection.ticket == ticket)
+    {
+        pending.take()
+    } else {
+        None
+    }
+}
+/// Admit the read before changing window state. The old model and selected ID
+/// stay actionable only after success/failure releases the existing busy gate.
+fn reveal_created(app: &App, state: &UiState, id: LocalPlaylistId) -> bool {
+    let Some(epoch) = next_epoch(app, &state.library_ui.collection_epoch) else {
+        return false;
+    };
+    let original = state.library_ui.collections.borrow().clone();
+    if !read_page(
+        app,
+        state,
+        Route::Collections(epoch),
+        library::PageQuery::Collections(PlaylistWindow::EndingAt(id)),
+    ) {
+        return false;
+    }
+    *state.library_ui.collection_origin.borrow_mut() =
+        Some((state.library_ui.collection_epoch.get(), original));
+    state.library_ui.collection_epoch.set(epoch);
+    state.library_ui.collections.borrow_mut().current = PlaylistWindow::EndingAt(id);
+    let ticket = state
+        .library_ui
+        .reads
+        .borrow()
+        .pending
+        .as_ref()
+        .expect("admitted collection read")
+        .0;
+    *state.library_ui.created_selection.borrow_mut() = Some(CreatedSelection {
+        ticket,
+        id,
+        context: create_context(app, state),
+    });
+    true
+}
+fn restore_collection_page(state: &State, origin: Option<(u64, CollectionWindow)>) {
     if let Some((epoch, page)) = origin {
         state.collection_epoch.set(epoch);
         *state.collections.borrow_mut() = page;
@@ -844,6 +941,11 @@ fn publish_collections(
     }
     app.set_selected_playlist(index);
     app.global::<LibraryUi>().set_selected(index);
+    if next_route.is_some() {
+        // A subsequent video read can fail. Retire the old playlist's rows now,
+        // before that failure could make them actionable under a new identity.
+        publish(app, s, Vec::new(), None);
+    }
     true
 }
 /// Call on media position notifications; no timer is created for history.
@@ -885,15 +987,14 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 library::Response::Home { ticket, result } => crate::home_ui::receive(&app, &s, ticket, result),
                 library::Response::Library(items, prefs, chosen) => {
                     crate::home_ui::changed(&app, &s);
-                    if chosen.is_some() { finish_name(&app,&s,NameKind::Create); }
                     complete(&app, &s);
                     if s.library_ui.reads.borrow().pending.is_none() {
-                        let was_later_page=s.library_ui.collections.borrow().current.is_some();
+                        let was_later_page=s.library_ui.collections.borrow().current != PlaylistWindow::First;
                         if was_later_page {
                             let Some(epoch)=next_epoch(&app,&s.library_ui.collection_epoch) else { continue; };
                             s.library_ui.collection_epoch.set(epoch);
                         }
-                        *s.library_ui.collections.borrow_mut()=Pagination::default();
+                        *s.library_ui.collections.borrow_mut()=CollectionWindow::default();
                         publish_collections(&app, &s, items, chosen);
                     }
                     if !s.playback_preferences.ready() {
@@ -910,8 +1011,25 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                       crate::playback_preferences::hydrate(&app, &s, prefs.playback);
                       apply_thumbnail_cache(&app, &s, prefs.thumbnail_cache_mib);
                     }
-                    // Startup/create summary is followed by a correlated page.
+                    // Startup summary is followed by a correlated page.
                     if s.library_ui.reads.borrow().pending.is_none() {
+                        collections(&app, &s);
+                    }
+                }
+                library::Response::Created(id) => {
+                    crate::home_ui::changed(&app, &s);
+                    let write = finish_name(&app, &s, NameKind::Create);
+                    complete(&app, &s);
+                    if s.caption_cache.active() { continue; }
+                    let reveal = write.and_then(|write| write.create_context)
+                        .is_some_and(|context| context_matches(&app, &s, context));
+                    if reveal {
+                        if !reveal_created(&app, &s, id) {
+                            status(&app, "Playlist created, but its page could not be loaded. Reopen local playlists.");
+                        }
+                    } else {
+                        // Keep the current selection/window when a committed
+                        // creation finishes after its author left the editor.
                         collections(&app, &s);
                     }
                 }
@@ -922,21 +1040,35 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let collection_origin=if matches!(route,Route::Collections(_)) {
                         s.library_ui.collection_origin.borrow_mut().take()
                     } else { None };
+                    let created = take_created_selection(&s.library_ui, ticket);
                     complete(&app,&s);
                     let current = if matches!(route,Route::Collections(_)) {
                         Route::Collections(s.library_ui.collection_epoch.get())
                     } else { current_route(&app,&s) };
                     if route != current || s.caption_cache.active() { continue; }
+                    if created.as_ref().is_some_and(|selection| !context_matches(&app, &s, selection.context)) {
+                        restore_collection_page(&s.library_ui, collection_origin);
+                        collections(&app, &s);
+                        continue;
+                    }
                     let result = match result { Ok(page) if route.accepts(&page) => page,
                         Ok(_) => { restore_collection_page(&s.library_ui,collection_origin); status(&app,"Unexpected local-library page. Please reopen this view."); continue; },
-                        Err(error) => { restore_collection_page(&s.library_ui,collection_origin); status(&app,error); continue; } };
+                        Err(error) => { restore_collection_page(&s.library_ui,collection_origin); status(&app,if created.is_some() { format!("Playlist created, but its page could not be loaded. {error}") } else { error }); continue; } };
                     let published = match result {
                         library::PageResult::Collections(page) => {
-                            if !publish_collections(&app,&s,page.items,None) { restore_collection_page(&s.library_ui,collection_origin); continue; }
+                            let prefer = created.map(|selection| selection.id);
+                            if prefer.is_some_and(|id| !page.items.iter().any(|item| item.id == id)) {
+                                restore_collection_page(&s.library_ui,collection_origin);
+                                status(&app,"Playlist was created, but its page no longer contains it. Reopen local playlists.");
+                                continue;
+                            }
+                            if !publish_collections(&app,&s,page.items,prefer) { restore_collection_page(&s.library_ui,collection_origin); continue; }
                             let (has_next,has_previous)={
                                 let mut pages=s.library_ui.collections.borrow_mut();
-                                pages.next=page.next.map(Cursor::Page);
-                                (pages.next.is_some(),!pages.previous.is_empty())
+                                pages.current=page.current;
+                                pages.next=page.next;
+                                pages.previous=page.previous;
+                                (pages.next.is_some(),pages.previous.is_some())
                             };
                             let ui=app.global::<LibraryUi>();
                             ui.set_collections_next(has_next); ui.set_collections_previous(has_previous);
@@ -991,7 +1123,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 }
                 library::Response::Saved => {
                     crate::home_ui::changed(&app, &s);
-                    finish_name(&app,&s,NameKind::Rename);
+                    let _ = finish_name(&app,&s,NameKind::Rename);
                     complete(&app, &s);
                     status(&app, "Saved on this device.");
                     if app.global::<LibraryUi>().get_tab() == 0 {
@@ -1051,7 +1183,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                             summary.channels_followed
                         ),
                     );
-                    *s.library_ui.collections.borrow_mut() = Pagination::default();
+                    *s.library_ui.collections.borrow_mut() = CollectionWindow::default();
                     if let Some(epoch)=next_epoch(&app,&s.library_ui.collection_epoch) { s.library_ui.collection_epoch.set(epoch); }
                     collections(&app, &s);
                 }
@@ -1091,11 +1223,12 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let _ = s.player.set_volume(prefs.volume_percent as f64);
                     app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
-                    *s.library_ui.collections.borrow_mut() = Pagination::default();
+                    *s.library_ui.collections.borrow_mut() = CollectionWindow::default();
                     *s.library_ui.pages.borrow_mut() = Pagination::default();
                     s.library_ui.reads.borrow_mut().pending=None;
                     s.library_ui.last_page_read.set(None);
                     s.library_ui.collection_origin.borrow_mut().take();
+                    s.library_ui.created_selection.borrow_mut().take();
                     complete(&app, &s);
                     if let Some(epoch)=next_epoch(&app,&s.library_ui.collection_epoch) { s.library_ui.collection_epoch.set(epoch); }
                     if let Some(epoch)=next_epoch(&app,&s.library_ui.route_epoch) { s.library_ui.route_epoch.set(epoch); }
@@ -1212,7 +1345,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 &app,
                 &s,
                 Route::Collections(epoch),
-                library::PageQuery::Collections(page.page()),
+                library::PageQuery::Collections(page.current),
             ) {
                 return;
             }
@@ -1249,6 +1382,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     kind: NameKind::Create,
                     draft: name,
                     rename_identity: None,
+                    create_context: Some(create_context(&app, &s)),
                 });
                 name_status(&app, "Creating playlist…");
             }
@@ -1312,7 +1446,8 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else {
             return;
         };
-        if s.library_ui.name_write.borrow().is_some() {
+        if let Some(write) = s.library_ui.name_write.borrow_mut().as_mut() {
+            write.create_context = None;
             if let Some(target) = s.library_ui.rename_target.borrow_mut().as_mut() {
                 target.context_valid = false;
             }
@@ -1359,6 +1494,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 kind: NameKind::Rename,
                 draft: name,
                 rename_identity: Some((id, s.library_ui.route_epoch.get())),
+                create_context: None,
             });
             name_status(&app, "Saving playlist name…");
         }
@@ -1658,6 +1794,68 @@ mod tests {
     use super::*;
 
     #[test]
+    fn created_selection_requires_its_exact_read_and_live_submission_context() {
+        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let id = store.create_playlist("Synthetic created").unwrap();
+        let context = CreateContext {
+            route_epoch: 3,
+            collection_epoch: 7,
+            visible: true,
+        };
+        assert!(context.matches(3, 7, true));
+        for (route, collection, visible) in [(4, 7, true), (3, 8, true), (3, 7, false)] {
+            assert!(!context.matches(route, collection, visible));
+        }
+        assert!(
+            !CreateContext {
+                visible: false,
+                ..context
+            }
+            .matches(3, 7, true)
+        );
+        let state = State::default();
+        *state.created_selection.borrow_mut() = Some(CreatedSelection {
+            ticket: 42,
+            id,
+            context,
+        });
+        assert!(take_created_selection(&state, 41).is_none());
+        assert_eq!(
+            state.created_selection.borrow().as_ref().unwrap().ticket,
+            42
+        );
+        assert_eq!(take_created_selection(&state, 42).unwrap().id, id);
+        assert!(take_created_selection(&state, 42).is_none());
+    }
+    #[test]
+    fn collection_windows_move_both_directions_after_a_jump_without_a_cursor_stack() {
+        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let ids: Vec<_> = (0..206)
+            .map(|i| store.create_playlist(&format!("Synthetic {i}")).unwrap())
+            .collect();
+        let last = store
+            .playlist_window(PlaylistWindow::EndingAt(ids[205]), 100)
+            .unwrap();
+        let mut window = CollectionWindow {
+            current: last.current,
+            previous: last.previous,
+            next: last.next,
+        };
+        assert!(!window.advance(true));
+        assert!(window.advance(false));
+        let previous = store.playlist_window(window.current, 100).unwrap();
+        assert_eq!(previous.items.first().unwrap().id, ids[6]);
+        assert_eq!(previous.items.last().unwrap().id, ids[105]);
+        window = CollectionWindow {
+            current: previous.current,
+            previous: previous.previous,
+            next: previous.next,
+        };
+        assert!(window.advance(true));
+        let again = store.playlist_window(window.current, 100).unwrap();
+        assert_eq!(again.items, last.items);
+    }
+    #[test]
     fn thumbnail_cache_selector_admits_only_supported_persisted_limits() {
         for (index, mib) in [(0, 0), (1, 32), (2, 128), (3, 256)] {
             assert_eq!(thumbnail_cache_mib(index), Some(mib));
@@ -1704,8 +1902,8 @@ mod tests {
         store.create_playlist("Synthetic first").unwrap();
         store.create_playlist("Synthetic second").unwrap();
         let cursor = store.playlists(None, 1).unwrap().next.unwrap();
-        let original = Pagination {
-            next: Some(Cursor::Page(cursor)),
+        let original = CollectionWindow {
+            next: Some(PlaylistWindow::After(cursor)),
             ..Default::default()
         };
         let state = State::default();
@@ -1716,9 +1914,9 @@ mod tests {
         restore_collection_page(&state, Some((7, original)));
         assert_eq!(state.collection_epoch.get(), 7);
         let page = state.collections.borrow();
-        assert!(page.current.is_none());
-        assert!(matches!(page.next,Some(Cursor::Page(actual)) if actual==cursor));
-        assert!(page.previous.is_empty());
+        assert_eq!(page.current, PlaylistWindow::First);
+        assert_eq!(page.next, Some(PlaylistWindow::After(cursor)));
+        assert!(page.previous.is_none());
         assert_eq!(state.collection_replacements.get(), 0);
         assert_eq!(state.collection_changes.get(), 0);
     }

@@ -60,16 +60,18 @@ export component Action inherits Rectangle {
     in property <bool> checkable;
     in property <bool> enabled: true;
     in property <bool> compact;
+    in property <bool> on-video;
     // Visual emphasis is independent of selection/check state and accessibility.
     in property <ActionVariant> variant: quiet;
     private property <bool> keyboard-pressed;
     private property <bool> pressed: enabled && (touch.pressed || keyboard-pressed);
-    private property <color> foreground: variant == primary ? #ffffff : variant == destructive ? Colors.destructive : Colors.text;
+    private property <color> foreground: root.on-video || variant == primary ? #ffffff : variant == destructive ? Colors.destructive : Colors.text;
     callback clicked;
     height: 40px;
     min-width: compact ? 40px : 70px;
     border-radius: 8px;
-    background: variant == primary ? (pressed ? Colors.primary-pressed : touch.has-hover && enabled ? Colors.primary-hover : Colors.primary)
+    background: root.on-video ? (pressed ? #ffffff38 : touch.has-hover && enabled ? #ffffff24 : selected ? #ffffff18 : transparent)
+        : variant == primary ? (pressed ? Colors.primary-pressed : touch.has-hover && enabled ? Colors.primary-hover : Colors.primary)
         : pressed ? Colors.border : touch.has-hover && enabled ? Colors.raised
         : selected ? Colors.selected : variant == quiet ? transparent : Colors.surface;
     border-width: focus.has-focus ? 2px : variant == secondary || variant == destructive ? 1px : 0px;
@@ -125,7 +127,7 @@ export component Action inherits Rectangle {
             : root.icon-name == "clapperboard" ? @image-url("icons/clapperboard.svg")
             : root.icon-name == "image-off" ? @image-url("icons/image-off.svg")
             : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
-        colorize: root.variant == quiet && root.selected ? Colors.accent : root.foreground;
+        colorize: root.variant == quiet && root.selected && !root.on-video ? Colors.accent : root.foreground;
         x: root.compact ? (root.width - 20px) / 2 : 12px;
         y: (root.height - 20px) / 2; width: 20px; height: 20px;
     }

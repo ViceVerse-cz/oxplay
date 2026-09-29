@@ -694,3 +694,12 @@ Home exercises checked correct image display, unchanged model notifications and
 acknowledged clearing only. No CPU/RAM/usage benchmark was run for this slice;
 existing target/ceiling failures and platform qualifications remain unchanged.
 See [artwork ownership and evidence](artwork-cache.md).
+
+## Subsequent UI changes while resource testing is deferred
+
+The inline video transport and borderless PiP update changes control placement
+and the compact video extent. Earlier resource samples describe their recorded
+source/layout only; they do not validate this newer layout. Functional window,
+playback and collection-navigation checks do not measure CPU/RAM/energy budgets.
+Resource and usage testing remains deferred at the user's request; no acceptance
+budget or quality target was changed.

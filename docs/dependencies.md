@@ -242,3 +242,9 @@ synchronously because the base widget reverse-resolves value changes to an index
 Confirmed history toggles likewise mirror asynchronous checked acknowledgments.
 No dependency, feature or license selection
 changed for this slice.
+
+Inline transport and borderless PiP use the existing locked Slint/Winit stack.
+The pinned Winit adapter reapplies native decoration state from `Window.no-frame`;
+compact mode therefore binds that property as well as setting the native hint.
+Winit's native inner/outer frame queries support the functional geometry checks.
+No framework revision, Cargo feature, dependency or license route changed.

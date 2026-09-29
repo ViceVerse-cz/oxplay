@@ -6,7 +6,31 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The newest slice fixes [playlist keyboard editing and confirmation focus](library-reconciliation.md#keyboard-name-editing-and-confirmations).
+The newest slice moves playback controls inside the video and makes PiP
+borderless, with a shared drag area and restoration of the original native
+frame. It also fixes created-playlist selection beyond the first 100 through
+bounded bidirectional collection windows. See [PiP](picture-in-picture.md#inline-controls-and-borderless-update)
+and [collection windows](library-reconciliation.md#created-playlist-windows-beyond-the-first-page).
+
+The local workspace passed 428 Rust tests (four explicit integrations ignored),
+formatting and strict Clippy. An existing caption test raced FILE_LOADED against
+PLAYBACK_RESTART; four caption fixtures now wait for the exact paused load's
+restart, preserving all caption/lease assertions and production admission rules.
+All seven focused caption tests passed before the complete suite. The 14-stage
+native collection exercise passed in debug; read-only SQL confirmed 206 final
+playlists, the expected create/delete results and history off. The ordinary
+light watch capture visibly places transport over video. The debug PiP repeat
+passed all nine stages and three own-PID native frame/stacking probes; same-window
+borderless geometry and normal-frame restoration were verified. The first PiP
+attempt failed initial playback readiness before any PiP operation and remains
+recorded. Final locked debug and release builds passed. The release PiP check
+passed all nine stages and three native probes, including borderless 480×270
+geometry, readable subtitle/control capture and restoration. The release
+collection check passed all fourteen stages at 760×600/light with the same
+persisted results. All owned native test processes were reaped. The new remote
+run is pending. No performance or usage test was run.
+
+The preceding slice fixes [playlist keyboard editing and confirmation focus](library-reconciliation.md#keyboard-name-editing-and-confirmations).
 The editor stays focused/read-only during writes, Escape safely cancels unsubmitted
 renames, and confirmations focus Cancel then restore their originating control.
 Accepted video pagination retires stale Rename UI; rejected playlist selection
@@ -472,11 +496,7 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Fix creation beyond the first 100 local playlists: the current summary excludes
-the newly created ID and falls back to an older selection. Add bounded
-bidirectional collection pagination and a correlated window containing the new
-ID; preserve Previous/Next and typed selection after rename/deletion. Continue
-the controlled-widget review for captions, Appearance and catalog filters, then
+Continue the controlled-widget review for captions, Appearance and catalog filters, then
 cover actual queue saturation and page-navigation rename cancellation with native
 interaction checks. Failed-stream restart and additional PiP monitor/fullscreen
 lifecycle cases remain next. Physical keyboard/IME/screen-reader qualification

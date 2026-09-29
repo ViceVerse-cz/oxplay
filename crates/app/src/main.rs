@@ -9,6 +9,7 @@ mod catalog;
 mod clear_smoke;
 mod cli;
 mod clock_ui;
+mod collection_window_smoke;
 mod comments_ui;
 mod decode_warning;
 mod feed_focus;
@@ -711,11 +712,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // An explicit root keeps native validation isolated from the normal profile.
     // Only its Serein child is app-owned; never chmod the selected root itself.
     let mut home_fixture = None;
+    let mut collection_window_fixture = None;
     let library_path = if let Some(root) = options.data_root {
         if !root.is_absolute() {
             return Err("--data-root requires an absolute directory".into());
         }
-        if options.home_smoke {
+        if options.collection_window_smoke {
+            collection_window_fixture = Some(collection_window_smoke::prepare_root(&root)?);
+        } else if options.home_smoke {
             home_fixture = Some(home_smoke::prepare_root(&root)?);
         } else if let Some(phase) = options.preferences_smoke {
             preferences_smoke::prepare_root(&root, phase)?;
@@ -1895,6 +1899,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let library_diagnostic = options
         .library_smoke
         .then(|| library_smoke::Smoke::start(&app, &state));
+    let collection_window_diagnostic = collection_window_fixture
+        .map(|fixture| collection_window_smoke::Smoke::start(&app, &state, fixture));
     let library_keyboard_diagnostic = options
         .library_keyboard_smoke
         .then(|| library_keyboard_smoke::Smoke::start(&app, &state));
@@ -2033,6 +2039,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = library_diagnostic {
+        diagnostic.finish().map_err(std::io::Error::other)?;
+    }
+    if let Some(diagnostic) = collection_window_diagnostic {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = library_keyboard_diagnostic {

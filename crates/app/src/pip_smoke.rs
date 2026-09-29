@@ -25,6 +25,9 @@ struct Original {
     loads: u64,
     request: u64,
     presenters: u64,
+    decorated: bool,
+    frame_width: f64,
+    frame_height: f64,
     seek: f64,
 }
 
@@ -36,6 +39,7 @@ struct Driver {
     phase_started: Cell<Instant>,
     stage: Cell<usize>,
     original: Cell<Option<Original>>,
+    baseline_at: Cell<Option<Instant>>,
     failure: RefCell<Option<&'static str>>,
 }
 
@@ -52,6 +56,7 @@ impl Smoke {
             phase_started: Cell::new(started),
             stage: Cell::new(0),
             original: Cell::new(None),
+            baseline_at: Cell::new(None),
             failure: RefCell::new(None),
         });
         Driver::schedule(&driver);
@@ -128,7 +133,7 @@ impl Driver {
                 );
                 if completed == COMPLETE {
                     eprintln!(
-                        "picture-in-picture completed: same native window, media load and presenter generation; compact/paused-seek/resume/resize/Escape/close-request restoration; performance=not_measured"
+                        "picture-in-picture completed: same native window, media load and presenter generation; borderless compact/paused-seek/resume/resize/Escape/close-request decoration restoration; performance=not_measured"
                     );
                     return;
                 }
@@ -158,16 +163,32 @@ impl Driver {
         if state.native_child.enabled {
             return Err("Picture-in-picture exercise requires the regular shared-window presenter");
         }
+        let observed_compact = app.get_picture_in_picture();
         let snapshot = state.player.snapshot();
         if snapshot.error.is_some() {
             return Err("The media engine reported an error during picture-in-picture");
         }
-        let (window, size) = app
+        let (window, size, decorated, frame) = app
             .window()
             .with_winit_window(|window| {
                 (
                     window.id(),
                     window.inner_size().to_logical::<f64>(window.scale_factor()),
+                    window.is_decorated(),
+                    winit::dpi::LogicalSize::new(
+                        f64::from(
+                            window
+                                .outer_size()
+                                .width
+                                .saturating_sub(window.inner_size().width),
+                        ) / window.scale_factor(),
+                        f64::from(
+                            window
+                                .outer_size()
+                                .height
+                                .saturating_sub(window.inner_size().height),
+                        ) / window.scale_factor(),
+                    ),
                 )
             })
             .ok_or("The native Winit window is unavailable")?;
@@ -198,8 +219,28 @@ impl Driver {
                 loads: snapshot.file_loads,
                 request: snapshot.load_request_id,
                 presenters: state.presenter_generations.get(),
+                decorated,
+                frame_width: frame.width,
+                frame_height: frame.height,
                 seek: (snapshot.duration / 3.).min(20.),
             }));
+            if let Some(at) = self.baseline_at.get() {
+                if at.elapsed() < Duration::from_secs(1) {
+                    return Ok(false);
+                }
+            } else {
+                self.baseline_at.set(Some(Instant::now()));
+                eprintln!(
+                    r#"pip window probe: {{"phase":"baseline","inner_width":{},"inner_height":{},"outer_width":{},"outer_height":{},"scale":{},"decorated":{}}}"#,
+                    size.width,
+                    size.height,
+                    size.width + frame.width,
+                    size.height + frame.height,
+                    app.window().scale_factor(),
+                    decorated
+                );
+                return Ok(false);
+            }
             app.invoke_focus_video_mode();
             app.window()
                 .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "p".into() });
@@ -222,8 +263,11 @@ impl Driver {
             1 => {
                 if !ready
                     || !app.get_picture_in_picture()
+                    || decorated
+                    || !near(frame.width, 0.)
+                    || !near(frame.height, 0.)
                     || !near(size.width, 480.)
-                    || !near(size.height, 328.)
+                    || !near(size.height, 270.)
                 {
                     return Ok(false);
                 }
@@ -260,6 +304,9 @@ impl Driver {
             5 => {
                 if !ready
                     || !app.get_picture_in_picture()
+                    || decorated
+                    || !near(frame.width, 0.)
+                    || !near(frame.height, 0.)
                     || !near(size.width, 360.)
                     || !near(size.height, 260.)
                 {
@@ -277,6 +324,9 @@ impl Driver {
             6 => {
                 if !ready
                     || app.get_picture_in_picture()
+                    || decorated != original.decorated
+                    || !near(frame.width, original.frame_width)
+                    || !near(frame.height, original.frame_height)
                     || !near(size.width, original.width)
                     || !near(size.height, original.height)
                 {
@@ -287,8 +337,11 @@ impl Driver {
             7 => {
                 if !ready
                     || !app.get_picture_in_picture()
+                    || decorated
+                    || !near(frame.width, 0.)
+                    || !near(frame.height, 0.)
                     || !near(size.width, 480.)
-                    || !near(size.height, 328.)
+                    || !near(size.height, 270.)
                 {
                     return Ok(false);
                 }
@@ -302,6 +355,9 @@ impl Driver {
             8 => {
                 if !ready
                     || app.get_picture_in_picture()
+                    || decorated != original.decorated
+                    || !near(frame.width, original.frame_width)
+                    || !near(frame.height, original.frame_height)
                     || !near(size.width, original.width)
                     || !near(size.height, original.height)
                 {
@@ -309,6 +365,34 @@ impl Driver {
                 }
             }
             _ => return Err("Unexpected picture-in-picture stage"),
+        }
+        if matches!(self.stage.get(), 1 | 8) {
+            let phase = if self.stage.get() == 1 {
+                "compact"
+            } else {
+                "restored"
+            };
+            eprintln!(
+                r#"pip window probe: {{"phase":"{phase}","inner_width":{},"inner_height":{},"outer_width":{},"outer_height":{},"scale":{},"decorated":{}}}"#,
+                size.width,
+                size.height,
+                size.width + frame.width,
+                size.height + frame.height,
+                app.window().scale_factor(),
+                decorated
+            );
+        }
+        if matches!(self.stage.get(), 1 | 5 | 6 | 7 | 8) {
+            eprintln!(
+                "picture-in-picture geometry stage={} compact={} decorated={} client={}x{} frame={}x{}",
+                self.stage.get() + 1,
+                observed_compact,
+                decorated,
+                size.width,
+                size.height,
+                frame.width,
+                frame.height
+            );
         }
         Ok(true)
     }

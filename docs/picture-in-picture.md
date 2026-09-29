@@ -1,8 +1,9 @@
 # Picture in picture
 
 The player’s picture-in-picture button or **P** turns the existing Serein window
-into a compact floating player. Play/pause, seek, elapsed time and mute remain
-available. **P**, **Escape**, the return button or closing the compact window
+into a compact borderless floating player. Play/pause, seek, elapsed time, mute,
+captions and playback settings remain available inside the video. The small
+shared drag area invokes the native window manager directly on left press. **P**, **Escape**, the return button or closing the compact window
 restores the main window. Closing the restored main window exits normally.
 Fullscreen and PiP are mutually exclusive; F in PiP returns to the main player.
 Shortcuts remain inactive while editing text.
@@ -14,9 +15,9 @@ texture crosses a window boundary and no extra decoder is created. It does not
 change guest/account authority, quality, captions or accepted pause intent.
 Account expiry and disconnection still invalidate authenticated playback.
 
-The initial client size is 480×328 logical pixels, with a 360×240 minimum.
+The initial client size is 480×270 logical pixels, with a 360×240 minimum.
 The original logical client size, physical desktop position, maximized state
-and window-button configuration are retained. Restoration clamps an off-screen
+window-button configuration, decoration state and logical frame extents are retained. Restoration clamps an off-screen
 window to the current monitor while respecting the normal 760×600 UI minimum.
 Winit exposes monitor bounds, not a portable desktop work-area API. DPI changes,
 different monitor arrangements and compositor-specific behavior need further
@@ -95,3 +96,60 @@ The diagnostic uses a 25-second watchdog, forbids online inputs and other
 diagnostic modes, and labels its fixture state. It is not part of headless CI.
 The system must have an awake graphical session. The screenshot is a single
 explicit test capture, not the normal video presentation path.
+
+## Inline controls and borderless update
+
+The normal watch page and PiP use one shared two-row transport overlay inside
+the video. Dark translucent backing and white Lucide glyphs remain readable in
+both application themes. The bottom 48 logical pixels are left clear for native
+subtitles; arbitrary subtitle sizes/styles still require qualification. The
+metadata/actions below the normal video no longer contain the transport bar.
+Paused and PiP controls stay visible. The existing explicit hide/show control is
+retained; no automatic hiding timer or pointer-driven global model was added.
+The settings popup scrolls within compact window bounds. The experimental native
+child surface retains its separate reserved strip because it cannot compose
+Slint over that surface; it remains an opt-in unqualified diagnostic.
+
+`Window.no-frame` tracks the compact window state: the pinned Slint adapter
+reapplies native decorations from this property. The controller also stores the
+actual Winit decoration state and frame extents before entering PiP, then restores
+those values with the normal geometry. Monitor clamping uses captured logical
+frame extents scaled for the destination display, rather than measuring the
+borderless window's zero frame. Dragging is delegated synchronously to Winit
+on left press without retaining a pressed-state latch or a strong UI reference.
+
+The strengthened native exercise checks both requested decoration state and
+actual outer-minus-inner dimensions, preserves the same window/load/presenter,
+and verifies decoration restoration after Escape and close-request handling.
+Finite phase markers allow a separately owned-PID-only CoreGraphics probe to
+check actual native frame and stacking level. The initial borderless debug repeat (before removing the old control-strip height)
+passed all nine stages on macOS and three correlated CoreGraphics probes of owned window 5747:
+normal 900×682/layer0 → compact 480×328/layer3 → original 900×682/layer0, restoring
+its original position. Native client sizes were 900×650 →480×328 →900×650; frame
+extents were 0×32 →0×0 →0×32 logical pixels. Window/load/presenter identities stayed
+the same. The inspected PiP capture shows the inline transport and readable local
+subtitles; the separate 1000×800 light watch capture shows inline controls in the
+normal page (`artifacts/pip-inline-debug-v2`, `artifacts/inline-watch-debug-v1`).
+Both native processes exited 0; the PiP harness confirmed all owned process groups
+absent. The first attempt failed initial playback readiness before entering PiP
+(`pip-inline-debug-v1`); it is not counted as a decoration result. Actual pointer
+dragging, other operating systems and general subtitle styling remain unqualified.
+Earlier decorated PiP captures above remain historical.
+
+The final 480×270 default removes the old 58px external-control reservation. Debug
+`artifacts/pip-inline-debug-v3` passed all nine stages and three correlated
+probes on owned window 5762: 900×682/layer0 →480×270/layer3 →900×682/layer0,
+with the exact original position restored. Its inspected 960×540 content capture
+has inline controls and readable local subtitles without letterboxing. The app
+exited 0 and every owned process group was confirmed absent.
+
+The final locked release also passed all nine stages and three phase-correlated
+probes (`artifacts/pip-inline-release-v1`, light theme). Owned window 5777 changed
+from 900×682/layer 0 to 480×270/layer 3 and back to its original 900×682/layer 0
+bounds and position. Native frame extents changed from 0×32 to 0×0 and back.
+The inspected 960×540 capture retains inline controls and readable subtitles.
+The application exited 0; all owned process groups were confirmed absent.
+Release executable SHA256:
+`784dae0bed05a158a386b827866dac7c3c41c21bc3fb615ff04f9b35cc1add1e`.
+This is local functional evidence, not platform, account or performance
+qualification. Hosted CI is tracked separately in [CI notes](ci-release.md).

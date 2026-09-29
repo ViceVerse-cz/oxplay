@@ -16,7 +16,7 @@ use std::cell::RefCell;
 
 const NORMAL_MINIMUM: LogicalSize<f64> = LogicalSize::new(760.0, 600.0);
 const COMPACT_MINIMUM: LogicalSize<f64> = LogicalSize::new(360.0, 240.0);
-const COMPACT_SIZE: LogicalSize<f64> = LogicalSize::new(480.0, 328.0);
+const COMPACT_SIZE: LogicalSize<f64> = LogicalSize::new(480.0, 270.0);
 
 #[derive(Clone, Copy)]
 struct Saved {
@@ -25,6 +25,8 @@ struct Saved {
     position: PhysicalPosition<i32>,
     maximized: bool,
     buttons: WindowButtons,
+    decorated: bool,
+    decoration: LogicalSize<f64>,
 }
 
 #[derive(Default)]
@@ -91,6 +93,21 @@ impl Controller {
                         .map_err(|_| "The window position is unavailable.")?,
                     maximized: window.is_maximized(),
                     buttons: window.enabled_buttons(),
+                    decorated: window.is_decorated(),
+                    decoration: LogicalSize::new(
+                        f64::from(
+                            window
+                                .outer_size()
+                                .width
+                                .saturating_sub(window.inner_size().width),
+                        ) / window.scale_factor(),
+                        f64::from(
+                            window
+                                .outer_size()
+                                .height
+                                .saturating_sub(window.inner_size().height),
+                        ) / window.scale_factor(),
+                    ),
                 })
             })
             .ok_or("The window is not ready for picture-in-picture.")??;
@@ -98,9 +115,27 @@ impl Controller {
         // No RefCell guard spans a Slint callback/property update. Retain the
         // first snapshot throughout minimize/restore and repeated entry requests.
         *self.saved.borrow_mut() = Some(saved);
+        // Slint reapplies native decorations from Window.no-frame whenever
+        // window properties update; use the shared binding, not only Winit.
+        app.set_window_borderless(true);
         app.set_picture_in_picture(true);
+        let weak = app.as_weak();
+        app.on_pip_drag(move || {
+            let Some(app) = weak.upgrade() else { return };
+            if app.get_picture_in_picture() {
+                // Invoked synchronously by the shared TouchArea's left press.
+                // macOS can consume release: no pressed-state latch is kept.
+                let result = app
+                    .window()
+                    .with_winit_window(|window| window.drag_window());
+                if !matches!(result, Some(Ok(()))) {
+                    app.set_status("The window manager could not move picture in picture.".into());
+                }
+            }
+        });
         app.window().with_winit_window(|window| {
             window.set_maximized(false);
+            window.set_decorations(false);
             // Supported by macOS/Windows. X11 ignores button hints; the host
             // must also reject observed native fullscreen while PiP is active.
             window.set_enabled_buttons(saved.buttons & !WindowButtons::MAXIMIZE);
@@ -135,8 +170,6 @@ impl Controller {
                 let geometry = window
                     .current_monitor()
                     .map(|monitor| {
-                        let outer = window.outer_size();
-                        let inner = window.inner_size();
                         fit_restore(
                             saved.size,
                             saved.position,
@@ -144,10 +177,7 @@ impl Controller {
                             monitor.size().width,
                             monitor.size().height,
                             monitor.scale_factor(),
-                            (
-                                outer.width.saturating_sub(inner.width),
-                                outer.height.saturating_sub(inner.height),
-                            ),
+                            restore_decoration(saved.decoration, monitor.scale_factor()),
                         )
                     })
                     .unwrap_or((saved.size, saved.position));
@@ -157,7 +187,9 @@ impl Controller {
 
         self.saved.borrow_mut().take();
         app.set_picture_in_picture(false);
+        app.set_window_borderless(!saved.decorated);
         app.window().with_winit_window(|window| {
+            window.set_decorations(saved.decorated);
             window.set_enabled_buttons(saved.buttons);
             window.set_min_inner_size(Some(NORMAL_MINIMUM));
         });
@@ -172,6 +204,15 @@ impl Controller {
         });
         Ok(())
     }
+}
+
+// Borderless outer-minus-inner is zero, so restore from the captured frame
+// extents rather than measuring the compact window. Account for a DPI change.
+fn restore_decoration(decoration: LogicalSize<f64>, scale: f64) -> (u32, u32) {
+    (
+        (decoration.width * scale).round() as u32,
+        (decoration.height * scale).round() as u32,
+    )
 }
 
 fn valid_size(size: LogicalSize<f64>) -> bool {
@@ -223,6 +264,25 @@ fn fit_restore(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn borderless_restore_uses_original_frame_extents_at_the_new_scale() {
+        let frame = LogicalSize::new(8.0, 28.0);
+        assert_eq!(restore_decoration(frame, 2.0), (16, 56));
+        assert_eq!(restore_decoration(frame, 1.0), (8, 28));
+        let (size, position) = fit_restore(
+            LogicalSize::new(1200.0, 800.0),
+            PhysicalPosition::new(5000, 5000),
+            PhysicalPosition::new(0, 0),
+            1920,
+            1080,
+            2.0,
+            restore_decoration(frame, 2.0),
+        );
+        assert_eq!(size, LogicalSize::new(952.0, 600.0));
+        assert_eq!(position, PhysicalPosition::new(0, 0));
+        assert_eq!(restore_decoration(LogicalSize::new(0.0, 0.0), 2.0), (0, 0));
+    }
 
     #[test]
     fn restore_preserves_logical_size_across_dpi_and_negative_desktop_origin() {

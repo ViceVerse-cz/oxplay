@@ -55,7 +55,7 @@ export global LibraryUi {
 export component LibraryPage inherits Rectangle {
     private property <bool> narrow: root.width < 720px;
     private property <length> confirmation-scroll-y;
-    private property <bool> collection-visible: LibraryUi.tab == 0 && LibraryUi.collections.length > 0;
+    private property <bool> collection-visible: LibraryUi.tab == 0 && (LibraryUi.collections.length > 0 || LibraryUi.collections-previous || LibraryUi.collections-next);
     changed collection-visible => {
         if !root.collection-visible {
             LibraryUi.collection-visible-index = -1;
@@ -112,7 +112,7 @@ export component LibraryPage inherits Rectangle {
                 horizontal-stretch: 1; accessible-label: "Local playlist";
                 model: LibraryUi.collections;
                 acknowledged-index: LibraryUi.selected;
-                enabled: !LibraryUi.busy && LibraryUi.confirmation == 0;
+                enabled: LibraryUi.collections.length > 0 && !LibraryUi.busy && LibraryUi.confirmation == 0;
                 init => {
                     LibraryUi.collection-visible-index = self.current-index;
                     LibraryUi.collection-visible-value = self.current-value;
@@ -222,7 +222,7 @@ export component LibraryPage inherits Rectangle {
                 Action { x: parent.width - 120px; y: 16px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.remove(index); } }
             }
         }
-        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.collections.length == 0 ? "Create a playlist to keep videos on this device." : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
+        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.collections.length == 0 ? (LibraryUi.collections-previous || LibraryUi.collections-next ? "No playlists on this page. Use the playlist page controls above." : "Create a playlist to keep videos on this device.") : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
         if LibraryUi.previous || LibraryUi.next: HorizontalLayout { height: 38px; spacing: 8px;
             Action { width: 126px; horizontal-stretch: 0; label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.previous; clicked => { LibraryUi.page(false); } }
             Action { width: 106px; horizontal-stretch: 0; label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.next; clicked => { LibraryUi.page(true); } }

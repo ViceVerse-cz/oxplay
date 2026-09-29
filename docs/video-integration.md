@@ -5,7 +5,10 @@ existing presenter and decoder. Its nine-stage local lifecycle test preserved
 native window, media-load and presenter identities across compact resize and
 restoration; no cross-window borrowed-texture sharing was introduced. macOS
 floating-layer and subtitle observations are recorded separately from resource
-qualification, which remains paused and incomplete.
+qualification, which remains paused and incomplete. The normal presenter now
+composes shared transport controls inside the video rectangle; borderless PiP
+uses the same context and restores the original native frame on exit. The
+experimental native child keeps its reserved diagnostic control strip.
 
 The current working tree embeds libmpv inside the compiled Slint window. This is
 a functional spike, not a passed optimized/release gate. There is one player,

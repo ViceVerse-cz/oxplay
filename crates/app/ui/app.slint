@@ -9,6 +9,9 @@ export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, Commen
 export component App inherits Window {
     title: root.picture-in-picture ? "Serein — Picture in picture" : "Serein";
     always-on-top: root.picture-in-picture;
+    no-frame: root.window-borderless;
+    in-out property <bool> window-borderless;
+    callback pip-drag();
     public function show-video-details() { root.prepare-native-overlay(); video-details.show(); }
     private property <string> message-text;
     private property <int> message-recovery-serial;
@@ -161,7 +164,7 @@ export component App inherits Window {
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
     out property <int> visible-related-count: max(0, related-last - related-first);
-    out property <bool> progress-visible: watching && (controls-visible || picture-in-picture) && watch-controls.y + watch.content-y < watch.visible-height && watch-controls.y + watch.content-y + 42px > 0px;
+    out property <bool> progress-visible: watching && transport.visible && transport.y + watch.content-y < watch.visible-height && transport.y + watch.content-y + transport.height > 0px;
     out property <int> columns: min(6, max(1, floor((browse.width + 20px) / 270px)));
     in property <int> feed-focus-target: -1;
     in property <int> feed-focus-surface: -1;
@@ -361,7 +364,7 @@ export component App inherits Window {
             x: 0px;
             y: 0px;
             width: root.video-only ? watch.visible-width : watch.visible-width - (root.width >= 1240px ? 368px : 0px);
-            height: root.video-only ? max(1px, watch.visible-height - (root.native-video-child || root.picture-in-picture ? 58px : 0px)) : self.width * 9 / 16;
+            height: root.video-only ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : self.width * 9 / 16;
             visible: root.watching;
             background: #000000;
             focus := FocusScope {
@@ -374,29 +377,60 @@ export component App inherits Window {
                 Text { x: 16px; y: 10px; width: parent.width - 32px; height: parent.height - 20px; text: root.technical; color: #eeeeee; font-size: 12px; wrap: word-wrap; }
             }
         }
-        watch-controls := Rectangle {
-            x: video.x; y: root.video-only ? watch.visible-height - 58px : video.y + video.height + 8px;
-            width: video.width; height: root.video-only ? 58px : 214px;
-            visible: root.watching;
-            background: root.video-only ? Colors.surface.with-alpha(0.94) : Colors.canvas;
-            if root.controls-visible || root.picture-in-picture: HorizontalLayout {
-                y: 0; height: 42px; spacing: 8px;
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
-                Slider { horizontal-stretch: 1; min-width: 80px; accessible-label: "Playback position in seconds"; minimum: 0; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
-                Text { text: root.picture-in-picture ? root.elapsed : root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: Colors.text; width: root.picture-in-picture ? 48px : 124px; horizontal-stretch: 0; vertical-alignment: center; }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
+        // Shared controls overlay the video; its bottom 48px stay clear for
+        // native-rendered subtitles. The experimental native child cannot
+        // compose Slint over its surface, so retains a reserved diagnostic strip.
+        transport := Rectangle {
+            x: video.x + (root.native-video-child ? 0px : 8px);
+            y: root.native-video-child ? video.y + video.height + 4px : video.y + video.height - self.height - 48px;
+            width: video.width - (root.native-video-child ? 0px : 16px); height: 72px;
+            visible: root.watching && (root.controls-visible || root.paused || root.picture-in-picture);
+            background: #111315eb; border-radius: 10px;
+            Slider { x: 12px; y: 2px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; minimum: 0; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
+            HorizontalLayout {
+                x: 8px; y: 26px; width: parent.width - 16px; height: 40px; spacing: 4px;
+                Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
+
+                Text { text: transport.width < 580px ? root.elapsed : root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: #ffffff; width: transport.width < 580px ? 48px : 124px; horizontal-stretch: 0; vertical-alignment: center; }
+                Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
                 // Keep the primary row usable at the narrow watch breakpoint.
                 // Volume remains available in settings when this slider is absent.
-                if watch-controls.width >= 700px: Slider { horizontal-stretch: 0; accessible-label: "Volume percent"; width: 100px; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
-                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
-                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
-                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
+                if transport.width >= 780px: Slider { horizontal-stretch: 0; accessible-label: "Volume percent"; width: 100px; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
+                Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
+                Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
+                Rectangle { horizontal-stretch: 1; }
+                Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
+                if !root.picture-in-picture: Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
             }
-            if !root.video-only: Text { x: 0; y: 54px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
-            if !root.video-only: Text { x: 0; y: 116px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
+        }
+        if root.picture-in-picture: Rectangle {
+            x: video.x + 8px; y: video.y + 8px; width: video.width - 16px; height: 30px;
+            border-radius: 8px; background: #111315d6;
+            Text { x: 10px; width: parent.width - 20px; height: parent.height; text: root.diagnostic-fixture-label != "" ? "TEST FIXTURE · Drag to move" : "Serein · Drag to move"; color: #ffffff; font-size: 12px; vertical-alignment: center; }
+            TouchArea {
+                mouse-cursor: move;
+                pointer-event(event) => { if event.kind == PointerEventKind.down && event.button == PointerEventButton.left { root.pip-drag(); } }
+            }
+        }
+        if root.video-only && !root.native-video-child && (root.diagnostic-warning != "" || root.playback-status != ""): Rectangle {
+            x: video.x + 8px; y: video.y + (root.picture-in-picture ? 44px : 8px);
+            width: video.width - 16px; height: 34px;
+            background: #111315eb; border-radius: 6px;
+            Text { x: 8px; width: parent.width - 16px; height: parent.height;
+                text: root.diagnostic-warning != "" ? root.diagnostic-warning : root.playback-status;
+                color: #ffffff; font-size: 12px; wrap: word-wrap; overflow: elide;
+                accessible-label: "Playback status: " + self.text;
+            }
+        }
+        watch-controls := Rectangle {
+            x: video.x; y: video.y + video.height + (root.native-video-child ? 86px : 12px);
+            width: video.width; height: 160px;
+            visible: root.watching && !root.video-only;
+            background: Colors.canvas;
+            if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if !root.video-only: Text { x: 0; y: 62px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
             if !root.video-only: HorizontalLayout {
-                y: 154px; height: 36px; spacing: 8px;
+                y: 100px; height: 36px; spacing: 8px;
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
                 Rectangle { horizontal-stretch: 1; }
                 if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
@@ -404,11 +438,10 @@ export component App inherits Window {
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "ellipsis"; label: "Show or hide controls"; clicked => { root.toggle-controls(); } }
             }
-            if (root.playback-status != "" || root.picture-in-picture) && (!root.video-only || !root.native-video-child): Text {
-                x: 0px; y: root.video-only ? 42px : 194px;
-                width: parent.width; height: root.video-only ? 16px : 20px;
-                text: root.picture-in-picture && root.diagnostic-fixture-label != "" ? "TEST FIXTURE · Picture in picture" : root.picture-in-picture && root.diagnostic-warning != "" ? root.diagnostic-warning : root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : (root.picture-in-picture && root.playback-status == "" ? "Picture in picture · P or Esc to return" : root.playback-status); color: Colors.muted;
-                font-size: 12px; overflow: elide;
+            if root.playback-status != "": Text {
+                x: 0px; y: 140px; width: parent.width; height: 20px;
+                text: root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : root.playback-status;
+                color: Colors.muted; font-size: 12px; overflow: elide;
                 accessible-label: "Playback status: " + self.text;
             }
         }
@@ -477,9 +510,10 @@ export component App inherits Window {
         }
     playback-settings := PopupWindow {
             x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
-            width: 280px; height: 320px;
+            width: 280px; height: min(320px, root.height - 16px);
             Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
-                VerticalLayout { padding: 16px; spacing: 10px;
+                ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
+                VerticalLayout { width: parent.visible-width; padding: 16px; spacing: 10px;
                     Text { text: "Volume"; color: Colors.text; }
                     Slider { accessible-label: "Volume percent"; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
                     Text { text: "Playback speed"; color: Colors.text; }
@@ -487,6 +521,7 @@ export component App inherits Window {
                     Text { text: "Maximum video quality"; color: Colors.text; }
                     ComboBox { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; current-index <=> root.quality-index; enabled: root.remote-video && !root.busy; selected(value) => { root.quality(self.current-index); } }
                     Text { text: root.remote-video ? "Uses the best available stream within this limit." : "Quality selection applies to YouTube videos."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+                }
                 }
             }
         }

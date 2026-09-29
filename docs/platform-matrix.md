@@ -153,3 +153,13 @@ browsing remains available. macOS debug/release native functional checks passed 
 stages; screenshots were inspected. Linux CI evidence is tracked separately in
 [artwork-cache.md](artwork-cache.md). This does not
 change any platform support or optimized-video qualification.
+
+The shared inline player controls and borderless 480×270 PiP passed finite macOS
+debug/release functional exercises. Three own-PID CoreGraphics probes confirmed
+the same native window, floating layer, zero compact frame extents and restored
+normal frame/position. Inspected captures retain controls and local subtitles.
+The bounded collection-window diagnostic also passed fourteen stages in both
+builds. Physical pointer dragging, multiple displays, OS keyboard/IME and
+accessibility remain unqualified, as do Windows, Linux/X11 and native Wayland.
+These checks do not change platform support or resource acceptance status. See
+[PiP evidence](picture-in-picture.md#inline-controls-and-borderless-update).

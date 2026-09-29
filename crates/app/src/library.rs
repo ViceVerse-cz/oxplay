@@ -5,7 +5,7 @@ use serein_core::{ChannelId, VideoId, VideoSummary};
 use serein_storage::{
     HistoryCursor, HistoryEntry, ImportSummary, LocalPlaylist, LocalPlaylistId, LocalPreferences,
     LocalStore, LocalSubscription, MAX_PAGE_SIZE, MAX_TRANSFER_BYTES, Page, PageCursor,
-    StorageError, vault::SessionProfile,
+    PlaylistWindow, PlaylistWindowPage, StorageError, vault::SessionProfile,
 };
 use std::{
     fs::{File, OpenOptions},
@@ -32,13 +32,13 @@ pub struct VideoSave {
 /// Authoritative bounded page reads carry an application ticket through every
 /// success and failure, including database initialization failure.
 pub enum PageQuery {
-    Collections(Option<PageCursor>),
+    Collections(PlaylistWindow),
     Videos(LocalPlaylistId, Option<PageCursor>),
     Subscriptions(Option<PageCursor>),
     History(Option<HistoryCursor>),
 }
 pub enum PageResult {
-    Collections(Page<LocalPlaylist>),
+    Collections(PlaylistWindowPage),
     Videos(LocalPlaylistId, Page<VideoSummary>),
     Subscriptions(Page<LocalSubscription>),
     History {
@@ -83,6 +83,8 @@ pub enum Request {
     ClearLocalData,
 }
 pub enum Response {
+    /// The write committed; selecting its bounded window is a separate read.
+    Created(LocalPlaylistId),
     Library(
         Vec<LocalPlaylist>,
         LocalPreferences,
@@ -225,8 +227,8 @@ fn summary(
 }
 fn read_page(store: &LocalStore, page: PageQuery) -> serein_storage::Result<PageResult> {
     Ok(match page {
-        PageQuery::Collections(after) => {
-            PageResult::Collections(store.playlists(after, MAX_PAGE_SIZE)?)
+        PageQuery::Collections(window) => {
+            PageResult::Collections(store.playlist_window(window, MAX_PAGE_SIZE)?)
         }
         PageQuery::Videos(id, after) => {
             PageResult::Videos(id, store.playlist_videos(id, after, MAX_PAGE_SIZE)?)
@@ -250,7 +252,7 @@ fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Re
         Request::Load => summary(store, None),
         Request::Create(name) => {
             let item = store.create_playlist(&name)?;
-            summary(store, Some(item))
+            Ok(Response::Created(item))
         }
         Request::DeleteEmpty(id) => {
             if !store.playlist_videos(id, None, 1)?.items.is_empty() {
@@ -586,6 +588,94 @@ mod tests {
         assert!(store.playlists(None, 100).unwrap().items.is_empty());
     }
     #[test]
+    fn committed_creation_beyond_first_page_has_correlated_bidirectional_windows() {
+        let directory = TestDirectory::new();
+        let path = directory.0.join("library.sqlite3");
+        let (wake, received) = mpsc::channel();
+        let worker = Worker::new(path.clone(), move || {
+            let _ = wake.send(());
+        });
+        let receive = || {
+            received.recv_timeout(Duration::from_secs(5)).unwrap();
+            worker.take().expect("one response per accepted operation")
+        };
+        let read = |ticket, window| {
+            assert!(worker.submit(Request::ReadPage {
+                ticket,
+                page: PageQuery::Collections(window),
+            }));
+            let Response::PageRead {
+                ticket: actual,
+                result: Ok(PageResult::Collections(page)),
+            } = receive()
+            else {
+                panic!("correlated collection window expected")
+            };
+            assert_eq!(actual, ticket);
+            assert!(page.items.len() <= MAX_PAGE_SIZE as usize);
+            page
+        };
+        let ids: Vec<_> = (0..205)
+            .map(|index| {
+                assert!(worker.submit(Request::Create(format!("Synthetic collection {index:03}"))));
+                let Response::Created(id) = receive() else {
+                    panic!("committed creation must return its exact ID, not a summary")
+                };
+                id
+            })
+            .collect();
+        let page_ids = |page: &PlaylistWindowPage| {
+            page.items
+                .iter()
+                .map(|playlist| playlist.id)
+                .collect::<Vec<_>>()
+        };
+        let first = read(101, PlaylistWindow::First);
+        assert_eq!(page_ids(&first), ids[..100]);
+        assert!(first.previous.is_none());
+        let second = read(102, first.next.unwrap());
+        assert_eq!(page_ids(&second), ids[100..200]);
+        let third = read(103, second.next.unwrap());
+        assert_eq!(page_ids(&third), ids[200..]);
+        assert!(third.next.is_none());
+        let previous = read(104, third.previous.unwrap());
+        assert_eq!(page_ids(&previous), ids[100..200]);
+        let initial = read(105, previous.previous.unwrap());
+        assert_eq!(page_ids(&initial), ids[..100]);
+
+        // The newly created item is outside the startup summary. Its returned
+        // identity selects a bounded window that actually contains that item.
+        let selected = read(106, PlaylistWindow::EndingAt(ids[204]));
+        assert_eq!(page_ids(&selected), ids[105..]);
+        assert!(selected.next.is_none());
+        assert!(!matches!(selected.current, PlaylistWindow::EndingAt(_)));
+        assert!(worker.submit(Request::Delete(ids[204])));
+        assert!(matches!(receive(), Response::Saved));
+        let refreshed = read(107, selected.current);
+        assert_eq!(page_ids(&refreshed), ids[105..204]);
+        assert!(worker.submit(Request::ReadPage {
+            ticket: 108,
+            page: PageQuery::Collections(PlaylistWindow::EndingAt(ids[204])),
+        }));
+        assert!(matches!(
+            receive(),
+            Response::PageRead {
+                ticket: 108,
+                result: Err(_),
+            }
+        ));
+        assert!(worker.take().is_none());
+        drop(worker);
+        // Results above reflect committed storage, not only worker-local state.
+        let reopened = LocalStore::open(&path).unwrap();
+        let last = reopened
+            .playlist_window(PlaylistWindow::EndingAt(ids[203]), MAX_PAGE_SIZE)
+            .unwrap();
+        assert_eq!(last.items.last().unwrap().id, ids[203]);
+        assert_eq!(last.items.last().unwrap().name, "Synthetic collection 203");
+    }
+
+    #[test]
     fn worker_create_and_save_has_correlated_failure_and_committed_success() {
         let directory = TestDirectory::new();
         let path = directory.0.join("library.sqlite3");
@@ -781,7 +871,7 @@ mod tests {
         });
         assert!(worker.submit(Request::ReadPage {
             ticket: 41,
-            page: PageQuery::Collections(None)
+            page: PageQuery::Collections(PlaylistWindow::First)
         }));
         assert!(worker.submit(Request::ReadPage {
             ticket: 42,
@@ -852,7 +942,7 @@ mod tests {
                 &mut store,
                 Request::ReadPage {
                     ticket: 42,
-                    page: PageQuery::Collections(None),
+                    page: PageQuery::Collections(PlaylistWindow::First),
                 }
             )
             .unwrap(),
@@ -877,7 +967,7 @@ mod tests {
         }
         assert!(worker.submit(Request::ReadPage {
             ticket: 42,
-            page: PageQuery::Collections(None)
+            page: PageQuery::Collections(PlaylistWindow::First)
         }));
         for expected in [41, 42] {
             received.recv_timeout(Duration::from_secs(5)).unwrap();
