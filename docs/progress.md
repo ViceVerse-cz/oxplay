@@ -24,7 +24,11 @@ first post-exit inspection used a wrong table name, then was corrected and
 completed without changing the database. The locked release build passed the
 same twelve stages at 760×600/light, exited 0, and left no cached artwork or
 saved entries. Its capture and the ordinary light Settings screen were inspected;
-evidence and executable hash are in the cache notes. Push/CI are pending. Performance/usage tests remain paused at the user's request.
+evidence and executable hash are in the cache notes. Source `c6e5c14` is pushed;
+[CI](https://github.com/ViceVerse-cz/yt/actions/runs/36588787500) passed macOS
+(411 Rust tests, four ignored) and Linux (393, one ignored), plus 163 Python tests,
+formatting, strict Clippy and locked release compilation on each. The exact-source
+archive and checksums were verified locally; no tag or release was published. Performance/usage tests remain paused at the user's request.
 
 The preceding slice implements [local-first Home](local-home.md). Home is now a
 distinct route with a bounded, deduplicated page of saved local videos; clicking
@@ -440,14 +444,11 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Implement a bounded anonymous-video artwork cache, populated only during
-explicit guest browsing. Home must read it locally with no HTTP fallback, and
-clear-data must drain/purge it before reopening admission. The existing thumbnail
-worker has no reusable cache, so saved summaries currently show unavailable-image
-placeholders. Preserve image references and video-ID/generation ownership across
-Home reconciliation. Then complete native keyboard checks for playlist
-creation/renaming and failed-stream restart, and additional PiP monitor/fullscreen
-lifecycle cases.
+Complete the remaining shared-UI keyboard/focus paths for playlist creation and
+renaming, with native functional checks and fixes where needed. Follow with
+failed-stream restart and additional PiP monitor/fullscreen lifecycle cases.
+The bounded anonymous artwork cache and coordinated deletion are implemented;
+its native evidence is recorded above.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,

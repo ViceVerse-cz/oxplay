@@ -141,3 +141,14 @@ development commits are retained in a local archive branch, not pushed as public
 history. Historical hashes in evidence documents identify those local checkpoints;
 they are not advertised as remotely fetchable commits. Evidence remains unchanged
 apart from removing a personal filesystem path from explanatory prose.
+
+## Guest artwork cache checkpoint
+
+Source `c6e5c14` passed [both CI jobs](https://github.com/ViceVerse-cz/yt/actions/runs/36588787500).
+macOS passed 411 Rust tests with four explicit external integrations ignored;
+Linux passed 393 with one ignored. Both passed 163 Python tooling tests,
+formatting, strict Clippy and locked release workspace builds. No performance,
+usage, desktop or live-account test ran in CI. The local exact-commit source
+preview includes `artwork.rs`, schema v6 and its documentation; all generated
+asset checksums were verified. The release workflow was not dispatched, and no
+tag or release was created.

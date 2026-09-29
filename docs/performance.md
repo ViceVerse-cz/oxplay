@@ -686,3 +686,11 @@ separate footprint, unmeasured GPU allocation and A/V limitations apply.
 
 See [full measurements and exact identities](experiments/mpv-pass-timers.md#native-child-matched-onoffoffon-resource-result)
 and the [34-payload export](evidence/2026-09-29-native-timer-abba-export.json).
+
+The guest artwork cache slice adds bounded encoded disk persistence and reuses
+visible Home images by video identity. Its cache quotas, four image tasks and
+eight ready images are implementation bounds, not new measurements. Native
+Home exercises checked correct image display, unchanged model notifications and
+acknowledged clearing only. No CPU/RAM/usage benchmark was run for this slice;
+existing target/ceiling failures and platform qualifications remain unchanged.
+See [artwork ownership and evidence](artwork-cache.md).

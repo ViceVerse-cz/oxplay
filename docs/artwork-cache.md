@@ -82,5 +82,10 @@ in `artifacts/artwork-release-v1`; executable SHA256:
 `f033e08343782a44129836ebe167ff89204f425349f6c89eb5c2e3921999c1f5`.
 The 1000×850 light Settings screen was also inspected after an ordinary debug
 launch and clean exit (`artifacts/artwork-settings-v1`). All owned native and
-display-wake processes were reaped. Remote CI is pending. No CPU/RAM/usage benchmark was run;
+display-wake processes were reaped. Source `c6e5c14` is pushed. [CI](https://github.com/ViceVerse-cz/yt/actions/runs/36588787500)
+passed both jobs: macOS 411 Rust tests (four ignored), Linux 393 (one ignored),
+and 163 Python tests on each, formatting, strict Clippy and locked release builds.
+CI does not launch a desktop or qualify X11/Wayland playback. The exact-commit
+source preview archive includes this module, migration and documentation; its
+checksums were verified locally. No tag or release was published. No CPU/RAM/usage benchmark was run;
 resource gates remain unqualified. No real account credentials were used.

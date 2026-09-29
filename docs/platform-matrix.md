@@ -149,6 +149,7 @@ predate this coordinator and do not qualify it.
 
 Guest artwork disk caching uses Unix private directory descriptors and locking.
 The Windows implementation fails closed for this optional cache; ordinary guest
-browsing remains available. macOS native functional and Linux CI evidence for
-this slice will be recorded in [artwork-cache.md](artwork-cache.md). This does not
+browsing remains available. macOS debug/release native functional checks passed twelve offline Home/cache/clear
+stages; screenshots were inspected. Linux CI evidence is tracked separately in
+[artwork-cache.md](artwork-cache.md). This does not
 change any platform support or optimized-video qualification.
