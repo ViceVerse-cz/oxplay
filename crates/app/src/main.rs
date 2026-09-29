@@ -742,7 +742,7 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
     app.on_navigate(move |page| {
         let Some(app) = weak.upgrade() else { return };
         if page == 0 {
-            home_ui::open(&app, &s);
+            home_ui::open(&app, &s, true);
             update(&app, &s);
             return;
         }
@@ -1354,6 +1354,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             home_ui::cancel(&app, &s);
         }
     });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_home_source_changed(move |index| {
+        if let Some(app) = weak.upgrade() {
+            home_ui::select_source(&app, &s, index);
+        }
+    });
     feed_focus::bind(&app, &state);
     comments_ui::bind(&app, &state);
     caption_ui::bind(&app, &state);
@@ -1642,7 +1649,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(url) = url {
         playback_preferences::startup(&app, &state, url.into());
     } else if !local_startup && !smoke && !demo_related && state.library_fixture.is_none() {
-        home_ui::open(&app, &state);
+        // Not explicit navigation: a clean launch never reads account data.
+        home_ui::open(&app, &state, false);
     }
     let mut timers = Vec::new();
     if ui_page.is_some() || ui_theme.is_some() || ui_size.is_some() {

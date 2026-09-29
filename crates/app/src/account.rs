@@ -4,6 +4,7 @@
 use crate::resolver::SharedResolver;
 use serein_core::{
     CancellationToken, ChannelId, OperationContext, PlaylistId, ProviderError, VideoId,
+    VideoSummary,
 };
 use serein_storage::vault::{ProtectedSessionStore, SessionProfile, VaultError};
 use serein_youtube::ResolutionPolicy;
@@ -45,6 +46,8 @@ pub enum AccountRequest {
     Subscriptions(Option<AccountCursor>),
     Playlists(Option<AccountCursor>),
     Playlist(PlaylistId, Option<AccountCursor>),
+    /// Signed-in YouTube home feed. Submit only for explicit Home navigation/Refresh.
+    Recommendations(Option<AccountCursor>),
     SubscriptionState(ChannelId),
     Rating(VideoId),
     /// Submit only for the corresponding explicit UI action; never retry automatically.
@@ -74,6 +77,7 @@ pub enum Response {
     Subscriptions(AccountPage<AccountChannel>),
     Playlists(AccountPage<AccountPlaylist>),
     Playlist(PlaylistContents),
+    Recommendations(AccountPage<VideoSummary>),
     SubscriptionState(bool),
     Rating(bool),
     Mutation(MutationOutcome),
@@ -525,6 +529,9 @@ impl Engine {
             AccountRequest::Playlist(id, cursor) => Ok(Response::Playlist(
                 self.client()?.playlist(&id, cursor.as_ref(), operation)?,
             )),
+            AccountRequest::Recommendations(cursor) => Ok(Response::Recommendations(
+                self.client()?.recommendations(cursor.as_ref(), operation)?,
+            )),
             AccountRequest::SubscriptionState(id) => Ok(Response::SubscriptionState(
                 self.client()?.subscription_state(&id, operation)?,
             )),
@@ -955,6 +962,7 @@ mod tests {
             }),
             AccountRequest::Reconcile,
             AccountRequest::Subscriptions(None),
+            AccountRequest::Recommendations(None),
             AccountRequest::InspectSaved,
         ] {
             let worker = dormant();
@@ -1051,6 +1059,28 @@ mod tests {
         receive.recv_timeout(Duration::from_secs(3)).unwrap();
         let response = worker.take().unwrap();
         assert_eq!(response.playback_selection, Some(42));
+        assert!(response.connection.is_none());
+        assert!(matches!(
+            response.result,
+            Err(WorkerError::Account(AccountError::IdentityNotVerified))
+        ));
+        assert!(!path.exists());
+    }
+    #[test]
+    fn unverified_worker_rejects_home_recommendations_without_network_or_vault() {
+        let directory = TestDirectory::new();
+        let path = directory.0.join("unused-vault");
+        let (notify, receive) = mpsc::channel();
+        let worker = Worker::new(path.clone(), move || {
+            let _ = notify.send(());
+        });
+        let id = worker
+            .submit(AccountRequest::Recommendations(None))
+            .unwrap();
+        receive.recv_timeout(Duration::from_secs(3)).unwrap();
+        let response = worker.take().unwrap();
+        assert_eq!(response.request_id, id);
+        assert!(response.playback_selection.is_none());
         assert!(response.connection.is_none());
         assert!(matches!(
             response.result,
