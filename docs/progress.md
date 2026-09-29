@@ -36,6 +36,11 @@ usage measurement is part of this user-requested fast implementation pass.
 Native picker, popup/keyboard, subtitle, chapter, malformed-file/egress and
 account-to-local transitions still require functional qualification. The product
 and all additional platforms remain unqualified for production release.
+Source `2b27782` is pushed. [CI run 36608907512](https://github.com/ViceVerse-cz/yt/actions/runs/36608907512)
+could not start either macOS or Linux job because of the repository
+account-payment/spending-limit restriction. No hosted compilation or test
+result exists for this source. The next implementation slice is an explicit
+user-controlled playback queue, retaining autoplay off and exact-load ownership.
 
 The preceding feature slice adds three shared-UI workflows: public channel handles,
 local playlist search, and explicit video-link sharing. A handle resolves through
