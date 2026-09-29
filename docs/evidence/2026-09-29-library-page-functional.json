@@ -1,0 +1,78 @@
+{
+  "source": "068bc94030f41b13cf74ce4e28424688adddeb67",
+  "scope": "Finite offline macOS functional checks. Injected Slint keys and real worker callbacks; no physical keyboard, IME, AX, live account, resource or other-platform qualification.",
+  "platform": "macOS 27.0 (26A428), Apple M1",
+  "rust": "1.98.1",
+  "python": "3.14.7",
+  "checks": {
+    "rust_passed": 448,
+    "rust_ignored": 4,
+    "python_passed": 163,
+    "format": "passed",
+    "clippy": "passed with -D warnings",
+    "debug_build": "passed --workspace --locked",
+    "release_build": "passed --workspace --release --locked"
+  },
+  "runs": {
+    "debug": {
+      "binary_sha256": "4a52361d37aac19980f8a18539913f6a1b94404459a6b846aedbaac27aa7558f",
+      "scope": "Finite offline native functional check; injected Slint keys, not OS keyboard/AX; no performance sampling",
+      "exit_code": 0,
+      "playlists": [
+        [
+          1,
+          "TEST FIXTURE renamed while away"
+        ],
+        [
+          2,
+          "TEST FIXTURE separate create draft"
+        ]
+      ],
+      "playlist_counts": [
+        [
+          1,
+          101
+        ]
+      ],
+      "history_enabled": 0,
+      "owned_process_groups_absent": true,
+      "log": "2026-09-29-library-page-debug.log",
+      "log_sha256": "03cd5ba672f5c06d62f32c072f6e98ad941bd21281f64ffb963409ad3c1ce9f3",
+      "stages": 22,
+      "ui_size": "1000x800",
+      "theme": "dark",
+      "capture_sha256": "205f810416505d99ea5888a34af5b21f73ba9b6bd91503c55d3fd072216351f9",
+      "capture_scope": "Inspected confirmation checkpoint at15s, before fixture video pagination; image retained in ignored local artifacts."
+    },
+    "release": {
+      "binary_sha256": "3ab759dd848c2630aabf5e969ee741aa535e91400bb306c2b1e878c552eb1f0e",
+      "scope": "Finite offline native functional check; injected Slint keys, not OS keyboard/AX; no performance sampling",
+      "exit_code": 0,
+      "playlists": [
+        [
+          1,
+          "TEST FIXTURE renamed while away"
+        ],
+        [
+          2,
+          "TEST FIXTURE separate create draft"
+        ]
+      ],
+      "playlist_counts": [
+        [
+          1,
+          101
+        ]
+      ],
+      "history_enabled": 0,
+      "owned_process_groups_absent": true,
+      "log": "2026-09-29-library-page-release.log",
+      "log_sha256": "3d5de06cbab5053d07e1cbc902705ccd715f75d1ef8a690241911f4036d20779",
+      "stages": 22,
+      "ui_size": "760x600",
+      "theme": "light",
+      "capture_sha256": "a3631b57adccaab9dcc5f9b58d35ace82403a9e235408397ef33f60dc1c7dae6",
+      "capture_scope": "Inspected confirmation checkpoint at15s, before fixture video pagination; image retained in ignored local artifacts."
+    }
+  }
+}

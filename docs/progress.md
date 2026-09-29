@@ -24,8 +24,13 @@ SQL confirmed the unchanged names, two playlists, 101 items in the original
 playlist and history off. The release check also passed all 22 stages at
 760×600/light with the same persisted results and inspected confirmation capture.
 Both runs exited zero and their owned process groups were absent afterward.
-No performance/usage test was run. Push and hosted CI status are recorded below
-once the exact source revision is available.
+No performance/usage test was run. [Public functional evidence](evidence/2026-09-29-library-page-functional.json)
+records the exact source/binary hashes and complete native logs.
+Source `068bc94` is pushed. [CI run 36603317441](https://github.com/ViceVerse-cz/yt/actions/runs/36603317441)
+failed before either job ran a step; both annotations cite failed account payments
+or a spending-limit issue. No hosted build/test result exists for this source.
+Its local exact-commit source preview and all asset checksums verified; no tag,
+release or workflow dispatch was created.
 
 The preceding slice fixes acknowledged state in captions, quality, Appearance and
 catalog filters, and gives the local Save dialog an explicit destination draft.

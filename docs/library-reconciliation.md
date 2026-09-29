@@ -185,6 +185,8 @@ The complete local suite passed 448 Rust tests (four explicit integrations
 ignored), 163 Python tooling tests, formatting, strict Clippy and locked
 debug/release builds. No performance/usage measurements or real-account tests
 were performed.
+The [public functional manifest](evidence/2026-09-29-library-page-functional.json)
+retains exact source/binary hashes, post-exit results and complete native logs.
 
 ## Created playlist windows beyond the first page
 

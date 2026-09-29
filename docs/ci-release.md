@@ -226,3 +226,27 @@ The exact-commit local source preview contains `controlled_widgets.rs`,
 release metadata and notes all passed their SHA-256 manifest verification.
 The release workflow was not dispatched; no tag or release was created.
 Linux compilation for this source remains unverified.
+
+## Account expiry and library pagination checkpoint
+
+Source `068bc94030f41b13cf74ce4e28424688adddeb67` is pushed.
+[CI run 36603317441](https://github.com/ViceVerse-cz/yt/actions/runs/36603317441)
+failed before either Linux or macOS ran any step. Both check annotations report
+failed account payments or a spending-limit issue; macOS also reports ARM64
+capacity constraints. No automatic retry was requested and no hosted test/build
+result is claimed for this source.
+
+Local formatting, strict all-target Clippy, 448 Rust tests (four explicit
+integrations ignored), 163 Python tooling tests and locked debug/release builds
+passed. Both native offline library checks passed all 22 checkpoints, exited zero
+and left no owned process groups. Post-exit SQL confirmed the two unchanged
+playlist names, 101 saved fixture entries and history off. See the
+[functional manifest and logs](evidence/2026-09-29-library-page-functional.json).
+Account expiry/no-replay and pause-aware refresh regressions are synthetic;
+they do not qualify a live account or live expired-stream replacement.
+
+The local exact-commit source preview's archive, metadata and notes passed their
+SHA-256 checks. Archive bytes for account reconciliation, refresh, the extended
+native diagnostic and Cargo.lock match the committed files. The release
+workflow was not dispatched; no tag or release was created. Performance/usage
+tests remain paused, and Linux/Windows runtime qualification remains open.
