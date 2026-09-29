@@ -35,6 +35,12 @@ Slint callbacks; there is no new production polling timer.
 
 ## Validation
 
+Source `42c937e` passed [macOS and Linux CI](https://github.com/ViceVerse-cz/yt/actions/runs/36585092789):
+395/377 Rust tests respectively, 163 Python tests on each, formatting, strict
+Clippy and locked release builds. CI performs no native window or account test.
+The exact-commit source archive includes the new schema migration and Home
+modules; its generated checksums were verified locally.
+
 The final integrated workspace suite passed 395 Rust tests, with four explicit
 external integrations ignored. Formatting and strict workspace/all-target Clippy
 passed, along with all 163 Python tooling tests and the locked release build. Tests cover deduplication across 205 videos/multiple playlists, all three

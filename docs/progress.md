@@ -26,7 +26,13 @@ passed all11 stages and clean shutdown at760×600 in the light theme; its captur
 was inspected and its executable hash is recorded in the Home notes
 (`artifacts/home-release-v1`). An ordinary fresh-profile release launch also
 exited successfully, with its compact light-theme empty state visually inspected
-(`artifacts/home-empty-v1`). Remote CI for this source slice is pending.
+(`artifacts/home-empty-v1`). The ordinary empty profile retained schema5 and zero
+local content rows. Source `42c937e` is pushed; its
+[CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36585092789) is green:
+macOS395 Rust tests (four ignored), Linux377 (one ignored), and each passed163
+Python tests, formatting, strict Clippy and locked release compilation. The
+exact-commit source archive and checksums were verified locally, including the
+Home modules and schema-v5 migration. No release/tag was published.
 No performance/usage benchmark was run. Remote-account/platform/packaging and
 resource acceptance gates remain open.
 
@@ -414,10 +420,14 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Complete native keyboard checks for playlist creation/renaming and failed-stream
-restart, followed by additional PiP monitor/fullscreen lifecycle cases. Home
-currently uses unavailable-image placeholders for saved summaries; consider a
-bounded local artwork cache that never makes startup network requests.
+Implement a bounded anonymous-video artwork cache, populated only during
+explicit guest browsing. Home must read it locally with no HTTP fallback, and
+clear-data must drain/purge it before reopening admission. The existing thumbnail
+worker has no reusable cache, so saved summaries currently show unavailable-image
+placeholders. Preserve image references and video-ID/generation ownership across
+Home reconciliation. Then complete native keyboard checks for playlist
+creation/renaming and failed-stream restart, and additional PiP monitor/fullscreen
+lifecycle cases.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,

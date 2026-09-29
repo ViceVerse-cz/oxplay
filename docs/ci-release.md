@@ -62,6 +62,13 @@ locked release builds. The exact-commit source archive was generated and its
 checksums verified locally; the new PiP sources and unchanged Lucide icon/license
 were present. This remains a source preview, with no release/tag dispatched.
 
+The [local Home run for 42c937e](https://github.com/ViceVerse-cz/yt/actions/runs/36585092789)
+passed both jobs: macOS395 Rust tests (four ignored), Linux377 (one ignored),
+163 Python tests each, formatting, strict Clippy and locked release compilation.
+The source archive for that commit also passed local checksum/content checks,
+including the new Home modules and schema-v5 migration. Native Home evidence
+is documented separately in [local-home.md](local-home.md).
+
 Compilation with both Linux backends is not an X11 or native Wayland runtime
 qualification. Neither CI job establishes working hardware decoding, account
 capabilities, resource budgets, accessibility or portable installation. Windows
