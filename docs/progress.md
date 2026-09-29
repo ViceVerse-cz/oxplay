@@ -33,6 +33,13 @@ feature or lockfile change is required; the theatre icon is unchanged from the
 existing pinned official Lucide revision. Performance/usage tests are skipped
 at the user's request, and release/platform qualification remains outstanding.
 
+Source `1fe1735` is pushed. [CI run 36616692541](https://github.com/ViceVerse-cz/yt/actions/runs/36616692541)
+could not start either macOS ARM64 or Linux job: GitHub reports failed account
+payments or a spending-limit restriction. This is not a hosted compilation/test
+failure and supplies no new test evidence. The next concrete step is visual
+verification of watch/theatre/native-frame and library interactions on an active
+macOS display, followed by the outstanding live guest-avatar path check.
+
 The preceding inline-description/search/window slice passed formatting, strict
 all-target Clippy and a locked workspace build. Source `57a6be1` is pushed.
 [CI run 36612353509](https://github.com/ViceVerse-cz/yt/actions/runs/36612353509)
