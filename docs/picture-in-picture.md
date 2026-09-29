@@ -70,6 +70,10 @@ window 5321 moved from layer 3 (480×360 decorated) to layer 0 (900×682), with 
 original position restored. Evidence is in `artifacts/pip-release-v1/`; executable
 SHA256 is `5b0d5603488a50f64319b47a5df10b25a316b8f1ca2fc947c8c2aedec1c939f0`.
 Both builds exited successfully with unchanged window/load/presenter identities.
+After the separate fractional retry-timer correction, the final locked release
+build also passed; its executable SHA256 is
+`35a52a1fda7ec0bdf6dee16a3f07f0a0fb5d78588c6251e3918bdaa3ee5f678d`.
+The native PiP captures above belong to the earlier, explicitly identified build.
 
 Two prior attempts remain recorded: `pip-v1` could not create a CoreVideo clock
 while the display was asleep; `pip-v2` played video but exposed the early

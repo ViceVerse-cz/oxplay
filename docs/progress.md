@@ -30,7 +30,13 @@ remains open and must be locally authorized.
 Local validation passed: locked workspace tests (379 passed, four explicitly
 ignored external integrations), strict workspace/all-target Clippy, formatting,
 locked debug and release builds. Release executable SHA256 and native evidence
-are recorded in the PiP notes. Remote CI for this slice is pending the push.
+are recorded in the PiP notes. Source `c195894` is pushed to `ViceVerse-cz/yt`.
+Its [CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36581318438) passed both
+jobs: macOS 379 Rust tests (four ignored), Linux 361 (one ignored), and each
+passed 163 Python tests, formatting, strict Clippy and locked release builds.
+The exact-commit source archive was also generated locally and checksum-verified,
+including the new PiP source/icon/license and excluding local artifacts.
+No GitHub release or tag was created.
 No performance or usage benchmark was run.
 
 CI and the initial repository push are complete. The
@@ -384,8 +390,12 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Complete native keyboard handling checks for playlist creation/renaming and
-failed-stream restart, then additional PiP monitor/fullscreen lifecycle cases.
+Implement a distinct local-first Home route backed by a bounded page of saved
+videos. Currently Home shares page 0 with public catalogs, so selecting Home
+while browsing can retain the last search instead of returning to a local feed.
+Keep startup networking off and local/account collections separate. Then complete
+native keyboard checks for playlist creation/renaming and failed-stream restart,
+and additional PiP monitor/fullscreen lifecycle cases.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,

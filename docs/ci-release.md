@@ -55,6 +55,13 @@ and LuaJIT `2.1.0+git20231223.c525bcb+dfsg-1ubuntu0.1`. Platform-specific test
 counts differ because macOS adapters have their own tests. No runtime desktop,
 account, performance or usage test was run.
 
+The subsequent [PiP/account-recovery run for c195894](https://github.com/ViceVerse-cz/yt/actions/runs/36581318438)
+also passed every job: macOS 379 Rust tests (four ignored), Linux 361 (one
+ignored), and 163 Python tests on each runner, formatting, strict Clippy and
+locked release builds. The exact-commit source archive was generated and its
+checksums verified locally; the new PiP sources and unchanged Lucide icon/license
+were present. This remains a source preview, with no release/tag dispatched.
+
 Compilation with both Linux backends is not an X11 or native Wayland runtime
 qualification. Neither CI job establishes working hardware decoding, account
 capabilities, resource budgets, accessibility or portable installation. Windows

@@ -11,10 +11,10 @@ native-child presenter explicitly disable PiP. The account page was visually
 checked in guest mode; this does not validate a live Google/YouTube connection.
 No resource measurements were added.
 
-The [CI run for source 036da68](https://github.com/ViceVerse-cz/yt/actions/runs/36574672656)
-passed macOS ARM64 formatting, strict Clippy, all 369 Rust tests, 163 Python tests
+The [CI run for source c195894](https://github.com/ViceVerse-cz/yt/actions/runs/36581318438)
+passed macOS ARM64 formatting, strict Clippy, all 379 Rust tests, 163 Python tests
 and release compilation on a hosted macOS 26 runner. The Ubuntu 24.04 job passed
-formatting, strict Clippy, 351 Rust tests, 163 Python tests and release compilation
+formatting, strict Clippy, 361 Rust tests, 163 Python tests and release compilation
 with both Linux backend features enabled. CI uses null audio/video outputs
 in media unit tests and never opens a native desktop window. It provides no
 new X11/Wayland/macOS presentation or hardware-decoder qualification.
