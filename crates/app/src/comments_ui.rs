@@ -32,7 +32,21 @@ impl State {
     }
 }
 pub fn details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetails) {
-    *state.comments_ui.video.borrow_mut() = Some(video.clone());
+    set_details(app, state, video, details, true);
+}
+/// Show already-resolved account metadata without exposing the guest comment
+/// request path. Sign-out clears these fields through `clear_local`.
+pub fn account_details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetails) {
+    set_details(app, state, video, details, false);
+}
+fn set_details(
+    app: &App,
+    state: &UiState,
+    video: &VideoId,
+    details: &VideoDetails,
+    guest_comments: bool,
+) {
+    *state.comments_ui.video.borrow_mut() = guest_comments.then(|| video.clone());
     state.comments_ui.pending.set(None);
     state.comments_ui.rows.set_vec(Vec::new());
     state.comments_ui.cursor.borrow_mut().take();
@@ -42,13 +56,31 @@ pub fn details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetai
     ui.set_request_active(false);
     ui.set_next(false);
     ui.set_previous(false);
-    ui.set_tab(0);
-    ui.set_status("Comments load only when requested. Guest access; read-only.".into());
-    ui.set_description(
+    ui.set_description_expanded(false);
+    ui.set_available(guest_comments);
+    ui.set_has_loaded(false);
+    ui.set_status(
+        if guest_comments {
+            "Load public comments when you're ready. Guest access · Read-only."
+        } else {
+            "Comments are unavailable for account playback. No guest comment request will be made."
+        }
+        .into(),
+    );
+    let description = details
+        .description
+        .as_deref()
+        .unwrap_or("No description was provided.");
+    let preview = description.lines().take(3).collect::<Vec<_>>().join("\n");
+    let preview = preview.chars().take(300).collect::<String>();
+    ui.set_description_expandable(preview != description);
+    ui.set_description_preview(preview.into());
+    ui.set_description(description.into());
+    ui.set_heading(
         details
-            .description
-            .clone()
-            .unwrap_or_else(|| "No description was provided.".into())
+            .comment_count
+            .map(|count| format!("{count} comments"))
+            .unwrap_or_else(|| "Comments".into())
             .into(),
     );
     let mut metadata = Vec::new();
@@ -60,9 +92,6 @@ pub fn details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetai
     }
     if let Some(count) = details.like_count {
         metadata.push(format!("{count} likes"));
-    }
-    if let Some(count) = details.comment_count {
-        metadata.push(format!("{count} comments reported by YouTube"));
     }
     ui.set_metadata(metadata.join(" · ").into());
 }
@@ -80,8 +109,13 @@ pub fn clear_local(app: &App, state: &UiState) {
     ui.set_request_active(false);
     ui.set_next(false);
     ui.set_previous(false);
-    ui.set_tab(0);
-    ui.set_description("".into());
+    ui.set_description_expanded(false);
+    ui.set_available(false);
+    ui.set_has_loaded(false);
+    ui.set_heading("Comments".into());
+    ui.set_description_expandable(false);
+    ui.set_description_preview("Description unavailable for this playback mode.".into());
+    ui.set_description("Description unavailable for this playback mode.".into());
     ui.set_metadata("".into());
     ui.set_status("Account comments are not supported by the guest comments reader.".into());
 }
@@ -130,6 +164,7 @@ pub fn publish(
     ui.set_request_active(false);
     match result {
         Ok(page) if page.video == video => {
+            ui.set_has_loaded(true);
             let rows = page
                 .comments
                 .into_iter()
@@ -166,14 +201,18 @@ pub fn publish(
                 } else if empty {
                     "YouTube returned no public comments on this page."
                 } else {
-                    "Guest comments · Up to 20 per page · Replies are not loaded."
+                    "Top comments · Guest access · Read-only · Replies are not loaded."
                 }
                 .into(),
             );
+            // One finite publication signal after rows and navigation state are
+            // committed. The watch page may reveal the heading without moving
+            // keyboard focus; failures/cancellation do not move its scroll.
+            ui.set_page_epoch(ui.get_page_epoch().wrapping_add(1));
         }
         Ok(_) => ui.set_status("The provider returned comments for a different video.".into()),
         Err(error) => ui.set_status(if error == ProviderError::Unavailable {
-            "Comments are unavailable or their order changed. Try Load / refresh.".into()
+            "Comments are unavailable or their order changed. Try loading them again.".into()
         } else {
             error.to_string().into()
         }),
@@ -284,12 +323,11 @@ impl Smoke {
                                 !ui.get_description().is_empty(),
                                 "description was not populated"
                             );
-                            ui.set_tab(0);
+                            ui.set_description_expanded(true);
                             app.invoke_show_video_details();
                         }
                         17 => capture(&app, directory.as_deref(), "description.png", &captures),
                         20 => {
-                            ui.set_tab(1);
                             ui.invoke_load();
                             assert!(ui.get_request_active(), "comment request did not start");
                         }

@@ -1,5 +1,10 @@
 # Video integration — experimental macOS path
 
+The latest shell revision moves description/comments into the outer watch-page
+scroll and retains the persistent video host. Custom chrome and optional alpha/
+blur reuse the same window and presenter; main content/video stay opaque. These
+appearance changes need separate native composition/lifecycle qualification.
+
 The latest [control styling](picture-in-picture.md) changes only shared UI and
 a cached total-duration label. It preserves the player/presenter lifetime and
 existing seek/volume commands. Native subtitle overlap at the new bottom-edge

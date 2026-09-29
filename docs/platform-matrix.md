@@ -1,5 +1,10 @@
 # Platform qualification
 
+Shared custom chrome and optional translucency are now implemented. Blur is
+exposed only as an experimental macOS request; Windows/X11/native Wayland blur
+remains unavailable in this implementation. These API paths have no new native
+qualification. See [appearance capabilities](window-appearance.md).
+
 The latest local-file picker, playlist organization, timestamp links, chapter
 navigation and Jump to time additions have source/compile validation only. No
 new native picker, popup/keyboard, malformed-file or account test has run on any

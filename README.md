@@ -8,7 +8,7 @@ Implemented: native shared UI, embedded local video via persistent OpenGL target
 play/pause, seek, fullscreen, explicit local subtitle loading/cycling, real guest
 YouTube video/channel/playlist search, public channel and playlist pages, and
 direct content stream resolution/playback. Genuine video descriptions and optional
-metadata are available in an expandable shared popup; public read-only comments
+metadata appear inline beneath the player; public read-only comments
 load explicitly in bounded pages. The provider runs one cancellable
 bounded yt-dlp process group; each displayed guest catalog page has at most 20 rows.
 The shared UI now includes responsive thumbnail cards, themes, local collections,
@@ -50,6 +50,15 @@ the inspected Homebrew mpv package installs it as a dependency. The inspected
 yt-dlp package supplies Python, Deno and packaged EJS challenge scripts.
 
 ## Use
+
+Description and comments sit beneath the watch-page title and actions. Expand
+long descriptions with **Show more** and load real public comments explicitly;
+Next/Previous keeps each page bounded to 20 comments in the same page scroll.
+The shell has a rounded search field and shared custom window controls.
+**Settings → Appearance** offers session-local translucent title/header/sidebar
+surfaces and optional experimental macOS blur. Video and main content stay
+opaque. Other backends report their appearance limitations. See
+[window appearance](docs/window-appearance.md).
 
 Search or paste a supported HTTPS YouTube URL in the centered field. Filter real
 results by videos, channels, or playlists. Select a video to play, a channel to

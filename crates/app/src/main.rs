@@ -52,6 +52,7 @@ mod save_smoke;
 mod share_ui;
 mod soak_smoke;
 mod thumbnails;
+mod window_chrome;
 use catalog::{Response, Worker};
 use model::CatalogModel;
 use serein_media::{GlPresenter, Player};
@@ -65,6 +66,7 @@ use std::{
 slint::include_modules!();
 
 struct UiState {
+    window_chrome: Rc<window_chrome::Controller>,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -817,6 +819,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .backend_name("winit".into())
         .renderer_name("femtovg".into())
         .require_opengl()
+        .with_winit_window_attributes_hook(window_chrome::attributes)
         .select()?;
     // Declare before App/Player so error-path destruction releases all media
     // leases before the caption cleanup owner joins.
@@ -828,6 +831,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let app = App::new()?;
     app.set_native_video_child(options.native_video_child);
+    app.set_custom_chrome(!options.native_video_child);
+    app.set_window_borderless(!options.native_video_child);
+    let window_chrome = window_chrome::bind(&app);
     app.set_cache_chrome(options.ui_cache);
     app.set_cache_search(options.search_cache);
     app.set_cache_related(options.related_cache);
@@ -866,6 +872,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
     let state = Rc::new(UiState {
+        window_chrome,
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -1223,6 +1230,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         fixture_quiescence::window_event(&s, event);
         if let Some(app) = weak.upgrade() {
+            if matches!(
+                event,
+                winit::event::WindowEvent::Resized(_)
+                    | winit::event::WindowEvent::Focused(_)
+                    | winit::event::WindowEvent::ScaleFactorChanged { .. }
+                    | winit::event::WindowEvent::ThemeChanged(_)
+            ) {
+                s.window_chrome.synchronize(&app);
+            }
             if !app.get_pip_available()
                 && !s.native_child.enabled
                 && matches!(
@@ -1416,6 +1432,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         library_fixture::bind(&app, &state);
     }
     app.show()?;
+    state.window_chrome.synchronize(&app);
     app.window().with_winit_window(|w| {
         w.focus_window();
         if let Some(theme) = w.theme() {

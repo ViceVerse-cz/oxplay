@@ -711,7 +711,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     install(app, state, playback.authorization);
     let item = playback.playback;
     crate::caption_ui::clear_local(app, state);
-    crate::comments_ui::clear_local(app, state);
+    crate::comments_ui::account_details(app, state, &item.video.id, &item.details);
     app.global::<CaptionsUi>().set_status(
         "Account captions are not supported yet. No guest caption request will be made.".into(),
     );

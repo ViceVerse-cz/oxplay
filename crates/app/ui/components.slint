@@ -106,7 +106,11 @@ export component Action inherits Rectangle {
         }
     }
     if root.icon-name != "": Image {
-        source: root.icon-name == "menu" ? @image-url("icons/menu.svg")
+        source: root.icon-name == "minus" ? @image-url("icons/minus.svg")
+            : root.icon-name == "x" ? @image-url("icons/x.svg")
+            : root.icon-name == "square" ? @image-url("icons/square.svg")
+            : root.icon-name == "copy" ? @image-url("icons/copy.svg")
+            : root.icon-name == "menu" ? @image-url("icons/menu.svg")
             : root.icon-name == "house" ? @image-url("icons/house.svg")
             : root.icon-name == "library-big" ? @image-url("icons/library-big.svg")
             : root.icon-name == "users" ? @image-url("icons/users.svg")

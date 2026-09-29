@@ -314,3 +314,8 @@ the existing application GPL-3.0-or-later headers and compiled shared Slint UI.
 No new third-party code, font or icon was vendored in this batch; chapter controls
 reuse the existing attributed Lucide list-video asset. Dependency and native
 distribution qualification remain as recorded above.
+
+The custom-titlebar slice adds four unchanged Lucide icons (`minus`, `square`,
+`copy`, `x`) from the existing pinned official revision. Their source/license
+record and checksums are retained beside the assets. Shared titlebar/search/
+inline-comments code retains GPL-3.0-or-later; no runtime dependency is added.

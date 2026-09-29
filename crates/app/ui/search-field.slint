@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Colors, Action } from "components.slint";
+export component SearchField inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder: "Search YouTube";
+    in property <bool> enabled: true;
+    out property <bool> has-focus: input.has-focus;
+    callback accepted(string);
+    callback edited();
+    forward-focus: input;
+    height: 42px;
+    border-radius: 21px;
+    border-width: input.has-focus ? 2px : 1px;
+    border-color: input.has-focus ? Colors.accent : Colors.border;
+    background: Colors.surface;
+    clip: true;
+    if root.text == "": Text {
+        x: 20px; height: parent.height; width: parent.width - 80px;
+        text: root.placeholder; color: Colors.muted;
+        vertical-alignment: center; overflow: elide;
+    }
+    input := TextInput {
+        x: 20px; width: max(0px, parent.width - 82px); height: parent.height;
+        enabled: root.enabled; single-line: true;
+        text <=> root.text;
+        color: Colors.text; vertical-alignment: center;
+        selection-background-color: Colors.accent;
+        selection-foreground-color: #ffffff;
+        accessible-label: "Search YouTube";
+        edited => { root.edited(); }
+        accepted => { root.accepted(root.text); }
+    }
+    Rectangle { x: parent.width - 58px; y: 1px; width: 1px; height: parent.height - 2px; background: Colors.border; }
+    Action {
+        x: parent.width - 54px; y: 1px; width: 50px; height: parent.height - 2px;
+        compact: true; icon-name: "search"; label: "Search";
+        enabled: root.enabled;
+        clicked => { root.accepted(root.text); }
+    }
+}

@@ -278,3 +278,8 @@ framework revision, Cargo feature or lockfile change is introduced. The new
 local per-entry options were source-reviewed against official mpv v0.41.0 and
 FFmpeg n8.0; see [local media policy](local-media-policy.md). This does not advance
 or replace the installed native build inventory or its pending qualifications.
+
+The custom-window-chrome slice uses existing locked Slint/Winit APIs, including
+WindowMoveArea, resize-border-width, window attributes and the Winit blur request.
+No Cargo dependency, feature, revision or lockfile changes. The exact source
+contracts and platform restrictions are recorded in [window appearance](window-appearance.md).

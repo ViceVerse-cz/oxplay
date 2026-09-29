@@ -1,53 +1,118 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { ScrollView, ListView, TextEdit } from "std-widgets.slint";
 import { Colors, Action, ActionVariant } from "components.slint";
 export struct CommentRow { author: string, metadata: string, content: string }
 export global CommentsUi {
     in property <string> description;
+    in property <string> description-preview;
+    in property <bool> description-expandable;
+    in-out property <bool> description-expanded;
     in property <string> metadata;
-    in property <string> status: "Comments load only when requested. Guest access; read-only.";
+    in property <string> heading: "Comments";
+    in property <string> status: "Load public comments when you're ready. Guest access · Read-only.";
     in property <[CommentRow]> rows;
+    in property <bool> available;
+    in property <bool> has-loaded;
+    in property <int> page-epoch;
     in property <bool> next;
     in property <bool> previous;
     in property <bool> request-active;
-    in-out property <int> tab;
     callback load();
     callback page(bool);
     callback cancel();
 }
-export component VideoDetailsPanel inherits Rectangle {
+// Inline watch-page content, scrolled by the outer watch page. This finite
+// page contains at most 20 comments; pagination replaces it rather than appending.
+export component WatchDetails inherits Rectangle {
     in property <bool> busy;
-    callback close();
-    background: Colors.surface;
-    border-width: 1px; border-color: Colors.border;
-    VerticalLayout { padding: 16px; spacing: 12px;
-        HorizontalLayout { height: 36px; spacing: 8px;
-            Action { label: "Description"; selectable: true; selected: CommentsUi.tab == 0; clicked => { CommentsUi.tab = 0; } }
-            Action { label: "Comments"; selectable: true; selected: CommentsUi.tab == 1; clicked => { CommentsUi.tab = 1; } }
-            Rectangle { horizontal-stretch: 1; }
-            Action { label: "Close"; variant: ActionVariant.secondary; clicked => { root.close(); } }
-        }
-        if CommentsUi.tab == 0: VerticalLayout { spacing: 12px;
-            Text { text: CommentsUi.metadata; color: Colors.muted; wrap: word-wrap; }
-            TextEdit { text: CommentsUi.description; read-only: true; wrap: word-wrap; vertical-stretch: 1; }
-        }
-        if CommentsUi.tab == 1: VerticalLayout { spacing: 10px;
-            Text { text: "Public top-level comments · Read-only · Sorted by top comments"; color: Colors.muted; wrap: word-wrap; }
-            HorizontalLayout { height: 36px; spacing: 8px;
-                Action { label: "Load / refresh"; variant: ActionVariant.secondary; enabled: !root.busy; clicked => { CommentsUi.load(); } }
-                Action { label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
-                Action { label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && CommentsUi.next; clicked => { CommentsUi.page(true); } }
-                if CommentsUi.request-active: Action { label: "Cancel"; variant: ActionVariant.secondary; clicked => { CommentsUi.cancel(); } }
-            }
-            Text { text: CommentsUi.status; color: Colors.muted; wrap: word-wrap; }
-            ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                for item in CommentsUi.rows: Rectangle {
-                    height: comment-text.preferred-height + 64px;
-                    Text { x: 8px; y: 8px; width: parent.width - 144px; height: 22px; text: item.author; color: Colors.text; font-weight: 600; overflow: elide; }
-                    Action { x: parent.width - 128px; y: 4px; width: 120px; height: 32px; label: "Copy comment"; variant: ActionVariant.secondary; clicked => { comment-text.select-all(); comment-text.copy(); } }
-                    Text { x: 8px; y: 32px; width: parent.width - 16px; height: 18px; text: item.metadata; color: Colors.muted; font-size: 12px; overflow: elide; }
-                    comment-text := TextInput { x: 8px; y: 56px; width: parent.width - 16px; text: item.content; color: Colors.text; wrap: word-wrap; read-only: true; single-line: false; }
+    public function focus-description() { description-text.focus(); }
+    out property <length> comments-y: comments-content.y;
+    callback page-loaded();
+    private property <int> publication: CommentsUi.page-epoch;
+    changed publication => {
+        if CommentsUi.available && CommentsUi.has-loaded { root.page-loaded(); }
+    }
+    preferred-height: content.preferred-height;
+    vertical-stretch: 0;
+    background: transparent;
+    content := VerticalLayout {
+        spacing: 20px;
+        Rectangle {
+            background: Colors.surface;
+            border-radius: 12px;
+            height: description-layout.preferred-height;
+            description-layout := VerticalLayout {
+                padding: 14px; spacing: 8px;
+                if CommentsUi.metadata != "": Text {
+                    text: CommentsUi.metadata; color: Colors.text;
+                    font-size: 13px; font-weight: 600; wrap: word-wrap;
                 }
+                description-text := TextInput {
+                    text: CommentsUi.description-expanded ? CommentsUi.description : CommentsUi.description-preview;
+                    accessible-label: "Video description";
+                    color: Colors.text; font-size: 14px;
+                    wrap: word-wrap; read-only: true; single-line: false;
+                    vertical-stretch: 0;
+                }
+                if CommentsUi.description-expandable: HorizontalLayout {
+                    height: 32px;
+                    Action {
+                        width: 116px; height: 32px; horizontal-stretch: 0;
+                        label: CommentsUi.description-expanded ? "Show less" : "Show more";
+                        checkable: true; selected: CommentsUi.description-expanded;
+                        clicked => { CommentsUi.description-expanded = !CommentsUi.description-expanded; }
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                }
+            }
+        }
+        comments-content := VerticalLayout {
+            spacing: 12px;
+            HorizontalLayout {
+                height: 40px; spacing: 12px;
+                Text { text: CommentsUi.heading; color: Colors.text; font-size: 20px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                if CommentsUi.available: Action {
+                    width: 142px; height: 36px; horizontal-stretch: 0;
+                    label: CommentsUi.has-loaded ? "Refresh comments" : "Load comments";
+                    variant: ActionVariant.secondary; enabled: !root.busy;
+                    clicked => { CommentsUi.load(); }
+                }
+                if CommentsUi.request-active: Action {
+                    width: 76px; height: 36px; horizontal-stretch: 0;
+                    label: "Cancel"; clicked => { CommentsUi.cancel(); }
+                }
+            }
+            Text { text: CommentsUi.status; color: Colors.muted; font-size: 13px; wrap: word-wrap; }
+            if CommentsUi.rows.length > 0: VerticalLayout {
+                spacing: 12px;
+                for item in CommentsUi.rows: Rectangle {
+                    height: comment-text.preferred-height + 70px;
+                    background: transparent;
+                    Text {
+                        x: 0px; y: 4px; width: parent.width - 82px; height: 22px;
+                        text: item.author; color: Colors.text; font-size: 14px; font-weight: 600; overflow: elide;
+                    }
+                    Action {
+                        x: parent.width - 72px; y: 0px; width: 68px; height: 30px;
+                        label: "Copy";
+                        accessible-label: "Copy comment by " + item.author;
+                        clicked => { comment-text.select-all(); comment-text.copy(); }
+                    }
+                    Text {
+                        x: 0px; y: 30px; width: parent.width - 8px; height: 18px;
+                        text: item.metadata; color: Colors.muted; font-size: 12px; overflow: elide;
+                    }
+                    comment-text := TextInput {
+                        x: 0px; y: 54px; width: parent.width - 8px;
+                        text: item.content; accessible-label: "Comment by " + item.author;
+                        color: Colors.text; font-size: 14px; wrap: word-wrap; read-only: true; single-line: false;
+                    }
+                }
+            }
+            if CommentsUi.previous || CommentsUi.next: HorizontalLayout {
+                height: 36px; spacing: 8px;
+                Action { width: 114px; label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
+                Action { width: 100px; label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && CommentsUi.next; clicked => { CommentsUi.page(true); } }
+                Rectangle { horizontal-stretch: 1; }
             }
         }
     }

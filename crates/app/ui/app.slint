@@ -2,10 +2,11 @@
 import { LineEdit, Slider, ListView, CheckBox, Palette, ScrollView } from "std-widgets.slint";
 import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
 import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
-import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
+import { WatchDetails, CommentsUi, CommentRow } from "comments.slint";
 import { CaptionSelector, CaptionsUi } from "captions.slint";
 import { ChapterPanel, ChaptersUi } from "chapters.slint";
 import { JumpDialog, JumpUi } from "jump.slint";
+import { SearchField } from "search-field.slint";
 import { MediaSlider } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
@@ -15,6 +16,24 @@ export component App inherits Window {
     no-frame: root.window-borderless;
     in-out property <bool> window-borderless;
     callback pip-drag();
+    in property <bool> custom-chrome;
+    in property <bool> window-maximized;
+    in property <bool> window-native-resize;
+    in property <bool> window-translucency-available;
+    in property <bool> window-blur-available;
+    in-out property <bool> window-translucent;
+    in-out property <bool> window-blur-enabled;
+    in property <string> window-appearance-status;
+    callback window-minimize();
+    callback window-toggle-maximize();
+    callback window-close();
+    callback window-appearance-changed();
+    private property <bool> chrome-translucent: root.window-translucent && root.custom-chrome && !root.video-only;
+    private property <brush> chrome-background: root.chrome-translucent ? Colors.canvas.with-alpha(0.84) : Colors.canvas;
+    private property <length> title-height: root.custom-chrome && !root.video-only ? 32px : 0px;
+    resize-border-width: root.window-native-resize || !root.custom-chrome || root.video-only || root.window-maximized ? 0px : 6px;
+    changed window-translucent => { root.window-appearance-changed(); }
+    changed window-blur-enabled => { root.window-appearance-changed(); }
     in property <bool> local-file-busy;
     in property <bool> local-file-cancellable;
     in property <bool> local-subtitle-available;
@@ -22,7 +41,13 @@ export component App inherits Window {
     callback load-subtitle-file();
     callback cancel-local-file();
     callback local-file-wake();
-    public function show-video-details() { root.prepare-native-overlay(); video-details.show(); }
+    public function show-video-details() {
+        if root.remote-video && root.loaded && !root.video-only {
+            CommentsUi.description-expanded = true;
+            watch.content-y = max(min(0px, watch.visible-height - watch.content-height), -watch-details.y);
+            watch-details.focus-description();
+        }
+    }
     private property <string> message-text;
     private property <int> message-recovery-serial;
     in-out property <bool> recovery-available;
@@ -73,7 +98,7 @@ export component App inherits Window {
     }
     private property <int> save-destination: -1;
     preferred-width: 1320px; preferred-height: 860px; min-width: root.picture-in-picture ? 360px : 760px; min-height: root.picture-in-picture ? 240px : 600px;
-    background: Colors.canvas;
+    background: root.chrome-translucent ? transparent : Colors.canvas;
     default-font-size: 14px;
     forward-focus: shortcuts;
     out property <bool> search-active: search.has-focus;
@@ -88,7 +113,7 @@ export component App inherits Window {
     out property <length> native-clip-y: watch.y;
     out property <length> native-clip-width: watch.visible-width;
     out property <length> native-clip-height: watch.visible-height;
-    private property <bool> native-overlay-open: jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
+    private property <bool> native-overlay-open: jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || status-popup.is-open;
     out property <bool> native-child-visible: native-video-child && watching && loaded && (!show-info || fullscreen-active) && !native-overlay-open;
     callback native-child-hide();
     function prepare-native-overlay() { if root.native-video-child { root.native-child-hide(); } }
@@ -234,7 +259,7 @@ export component App inherits Window {
     out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
     private property <length> sidebar-width: video-only ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
-    private property <length> top-height: video-only ? 0px : 56px;
+    private property <length> top-height: video-only ? 0px : 56px + root.title-height;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
     private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
     private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
@@ -299,6 +324,7 @@ export component App inherits Window {
     changed related-last => { root.refresh-visible(); }
     changed page => { root.controls-state-changed(); if root.watching { root.controls-activity(); } if root.page != 0 { root.home-leave(); } if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
     changed video-only => {
+        root.window-appearance-changed();
         if root.video-only {
             // Retire parking before the related surface disappears.
             // Transfer only retiring related focus, without resetting the saved
@@ -358,6 +384,11 @@ export component App inherits Window {
         }
         root.refresh-visible();
     }
+    Rectangle {
+        x: root.sidebar-width; y: root.top-height;
+        width: root.width - self.x; height: root.height - self.y;
+        background: Colors.canvas;
+    }
     shortcuts := FocusScope {
     x: 0; y: 0; width: root.width; height: root.height;
     // Neutral startup focus belongs to the stable shared shell. Search keeps
@@ -407,7 +438,7 @@ export component App inherits Window {
         horizontal-scrollbar-policy: always-off;
         vertical-scrollbar-policy: root.video-only ? always-off : as-needed;
         content-width: self.visible-width;
-        content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-controls.y + watch-controls.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
+        content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
         changed content-y => {
             if root.video-only && self.content-y != 0px { self.content-y = 0px; }
         }
@@ -459,7 +490,7 @@ export component App inherits Window {
 
                     mute-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
                     // Compact PiP keeps mute; full volume remains in settings.
-                    volume-control := MediaSlider { visible: transport.width >= 600px; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } horizontal-stretch: 0; volume: true; accessible-label: "Volume percent"; min-width: self.visible ? 72px : 0px; max-width: self.visible ? 72px : 0px; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
+                    volume-control := MediaSlider { height: 40px; visible: transport.width >= 600px; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } horizontal-stretch: 0; volume: true; accessible-label: "Volume percent"; min-width: self.visible ? 72px : 0px; max-width: self.visible ? 72px : 0px; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
                     elapsed-control := Action {
                         on-video: true; compact: true;
                         label: "Jump to time · Elapsed " + root.elapsed + ", remaining " + root.remaining;
@@ -503,7 +534,6 @@ export component App inherits Window {
             if !root.video-only: Text { x: 0; y: 62px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
             if !root.video-only: HorizontalLayout {
                 y: 100px; height: 36px; spacing: 8px;
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
                 Rectangle { horizontal-stretch: 1; }
                 if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
@@ -517,6 +547,18 @@ export component App inherits Window {
                 text: root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : root.playback-status;
                 color: Colors.muted; font-size: 12px; overflow: elide;
                 accessible-label: "Playback status: " + self.text;
+            }
+        }
+        watch-details := WatchDetails {
+            x: video.x; y: watch-controls.y + watch-controls.height + 12px;
+            width: video.width;
+            visible: root.watching && !root.video-only && root.loaded && root.remote-video;
+            height: self.visible ? self.preferred-height : 0px;
+            busy: root.busy;
+            page-loaded => {
+                if root.watching && !root.video-only && root.remote-video && !root.account-playback-active && CommentsUi.has-loaded {
+                    watch.content-y = max(min(0px, watch.visible-height - watch.content-height), -(watch-details.y + watch-details.comments-y));
+                }
             }
         }
         related-parking := FocusScope {
@@ -537,7 +579,7 @@ export component App inherits Window {
         }
         related := ListView {
             x: root.width >= 1240px ? video.x + video.width + 24px : video.x;
-            y: root.width >= 1240px ? 0px : watch-controls.y + watch-controls.height + 20px;
+            y: root.width >= 1240px ? 0px : watch-details.y + watch-details.height + 20px;
             width: root.width >= 1240px ? watch.visible-width - self.x : video.width;
             height: root.width >= 1240px ? watch.visible-height : max(318px, watch.visible-height * 0.65);
             visible: root.watching && !root.video-only;
@@ -630,27 +672,30 @@ export component App inherits Window {
             }
         }
     Rectangle {
-        x: 0; y: 0;
+        x: 0; y: root.title-height;
         // Cache stable chrome in a GPU layer during video.
         // Focus, hover, edits and theme changes still invalidate this subtree.
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only;
-        width: parent.width; height: root.top-height; background: Colors.canvas;
+        width: parent.width; height: 56px; background: root.chrome-background;
         Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: "Toggle sidebar"; clicked => { root.expanded-sidebar = !root.expanded-sidebar; } }
         Rectangle { x: 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
             Image { x: 5px; y: 5px; width: 20px; height: 20px; source: @image-url("icons/clapperboard.svg"); colorize: Colors.canvas; }
         }
         Text { x: 110px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 25px; font-weight: 700; vertical-alignment: center; }
-        Rectangle {
+        search := SearchField {
             x: max(228px, (root.width - self.width) / 2); y: 7px;
             width: min(620px, root.width - 418px); height: 42px;
-            search := LineEdit { enabled: !root.native-video-child; cache-rendering-hint: root.cache-search; accessible-label: "Search YouTube"; x: 0; y: 1px; height: 40px; width: parent.width - 52px; placeholder-text: root.native-video-child ? "Local-only diagnostic" : "Search YouTube"; edited => { root.cancel-playback-focus(); } accepted => { root.search(self.text); } }
-            Action { enabled: !root.native-video-child; x: parent.width - 48px; y: 1px; width: 46px; height: 40px; compact: true; icon-name: "search"; label: "Search"; clicked => { root.search(search.text); } }
+            enabled: !root.native-video-child; cache-rendering-hint: root.cache-search;
+            placeholder: root.native-video-child ? "Local-only diagnostic" : "Search YouTube";
+            edited => { root.cancel-playback-focus(); }
+            accepted(text) => { root.search(text); }
         }
         Action { enabled: !root.native-video-child; x: parent.width - 156px; y: 8px; width: 140px; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
     }
     Rectangle {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
+        background: root.chrome-background;
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only;
         VerticalLayout {
@@ -742,6 +787,24 @@ export component App inherits Window {
             Rectangle { horizontal-stretch: 1; }
         }
     }
+    Rectangle {
+        x: 0px; y: 0px; width: root.width; height: root.title-height;
+        visible: root.custom-chrome && !root.video-only;
+        background: root.chrome-background;
+        accessible-role: window-title-bar;
+        accessible-label: "Serein window";
+        WindowMoveArea {
+            width: parent.width - 140px; height: parent.height;
+            Text { x: 18px; height: parent.height; text: "Serein"; color: Colors.muted; font-size: 12px; vertical-alignment: center; }
+            TouchArea { double-clicked => { root.window-toggle-maximize(); } }
+        }
+        HorizontalLayout {
+            x: parent.width - 138px; y: 2px; width: 132px; height: 28px; spacing: 0px;
+            Action { height: 28px; compact: true; icon-size: 16px; icon-name: "minus"; label: "Minimize window"; clicked => { root.window-minimize(); } }
+            Action { height: 28px; compact: true; icon-size: 14px; icon-name: root.window-maximized ? "copy" : "square"; label: root.window-maximized ? "Restore window" : "Maximize window"; clicked => { root.window-toggle-maximize(); } }
+            Action { height: 28px; compact: true; icon-size: 17px; icon-name: "x"; label: "Close window"; clicked => { root.window-close(); } }
+        }
+    }
     chapters-popup := PopupWindow {
         x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
         width: min(420px, root.width - 48px); height: min(400px, root.height - 48px);
@@ -764,11 +827,6 @@ export component App inherits Window {
             close => { status-popup.close(); }
         }
     }
-    video-details := PopupWindow {
-        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
-        width: min(680px, root.width - 48px); height: min(620px, root.height - 80px);
-        VideoDetailsPanel { width: parent.width; height: parent.height; busy: root.busy; close => { video-details.close(); } }
-    }
     if root.page == 1: LibraryPage {
         x: root.sidebar-width + 28px; y: root.top-height + 22px;
         width: root.width - self.x - 28px; height: root.height - self.y - 50px;
@@ -780,6 +838,9 @@ export component App inherits Window {
             Text { text: "Settings"; color: Colors.text; font-size: 28px; font-weight: 700; height: 40px; }
             Text { text: "Appearance"; color: Colors.text; font-size: 18px; height: 26px; }
             ConfirmedChoice { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; acknowledged-index: root.theme; choose(index) => { root.theme-changed(index); } }
+            CheckBox { text: "Translucent title bar and sidebar"; enabled: root.window-translucency-available; checked <=> root.window-translucent; }
+            CheckBox { text: "Blur behind window (experimental)"; enabled: root.window-blur-available && root.window-translucent; checked <=> root.window-blur-enabled; }
+            Text { text: root.window-appearance-status + " Changes apply to this session."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Text { text: "Default maximum quality"; color: Colors.text; font-size: 18px; height: 26px; }
             ConfirmedChoice { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
             Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }
@@ -867,7 +928,7 @@ export component App inherits Window {
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.
-    if jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
+    if jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || status-popup.is-open: Rectangle {
         x: 0px; y: 0px; width: root.width; height: root.height;
         background: #00000070;
     }

@@ -6,7 +6,31 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current visual slice follows the user's YouTube player reference: shared
+The current watch/window slice places descriptions and bounded real comment
+pages directly below the player title/actions in the outer watch scroll. Long
+descriptions expand inline; successful comment paging reveals the new page's
+heading without taking focus. Already-resolved account descriptions remain
+visible while account comments stay unavailable, with no guest fallback request.
+The volume slider now uses the same 40px row height as the player buttons, and
+the search field is a shared pill-shaped native text input with IME support.
+
+Normal windows use shared custom titlebar controls and native move/resize/state
+operations. Settings expose opt-in session-local chrome translucency and a
+separate experimental macOS blur request; main content and video remain opaque.
+Fullscreen/PiP suspend blur and hide the normal titlebar. Other platform blur
+paths are explicitly unavailable. The adapter uses the existing locked Slint/
+Winit APIs and retains the existing close/PiP lifecycle. Four unchanged icons
+were added from the pinned official Lucide revision; all icon/license checksums
+passed. See [inline comments](comments.md) and [window appearance](window-appearance.md).
+
+`cargo fmt --all -- --check`, strict all-target
+`cargo clippy --workspace --all-targets --locked -- -D warnings`, and
+`cargo build --workspace --locked` passed. No new dependency/feature/lockfile change, test suite, native UI run,
+account operation or resource measurement is part of this pass. Native layout,
+volume alignment, text/IME/accessibility, window controls, translucency/blur and
+composition behavior still require runtime qualification on every target.
+
+The preceding visual slice follows the user's YouTube player reference: shared
 controls sit at the video's bottom edge over a restrained dark fade, with a
 thin red timeline, play/volume/time at left, and captions/settings/PiP/fullscreen
 at right. Existing attributed Lucide assets render at 24px. Elapsed/total time
