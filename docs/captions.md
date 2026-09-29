@@ -122,7 +122,8 @@ already deleted. An epoch rejects stale download/file results after a timeout or
 superseding clear. No filesystem deletion, directory scan or wait runs on Slint.
 A 15-second file-phase deadline reports incomplete cleanup without deleting leased
 files or claiming that the library was cleared. The library transaction begins
-only after the caption acknowledgement; once accepted, its own typed terminal
+only after the caption acknowledgement and the [artwork purge](artwork-cache.md);
+once accepted, its own typed terminal
 response is required. Unrelated startup/read failures cannot finish that phase.
 Committed privacy defaults and empty local models are installed before reopening
 admission, so a later volume/theme change cannot resurrect an old history opt-in.

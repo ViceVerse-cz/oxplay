@@ -4,7 +4,10 @@
 //! identifiers never enter a provider or player request.
 use crate::{App, LibraryUi, UiState, home_ui, library};
 use serein_core::{VideoId, VideoSummary};
-use serein_storage::{LocalPlaylistId, LocalStore};
+use serein_storage::{
+    LocalPlaylistId, LocalStore,
+    artwork::{ArtworkCache, CacheLimit},
+};
 use slint::{ComponentHandle, Model, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -18,7 +21,7 @@ use std::{
 const COUNT: usize = 205;
 const NAME: &str = "TEST FIXTURE — offline Home saved videos";
 const IMPORT_NAME: &str = "TEST FIXTURE — offline Home import";
-const COMPLETE: usize = 11;
+const COMPLETE: usize = 12;
 const DEADLINE: Duration = Duration::from_secs(35);
 
 pub struct Fixture {
@@ -49,6 +52,29 @@ pub fn prepare_root(root: &Path) -> io::Result<Fixture> {
             .map_err(io::Error::other)?;
     }
     drop(store);
+
+    // Generated diagnostic pixels, never downloaded/provider artwork. The
+    // production worker must reopen these after its preference hydration; the
+    // fixture does not hold a cache lock or a connection during the UI run.
+    let cache_path = directory
+        .canonicalize()?
+        .join("artwork-youtube-guest-default-locale-v1");
+    let mut artwork =
+        ArtworkCache::open(&cache_path, CacheLimit::Mib256).map_err(io::Error::other)?;
+    for index in 0..COUNT + 2 {
+        let pixels = image::RgbaImage::from_fn(32, 18, |x, y| {
+            let band = if (x / 8 + y / 6) % 2 == 0 { 220 } else { 80 };
+            image::Rgba([band, (index % 200 + 30) as u8, 110, 255])
+        });
+        let mut png = io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(pixels)
+            .write_to(&mut png, image::ImageFormat::Png)
+            .map_err(io::Error::other)?;
+        artwork
+            .put(&video(index).id, png.get_ref())
+            .map_err(io::Error::other)?;
+    }
+    drop(artwork);
 
     let source = LocalStore::in_memory().map_err(io::Error::other)?;
     let imported = source
@@ -195,7 +221,7 @@ impl Driver {
                 );
                 if completed == COMPLETE {
                     eprintln!(
-                        "offline-home completed: startup/pages/unchanged-refresh/navigation/save/remove/import/delete; synthetic local data only; no playback or resource measurement"
+                        "offline-home completed: startup/pages/cached-artwork/unchanged-refresh/navigation/save/remove/import/delete/confirmed-clear; synthetic local data only; no playback or resource measurement"
                     );
                     return;
                 }
@@ -229,6 +255,27 @@ impl Driver {
         if app.get_home_error() {
             return Err("Home reported a storage error");
         }
+        if self.stage.get() == 11 {
+            if state.caption_cache.active() {
+                return Ok(false);
+            }
+            if !app
+                .global::<LibraryUi>()
+                .get_status()
+                .starts_with("Local library, cached artwork and captions cleared.")
+            {
+                return Err(
+                    "Local-data clearing did not confirm all worker purges and database deletion",
+                );
+            }
+            if state.model.row_count() != 0
+                || !state.playlists.borrow().is_empty()
+                || home_ui::acknowledged_videos(state).is_none_or(|rows| !rows.is_empty())
+            {
+                return Err("Clearing retained local Home rows or public artwork references");
+            }
+            return Ok(true);
+        }
         if app.get_page() != 0
             || !app.get_home_active()
             || app.get_home_loading()
@@ -247,6 +294,9 @@ impl Driver {
             _ => (105..205).rev().collect(),
         };
         if !matches_page(&rows, &expected) {
+            return Ok(false);
+        }
+        if !artwork_ready(app, state) {
             return Ok(false);
         }
         if state.model.row_count() != rows.len() {
@@ -288,6 +338,11 @@ impl Driver {
                 }
                 if self.stage.get() == 1 {
                     app.invoke_more();
+                } else {
+                    app.global::<LibraryUi>().invoke_clear_local();
+                    if !state.caption_cache.active() {
+                        return Err("Clear-local-data was not admitted");
+                    }
                 }
             }
             2 => app.invoke_more(),
@@ -340,6 +395,36 @@ impl Driver {
     }
 }
 
+fn artwork_ready(app: &App, state: &UiState) -> bool {
+    let worker = state.thumbnails.borrow();
+    let stats = worker.statistics();
+    if stats.cache_hits == 0
+        || stats.admitted_generation != worker.generation()
+        || stats.pending != 0
+        || stats.inflight != 0
+        || stats.ready != 0
+    {
+        return false;
+    }
+    drop(worker);
+    let (first, end) = state.thumbnail_range.get();
+    let visible_first = app.get_feed_thumbnail_first().max(0) as usize;
+    let visible_end = app.get_feed_thumbnail_end().max(0) as usize;
+    first < end
+        && end <= state.model.row_count()
+        && end - first <= 40
+        && visible_first < visible_end
+        && visible_first >= first
+        && visible_end <= end
+        && (first..end).all(|index| {
+            state.model.row_data(index).is_some_and(|row| {
+                row.thumbnail_ready
+                    && row.thumbnail.size().width == 320
+                    && row.thumbnail.size().height == 180
+            })
+        })
+}
+
 fn matches_page(rows: &[VideoSummary], expected: &[usize]) -> bool {
     rows.len() == expected.len()
         && rows.iter().zip(expected).all(|(row, index)| {
@@ -372,7 +457,7 @@ mod tests {
     #[cfg(unix)]
     fn fresh_private_fixture_uses_real_pages_and_import_without_reusing_roots() {
         static NEXT: AtomicU64 = AtomicU64::new(0);
-        let root = std::env::temp_dir().join(format!(
+        let root = std::env::temp_dir().canonicalize().unwrap().join(format!(
             "serein-home-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
@@ -418,6 +503,20 @@ mod tests {
             video(206).id
         );
         drop(store);
+        let mut cache = ArtworkCache::open(
+            &root
+                .canonicalize()
+                .unwrap()
+                .join("Serein/artwork-youtube-guest-default-locale-v1"),
+            CacheLimit::Mib256,
+        )
+        .unwrap();
+        let png = cache.get(&video(204).id).unwrap().unwrap();
+        let image = image::load_from_memory(&png).unwrap();
+        assert_eq!((image.width(), image.height()), (32, 18));
+        cache.clear().unwrap();
+        assert!(cache.get(&video(204).id).unwrap().is_none());
+        drop(cache);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

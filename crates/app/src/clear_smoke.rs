@@ -83,9 +83,9 @@ impl Smoke {
                             _ => {
                                 assert!(!state.caption_cache.active(), "clear did not finish");
                                 assert!(
-                                    library
-                                        .get_status()
-                                        .starts_with("Local library and cached captions cleared."),
+                                    library.get_status().starts_with(
+                                        "Local library, cached artwork and captions cleared."
+                                    ),
                                     "clear did not report confirmed success"
                                 );
                                 assert!(

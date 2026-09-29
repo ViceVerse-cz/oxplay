@@ -2,6 +2,110 @@
 use super::*;
 
 #[test]
+fn artwork_limit_persists_reopens_and_clear_restores_the_bounded_default() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("artwork-limit.sqlite3");
+    for thumbnail_cache_mib in [0, 32, 128, 256] {
+        let prefs = LocalPreferences {
+            thumbnail_cache_mib,
+            volume_percent: 41,
+            theme: Theme::Dark,
+            ..Default::default()
+        };
+        LocalStore::open(&path)
+            .unwrap()
+            .set_preferences(prefs)
+            .unwrap();
+        assert_eq!(
+            LocalStore::open(&path).unwrap().preferences().unwrap(),
+            prefs
+        );
+    }
+    let mut store = LocalStore::open(&path).unwrap();
+    let mut prefs = store.preferences().unwrap();
+    prefs.thumbnail_cache_mib = 0;
+    store.set_preferences(prefs).unwrap();
+    store.clear_local_data().unwrap();
+    assert_eq!(store.preferences().unwrap(), LocalPreferences::default());
+    assert_eq!(store.preferences().unwrap().thumbnail_cache_mib, 256);
+}
+
+#[test]
+fn artwork_limit_rejects_invalid_writes_constraints_and_corrupt_readback() {
+    let store = LocalStore::in_memory().unwrap();
+    let before = store.preferences().unwrap();
+    for thumbnail_cache_mib in [1, 31, 33, 127, 129, 255, 257, u16::MAX] {
+        assert_eq!(
+            store.set_preferences(LocalPreferences {
+                thumbnail_cache_mib,
+                volume_percent: 7,
+                ..before
+            }),
+            Err(StorageError::InvalidInput)
+        );
+        assert_eq!(store.preferences().unwrap(), before);
+        assert!(
+            store
+                .connection
+                .execute(
+                    "UPDATE local_preferences SET thumbnail_cache_mib=?1",
+                    [thumbnail_cache_mib]
+                )
+                .is_err()
+        );
+    }
+    store
+        .connection
+        .execute_batch("PRAGMA ignore_check_constraints=ON;")
+        .unwrap();
+    for invalid in [-1_i64, 33, 65536] {
+        store
+            .connection
+            .execute(
+                "UPDATE local_preferences SET thumbnail_cache_mib=?1",
+                [invalid],
+            )
+            .unwrap();
+        assert_eq!(store.preferences(), Err(StorageError::CorruptData));
+    }
+}
+
+#[test]
+fn v5_artwork_migration_preserves_collections_and_existing_preferences() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("v5.sqlite3");
+    {
+        let connection = Connection::open(&path).unwrap();
+        for schema in [
+            include_str!("schema_v1.sql"),
+            include_str!("schema_v2.sql"),
+            include_str!("schema_v3.sql"),
+            include_str!("schema_v4.sql"),
+            include_str!("schema_v5.sql"),
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+        connection.execute_batch("PRAGMA user_version=5;
+            UPDATE local_preferences SET volume_percent=43,theme='dark',quality_height=720,speed_millis=1500;
+            INSERT INTO local_playlists(name) VALUES ('Synthetic preserved collection');
+            INSERT INTO local_playlist_items(playlist_id,video_id,title,channel_name) VALUES (1,'00000000001','Synthetic saved title','Synthetic channel');").unwrap();
+    }
+    let store = LocalStore::open(&path).unwrap();
+    let prefs = store.preferences().unwrap();
+    assert_eq!(store.schema_version().unwrap(), 6);
+    assert_eq!(prefs.thumbnail_cache_mib, 256);
+    assert_eq!((prefs.volume_percent, prefs.theme), (43, Theme::Dark));
+    assert_eq!(prefs.playback.quality, QualityCeiling::P720);
+    assert_eq!(prefs.playback.speed, PlaybackSpeed::OneAndHalf);
+    assert_eq!(prefs.privacy, Preferences::default());
+    let lists = store.playlists(None, 100).unwrap();
+    assert_eq!(lists.items.len(), 1);
+    let videos = store.playlist_videos(lists.items[0].id, None, 100).unwrap();
+    assert_eq!(videos.items.len(), 1);
+    assert_eq!(videos.items[0].title, "Synthetic saved title");
+}
+
+#[test]
 fn recently_saved_deduplicates_across_pages_without_urls_or_history() {
     let mut store = LocalStore::in_memory().unwrap();
     let first = store.create_playlist("Synthetic first").unwrap();
@@ -121,7 +225,7 @@ fn recently_saved_v4_migration_preserves_data_and_adds_lookup_index() {
     connection = before.connection;
     migrate(&mut connection).unwrap();
     let store = LocalStore { connection };
-    assert_eq!(store.schema_version().unwrap(), 5);
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
     assert_eq!(store.preferences().unwrap(), LocalPreferences::default());
     assert_eq!(
         store.recently_saved_videos(None, 100).unwrap().items[0].id,

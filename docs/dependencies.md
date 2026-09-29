@@ -222,3 +222,8 @@ video surface and context integration, not another application UI. Reviewed loca
 headers identify SDK `macosx27.0`; its OpenGL APIs remain present but deprecated.
 The existing Slint revision, GPL distribution route and default presenter remain
 unchanged. See the [unqualified native-child implementation](experiments/native-video-child.md).
+
+The guest artwork cache uses the already locked `image`, `libc`, SQLite and
+Tokio dependencies. No framework revision, production feature combination or
+license route changed for this slice. Cache path/platform limitations and the
+schema-v6 migration are recorded in [artwork-cache.md](artwork-cache.md).

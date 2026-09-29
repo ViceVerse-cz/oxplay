@@ -431,6 +431,9 @@ fn video_row(video: &serein_core::VideoSummary) -> VideoRow {
     }
 }
 fn viewport(state: &UiState, first: usize, end: usize, visible: Option<(usize, usize)>) {
+    if state.caption_cache.active() {
+        return;
+    }
     let len = state.model.row_count();
     let (first, end) = groups::thumbnail_window(len, (first, end), visible);
     if state.thumbnail_range.replace((first, end)) == (first, end) {
@@ -466,7 +469,7 @@ fn viewport(state: &UiState, first: usize, end: usize, visible: Option<(usize, u
                         index: row % library_fixture::THUMBNAILS,
                     }
                 } else {
-                    thumbnails::Source::Remote(state.guest_ui.thumbnail(row)?)
+                    state.guest_ui.thumbnail_source(row)?
                 },
             })
         })
@@ -491,14 +494,34 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     let weak = app.as_weak();
     app.on_thumbnail_wake(move || {
+        if let Some(app) = weak.upgrade() {
+            let configured = s.thumbnails.borrow_mut().take_cache_limit_result();
+            if let Some((mib, result)) = configured {
+                library_ui::thumbnail_cache_result(&app, &s, mib, result);
+                s.thumbnail_attempted.borrow_mut().clear();
+                s.thumbnail_range.set((usize::MAX, usize::MAX));
+                app.invoke_refresh_visible();
+            }
+            caption_cache::artwork_finished(&app, &s);
+        }
         loop {
             let ready = s.thumbnails.borrow_mut().take();
             let Some(ready) = ready else { break };
-            s.thumbnail_attempted.borrow_mut().insert(ready.row);
-            let Some(pixels) = ready.pixels else { continue };
+            if s.caption_cache.active() {
+                continue;
+            }
             let Some(mut row) = s.model.row_data(ready.row) else {
                 continue;
             };
+            if ready
+                .video_id
+                .as_ref()
+                .is_some_and(|id| row.kind != "Video" || row.id.as_str() != id.as_str())
+            {
+                continue;
+            }
+            s.thumbnail_attempted.borrow_mut().insert(ready.row);
+            let Some(pixels) = ready.pixels else { continue };
             let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
                 pixels.as_raw(),
                 pixels.width(),
@@ -794,6 +817,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let weak = app.as_weak();
     let thumbnails = thumbnails::Worker::new(
+        library_path
+            .parent()
+            .expect("library has a profile directory")
+            .join("artwork-youtube-guest-default-locale-v1"),
+        None,
         move || {
             let _ = weak.upgrade_in_event_loop(|app| app.invoke_thumbnail_wake());
         },
@@ -1394,7 +1422,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // while the shared popup is still open. Ordinary captures remain at15s.
         let seconds = if options.save_smoke {
             37
-        } else if options.pip_smoke {
+        } else if options.pip_smoke || options.home_smoke {
             6
         } else {
             15

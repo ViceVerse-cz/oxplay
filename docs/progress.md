@@ -6,7 +6,27 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The current slice implements [local-first Home](local-home.md). Home is now a
+The newest slice adds a [bounded guest artwork cache](artwork-cache.md), with
+Off/32/128/256 MiB Settings controls and schema-v6 persistence. Saved Home videos
+read it without HTTP fallback. Image identities survive unchanged refreshes;
+reindexed rows reject old completions. Clear local data waits for caption and
+artwork cleanup before SQLite deletion, then discards retained public rows.
+No account-derived artwork or credential material enters this cache.
+
+The integrated local suite passed 411 Rust tests (four external integrations
+ignored), all 163 Python tooling tests, formatting and strict Clippy. The native
+debug Home exercise passed twelve stages including cached artwork, unchanged
+refresh, navigation, local mutations and the actual clear callback. Its
+1000×720 dark screenshot was inspected. Post-exit read-only inspection found
+schema 6, zero saved entries/collections and only the empty cache lock file.
+Evidence is in `artifacts/artwork-debug-v1`. The native process exited 0; the
+first post-exit inspection used a wrong table name, then was corrected and
+completed without changing the database. The locked release build passed the
+same twelve stages at 760×600/light, exited 0, and left no cached artwork or
+saved entries. Its capture and the ordinary light Settings screen were inspected;
+evidence and executable hash are in the cache notes. Push/CI are pending. Performance/usage tests remain paused at the user's request.
+
+The preceding slice implements [local-first Home](local-home.md). Home is now a
 distinct route with a bounded, deduplicated page of saved local videos; clicking
 Home from a public catalog returns to local content. SQLite schema v5 adds the
 lookup index without changing existing data. Local reads have their own tickets,
@@ -15,7 +35,7 @@ playback and cancellation without a recurring timer or automatic retry loop.
 The shared catalog/group models reconcile unchanged pages without notifications;
 metadata/membership changes retain model identity and restore focused video IDs.
 
-The final integrated test suite passed395 Rust tests (four ignored), all163
+The final integrated test suite passed395 Rust tests (four ignored), all 163
 Python tooling tests, formatting, strict Clippy and the locked release build. Debug native Home passed all11 offline functional stages and
 exited cleanly: three bounded pages, unchanged Home rereads, navigation, committed
 Save/Remove/Import/Delete and correct updated rows. Its 1000×720 capture was

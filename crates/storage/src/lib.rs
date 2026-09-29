@@ -3,6 +3,7 @@
 //! thread, never the Slint event-loop thread. LocalStore has no account or secret
 //! API. The separate vault module protects explicitly imported opaque sessions.
 //! Public errors never echo SQL, credentials, or input values.
+pub mod artwork;
 mod backup;
 mod history;
 mod library_transfer;
@@ -16,7 +17,7 @@ use serein_core::{
 };
 use std::{fmt, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 5;
+const SCHEMA_VERSION: u32 = 6;
 pub const MAX_PAGE_SIZE: u32 = 100;
 const MAX_TEXT_BYTES: usize = 1024;
 
@@ -88,6 +89,8 @@ pub struct LocalPreferences {
     pub volume_percent: u8,
     pub theme: Theme,
     pub playback: PlaybackPreferences,
+    /// Encoded public-video artwork only; zero disables and clears disk caching.
+    pub thumbnail_cache_mib: u16,
 }
 impl Default for LocalPreferences {
     fn default() -> Self {
@@ -96,6 +99,7 @@ impl Default for LocalPreferences {
             volume_percent: 100,
             theme: Theme::System,
             playback: PlaybackPreferences::default(),
+            thumbnail_cache_mib: 256,
         }
     }
 }
@@ -310,8 +314,8 @@ impl LocalStore {
     }
 
     pub fn preferences(&self) -> Result<LocalPreferences> {
-        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis FROM local_preferences WHERE id=1",[],|row| {
-            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?))
+        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis,thumbnail_cache_mib FROM local_preferences WHERE id=1",[],|row| {
+            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?,row.get::<_,i64>(9)?))
         }).optional()?.ok_or(StorageError::CorruptData)?;
         Ok(LocalPreferences {
             privacy: values.0,
@@ -326,11 +330,15 @@ impl LocalStore {
                 quality: QualityCeiling::from_height(values.3).ok_or(StorageError::CorruptData)?,
                 speed: PlaybackSpeed::from_millis(values.4).ok_or(StorageError::CorruptData)?,
             },
+            thumbnail_cache_mib: match values.5 {
+                0 | 32 | 128 | 256 => values.5 as u16,
+                _ => return Err(StorageError::CorruptData),
+            },
         })
     }
 
     pub fn set_preferences(&self, prefs: LocalPreferences) -> Result<()> {
-        if prefs.volume_percent > 100 {
+        if prefs.volume_percent > 100 || !matches!(prefs.thumbnail_cache_mib, 0 | 32 | 128 | 256) {
             return Err(StorageError::InvalidInput);
         }
         let theme = match prefs.theme {
@@ -338,7 +346,7 @@ impl LocalStore {
             Theme::Light => "light",
             Theme::Dark => "dark",
         };
-        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis()])?;
+        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9,thumbnail_cache_mib=?10 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis(),prefs.thumbnail_cache_mib])?;
         Ok(())
     }
 
@@ -452,6 +460,9 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     }
     if version < 5 {
         tx.execute_batch(include_str!("schema_v5.sql"))?;
+    }
+    if version < 6 {
+        tx.execute_batch(include_str!("schema_v6.sql"))?;
     }
     tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     tx.commit()?;

@@ -377,6 +377,51 @@ pub fn save_speed(app: &App, state: &UiState, speed: serein_core::PlaybackSpeed)
     prefs.playback.speed = speed;
     save_preferences(app, state, prefs)
 }
+
+fn thumbnail_cache_mib(index: i32) -> Option<u16> {
+    match index {
+        0 => Some(0),
+        1 => Some(32),
+        2 => Some(128),
+        3 => Some(256),
+        _ => None,
+    }
+}
+
+fn thumbnail_cache_index(mib: u16) -> Option<i32> {
+    match mib {
+        0 => Some(0),
+        32 => Some(1),
+        128 => Some(2),
+        256 => Some(3),
+        _ => None,
+    }
+}
+
+/// Apply only a committed or freshly hydrated preference. The thumbnail worker
+/// performs disk IO asynchronously; the UI callback merely sends its config.
+fn apply_thumbnail_cache(app: &App, state: &UiState, mib: u16) {
+    app.set_thumbnail_cache_index(thumbnail_cache_index(mib).unwrap_or(0));
+    let result = state.thumbnails.borrow_mut().set_cache_limit(mib);
+    if let Err(error) = result {
+        status(app, error);
+    }
+}
+
+/// Called by the existing thumbnail wake after worker IO completes. Ignore a
+/// superseded setting's failure; it cannot describe the current saved policy.
+pub fn thumbnail_cache_result(
+    app: &App,
+    state: &UiState,
+    mib: u16,
+    result: Result<(), &'static str>,
+) {
+    if state.preferences.get().thumbnail_cache_mib == mib
+        && let Err(error) = result
+    {
+        status(app, error);
+    }
+}
 fn selected(app: &App, s: &UiState) -> Option<LocalPlaylistId> {
     s.playlists
         .borrow()
@@ -863,6 +908,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                       app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
                       crate::playback_preferences::hydrate(&app, &s, prefs.playback);
+                      apply_thumbnail_cache(&app, &s, prefs.thumbnail_cache_mib);
                     }
                     // Startup/create summary is followed by a correlated page.
                     if s.library_ui.reads.borrow().pending.is_none() {
@@ -910,6 +956,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 library::Response::BackgroundError(error) => status(&app, error),
                 library::Response::PreferencesFailed(write, error) => {
                     let latest = s.library_ui.finish_preferences(write);
+                    app.set_thumbnail_cache_index(thumbnail_cache_index(s.preferences.get().thumbnail_cache_mib).unwrap_or(0));
                     if latest {
                         crate::playback_preferences::save_failed(&app, &s, write.value.playback);
                     }
@@ -924,7 +971,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     s.library_ui.finish_preferences(write);
                     let prefs = write.value;
                     let history_changed = s.preferences.get().privacy.local_history != prefs.privacy.local_history;
+                    let thumbnail_changed = s.preferences.get().thumbnail_cache_mib != prefs.thumbnail_cache_mib;
                     s.preferences.set(prefs);
+                    app.set_thumbnail_cache_index(thumbnail_cache_index(prefs.thumbnail_cache_mib).unwrap_or(0));
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
                     app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
@@ -938,6 +987,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                             "Preferences saved. Local history is off."
                         },
                     );
+                    if thumbnail_changed { apply_thumbnail_cache(&app, &s, prefs.thumbnail_cache_mib); }
                 }
                 library::Response::Saved => {
                     crate::home_ui::changed(&app, &s);
@@ -1020,6 +1070,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     );
                 }
                 library::Response::Cleared(prefs) => {
+                    crate::guest_ui::clear_cached_catalog(&app, &s);
                     crate::home_ui::cleared(&app, &s);
                     cancel_name(&app,&s);
                     s.library_ui.name_write.borrow_mut().take();
@@ -1054,6 +1105,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     publish_collections(&app, &s, Vec::new(), None);
                     publish(&app, &s, Vec::new(), None);
                     crate::caption_cache::library_finished(&app, &s, Ok(()));
+                    apply_thumbnail_cache(&app, &s, prefs.thumbnail_cache_mib);
                 }
             }
         }
@@ -1475,6 +1527,20 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
+    app.on_thumbnail_cache_changed(move |index| {
+        let Some(app) = weak.upgrade() else { return };
+        if let Some(mib) = thumbnail_cache_mib(index) {
+            let mut prefs = desired_preferences(&s);
+            prefs.thumbnail_cache_mib = mib;
+            save_preferences(&app, &s, prefs);
+        }
+        // The selector reflects the committed policy until its write succeeds.
+        app.set_thumbnail_cache_index(
+            thumbnail_cache_index(s.preferences.get().thumbnail_cache_mib).unwrap_or(0),
+        );
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
     app.global::<LibraryUi>().on_transfer(move |kind| {
         let Some(app) = weak.upgrade() else { return };
         if s.library_ui.pending.get() {
@@ -1586,6 +1652,20 @@ pub fn open_tab(app: &App, state: &UiState, tab: i32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn thumbnail_cache_selector_admits_only_supported_persisted_limits() {
+        for (index, mib) in [(0, 0), (1, 32), (2, 128), (3, 256)] {
+            assert_eq!(thumbnail_cache_mib(index), Some(mib));
+            assert_eq!(thumbnail_cache_index(mib), Some(index));
+        }
+        for index in [i32::MIN, -1, 4, i32::MAX] {
+            assert_eq!(thumbnail_cache_mib(index), None);
+        }
+        for mib in [1, 31, 127, 257, u16::MAX] {
+            assert_eq!(thumbnail_cache_index(mib), None);
+        }
+    }
     #[test]
     fn rename_target_rejects_selection_navigation_and_reset_changes() {
         let store = serein_storage::LocalStore::in_memory().unwrap();

@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Anonymous, viewport-scoped images. No disk cache, cookies, proxy inheritance,
+//! Anonymous, viewport-scoped images. Guest video artwork has a bounded cache.
+//! No cookies, proxy inheritance,
 //! redirects, or UI-thread decoding. At most four requests and eight ready images.
+use serein_core::VideoId;
+use serein_storage::artwork::{ArtworkCache, CacheLimit};
 use std::{
     io::Cursor,
+    path::PathBuf,
     sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicU64, Ordering},
     },
     thread,
@@ -20,6 +24,13 @@ pub struct Request {
 #[derive(Clone)]
 pub enum Source {
     Remote(String),
+    /// Only a public guest video catalog row may admit this source.
+    RemoteGuestVideo {
+        id: VideoId,
+        url: String,
+    },
+    /// Disk-only lookup: a miss must never cause a network request.
+    CachedVideo(VideoId),
     /// Only an explicitly admitted offline developer fixture can create this.
     Fixture {
         source: Arc<crate::library_fixture::FixtureSource>,
@@ -35,6 +46,9 @@ pub struct Statistics {
     pub ready_peak: u64,
     pub started: u64,
     pub remote_started: u64,
+    pub cache_hits: u64,
+    pub cache_misses: u64,
+    pub cache_errors: u64,
     pub decoded: u64,
     pub failed: u64,
     pub cancelled: u64,
@@ -52,6 +66,9 @@ struct Counters {
     ready_peak: AtomicU64,
     started: AtomicU64,
     remote_started: AtomicU64,
+    cache_hits: AtomicU64,
+    cache_misses: AtomicU64,
+    cache_errors: AtomicU64,
     decoded: AtomicU64,
     failed: AtomicU64,
     cancelled: AtomicU64,
@@ -69,6 +86,9 @@ impl Counters {
             ready_peak: self.ready_peak.load(Ordering::SeqCst),
             started: self.started.load(Ordering::SeqCst),
             remote_started: self.remote_started.load(Ordering::SeqCst),
+            cache_hits: self.cache_hits.load(Ordering::SeqCst),
+            cache_misses: self.cache_misses.load(Ordering::SeqCst),
+            cache_errors: self.cache_errors.load(Ordering::SeqCst),
             decoded: self.decoded.load(Ordering::SeqCst),
             failed: self.failed.load(Ordering::SeqCst),
             cancelled: self.cancelled.load(Ordering::SeqCst),
@@ -122,18 +142,44 @@ pub struct Ready {
     pub generation: u64,
     pub row: usize,
     pub pixels: Option<image::RgbaImage>,
+    pub video_id: Option<VideoId>,
 }
+enum Control {
+    Purge(u64),
+    EndPurge(u64),
+}
+#[derive(Default)]
+struct Acknowledgments {
+    purge: Option<(u64, Result<(), &'static str>)>,
+    limit: Option<(u16, Result<(), &'static str>)>,
+}
+type Cache = Arc<Mutex<Option<ArtworkCache>>>;
+
 pub struct Worker {
     command: Option<watch::Sender<Option<Batch>>>,
     results: mpsc::Receiver<Ready>,
     thread: Option<thread::JoinHandle<()>>,
     generation: u64,
     counters: Arc<Counters>,
+    controls: mpsc::Sender<Control>,
+    limits: watch::Sender<Option<CacheLimit>>,
+    acknowledgments: Arc<Mutex<Acknowledgments>>,
+    purge: Option<u64>,
+    purge_serial: u64,
 }
 impl Worker {
-    pub fn new(wake: impl Fn() + Send + Sync + 'static, fixture_diagnostics: bool) -> Self {
+    pub fn new(
+        cache_path: PathBuf,
+        initial_limit: Option<CacheLimit>,
+        wake: impl Fn() + Send + Sync + 'static,
+        fixture_diagnostics: bool,
+    ) -> Self {
         let (command, mut commands) = watch::channel::<Option<Batch>>(None);
         let (results_tx, results) = mpsc::channel(8);
+        let (controls, mut control_rx) = mpsc::channel(2);
+        let (limits, mut limit_rx) = watch::channel(initial_limit);
+        let acknowledgments = Arc::new(Mutex::new(Acknowledgments::default()));
+        let acks = acknowledgments.clone();
         let wake = Arc::new(wake);
         let counters = Arc::new(Counters::default());
         let metrics = counters.clone();
@@ -144,6 +190,9 @@ impl Worker {
             else {
                 return;
             };
+            let cache = Arc::new(Mutex::new(
+                initial_limit.and_then(|limit| ArtworkCache::open(&cache_path, limit).ok()),
+            ));
             runtime.block_on(async move {
                 let Ok(client) = reqwest::Client::builder()
                     .https_only(true).no_proxy().redirect(reqwest::redirect::Policy::none())
@@ -152,6 +201,8 @@ impl Worker {
                 let mut jobs = tokio::task::JoinSet::new();
                 let mut pending: std::collections::VecDeque<(u64, Request)> = std::collections::VecDeque::new();
                 let mut completion_wake = CompletionWake::default();
+                let mut purging = None;
+                let mut deferred_limit = None;
                 loop {
                     while jobs.len() < 4 {
                         let Some((generation, request)) = pending.pop_front() else { break };
@@ -161,17 +212,12 @@ impl Worker {
                         let metrics = metrics.clone();
                         // Count scheduled jobs before removing their pending
                         // count: settled observers must not see a false gap.
+                        let cache = cache.clone();
                         let active = ActiveJob::new(metrics.clone());
                         metrics.pending.store(pending.len() as u64, Ordering::SeqCst);
                         jobs.spawn(async move {
                             let mut active = active;
-                            let pixels = match request.source {
-                                Source::Remote(url) => {
-                                    metrics.remote_started.fetch_add(1, Ordering::SeqCst);
-                                    fetch(&client, &url).await
-                                },
-                                Source::Fixture { source, index } => source.read(index).ok().and_then(|bytes| decode(&bytes)),
-                            };
+                            let (pixels, video_id) = resolve_source(&client, request.source, &cache, &metrics).await;
                             if pixels.is_some() { metrics.decoded.fetch_add(1, Ordering::SeqCst); }
                             else { metrics.failed.fetch_add(1, Ordering::SeqCst); }
                             if let Ok(permit) = results.reserve().await {
@@ -180,7 +226,7 @@ impl Worker {
                                 // do not confuse delayed consumer accounting
                                 // with a queue larger than its actual bound.
                                 metrics.ready_peak.fetch_max((8 - results.capacity()) as u64, Ordering::SeqCst);
-                                permit.send(Ready { generation, row: request.row, pixels });
+                                permit.send(Ready { generation, row: request.row, pixels, video_id });
                                 wake();
                             }
                             active.completed = true;
@@ -197,12 +243,64 @@ impl Worker {
                         wake();
                     }
                     tokio::select! {
+                        biased;
+                        control = control_rx.recv() => {
+                            let Some(control) = control else { break };
+                            match control {
+                                Control::Purge(id) => {
+                                    purging = Some(id);
+                                    // UI blocks replace synchronously before the next event.
+                                    // Drop only pre-barrier batches here, never post-End work.
+                                    commands.borrow_and_update();
+                                    jobs.abort_all();
+                                    while jobs.join_next().await.is_some() {}
+                                    pending.clear();
+                                    metrics.pending.store(0, Ordering::SeqCst);
+                                    // No job can retain a cache write across this barrier.
+                                    let result = clear_cache(&cache, &cache_path);
+                                    acks.lock().unwrap().purge = Some((id, result));
+                                    wake();
+                                }
+                                Control::EndPurge(id) if purging == Some(id) => {
+                                    purging = None;
+                                    if let Some(limit) = deferred_limit.take() {
+                                        let result = configure_cache(&cache, &cache_path, limit);
+                                        acks.lock().unwrap().limit = Some((limit.mib(), result));
+                                        wake();
+                                    }
+                                }
+                                Control::EndPurge(_) => {}
+                            }
+                        }
+                        changed = limit_rx.changed() => {
+                            if changed.is_err() { break; }
+                            let Some(limit) = *limit_rx.borrow_and_update() else { continue; };
+                            if purging.is_some() {
+                                deferred_limit = Some(limit);
+                            } else {
+                                let result = configure_cache(&cache, &cache_path, limit);
+                                acks.lock().unwrap().limit = Some((limit.mib(), result));
+                                wake();
+                            }
+                        }
                         changed = commands.changed() => {
                             if changed.is_err() { break; }
                             jobs.abort_all();
                             while jobs.join_next().await.is_some() {}
                             pending.clear();
-                            if let Some(batch) = commands.borrow_and_update().clone() {
+                            let batch = commands.borrow_and_update().clone();
+                            // Apply a coalesced preference before admitting any image jobs.
+                            if limit_rx.has_changed().unwrap_or(false) {
+                                let Some(limit) = *limit_rx.borrow_and_update() else { continue; };
+                                if purging.is_some() {
+                                    deferred_limit = Some(limit);
+                                } else {
+                                    let result = configure_cache(&cache, &cache_path, limit);
+                                    acks.lock().unwrap().limit = Some((limit.mib(), result));
+                                    wake();
+                                }
+                            }
+                            if purging.is_none() && let Some(batch) = batch {
                                 pending.extend(batch.requests.into_iter().take(40).map(|r| (batch.generation, r)));
                                 metrics.pending.store(pending.len() as u64, Ordering::SeqCst);
                                 metrics.admitted_generation.store(batch.generation, Ordering::SeqCst);
@@ -223,21 +321,75 @@ impl Worker {
             thread: Some(thread),
             generation: 0,
             counters,
+            controls,
+            limits,
+            acknowledgments,
+            purge: None,
+            purge_serial: 0,
         }
     }
-    pub fn replace(&mut self, requests: Vec<Request>) -> u64 {
+    pub fn replace(&mut self, mut requests: Vec<Request>) -> u64 {
+        requests.truncate(40);
         self.generation += 1;
         while self.results.try_recv().is_ok() {
             self.counters.ready.fetch_sub(1, Ordering::SeqCst);
             self.counters.stale.fetch_add(1, Ordering::SeqCst);
         }
-        if let Some(command) = &self.command {
+        if self.purge.is_none()
+            && let Some(command) = &self.command
+        {
             command.send_replace(Some(Batch {
                 generation: self.generation,
                 requests,
             }));
         }
         self.generation
+    }
+    pub fn set_cache_limit(&mut self, mib: u16) -> Result<(), &'static str> {
+        let limit = CacheLimit::from_mib(mib).ok_or("Invalid artwork cache limit.")?;
+        self.limits
+            .send(Some(limit))
+            .map_err(|_| "Artwork worker is unavailable.")
+    }
+    pub fn take_cache_limit_result(&self) -> Option<(u16, Result<(), &'static str>)> {
+        self.acknowledgments.lock().unwrap().limit.take()
+    }
+    pub fn begin_purge(&mut self) -> Result<u64, &'static str> {
+        if self.purge.is_some() {
+            return Err("Artwork cleanup is already in progress.");
+        }
+        let id = self
+            .purge_serial
+            .checked_add(1)
+            .ok_or("Artwork cleanup is unavailable.")?;
+        self.controls
+            .try_send(Control::Purge(id))
+            .map_err(|_| "Artwork worker is busy or unavailable.")?;
+        self.purge_serial = id;
+        self.purge = Some(id);
+        self.replace(Vec::new()); // synchronous publication invalidation, no new batch
+        Ok(id)
+    }
+    pub fn purge_result(&self, id: u64) -> Option<Result<(), &'static str>> {
+        self.acknowledgments
+            .lock()
+            .unwrap()
+            .purge
+            .filter(|(actual, _)| *actual == id)
+            .map(|(_, result)| result)
+    }
+    pub fn end_purge(&mut self, id: u64) -> Result<(), &'static str> {
+        if self.purge != Some(id) {
+            return Err("Artwork cleanup identity changed.");
+        }
+        if self.purge_result(id).is_none() {
+            return Err("Artwork cleanup has not completed.");
+        }
+        self.controls
+            .try_send(Control::EndPurge(id))
+            .map_err(|_| "Artwork worker is busy or unavailable.")?;
+        self.purge = None;
+        Ok(())
     }
     pub fn take(&mut self) -> Option<Ready> {
         while let Ok(result) = self.results.try_recv() {
@@ -268,6 +420,93 @@ impl Drop for Worker {
         if let Some(thread) = self.thread.take() {
             let _ = thread.join();
         }
+    }
+}
+fn configure_cache(
+    cache: &Cache,
+    path: &std::path::Path,
+    limit: CacheLimit,
+) -> Result<(), &'static str> {
+    let mut cache = cache.lock().unwrap();
+    if let Some(cache) = cache.as_mut() {
+        cache
+            .set_limit(limit)
+            .map_err(|_| "Artwork cache configuration failed.")
+    } else {
+        *cache =
+            Some(ArtworkCache::open(path, limit).map_err(|_| "Artwork cache is unavailable.")?);
+        Ok(())
+    }
+}
+fn clear_cache(cache: &Cache, path: &std::path::Path) -> Result<(), &'static str> {
+    let mut cache = cache.lock().unwrap();
+    match cache.as_mut() {
+        Some(cache) => cache.clear(),
+        None => ArtworkCache::clear_if_absent(path),
+    }
+    .map_err(|_| "Artwork cache could not be cleared.")
+}
+fn cached(cache: &Cache, id: &VideoId, counters: &Counters) -> Option<image::RgbaImage> {
+    let bytes = match cache.lock().unwrap().as_mut().map(|cache| cache.get(id)) {
+        Some(Ok(Some(bytes))) => bytes,
+        Some(Ok(None)) => {
+            counters.cache_misses.fetch_add(1, Ordering::SeqCst);
+            return None;
+        }
+        _ => {
+            counters.cache_errors.fetch_add(1, Ordering::SeqCst);
+            return None;
+        }
+    };
+    let pixels = decode(&bytes);
+    if pixels.is_some() {
+        counters.cache_hits.fetch_add(1, Ordering::SeqCst);
+    } else {
+        counters.cache_errors.fetch_add(1, Ordering::SeqCst);
+    }
+    pixels
+}
+fn store(cache: &Cache, id: &VideoId, pixels: &image::RgbaImage, counters: &Counters) {
+    // This is small normalized artwork, never decoded-video frame transport.
+    let mut png = Cursor::new(Vec::new());
+    let result = pixels
+        .write_to(&mut png, image::ImageFormat::Png)
+        .ok()
+        .filter(|_| png.get_ref().len() <= 512 * 1024)
+        .and_then(|_| cache.lock().unwrap().as_mut()?.put(id, png.get_ref()).ok());
+    if result.is_none() {
+        counters.cache_errors.fetch_add(1, Ordering::SeqCst);
+    }
+}
+async fn resolve_source(
+    client: &reqwest::Client,
+    source: Source,
+    cache: &Cache,
+    counters: &Counters,
+) -> (Option<image::RgbaImage>, Option<VideoId>) {
+    match source {
+        Source::CachedVideo(id) => (cached(cache, &id, counters), Some(id)),
+        Source::RemoteGuestVideo { id, url } => {
+            // Remote requests are explicitly admitted public browsing. A hit can
+            // avoid that request, but only this source may populate the cache.
+            if let Some(pixels) = cached(cache, &id, counters) {
+                return (Some(pixels), Some(id));
+            }
+            counters.remote_started.fetch_add(1, Ordering::SeqCst);
+            let pixels = fetch(client, &url).await;
+            if let Some(pixels) = &pixels {
+                store(cache, &id, pixels, counters);
+            }
+            (pixels, Some(id))
+        }
+        Source::Remote(url) => {
+            counters.remote_started.fetch_add(1, Ordering::SeqCst);
+            (fetch(client, &url).await, None)
+        }
+        Source::Fixture { source, index } => (
+            source.read(index).ok().and_then(|bytes| decode(&bytes)),
+            None,
+        ),
     }
 }
 fn allowed(url: &str) -> bool {
@@ -361,12 +600,19 @@ mod tests {
     fn offscreen_and_replaced_page_completions_cannot_repopulate_new_rows() {
         let (send, results) = mpsc::channel(8);
         let counters = Arc::new(Counters::default());
+        let (controls, _control_rx) = mpsc::channel(2);
+        let (limits, _limit_rx) = watch::channel(Some(CacheLimit::Off));
         let mut worker = Worker {
             command: None,
             results,
             thread: None,
             generation: 4,
             counters: counters.clone(),
+            controls,
+            limits,
+            acknowledgments: Arc::new(Mutex::new(Acknowledgments::default())),
+            purge: None,
+            purge_serial: 0,
         };
         let enqueue = |generation| {
             counters.ready.fetch_add(1, Ordering::SeqCst);
@@ -374,6 +620,7 @@ mod tests {
                 generation,
                 row: 0,
                 pixels: Some(image::RgbaImage::new(2, 2)),
+                video_id: None,
             })
             .unwrap();
         };
@@ -425,5 +672,132 @@ mod tests {
         assert!(wake.take(3, 0, 0)); // Coalesced replacement may skip generation2.
         assert!(!wake.take(2, 0, 0));
         assert!(wake.take(4, 0, 0)); // Empty batch still needs an admission wake.
+    }
+    #[test]
+    fn cache_only_miss_keeps_identity_and_never_admits_http() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let id = VideoId::new("aqz-KE-bpKQ").unwrap();
+        let metrics = Counters::default();
+        let (pixels, identity) = runtime.block_on(resolve_source(
+            &reqwest::Client::builder().no_proxy().build().unwrap(),
+            Source::CachedVideo(id.clone()),
+            &Arc::new(Mutex::new(None)),
+            &metrics,
+        ));
+        assert!(pixels.is_none());
+        assert!(identity == Some(id));
+        assert_eq!(metrics.snapshot().remote_started, 0);
+        assert_eq!(metrics.snapshot().cache_errors, 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn real_cache_purge_blocks_publication_and_immediate_post_end_batch_survives() {
+        use std::os::unix::fs::DirBuilderExt;
+        static SERIAL: AtomicU64 = AtomicU64::new(0);
+        struct Directory(PathBuf);
+        impl Drop for Directory {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let directory = Directory(std::env::temp_dir().join(format!(
+            "serein-artwork-worker-test-{}-{}",
+            std::process::id(),
+            SERIAL.fetch_add(1, Ordering::SeqCst),
+        )));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&directory.0)
+            .unwrap();
+        let path = directory.0.canonicalize().unwrap().join("cache");
+        let id = VideoId::new("aqz-KE-bpKQ").unwrap();
+        let mut png = Cursor::new(Vec::new());
+        image::RgbaImage::new(16, 9)
+            .write_to(&mut png, image::ImageFormat::Png)
+            .unwrap();
+        {
+            let mut cache = ArtworkCache::open(&path, CacheLimit::Mib32).unwrap();
+            cache.put(&id, png.get_ref()).unwrap();
+        }
+        let (wake, wakes) = std::sync::mpsc::channel();
+        let mut worker = Worker::new(
+            path.clone(),
+            None,
+            move || {
+                let _ = wake.send(());
+            },
+            false,
+        );
+        let request = || {
+            vec![Request {
+                row: 3,
+                source: Source::CachedVideo(id.clone()),
+            }]
+        };
+        worker.replace(request());
+        let wait = || wakes.recv_timeout(Duration::from_secs(5)).unwrap();
+        loop {
+            if let Some(ready) = worker.take() {
+                assert!(ready.pixels.is_none());
+                break;
+            }
+            wait();
+        }
+        // Unconfigured startup must neither open nor purge the preexisting cache.
+        worker.set_cache_limit(32).unwrap();
+        loop {
+            if let Some((limit, result)) = worker.take_cache_limit_result() {
+                assert_eq!(limit, 32);
+                result.unwrap();
+                break;
+            }
+            wait();
+        }
+        worker.replace(request());
+        let first = loop {
+            if let Some(ready) = worker.take() {
+                break ready;
+            }
+            wait();
+        };
+        assert_eq!(first.row, 3);
+        assert!(first.video_id == Some(id.clone()));
+        assert_eq!(first.pixels.unwrap().dimensions(), (320, 180));
+        let purge = worker.begin_purge().unwrap();
+        assert!(worker.begin_purge().is_err());
+        worker.replace(request()); // suppressed while purge owns admission
+        loop {
+            if let Some(result) = worker.purge_result(purge) {
+                result.unwrap();
+                break;
+            }
+            wait();
+        }
+        assert!(worker.take().is_none());
+        assert_eq!(worker.statistics().started, 2);
+        assert_eq!(worker.statistics().inflight, 0);
+        assert!(worker.end_purge(purge + 1).is_err());
+        worker.end_purge(purge).unwrap();
+        // Deliberately queue immediately: End must not discard this fresh batch.
+        let generation = worker.replace(request());
+        let second = loop {
+            if let Some(ready) = worker.take() {
+                break ready;
+            }
+            wait();
+        };
+        assert_eq!(second.generation, generation);
+        assert!(second.video_id == Some(id.clone()));
+        assert!(second.pixels.is_none());
+        assert_eq!(worker.statistics().remote_started, 0);
+        assert_eq!(worker.statistics().cache_hits, 1);
+        assert_eq!(worker.statistics().cache_misses, 1);
+        drop(worker);
+        let mut cache = ArtworkCache::open(&path, CacheLimit::Mib32).unwrap();
+        assert!(cache.get(&id).unwrap().is_none());
     }
 }

@@ -146,3 +146,9 @@ Keychain evidence, not proof of account login. Windows remains blocked by its
 unqualified file/helper supervision; Linux/X11 and native Wayland remain unrun.
 See [account-media.md](account-media.md). Existing packaged guest artifacts above
 predate this coordinator and do not qualify it.
+
+Guest artwork disk caching uses Unix private directory descriptors and locking.
+The Windows implementation fails closed for this optional cache; ordinary guest
+browsing remains available. macOS native functional and Linux CI evidence for
+this slice will be recorded in [artwork-cache.md](artwork-cache.md). This does not
+change any platform support or optimized-video qualification.

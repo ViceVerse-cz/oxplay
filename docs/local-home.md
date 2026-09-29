@@ -24,8 +24,9 @@ may reset the dataset. Focus is parked before affected virtual cards retire and
 restored by video ID. Home clears public navigation and advances thumbnail-work
 generation before replacing the catalog, preventing old image completions from
 painting local rows. Local saved summaries do not contain thumbnail URLs, so
-these cards show the ordinary unavailable-image treatment instead of fetching
-remote images at startup. Cached local artwork is not yet implemented.
+Home now reads [cached guest artwork](artwork-cache.md) by video ID without
+fetching remote images at startup. A miss uses the ordinary unavailable-image
+treatment. Retained video IDs preserve their existing image references.
 
 Home reads use their own ticket namespace, separate from library writes and
 collection pages. Navigation, new provider work and local-data clearing retire

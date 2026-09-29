@@ -7,7 +7,10 @@ use serein_youtube::catalog::{
     CatalogCursor, CatalogHeader, CatalogPage, CatalogRequest, ChannelTab, SearchKind,
 };
 use slint::{ComponentHandle, Model};
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+};
 
 #[derive(Clone)]
 struct Location {
@@ -116,6 +119,7 @@ impl Presentation {
 }
 #[derive(Default)]
 pub struct State {
+    local_home: Cell<bool>,
     presentation: RefCell<Presentation>,
     items: RefCell<Vec<CatalogItem>>,
     current: RefCell<Option<Location>>,
@@ -140,11 +144,31 @@ impl State {
         *self.previous.borrow_mut() = entry.previous;
         Some(entry.location)
     }
-    pub fn thumbnail(&self, row: usize) -> Option<String> {
-        match self.items.borrow().get(row)? {
-            CatalogItem::Video(item) => item.thumbnail_url.clone(),
-            CatalogItem::Channel(item) => item.thumbnail_url.clone(),
-            CatalogItem::Playlist(item) => item.thumbnail_url.clone(),
+    pub fn thumbnail_source(&self, row: usize) -> Option<crate::thumbnails::Source> {
+        let items = self.items.borrow();
+        let item = items.get(row)?;
+        if self.local_home.get() {
+            // Even unexpected stored URLs cannot promote a local lookup to HTTP.
+            return match item {
+                CatalogItem::Video(video) => {
+                    Some(crate::thumbnails::Source::CachedVideo(video.id.clone()))
+                }
+                _ => None,
+            };
+        }
+        match item {
+            CatalogItem::Video(video) => Some(crate::thumbnails::Source::RemoteGuestVideo {
+                id: video.id.clone(),
+                url: video.thumbnail_url.clone()?,
+            }),
+            CatalogItem::Channel(channel) => channel
+                .thumbnail_url
+                .clone()
+                .map(crate::thumbnails::Source::Remote),
+            CatalogItem::Playlist(playlist) => playlist
+                .thumbnail_url
+                .clone()
+                .map(crate::thumbnails::Source::Remote),
         }
     }
 }
@@ -316,6 +340,7 @@ pub fn resolution_finished(app: &App, state: &UiState, generation: u64) {
     }
 }
 pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
+    s.guest_ui.local_home.set(false);
     s.guest_ui.presentation.borrow_mut().published();
     match page.header {
         CatalogHeader::Search => app.set_catalog_subtitle(
@@ -373,6 +398,16 @@ pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
 }
 /// Retire provider navigation and thumbnail generations before any local rows.
 pub fn begin_home(app: &App, state: &UiState) {
+    clear_cached_catalog(app, state);
+    state.guest_ui.local_home.set(true);
+    state.guest_ui.presentation.borrow_mut().published();
+}
+
+/// Forget retained public catalog metadata and decoded images after explicit
+/// local-data deletion. Account collection models have separate ownership.
+/// The caller controls navigation; clearing never initiates a provider request.
+pub fn clear_cached_catalog(app: &App, state: &UiState) {
+    state.guest_ui.local_home.set(false);
     state.thumbnails.borrow_mut().replace(Vec::new());
     state.thumbnail_attempted.borrow_mut().clear();
     state.thumbnail_range.set((usize::MAX, usize::MAX));
@@ -382,10 +417,18 @@ pub fn begin_home(app: &App, state: &UiState) {
     state.guest_ui.navigation.borrow_mut().clear();
     state.guest_ui.channel.borrow_mut().take();
     state.guest_ui.items.borrow_mut().clear();
-    state.guest_ui.presentation.borrow_mut().published();
+    *state.guest_ui.presentation.borrow_mut() = Presentation::default();
     crate::feed_focus::reset(app, state);
-    state.model.replace(Vec::new());
-    state.groups.replace(&state.model);
+    if state.model.row_count() != 0 {
+        state.model.replace(Vec::new());
+        state.groups.replace(&state.model);
+    }
+    app.set_catalog_title("Catalog cleared".into());
+    app.set_catalog_subtitle(
+        "Cached public metadata and images were removed from this view.".into(),
+    );
+    app.set_catalog_empty_title("Start fresh".into());
+    app.set_catalog_empty_message("Open Home or search when you’re ready.".into());
     app.set_has_more(false);
     app.set_has_previous(false);
     app.set_guest_can_back(false);
@@ -420,30 +463,62 @@ pub fn publish_home(
         return Err("Invalid local Home page. Use Refresh to try again.");
     }
     let items: Vec<_> = videos.into_iter().map(CatalogItem::Video).collect();
-    let rows: Vec<_> = items.iter().map(row).collect();
-    let changed = state.model.row_count() != rows.len()
-        || rows
-            .iter()
-            .enumerate()
-            .any(|(i, row)| state.model.row_data(i).as_ref() != Some(row));
+    let mut rows: Vec<_> = items.iter().map(row).collect();
+    let old: Vec<_> = (0..state.model.row_count())
+        .filter_map(|i| state.model.row_data(i))
+        .collect();
+    retain_home_artwork(&mut rows, &old);
+    let reindexed = old.len() != rows.len() || old.iter().zip(&rows).any(|(a, b)| a.id != b.id);
+    let changed = old != rows;
+    // A completed image is addressed by row index. Retire its old generation
+    // before deleting/moving rows, including reconciliation on the first page.
+    if reindexed {
+        state.thumbnails.borrow_mut().replace(Vec::new());
+        state.thumbnail_attempted.borrow_mut().clear();
+        state.thumbnail_range.set((usize::MAX, usize::MAX));
+    }
+    state.guest_ui.local_home.set(true);
+    // Model notifications can synchronously evaluate viewport bindings. Install
+    // the matching source identities before any such callback can admit jobs.
+    let old_items = state.guest_ui.items.replace(items);
     if same_page && changed {
-        crate::feed_focus::reconcile_home(app, state, || {
+        let result = crate::feed_focus::reconcile_home(app, state, || {
             state.model.reconcile(rows, |row| row.id.clone())?;
             state.groups.reconcile(&state.model);
             Ok(())
-        })?;
+        });
+        if let Err(error) = result {
+            state.guest_ui.items.replace(old_items);
+            state.thumbnails.borrow_mut().replace(Vec::new());
+            state.thumbnail_attempted.borrow_mut().clear();
+            state.thumbnail_range.set((usize::MAX, usize::MAX));
+            return Err(error);
+        }
     } else if !same_page {
         crate::feed_focus::reset(app, state);
         state.model.replace(rows);
         state.groups.replace(&state.model);
         app.invoke_reset_feed_scroll();
     }
-    *state.guest_ui.items.borrow_mut() = items;
     state.guest_ui.presentation.borrow_mut().published();
-    state.thumbnail_attempted.borrow_mut().clear();
-    state.thumbnail_range.set((usize::MAX, usize::MAX));
-    app.invoke_refresh_visible();
+    if reindexed {
+        // Supersede any intermediate viewport admitted during reconciliation.
+        state.thumbnail_range.set((usize::MAX, usize::MAX));
+        app.invoke_refresh_visible();
+    }
     Ok(())
+}
+
+fn retain_home_artwork(rows: &mut [VideoRow], old: &[VideoRow]) {
+    for row in rows {
+        if let Some(previous) = old
+            .iter()
+            .find(|previous| previous.id == row.id && previous.kind == "Video")
+        {
+            row.thumbnail = previous.thumbnail.clone();
+            row.thumbnail_ready = previous.thumbnail_ready;
+        }
+    }
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
     let weak = app.as_weak();
@@ -471,6 +546,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             let Some(kind) = RequestKind::from_request(request) else {
                 return;
             };
+            state.guest_ui.local_home.set(false);
             crate::home_ui::cancel(&app, &state);
             let visible = state
                 .guest_ui
@@ -701,6 +777,82 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn artwork_video(index: u8) -> CatalogItem {
+        CatalogItem::Video(serein_core::VideoSummary {
+            id: VideoId::new(&format!("{index:011}")).unwrap(),
+            title: "Synthetic artwork fixture".into(),
+            channel: "Synthetic channel".into(),
+            channel_id: None,
+            duration: None,
+            thumbnail_url: Some("https://i.ytimg.com/synthetic.jpg".into()),
+        })
+    }
+
+    #[test]
+    fn local_artwork_lookup_cannot_escalate_to_remote_even_with_a_stored_url() {
+        let state = State::default();
+        state.items.borrow_mut().push(artwork_video(1));
+        state.local_home.set(true);
+        assert!(
+            matches!(state.thumbnail_source(0), Some(crate::thumbnails::Source::CachedVideo(id)) if id.as_str() == "00000000001")
+        );
+        assert!(state.thumbnail_source(1).is_none());
+        state.local_home.set(false);
+        assert!(
+            matches!(state.thumbnail_source(0), Some(crate::thumbnails::Source::RemoteGuestVideo { id, url }) if id.as_str() == "00000000001" && url == "https://i.ytimg.com/synthetic.jpg")
+        );
+        {
+            let mut items = state.items.borrow_mut();
+            let CatalogItem::Video(video) = &mut items[0] else {
+                unreachable!()
+            };
+            video.thumbnail_url = None;
+        }
+        assert!(state.thumbnail_source(0).is_none());
+    }
+
+    #[test]
+    fn nonvideo_catalog_artwork_never_enters_the_video_cache_namespace() {
+        let state = State::default();
+        state
+            .items
+            .borrow_mut()
+            .push(CatalogItem::Channel(serein_core::ChannelSummary {
+                id: ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap(),
+                title: "Synthetic channel".into(),
+                description: None,
+                thumbnail_url: Some("https://yt3.ggpht.com/synthetic.jpg".into()),
+                subscriber_count: None,
+            }));
+        assert!(matches!(
+            state.thumbnail_source(0),
+            Some(crate::thumbnails::Source::Remote(_))
+        ));
+        state.local_home.set(true);
+        assert!(state.thumbnail_source(0).is_none());
+    }
+
+    #[test]
+    fn home_metadata_refresh_and_reordering_preserve_artwork_by_video_identity() {
+        let mut first = row(&artwork_video(1));
+        first.thumbnail = slint::Image::from_rgba8(slint::SharedPixelBuffer::new(2, 1));
+        first.thumbnail_ready = true;
+        let second = row(&artwork_video(2));
+        let mut rows = vec![
+            second.clone(),
+            row(&artwork_video(1)),
+            row(&artwork_video(3)),
+        ];
+        rows[1].title = "Synthetic edited title".into();
+        retain_home_artwork(&mut rows, &[first.clone(), second]);
+        assert_eq!(rows[1].thumbnail, first.thumbnail);
+        assert!(rows[1].thumbnail_ready);
+        assert_eq!(rows[1].title, "Synthetic edited title");
+        assert!(!rows[0].thumbnail_ready && !rows[2].thumbnail_ready);
+        assert_eq!(rows[0].thumbnail.size().width, 0);
+        assert_eq!(rows[2].thumbnail.size().width, 0);
+    }
     #[test]
     fn presentation_rejects_stale_terminal_events_and_cancellation_clears_loading() {
         let mut state = Presentation::default();

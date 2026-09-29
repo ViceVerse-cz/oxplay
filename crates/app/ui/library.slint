@@ -105,7 +105,7 @@ export component LibraryPage inherits Rectangle {
             Rectangle { horizontal-stretch: 1; }
         }
         if LibraryUi.confirmation != 0: VerticalLayout { spacing: 8px;
-            Text { text: LibraryUi.confirmation == 1 ? "Delete “" + LibraryUi.collections[LibraryUi.selected] + "” and its saved entries?" : LibraryUi.confirmation == 2 ? "Delete all local watch history?" : "Stop playback and delete the local library, history, preferences and cached captions? Your YouTube account stays connected."; color: Colors.text; wrap: word-wrap; min-height: 44px; }
+            Text { text: LibraryUi.confirmation == 1 ? "Delete “" + LibraryUi.collections[LibraryUi.selected] + "” and its saved entries?" : LibraryUi.confirmation == 2 ? "Delete all local watch history?" : "Stop playback and delete the local library, history, preferences, cached artwork and captions? Your YouTube account stays connected."; color: Colors.text; wrap: word-wrap; min-height: 44px; }
             HorizontalLayout { height: 38px; spacing: 8px;
                 Action { width: 96px; horizontal-stretch: 0; label: "Cancel"; variant: ActionVariant.secondary; clicked => { LibraryUi.confirmation = 0; } }
                 Action { width: 158px; horizontal-stretch: 0; label: "Confirm deletion"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy; clicked => { if LibraryUi.confirmation == 1 { LibraryUi.delete-collection(); } else if LibraryUi.confirmation == 2 { LibraryUi.clear-history(); } else { LibraryUi.clear-local(); } LibraryUi.confirmation = 0; } }

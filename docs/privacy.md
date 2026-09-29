@@ -91,3 +91,9 @@ Supported advertising suppression is required but universal suppression is not
 claimed. Creator-embedded sponsorships are a separate matter. Platform terms,
 branding and distribution obligations require review; open source and cookie
 import do not imply approval from Google or YouTube.
+
+Guest video artwork may be retained within the configurable local disk limit
+(Off/32/128/256 MiB; default 256). These images can reveal browsing interests
+even when history is disabled. Home reads them without HTTP fallback. Clear
+local data includes artwork and waits for acknowledged cleanup; account artwork
+is excluded from this cache. See [cache ownership and limitations](artwork-cache.md).

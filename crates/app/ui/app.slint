@@ -210,6 +210,8 @@ export component App inherits Window {
     callback feed-focus-cancel();
     callback feed-focus-entry();
     callback visible-range(int, int, int, int);
+    in-out property <int> thumbnail-cache-index: 0;
+    callback thumbnail-cache-changed(int);
     callback thumbnail-wake();
     callback library-wake();
     callback create-playlist(string);
@@ -640,6 +642,9 @@ export component App inherits Window {
             Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
             CheckBox { text: "Keep watch history on this device"; checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; toggled => { LibraryUi.history(self.checked); self.checked = LibraryUi.history-enabled; } }
             Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
+            Text { text: "Saved video artwork"; color: Colors.text; font-size: 18px; height: 26px; }
+            ComboBox { accessible-label: "Saved video artwork cache"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; model: ["Off — remove cached artwork", "Up to 32 MiB", "Up to 128 MiB", "Up to 256 MiB"]; current-index: root.thumbnail-cache-index; selected(value) => { root.thumbnail-cache-changed(self.current-index); self.current-index = root.thumbnail-cache-index; } }
+            Text { text: "Keep artwork from guest browsing on this device. These images can reveal browsing interests even when history is off. Home reads them without contacting YouTube. Clear local data removes them with your local library."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 18px; height: 26px; }
