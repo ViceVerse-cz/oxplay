@@ -196,3 +196,33 @@ The local exact-commit source preview includes `collection_window_smoke.rs`,
 metadata and notes all passed their SHA-256 manifest verification. No workflow
 dispatch, tag or release was created. Linux compilation for this source remains
 unverified.
+
+## Controlled selectors and caption ordering checkpoint
+
+Source `dfc30db1173d712af0afd7c7aa05fc740d17b679` is pushed.
+[CI run 36601158670](https://github.com/ViceVerse-cz/yt/actions/runs/36601158670)
+failed before either job ran a step. Both annotations report failed account
+payments or a spending-limit issue; macOS also has an ARM64 capacity notice.
+There are no hosted compilation or test results for this source. Repository
+billing remains the runner-admission blocker; no automatic rerun was requested.
+
+Local formatting, strict all-target Clippy, 443 Rust tests (four explicit
+integrations ignored), 163 Python tooling tests and locked debug/release builds
+passed. The Rust total includes five tests of the real compiled shared controls
+using the development-only Slint mock backend. No pixels or native OS input are
+involved in those tests. CI's ordinary debug test command includes them; release
+builds omit their element metadata and the test target. Native null-output
+caption tests cover pending-On/Off ordering, command saturation, keep-open EOF,
+exact completion and lease ownership.
+
+The final release passed the five-stage public guest-caption check and nine-stage
+local PiP check, with three native frame/stacking probes for PiP. Their evidence
+and limitations are documented in [captions](captions.md#correlated-off-completion-and-controlled-selection)
+and [PiP restoration](picture-in-picture.md#restore-the-original-display).
+No account, performance or additional-platform qualification is inferred.
+
+The exact-commit local source preview contains `controlled_widgets.rs`,
+`subtitle_off.rs`, the updated lockfile and integration notes. Source archive,
+release metadata and notes all passed their SHA-256 manifest verification.
+The release workflow was not dispatched; no tag or release was created.
+Linux compilation for this source remains unverified.

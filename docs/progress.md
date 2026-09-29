@@ -27,8 +27,13 @@ including exact Off acknowledgement and paused quality reattachment. The release
 PiP check passed nine stages and three correlated native probes on the same
 window, restoring its original frame/position; its inspected capture retains
 inline controls and local subtitles. These do not qualify multiple displays or
-account playback. Owned native test processes were reaped. Hosted CI is pending.
-No performance/usage test was run.
+account playback. Owned native test processes were reaped. Source `dfc30db` is
+pushed. [Its CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36601158670)
+failed before either job ran a step; both annotations cite failed account payments
+or a spending-limit issue. No hosted build/test result exists for this source.
+The exact-commit source preview includes the new shared-control tests, native
+Off barrier and lockfile; all asset checksums verified. No tag or release was
+created, and no performance/usage test was run.
 
 The preceding slice moves playback controls inside the video and makes PiP
 borderless, with a shared drag area and restoration of the original native
