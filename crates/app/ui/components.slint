@@ -61,6 +61,7 @@ export component Action inherits Rectangle {
     in property <bool> enabled: true;
     in property <bool> compact;
     in property <bool> on-video;
+    in property <length> icon-size: root.on-video ? 24px : 20px;
     // Visual emphasis is independent of selection/check state and accessibility.
     in property <ActionVariant> variant: quiet;
     private property <bool> keyboard-pressed;
@@ -69,7 +70,7 @@ export component Action inherits Rectangle {
     callback clicked;
     height: 40px;
     min-width: compact ? 40px : 70px;
-    border-radius: 8px;
+    border-radius: root.on-video ? 20px : 8px;
     background: root.on-video ? (pressed ? #ffffff38 : touch.has-hover && enabled ? #ffffff24 : selected ? #ffffff18 : transparent)
         : variant == primary ? (pressed ? Colors.primary-pressed : touch.has-hover && enabled ? Colors.primary-hover : Colors.primary)
         : pressed ? Colors.border : touch.has-hover && enabled ? Colors.raised
@@ -128,8 +129,8 @@ export component Action inherits Rectangle {
             : root.icon-name == "image-off" ? @image-url("icons/image-off.svg")
             : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
         colorize: root.variant == quiet && root.selected && !root.on-video ? Colors.accent : root.foreground;
-        x: root.compact ? (root.width - 20px) / 2 : 12px;
-        y: (root.height - 20px) / 2; width: 20px; height: 20px;
+        x: root.compact ? (root.width - root.icon-size) / 2 : 12px;
+        y: (root.height - root.icon-size) / 2; width: root.icon-size; height: root.icon-size;
     }
     if !root.compact: Text { x: root.icon-name != "" ? 44px : 12px; y: 0; width: parent.width - self.x - 12px; height: parent.height; text: root.label; color: root.foreground; font-size: 14px; font-weight: root.variant == primary ? 600 : 400; vertical-alignment: center; overflow: elide; }
     touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }

@@ -6,7 +6,25 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current batch adds six user-facing workflows: in-app local video opening,
+The current visual slice follows the user's YouTube player reference: shared
+controls sit at the video's bottom edge over a restrained dark fade, with a
+thin red timeline, play/volume/time at left, and captions/settings/PiP/fullscreen
+at right. Existing attributed Lucide assets render at 24px. Elapsed/total time
+replaces the previous elapsed/remaining visual label; remaining time remains in
+the accessible description. Narrow players retain elapsed-only text and mute,
+with volume still available through settings.
+
+The shared media slider keeps its incoming playback value bound, owns only a
+local drag preview, handles left-button cancellation, and exposes keyboard and
+accessibility range actions. The existing inactivity/focus controller holds the
+transport during dragging. No new timer, player, decoder, renderer, dependency
+or icon asset is introduced. `cargo fmt --all -- --check`,
+`cargo clippy --workspace --all-targets --locked -- -D warnings`, and
+`cargo build --workspace --locked` passed. No native, test-suite or performance
+check ran for this visual pass. Native subtitle placement and compact/screen-reader interaction
+remain unverified for the new bottom-edge position.
+
+The preceding batch adds six user-facing workflows: in-app local video opening,
 local subtitle attachment, playlist duplication, copy/move between local
 playlists, timestamped YouTube playback, and chapter/precise-time navigation.
 Three agents implemented independent slices while the primary agent integrated

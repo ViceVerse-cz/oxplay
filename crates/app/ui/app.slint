@@ -6,6 +6,7 @@ import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
 import { CaptionSelector, CaptionsUi } from "captions.slint";
 import { ChapterPanel, ChaptersUi } from "chapters.slint";
 import { JumpDialog, JumpUi } from "jump.slint";
+import { MediaSlider } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 export component App inherits Window {
@@ -151,6 +152,7 @@ export component App inherits Window {
     // Fixture identity is independent of changing decoder diagnostics.
     in property <string> diagnostic-fixture-label;
     in property <string> elapsed: "0:00";
+    in property <string> total-time: "0:00";
     in property <string> remaining: "0:00";
     in property <float> position;
     in property <float> duration: 1;
@@ -179,7 +181,7 @@ export component App inherits Window {
     in-out property <bool> controls-visible: true;
     // Only transport interaction is observed; cursor coordinates never enter
     // application models. Focused controls and open editors cannot disappear.
-    out property <bool> controls-held: transport-hover.has-hover || seek-control.has-focus
+    out property <bool> controls-held: transport-hover.has-hover || seek-control.has-focus || seek-control.interacting || volume-control.interacting
         || play-control.has-focus || elapsed-control.has-focus || mute-control.has-focus || (volume-control.visible && volume-control.has-focus)
         || captions-control.has-focus || settings-control.has-focus || pip-control.has-focus
         || (fullscreen-control.visible && fullscreen-control.has-focus) || native-overlay-open || TextInputInterface.text-input-focused;
@@ -438,38 +440,36 @@ export component App inherits Window {
                 Text { x: 16px; y: 10px; width: parent.width - 32px; height: parent.height - 20px; text: root.technical; color: #eeeeee; font-size: 12px; wrap: word-wrap; }
             }
         }
-        // Shared controls overlay the video; its bottom 48px stay clear for
-        // native-rendered subtitles. The experimental native child cannot
-        // compose Slint over its surface, so retains a reserved diagnostic strip.
+        // Shared bottom-edge transport. The native-child experiment still uses
+        // its separate diagnostic strip because it cannot composite Slint overlays.
         transport := Rectangle {
-            x: video.x + (root.native-video-child ? 0px : 8px);
-            y: root.native-video-child ? video.y + video.height + 4px : video.y + video.height - self.height - 48px;
-            width: video.width - (root.native-video-child ? 0px : 16px); height: 72px;
+            x: video.x;
+            y: root.native-video-child ? video.y + video.height + 4px : video.y + video.height - self.height;
+            width: video.width; height: root.native-video-child ? 72px : 100px;
             visible: root.watching && (root.controls-visible || root.paused || root.controls-held || root.native-video-child);
-            background: #111315eb; border-radius: 10px;
+            background: root.native-video-child ? #111315 : @linear-gradient(180deg, #00000000 0%, #00000050 38%, #000000bd 100%);
             // The ancestor observes hover before children, without stealing a
             // slider's pointer grab or a button's activation.
             transport-hover := TouchArea {
                 width: parent.width; height: parent.height;
-                seek-control := Slider { x: 12px; y: 2px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; minimum: 0; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
+                seek-control := MediaSlider { x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
                 HorizontalLayout {
-                    x: 8px; y: 26px; width: parent.width - 16px; height: 40px; spacing: 4px;
+                    x: 8px; y: parent.height - 48px; width: parent.width - 16px; height: 40px; spacing: 2px;
                     play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
 
+                    mute-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
+                    // Compact PiP keeps mute; full volume remains in settings.
+                    volume-control := MediaSlider { visible: transport.width >= 600px; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } horizontal-stretch: 0; volume: true; accessible-label: "Volume percent"; min-width: self.visible ? 72px : 0px; max-width: self.visible ? 72px : 0px; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
                     elapsed-control := Action {
                         on-video: true; compact: true;
                         label: "Jump to time · Elapsed " + root.elapsed + ", remaining " + root.remaining;
-                        width: transport.width < 580px ? 48px : 124px; horizontal-stretch: 0;
-                        enabled: JumpUi.available; clicked => { root.show-jump(); }
-                        Text { text: transport.width < 580px ? root.elapsed : root.elapsed + " / −" + root.remaining; color: #ffffff; width: parent.width; height: parent.height; horizontal-alignment: center; vertical-alignment: center; }
+                        width: transport.width < 500px ? 50px : 122px; horizontal-stretch: 0;
+                        opacity: 1; enabled: JumpUi.available; clicked => { root.show-jump(); }
+                        Text { text: transport.width < 500px ? root.elapsed : root.elapsed + " / " + root.total-time; color: #ffffff; width: parent.width; height: parent.height; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
                     }
-                    mute-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
-                    // Keep the primary row usable at the narrow watch breakpoint.
-                    // Volume remains available in settings when this slider is absent.
-                    volume-control := Slider { visible: transport.width >= 780px; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } horizontal-stretch: 0; accessible-label: "Volume percent"; min-width: self.visible ? 100px : 0px; max-width: self.visible ? 100px : 0px; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
+                    Rectangle { horizontal-stretch: 1; }
                     captions-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
                     settings-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
-                    Rectangle { horizontal-stretch: 1; }
                     pip-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
                     fullscreen-control := Action { visible: !root.picture-in-picture; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
                 }

@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//! A controlled media slider: engine observations remain bound after scrubbing.
+export component MediaSlider inherits Rectangle {
+    in property <float> value;
+    in property <float> maximum: 100;
+    in property <float> step: 5;
+    in property <bool> enabled: true;
+    in property <bool> volume;
+    out property <bool> has-focus: focus.has-focus;
+    out property <bool> interacting: dragging;
+    private property <bool> dragging;
+    private property <float> draft;
+    private property <float> shown: clamp(root.dragging ? root.draft : root.value, 0, max(0, root.maximum));
+    private property <float> fraction: root.maximum > 0 ? root.shown / root.maximum : 0;
+    private property <bool> emphasized: touch.has-hover || root.dragging || focus.has-focus;
+    private property <length> inset: root.volume ? 6px : 0px;
+    private property <length> extent: max(1px, root.width - 2 * root.inset);
+    callback changed(float);
+    height: 24px;
+    forward-focus: focus;
+    changed enabled => { if !root.enabled { root.dragging = false; } }
+    changed visible => { if !root.visible { root.dragging = false; } }
+    accessible-role: slider;
+    accessible-enabled: root.enabled && root.maximum > 0;
+    accessible-orientation: horizontal;
+    accessible-value: root.shown;
+    accessible-value-minimum: 0;
+    accessible-value-maximum: max(0, root.maximum);
+    accessible-value-step: root.step;
+    accessible-action-set-value(value) => { if value.is-float() { root.request(value.to-float()); } }
+    accessible-action-increment => { root.request(root.shown + root.step); }
+    accessible-action-decrement => { root.request(root.shown - root.step); }
+    function request(value: float) {
+        if root.enabled && root.maximum > 0 {
+            root.draft = clamp(value, 0, root.maximum);
+            root.changed(root.draft);
+        }
+    }
+    function seek-pointer() { root.request((touch.mouse-x - root.inset) / root.extent * root.maximum); }
+    rail := Rectangle {
+        x: root.inset; y: (root.height - self.height) / 2;
+        width: root.extent; height: root.volume ? 3px : root.emphasized ? 5px : 3px;
+        background: #ffffff45; border-radius: 2px;
+        Rectangle { width: parent.width * root.fraction; height: parent.height; border-radius: 2px; background: root.volume ? #ffffff : #ff0033; }
+    }
+    if root.enabled && (root.emphasized || root.volume): Rectangle {
+        x: clamp(root.inset + root.extent * root.fraction - self.width / 2, 0px, max(0px, root.width - self.width));
+        y: (root.height - self.height) / 2;
+        width: root.volume ? 10px : 12px; height: self.width;
+        border-radius: self.width / 2;
+        background: root.volume ? #ffffff : #ff0033;
+        border-width: focus.has-focus ? 2px : 0px; border-color: #ffffff;
+    }
+    if focus.has-focus: Rectangle {
+        width: parent.width; height: parent.height;
+        border-radius: 4px; border-width: 1px; border-color: #ffffffa0;
+    }
+    focus := FocusScope {
+        enabled: root.enabled && root.maximum > 0;
+        key-pressed(event) => {
+            if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
+            if event.text == Key.LeftArrow || (root.volume && event.text == Key.DownArrow) { root.request(root.shown - root.step); return accept; }
+            if event.text == Key.RightArrow || (root.volume && event.text == Key.UpArrow) { root.request(root.shown + root.step); return accept; }
+            if event.text == Key.Home { root.request(0); return accept; }
+            if event.text == Key.End { root.request(root.maximum); return accept; }
+            return reject;
+        }
+    }
+    touch := TouchArea {
+        enabled: root.enabled && root.maximum > 0;
+        mouse-cursor: pointer;
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.cancel { root.dragging = false; return; }
+            if event.button != PointerEventButton.left { return; }
+            if event.kind == PointerEventKind.down {
+                root.draft = root.value; root.dragging = true;
+                focus.focus(); root.seek-pointer();
+            }
+            if event.kind == PointerEventKind.up && root.dragging {
+                root.seek-pointer(); root.dragging = false;
+            }
+        }
+        moved => { if root.dragging { root.seek-pointer(); } }
+    }
+}

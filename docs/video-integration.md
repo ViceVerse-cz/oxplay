@@ -1,5 +1,11 @@
 # Video integration — experimental macOS path
 
+The latest [control styling](picture-in-picture.md) changes only shared UI and
+a cached total-duration label. It preserves the player/presenter lifetime and
+existing seek/volume commands. Native subtitle overlap at the new bottom-edge
+transport position has not been revalidated; earlier native evidence applies
+to its recorded source, not this visual revision.
+
 The in-app [local media picker](local-media.md) now routes explicit selections
 through the existing stop barrier before loading the same player. Entry-scoped
 [local demux restrictions](local-media-policy.md) supplement worker header checks.

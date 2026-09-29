@@ -112,6 +112,7 @@ struct UiState {
     quality_index: Cell<usize>,
     displayed_elapsed: Cell<u64>,
     displayed_remaining: Cell<u64>,
+    displayed_duration: Cell<u64>,
     displayed_position: Cell<f32>,
     ui_assignments: Cell<u64>,
     redraw_requests: Cell<u64>,
@@ -228,6 +229,11 @@ fn update(app: &App, state: &Rc<UiState>) {
     }
     if app.get_duration() != duration.max(1.) as f32 {
         app.set_duration(duration.max(1.) as f32);
+    }
+    let seconds = duration.max(0.).floor() as u64;
+    if state.displayed_duration.replace(seconds) != seconds {
+        app.set_total_time(format!("{}:{:02}", seconds / 60, seconds % 60).into());
+        state.ui_assignments.set(state.ui_assignments.get() + 1);
     }
     if let Some(error) = snapshot.error {
         app.set_status(error.into());
@@ -907,6 +913,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         quality_index: Cell::new(0),
         displayed_elapsed: Cell::new(u64::MAX),
         displayed_remaining: Cell::new(u64::MAX),
+        displayed_duration: Cell::new(u64::MAX),
         displayed_position: Cell::new(0.),
         ui_assignments: Cell::new(0),
         redraw_requests: Cell::new(0),

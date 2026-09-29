@@ -1,5 +1,15 @@
 # Picture in picture
 
+The latest controls styling follows the supplied YouTube reference: a bottom-edge
+fade, thin red seek rail, white volume rail, 24px existing Lucide icons and left/
+right control groups. Compact mode hides the volume rail and total-time suffix,
+keeping mute, captions, settings and return-to-main reachable. The new slider
+preserves the engine value binding and holds visibility through drag/focus.
+This visual revision has no new native interaction or resource evidence. Moving
+the transport to the bottom removes the former caption-clear gap: overlap with
+native subtitles while controls are visible still needs visual qualification.
+
+
 The player’s picture-in-picture button or **P** turns the existing Serein window
 into a compact borderless floating player. Play/pause, seek, elapsed time, mute,
 captions and playback settings remain available inside the video. The small
