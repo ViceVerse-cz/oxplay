@@ -28,7 +28,8 @@ Fullscreen/PiP temporarily suspend the theatre layout; returning restores it.
 The header menu also exits theatre mode to reveal navigation. It is a session
 layout preference, not another window or presenter.
 
-Normal windows use native operating-system decorations, documented in
+The subsequent header correction integrates the custom macOS header with real
+AppKit controls; other platforms retain native decorations. See
 [window appearance](window-appearance.md). All application content is still
 compiled from the shared Slint component library.
 

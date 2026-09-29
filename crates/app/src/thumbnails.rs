@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
     time::Duration,
@@ -155,6 +155,30 @@ struct Acknowledgments {
 }
 type Cache = Arc<Mutex<Option<ArtworkCache>>>;
 
+/// One queued UI handoff regardless of how many images complete together.
+/// The UI acknowledges before draining, then schedules a continuation only
+/// while ready work remains. This is not a periodic image/upload timer.
+struct Wake {
+    queued: AtomicBool,
+    notify: Box<dyn Fn() + Send + Sync>,
+}
+impl Wake {
+    fn new(notify: impl Fn() + Send + Sync + 'static) -> Self {
+        Self {
+            queued: AtomicBool::new(false),
+            notify: Box::new(notify),
+        }
+    }
+    fn send(&self) {
+        if !self.queued.swap(true, Ordering::AcqRel) {
+            (self.notify)();
+        }
+    }
+    fn acknowledge(&self) {
+        self.queued.store(false, Ordering::Release);
+    }
+}
+
 pub struct Worker {
     command: Option<watch::Sender<Option<Batch>>>,
     results: mpsc::Receiver<Ready>,
@@ -166,6 +190,7 @@ pub struct Worker {
     acknowledgments: Arc<Mutex<Acknowledgments>>,
     purge: Option<u64>,
     purge_serial: u64,
+    wake: Arc<Wake>,
 }
 impl Worker {
     pub fn new(
@@ -180,10 +205,12 @@ impl Worker {
         let (limits, mut limit_rx) = watch::channel(initial_limit);
         let acknowledgments = Arc::new(Mutex::new(Acknowledgments::default()));
         let acks = acknowledgments.clone();
-        let wake = Arc::new(wake);
+        let wake = Arc::new(Wake::new(wake));
+        let worker_wake = wake.clone();
         let counters = Arc::new(Counters::default());
         let metrics = counters.clone();
         let thread = thread::spawn(move || {
+            let wake = worker_wake;
             let Ok(runtime) = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
@@ -227,7 +254,7 @@ impl Worker {
                                 // with a queue larger than its actual bound.
                                 metrics.ready_peak.fetch_max((8 - results.capacity()) as u64, Ordering::SeqCst);
                                 permit.send(Ready { generation, row: request.row, pixels, video_id });
-                                wake();
+                                wake.send();
                             }
                             active.completed = true;
                         });
@@ -240,7 +267,7 @@ impl Worker {
                     if fixture_diagnostics && completion_wake.take(
                         metrics.admitted_generation.load(Ordering::SeqCst), pending.len(), jobs.len(),
                     ) {
-                        wake();
+                        wake.send();
                     }
                     tokio::select! {
                         biased;
@@ -259,14 +286,14 @@ impl Worker {
                                     // No job can retain a cache write across this barrier.
                                     let result = clear_cache(&cache, &cache_path);
                                     acks.lock().unwrap().purge = Some((id, result));
-                                    wake();
+                                    wake.send();
                                 }
                                 Control::EndPurge(id) if purging == Some(id) => {
                                     purging = None;
                                     if let Some(limit) = deferred_limit.take() {
                                         let result = configure_cache(&cache, &cache_path, limit);
                                         acks.lock().unwrap().limit = Some((limit.mib(), result));
-                                        wake();
+                                        wake.send();
                                     }
                                 }
                                 Control::EndPurge(_) => {}
@@ -280,7 +307,7 @@ impl Worker {
                             } else {
                                 let result = configure_cache(&cache, &cache_path, limit);
                                 acks.lock().unwrap().limit = Some((limit.mib(), result));
-                                wake();
+                                wake.send();
                             }
                         }
                         changed = commands.changed() => {
@@ -297,7 +324,7 @@ impl Worker {
                                 } else {
                                     let result = configure_cache(&cache, &cache_path, limit);
                                     acks.lock().unwrap().limit = Some((limit.mib(), result));
-                                    wake();
+                                    wake.send();
                                 }
                             }
                             if purging.is_none() && let Some(batch) = batch {
@@ -326,6 +353,16 @@ impl Worker {
             acknowledgments,
             purge: None,
             purge_serial: 0,
+            wake,
+        }
+    }
+    pub fn begin_wake(&self) {
+        self.wake.acknowledge();
+    }
+    /// Call after a bounded UI drain to continue on a fresh event-loop turn.
+    pub fn continue_wake(&self) {
+        if !self.results.is_empty() {
+            self.wake.send();
         }
     }
     pub fn replace(&mut self, mut requests: Vec<Request>) -> u64 {
@@ -569,6 +606,26 @@ fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
 mod tests {
     use super::*;
     #[test]
+    fn image_completion_bursts_queue_one_handoff_until_acknowledged() {
+        let notifications = Arc::new(AtomicU64::new(0));
+        let observed = notifications.clone();
+        let wake = Wake::new(move || {
+            observed.fetch_add(1, Ordering::SeqCst);
+        });
+        for _ in 0..40 {
+            wake.send();
+        }
+        assert_eq!(notifications.load(Ordering::SeqCst), 1);
+        wake.acknowledge();
+        // A completion racing with a bounded-drain continuation still queues
+        // only one next callback. Idle state never schedules another wake.
+        wake.send();
+        wake.send();
+        assert_eq!(notifications.load(Ordering::SeqCst), 2);
+        wake.acknowledge();
+        assert_eq!(notifications.load(Ordering::SeqCst), 2);
+    }
+    #[test]
     fn anonymous_origin_policy_is_exact() {
         assert!(allowed("https://i.ytimg.com/vi/test/hqdefault.jpg"));
         assert!(allowed("https://yt3.ggpht.com/avatar"));
@@ -613,6 +670,7 @@ mod tests {
             acknowledgments: Arc::new(Mutex::new(Acknowledgments::default())),
             purge: None,
             purge_serial: 0,
+            wake: Arc::new(Wake::new(|| {})),
         };
         let enqueue = |generation| {
             counters.ready.fetch_add(1, Ordering::SeqCst);
@@ -739,13 +797,16 @@ mod tests {
             }]
         };
         worker.replace(request());
-        let wait = || wakes.recv_timeout(Duration::from_secs(5)).unwrap();
+        let wait = |worker: &Worker| {
+            wakes.recv_timeout(Duration::from_secs(5)).unwrap();
+            worker.begin_wake();
+        };
         loop {
             if let Some(ready) = worker.take() {
                 assert!(ready.pixels.is_none());
                 break;
             }
-            wait();
+            wait(&worker);
         }
         // Unconfigured startup must neither open nor purge the preexisting cache.
         worker.set_cache_limit(32).unwrap();
@@ -755,14 +816,14 @@ mod tests {
                 result.unwrap();
                 break;
             }
-            wait();
+            wait(&worker);
         }
         worker.replace(request());
         let first = loop {
             if let Some(ready) = worker.take() {
                 break ready;
             }
-            wait();
+            wait(&worker);
         };
         assert_eq!(first.row, 3);
         assert!(first.video_id == Some(id.clone()));
@@ -775,7 +836,7 @@ mod tests {
                 result.unwrap();
                 break;
             }
-            wait();
+            wait(&worker);
         }
         assert!(worker.take().is_none());
         assert_eq!(worker.statistics().started, 2);
@@ -788,7 +849,7 @@ mod tests {
             if let Some(ready) = worker.take() {
                 break ready;
             }
-            wait();
+            wait(&worker);
         };
         assert_eq!(second.generation, generation);
         assert!(second.video_id == Some(id.clone()));

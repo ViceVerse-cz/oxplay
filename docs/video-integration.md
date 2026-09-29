@@ -1,6 +1,14 @@
 # Video integration — experimental macOS path
 
-The latest shell revision moves description/comments into the outer watch-page
+The immediate-watch slice clears the previous picture before publishing a new
+selection and awaits the existing exact native stop barrier before installing
+resolved guest/account media. Account initial responses now have a single
+bounded deferred handoff, driven by engine events with a finite failure deadline.
+No presenter/decoder API or frame-transfer stage changes. macOS integrates the
+shared header with native traffic lights; fullscreen/PiP restoration requires
+renewed functional qualification. See [watch loading](watch-loading.md).
+
+The preceding shell revision moves description/comments into the outer watch-page
 scroll and retains the persistent video host. Custom chrome and optional alpha/
 blur reuse the same window and presenter; main content/video stay opaque. These
 appearance changes need separate native composition/lifecycle qualification.

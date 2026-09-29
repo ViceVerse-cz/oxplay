@@ -289,3 +289,10 @@ features. Native system decorations replace the custom titlebar. Theatre mode
 adds unchanged `rectangle-horizontal.svg` from the already-pinned Lucide
 revision, with its checksum and existing license retained. Channel artwork uses
 the existing yt-dlp/HTTP/image dependencies; no dependency or lockfile update.
+
+The integrated macOS header adds direct target-only references to already-locked
+`objc2 = 0.6.4` and `objc2-app-kit = 0.3.2` (default features off; std,
+NSResponder, NSView, NSWindow). Public AppKit methods restore full-size content
+styling after Winit restores PiP decorations. The lockfile adds these two edges
+to the application; no package version, Slint revision or renderer feature moves.
+No native titlebar subview hierarchy is retained or rewritten.

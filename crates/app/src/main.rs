@@ -53,6 +53,7 @@ mod save_smoke;
 mod share_ui;
 mod soak_smoke;
 mod thumbnails;
+mod watch_loading;
 mod window_chrome;
 use catalog::{Response, Worker};
 use model::CatalogModel;
@@ -68,6 +69,7 @@ slint::include_modules!();
 
 struct UiState {
     window_chrome: Rc<window_chrome::Controller>,
+    watch_loading: watch_loading::State,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -155,6 +157,25 @@ fn update(app: &App, state: &Rc<UiState>) {
     account_playback::observe(app, state);
     channel_avatar::observe(app, state);
     let snapshot = state.player.drain_events();
+    // A deferred handoff can accept a new load. Publish its reset state, not
+    // the prior file's clock/error snapshot drained before that transition.
+    let snapshot = if account_playback::observe_stopped(app, state, &snapshot) {
+        state.player.snapshot()
+    } else {
+        snapshot
+    };
+    let video_starting = app.get_loaded()
+        && !state.player.current_load_frame_ready()
+        && !matches!(
+            snapshot.state,
+            serein_media::PlaybackState::Ended | serein_media::PlaybackState::Failed
+        )
+        && (snapshot.state == serein_media::PlaybackState::Buffering
+            || snapshot.width > 0
+            || !state.player.current_load_is_active());
+    if app.get_video_starting() != video_starting {
+        app.set_video_starting(video_starting);
+    }
     let pending_seek = state
         .player
         .pending_seek_target()
@@ -333,6 +354,7 @@ fn start_local_media(app: &App, state: &Rc<UiState>, startup: &mut Option<Startu
         && let Some(path) = startup.local
     {
         app.set_loaded(true);
+        watch_loading::local_finished(app, state);
         app.set_page(2);
         app.set_video_title(
             path.file_name()
@@ -535,6 +557,7 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     let weak = app.as_weak();
     app.on_thumbnail_wake(move || {
+        s.thumbnails.borrow().begin_wake();
         if let Some(app) = weak.upgrade() {
             let configured = s.thumbnails.borrow_mut().take_cache_limit_result();
             if let Some((mib, result)) = configured {
@@ -545,7 +568,9 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
             }
             caption_cache::artwork_finished(&app, &s);
         }
-        loop {
+        // Bound image publication per event-loop turn; workers may refill the
+        // queue while this callback is running. Input/rendering must get a turn.
+        for _ in 0..2 {
             let ready = s.thumbnails.borrow_mut().take();
             let Some(ready) = ready else { break };
             if s.caption_cache.active() {
@@ -576,6 +601,7 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
                 .borrow()
                 .record_publication(pixels.as_raw().len());
         }
+        s.thumbnails.borrow().continue_wake();
         if s.library_fixture.is_some()
             && let Some(app) = weak.upgrade()
         {
@@ -825,11 +851,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let integrated_header = !options.native_video_child;
     slint::BackendSelector::new()
         .backend_name("winit".into())
         .renderer_name("femtovg".into())
         .require_opengl()
-        .with_winit_window_attributes_hook(window_chrome::attributes)
+        .with_winit_window_attributes_hook(move |attributes| {
+            window_chrome::attributes(attributes, integrated_header)
+        })
         .select()?;
     // Declare before App/Player so error-path destruction releases all media
     // leases before the caption cleanup owner joins.
@@ -883,6 +912,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
     let state = Rc::new(UiState {
         window_chrome,
+        watch_loading: watch_loading::State::default(),
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -1202,6 +1232,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     playback_ui::bind(&app, &state);
     focus_intent::bind(&app, &state);
     guest_recovery::bind(&app, &state);
+    watch_loading::bind(&app, &state);
     native_child::bind(&app, &state);
     let weak = app.as_weak();
     let s = state.clone();

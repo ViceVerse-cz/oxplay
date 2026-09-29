@@ -332,11 +332,16 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             Target::Video(id, quality, start) => Some((id.clone(), *quality, *start)),
             Target::Catalog(..) => None,
         };
+        if video.is_some() {
+            crate::watch_loading::prepare_guest(&app, &state);
+        }
         state.worker.borrow_mut().submit(target.request());
         if let Some(job) = state.guest_recovery.ledger.borrow_mut().job.as_mut() {
             job.attempt = attempt;
         }
         if let Some((id, quality, start)) = video {
+            let generation = state.worker.borrow().generation();
+            crate::watch_loading::guest_begin(&app, &state, generation, &id);
             if start == Default::default() {
                 crate::guest_playback::retry_submitted(&state, &id, quality);
             }

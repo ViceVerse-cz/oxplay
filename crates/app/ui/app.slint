@@ -15,6 +15,9 @@ export component App inherits Window {
     always-on-top: root.picture-in-picture;
     no-frame: root.window-borderless;
     in-out property <bool> window-borderless;
+    in property <bool> native-header-integrated;
+    callback window-header-drag();
+    private property <length> header-leading-inset: root.native-header-integrated && !root.video-only ? 88px : 0px;
     callback pip-drag();
     in property <bool> window-translucency-available;
     in property <bool> window-blur-available;
@@ -193,6 +196,12 @@ export component App inherits Window {
     callback guest-previous();
     callback guest-back();
     in property <bool> loaded;
+    in property <bool> watch-loading;
+    in property <string> watch-load-error;
+    in property <bool> watch-load-account;
+    callback watch-retry();
+    public function reset-watch-scroll() { root.saved-watch-offset = 0px; watch.content-y = 0px; }
+    in property <bool> video-starting;
     in property <string> catalog-title: "Find your next watch";
     in property <string> catalog-subtitle: "Search YouTube, or paste a video link above.";
     in property <string> catalog-empty-title: "Watch with intention";
@@ -447,7 +456,9 @@ export component App inherits Window {
         height: root.video-only ? root.height : root.height - self.y - 48px;
         visible: root.watching;
         horizontal-scrollbar-policy: always-off;
-        vertical-scrollbar-policy: root.video-only ? always-off : as-needed;
+        // Keep wheel/trackpad and focus-driven scrolling without painting a
+        // native scrollbar over the video or inline transport.
+        vertical-scrollbar-policy: always-off;
         content-width: self.visible-width;
         content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 16px, related.y + related.height + (root.wide-related ? 0px : 16px)));
         changed content-y => {
@@ -476,8 +487,23 @@ export component App inherits Window {
                     }
                 }
             }
-            Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; }
-            if root.show-info && root.watching && !root.video-only: Rectangle {
+            Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; visible: root.loaded && !root.watch-loading; }
+            if root.watch-loading || root.watch-load-error != "" || (root.video-starting && !root.playback-failed): Rectangle {
+                x: 0px; y: 0px; width: parent.width; height: parent.height; background: #121212;
+                VerticalLayout {
+                    x: max(16px, (parent.width - 420px) / 2); y: max(12px, (parent.height - self.height) / 2);
+                    width: min(420px, parent.width - 32px); height: self.preferred-height;
+                    spacing: 14px; alignment: start;
+                    Image { source: @image-url("icons/clapperboard.svg"); colorize: #777777; width: 36px; height: 36px; horizontal-stretch: 0; }
+                    Text { text: root.watch-load-error != "" ? "Couldn’t open this video" : root.watch-loading ? "Loading video…" : "Starting playback…"; color: #eeeeee; font-size: 18px; font-weight: 600; horizontal-alignment: center; wrap: word-wrap; }
+                    if root.watch-load-error != "": Text { text: root.watch-load-error; color: #bbbbbb; font-size: 13px; horizontal-alignment: center; wrap: word-wrap; }
+                    if root.watch-loading: Rectangle { height: 4px; width: min(200px, parent.width); horizontal-stretch: 0; border-radius: 2px; background: #333333; }
+                    if root.watch-load-error != "" && (root.watch-load-account || root.recovery-available): HorizontalLayout { height: 36px; spacing: 8px; alignment: center;
+                        Action { label: root.watch-load-account ? "Retry" : root.recovery-ready ? "Retry" : "Retry shortly"; width: 128px; height: 36px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && (root.watch-load-account ? root.account-connected && !root.account-pending : root.recovery-ready); clicked => { root.watch-retry(); } }
+                    }
+                }
+            }
+            if root.show-info && root.watching && root.loaded && !root.watch-loading && !root.video-only: Rectangle {
                 x: 0px; y: 12px; width: video.width; height: 110px; background: #111315dd;
                 Text { x: 16px; y: 10px; width: parent.width - 32px; height: parent.height - 20px; text: root.technical; color: #eeeeee; font-size: 12px; wrap: word-wrap; }
             }
@@ -488,7 +514,7 @@ export component App inherits Window {
             x: video.x;
             y: root.native-video-child ? video.y + video.height + 4px : video.y + video.height - self.height;
             width: video.width; height: root.native-video-child ? 72px : 100px;
-            visible: root.watching && (root.controls-visible || root.paused || root.controls-held || root.native-video-child);
+            visible: root.watching && !root.watch-loading && root.watch-load-error == "" && (root.controls-visible || root.paused || root.controls-held || root.native-video-child);
             background: root.native-video-child ? #111315 : @linear-gradient(180deg, #00000000 0%, #00000050 38%, #000000bd 100%);
             // The ancestor observes hover before children, without stealing a
             // slider's pointer grab or a button's activation.
@@ -542,7 +568,8 @@ export component App inherits Window {
             width: video.width; height: root.playback-status != "" ? 136px : 108px;
             visible: root.watching && !root.video-only;
             background: Colors.canvas;
-            if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; visible: !root.watch-loading || root.video-title != ""; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if root.watch-loading && root.video-title == "": Rectangle { x: 0px; y: 10px; width: parent.width * 0.72; height: 20px; border-radius: 4px; background: Colors.raised; }
             if !root.video-only: HorizontalLayout {
                 x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
                 Rectangle {
@@ -550,12 +577,15 @@ export component App inherits Window {
                     if root.watch-channel-avatar-ready: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; source: root.watch-channel-avatar; image-fit: cover; }
                     if !root.watch-channel-avatar-ready: Image { x: 5px; y: 5px; width: 30px; height: 30px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
                 }
-                Text { text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; horizontal-stretch: 1; min-width: 0px; overflow: elide; vertical-alignment: center; }
-                if root.account-connected: Action { width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                Rectangle { horizontal-stretch: 1; min-width: 0px; height: 40px;
+                    Text { x: 0px; y: 0px; width: parent.width; height: parent.height; text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; overflow: elide; vertical-alignment: center; }
+                    if root.watch-loading && root.video-channel == "": Rectangle { x: 0px; y: 12px; width: min(160px, parent.width); height: 16px; border-radius: 4px; background: Colors.raised; }
+                }
+                if root.account-connected && !root.watch-loading && root.watch-load-error == "": Action { width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
                 Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
                 share-button := Action { width: 72px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
                 Action { width: 88px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
-                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
+                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; enabled: root.loaded && !root.watch-loading; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
             }
             if root.playback-status != "": Text {
                 x: 0px; y: 114px; width: parent.width; height: 20px;
@@ -564,11 +594,17 @@ export component App inherits Window {
                 accessible-label: "Playback status: " + self.text;
             }
         }
+        if root.watch-loading && !root.video-only: VerticalLayout {
+            x: video.x; y: watch-controls.y + watch-controls.height + 12px; width: video.width; height: 78px;
+            padding: 12px; spacing: 8px; alignment: start;
+            Rectangle { height: 12px; width: parent.width * 0.9; border-radius: 3px; background: Colors.raised; horizontal-stretch: 0; }
+            Rectangle { height: 12px; width: parent.width * 0.7; border-radius: 3px; background: Colors.raised; horizontal-stretch: 0; }
+        }
         watch-details := WatchDetails {
             x: video.x; y: watch-controls.y + watch-controls.height + 12px;
             width: video.width;
             visible: root.watching && !root.video-only && root.loaded && root.remote-video;
-            height: self.visible ? self.preferred-height : 0px;
+            height: root.watch-loading && !root.video-only ? 78px : self.visible ? self.preferred-height : 0px;
             busy: root.busy;
             page-loaded => {
                 if root.watching && !root.video-only && root.remote-video && !root.account-playback-active && CommentsUi.has-loaded {
@@ -693,14 +729,19 @@ export component App inherits Window {
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only;
         width: parent.width; height: 56px; background: root.chrome-background;
-        Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
-        Rectangle { x: 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
+        TouchArea {
+            width: parent.width; height: parent.height;
+            enabled: root.native-header-integrated;
+            pointer-event(event) => { if event.kind == PointerEventKind.down && event.button == PointerEventButton.left { root.window-header-drag(); } }
+        }
+        Action { x: root.header-leading-inset + 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
+        Rectangle { x: root.header-leading-inset + 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
             Image { x: 5px; y: 5px; width: 20px; height: 20px; source: @image-url("icons/clapperboard.svg"); colorize: Colors.canvas; }
         }
-        Text { x: 110px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 25px; font-weight: 700; vertical-alignment: center; }
+        Text { x: root.header-leading-inset + 110px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 25px; font-weight: 700; vertical-alignment: center; }
         search := SearchField {
-            x: max(228px, (root.width - self.width) / 2); y: 7px;
-            width: min(620px, root.width - 418px); height: 42px;
+            x: max(root.header-leading-inset + 228px, (root.width - self.width) / 2); y: 7px;
+            width: min(620px, root.width - 418px - root.header-leading-inset); height: 42px;
             enabled: !root.native-video-child; cache-rendering-hint: root.cache-search;
             placeholder: root.native-video-child ? "Local-only diagnostic" : "Search YouTube";
             edited => { root.cancel-playback-focus(); }

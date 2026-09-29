@@ -324,3 +324,10 @@ The watch-layout correction adds unchanged `rectangle-horizontal.svg` from the
 same pinned official Lucide source. Existing ISC/MIT attribution and the updated
 asset checksum manifest accompany it. New avatar/provider/seek integration
 retains GPL-3.0-or-later headers; no media/helper build or license route changes.
+
+The integrated macOS header directly references existing locked objc2 0.6.4 and
+objc2-app-kit 0.3.2 packages. Their manifests declare `MIT` and `Zlib OR Apache-2.0 OR MIT`, respectively;
+existing third-party inventory/notice generation must retain the selected route
+and notices when distributing them. This adds no vendored interface asset,
+changes no framework GPL route, and does not qualify binary redistribution.
+New loading and native-adapter source retains GPL-3.0-or-later headers.

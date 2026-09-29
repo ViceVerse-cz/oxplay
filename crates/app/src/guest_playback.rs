@@ -193,6 +193,12 @@ pub fn receive(
         state.focus_intent.cancel(crate::focus_intent::Scope::Guest(
             state.worker.borrow().generation(),
         ));
+        crate::watch_loading::guest_failed(
+            app,
+            state,
+            state.worker.borrow().generation(),
+            "This playback response was rejected.",
+        );
         app.set_status("A non-guest result was rejected by guest playback.".into());
         return;
     }
@@ -225,6 +231,7 @@ pub fn receive(
         let (Some(app), Some(state)) = (weak.upgrade(), state_weak.upgrade()) else { return };
         if state.guest_playback.pending.borrow().as_ref().is_some_and(|job| job.generation == generation) {
             cancel(&app, &state);
+            crate::watch_loading::guest_failed(&app, &state, generation, "The previous player has not finished stopping. Select the video again to retry.");
             app.set_status("The previous player has not finished stopping. Select the video again to retry.".into());
         }
     });
@@ -260,6 +267,12 @@ fn publish(
     }
     if !state.presentation_ready.get() {
         state.focus_intent.cancel(focus_scope);
+        crate::watch_loading::guest_failed(
+            app,
+            state,
+            state.worker.borrow().generation(),
+            "Video presentation is unavailable. Activate the display, then select the video again.",
+        );
         app.set_status(
             "Video presentation is unavailable. Activate the display, then select the video again."
                 .into(),
@@ -273,6 +286,7 @@ fn publish(
     let paused = restart.is_some() && state.player.user_pause_intent();
     if let Err(error) = load_remote(state, &item, f64::from(start.seconds()), paused) {
         state.focus_intent.cancel(focus_scope);
+        crate::watch_loading::guest_failed(app, state, state.worker.borrow().generation(), &error);
         app.set_status(error.into());
         return;
     }
@@ -292,6 +306,7 @@ fn publish(
     playback_ui::selected(app, state, &item);
     app.set_page(2);
     app.set_loaded(true);
+    crate::watch_loading::guest_finished(app, state, state.worker.borrow().generation());
     crate::channel_avatar::selected_guest(app, state, &item.video);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Guest playback · Ad filtering is experimental and may miss some ads".into());

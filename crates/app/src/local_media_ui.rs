@@ -461,6 +461,7 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &Snapshot) {
                     app.set_video_channel("Local file · Not saved to history".into());
                     app.set_page(2);
                     app.set_loaded(true);
+                    crate::watch_loading::local_finished(app, state);
                     app.invoke_focus_video_mode();
                     finish(
                         app,

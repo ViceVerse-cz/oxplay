@@ -1,22 +1,32 @@
 # Window chrome and appearance
 
-The normal application uses the operating system's native window frame and
-controls. On macOS this means AppKit traffic lights and system-rounded frame
-corners, rather than shared minimize/maximize/close glyphs inside a square
-borderless window. Windows and Linux use their native desktop decoration policy;
-rounded corners are not promised on desktops that do not provide them. The
-browsing UI, search, sidebar and player remain one compiled Slint component
-library. Native decorations do not create another player, window or presenter.
+The macOS application places its shared 56px Slint header inside the native
+window's titlebar area. The title is hidden, the titlebar is transparent, and
+`FullSizeContentView` lets search and application controls use the top of the
+window without a separate default title row. The leading 88px is reserved for
+the real AppKit traffic lights. AppKit retains their normal placement, hover,
+accessibility, and close/minimize/fullscreen behavior, as well as the rounded
+system frame. The application does not draw replacement traffic-light glyphs
+or restructure AppKit's undocumented titlebar subviews.
+
+Windows and Linux currently retain their native desktop decoration policy;
+integrating the shared header with those native system buttons requires a
+separately validated adapter. Rounded corners are not promised on desktops that
+do not provide them. The browsing UI, search, sidebar and player remain one
+compiled Slint component library. Native decorations do not create another
+player, window or presenter.
 
 Slint's `Window.no-frame` remains the source of truth for decorations. It is false
 at normal startup. Picture-in-picture snapshots the existing native frame,
 sets `no-frame` true, then restores the saved decoration state and geometry on
-exit. Fullscreen follows the native window manager; Winit restores the normal
-frame when fullscreen ends. The main app no longer reserves a shared custom
-titlebar row or draws substitute system buttons. Drag, edge resize, minimize,
-zoom/maximize, close and the macOS green-button fullscreen behavior belong to
-the native frame. The existing Slint close-request handler still handles
-shutdown and PiP restoration.
+exit. Winit 0.30.13 drops `FullSizeContentView` when it restores decorations, so
+the macOS adapter restores that single style-mask bit after the normal titled
+frame returns. Fullscreen follows the native window manager. The shared empty
+header region starts a native window drag, while Slint controls and traffic
+lights retain their input. Native titlebar double-click, edge resize, minimize,
+zoom/maximize, close and the macOS green-button fullscreen behavior remain owned
+by AppKit. The existing Slint close-request handler still handles shutdown and
+PiP restoration. The native-child media diagnostic retains its ordinary frame.
 
 Translucency is an explicit session-local option, initially off. It applies to
 the shell background and sidebar; the main browsing surface and video remain
@@ -53,16 +63,22 @@ Source reviewed for this implementation:
   when choosing other platform configurations; opaque fallback can occur.
 - Locked Winit 0.30.13, `src/window.rs` and
   `src/platform_impl/macos/window_delegate.rs`: native operation contracts,
-  platform restrictions, borderless resizable style, and native blur internals.
+  platform restrictions, borderless resizable style, decoration-mask restoration,
+  and native blur internals; `src/platform/macos.rs` provides the creation-time
+  transparent/hidden-title/full-size-content attributes.
+- Already-locked objc2 0.6.4 and objc2-app-kit 0.3.2, now direct macOS-only
+  dependencies with limited AppKit features: `MainThreadMarker`, `NSView.window`,
+  and public `NSWindow` style/title methods. The adapter borrows Winit's live view
+  synchronously on the main thread and retains no raw handle across events.
 
 `window_chrome.rs` owns the native adapter. `BackendSelector` installs its window
 attributes hook before component creation, because X11 cannot add a transparent
 visual afterward. Shared Slint bindings own alpha and decoration properties. On
 macOS the pinned backend derives native transparency from `Window.background` and `no-frame`,
 overriding the creation hook. Keeping the normal background opaque therefore
-preserves the native titlebar paint and rounded frame. Opting into translucency
-can also make the native titlebar transparent; this is the selected upstream
-behavior, not a promise of an AppKit vibrancy material.
+preserves the opaque shell and rounded native frame while the titlebar itself
+is transparent over the shared header. Opting into translucency changes the
+underlying shell alpha; this is not a promise of an AppKit vibrancy material.
 Native blur writes are cached and updated only by user actions or observed
 window/mode changes. No appearance polling loop is introduced.
 

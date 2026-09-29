@@ -177,6 +177,20 @@ impl State {
         }
     }
 }
+pub fn video_summary(
+    state: &UiState,
+    id: &serein_core::VideoId,
+) -> Option<serein_core::VideoSummary> {
+    state
+        .guest_ui
+        .items
+        .borrow()
+        .iter()
+        .find_map(|item| match item {
+            CatalogItem::Video(video) if &video.id == id => Some(video.clone()),
+            _ => None,
+        })
+}
 fn filter_admitted(
     index: i32,
     scope: i32,
@@ -350,6 +364,7 @@ fn load(app: &App, s: &UiState, location: Location, remember: bool) {
 }
 /// Called only for current guest worker errors, irrespective of retry eligibility.
 pub fn failed(app: &App, state: &UiState, generation: u64, error: ProviderError) {
+    crate::watch_loading::guest_failed(app, state, generation, &error.to_string());
     let kind = state.guest_ui.presentation.borrow_mut().failed(generation);
     let Some(kind) = kind else { return };
     app.set_catalog_subtitle(kind.failed().into());
@@ -573,6 +588,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let (Some(app), Some(state)) = (weak.upgrade(), state_weak.upgrade()) else {
             return;
         };
+        crate::watch_loading::cancel_guest(&app, &state);
         let cancelled = state.guest_ui.presentation.borrow_mut().cancelled();
         if cancelled {
             app.set_catalog_subtitle("Request cancelled.".into());
@@ -632,10 +648,15 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         // load() clears it only when an actual catalog navigation is admitted.
         match request_from_input(query.as_str(), kind(app.get_search_kind())) {
             Ok(Input::Video(link)) => {
+                crate::watch_loading::prepare_guest(&app, &s);
                 let quality = crate::library_ui::desired_preferences(&s).playback.quality;
-                s.worker
-                    .borrow_mut()
-                    .submit(Request::ResolveAt(link.id, quality, link.start));
+                s.worker.borrow_mut().submit(Request::ResolveAt(
+                    link.id.clone(),
+                    quality,
+                    link.start,
+                ));
+                let generation = s.worker.borrow().generation();
+                crate::watch_loading::guest_begin(&app, &s, generation, &link.id);
                 s.focus_intent.arm(
                     crate::focus_intent::Scope::Guest(s.worker.borrow().generation()),
                     app.get_search_active(),
@@ -800,7 +821,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_select_video(move |index| {
         let Some(app) = weak.upgrade() else { return };
-        if app.get_busy() {
+        if app.get_busy() && !app.get_watch_loading() {
             return;
         }
         if !crate::playback_preferences::admit_search(&app, &s) {
@@ -809,10 +830,13 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let item = s.guest_ui.items.borrow().get(index as usize).cloned();
         match item {
             Some(CatalogItem::Video(video)) => {
+                crate::watch_loading::prepare_guest(&app, &s);
                 let quality = crate::library_ui::desired_preferences(&s).playback.quality;
                 s.worker
                     .borrow_mut()
-                    .submit(Request::Resolve(video.id, quality));
+                    .submit(Request::Resolve(video.id.clone(), quality));
+                let generation = s.worker.borrow().generation();
+                crate::watch_loading::guest_begin(&app, &s, generation, &video.id);
                 s.focus_intent.arm(
                     crate::focus_intent::Scope::Guest(s.worker.borrow().generation()),
                     app.get_search_active(),

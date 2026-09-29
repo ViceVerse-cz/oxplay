@@ -113,6 +113,12 @@ impl State {
             picker.abort();
         }
     }
+    pub fn video_title(&self, id: &serein_core::VideoId) -> Option<String> {
+        self.items.borrow().iter().find_map(|item| match item {
+            Item::Video(video) if &video.video_id == id => Some(video.title.clone()),
+            _ => None,
+        })
+    }
     pub fn session_generation(&self) -> u64 {
         self.worker.control().generation()
     }

@@ -152,6 +152,8 @@ impl Job {
 pub struct State {
     selection: Cell<u64>,
     pending: RefCell<Option<Job>>,
+    waiting_stop: RefCell<Option<AccountResponse>>,
+    stop_deadline: Timer,
     active: RefCell<Option<AccountPlaybackLease>>,
     expiry: Timer,
     restart: RefCell<RestartState>,
@@ -177,8 +179,11 @@ pub fn is_current(state: &UiState, video: &VideoId, selection: u64, session: u64
             .is_some_and(|lease| lease.generation() == session && lease.is_valid())
 }
 pub fn cancel_pending(app: &App, state: &Rc<UiState>) {
+    crate::watch_loading::cancel_account(app, state);
     crate::guest_recovery::invalidate(app, state);
     let s = &state.account_playback;
+    s.stop_deadline.stop();
+    s.waiting_stop.borrow_mut().take();
     state.focus_intent.cancel_account();
     s.selection.set(s.selection.get().wrapping_add(1));
     if s.pending.borrow_mut().take().is_some() {
@@ -213,6 +218,7 @@ pub fn clear(app: &App, state: &Rc<UiState>) {
     crate::channel_avatar::clear(app, state);
     state.clock_ui.invalidate();
     if let Err(error) = state.player.stop() {
+        crate::watch_loading::stop_failed(state);
         app.set_status(error.to_string().into());
     }
     if crate::playback_ui::clear_local(state) {
@@ -332,6 +338,9 @@ fn submit(
 }
 pub fn request_initial(app: &App, state: &Rc<UiState>, id: &VideoId) -> Result<(), String> {
     ready(app, state)?;
+    if authorization(state).is_some() {
+        clear(app, state);
+    }
     // Guest generation observers may cancel account work. Run them before the
     // new job/selection epoch is installed, never after its submission.
     state.worker.borrow_mut().cancel();
@@ -342,6 +351,7 @@ pub fn request_initial(app: &App, state: &Rc<UiState>, id: &VideoId) -> Result<(
         crate::playback_preferences::policy(state),
         Kind::Initial,
     )?;
+    crate::watch_loading::account_begin(app, state, id);
     state.focus_intent.arm(
         crate::focus_intent::Scope::Account {
             selection: generation(state),
@@ -547,6 +557,50 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     if !accepts {
         return;
     }
+    // A fast resolution may finish before the previous file's asynchronous VO
+    // teardown. Retain just this admitted response and its original Job; no
+    // media source or account lease is installed until the barrier completes.
+    if state.player.snapshot().stop_pending
+        && state
+            .account_playback
+            .pending
+            .borrow()
+            .as_ref()
+            .is_some_and(|job| job.kind == Kind::Initial)
+        && matches!(&response.result, Ok(Response::PlaybackResolved { .. }))
+    {
+        let selection = generation(state);
+        let session = state.account_ui.session_generation();
+        *state.account_playback.waiting_stop.borrow_mut() = Some(response);
+        let weak = app.as_weak();
+        let state_weak = Rc::downgrade(state);
+        state.account_playback.stop_deadline.start(
+            TimerMode::SingleShot,
+            Duration::from_secs(3),
+            move || {
+                let (Some(app), Some(state)) = (weak.upgrade(), state_weak.upgrade()) else {
+                    return;
+                };
+                if generation(&state) != selection
+                    || state.account_ui.session_generation() != session
+                    || state.account_playback.waiting_stop.borrow().is_none()
+                {
+                    return;
+                }
+                state.account_playback.waiting_stop.borrow_mut().take();
+                state.account_playback.pending.borrow_mut().take();
+                state.focus_intent.cancel(crate::focus_intent::Scope::Account {
+                    selection,
+                    session,
+                });
+                app.set_busy(false);
+                let message = "The previous player has not finished stopping. Select the video again to retry.";
+                crate::watch_loading::account_error(&app, &state, message);
+                app.set_status(message.into());
+            },
+        );
+        return;
+    }
     let job = state
         .account_playback
         .pending
@@ -585,6 +639,9 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
             }
             state.account_ui.set_status(app, error.to_string());
             app.set_status(error.to_string().into());
+            if job.kind == Kind::Initial {
+                crate::watch_loading::account_error(app, state, &error.to_string());
+            }
             if let Kind::Restart { load } = job.kind
                 && state.player.snapshot().load_request_id == load
             {
@@ -603,6 +660,13 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
         }
         _ => {
             state.focus_intent.cancel(focus_scope);
+            if job.kind == Kind::Initial {
+                crate::watch_loading::account_error(
+                    app,
+                    state,
+                    "An unexpected account playback response was rejected.",
+                );
+            }
             app.set_status("An unexpected account playback response was rejected.".into());
             return;
         }
@@ -640,6 +704,9 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
         };
         state.account_ui.set_status(app, message);
         app.set_status(message.into());
+        if job.kind == Kind::Initial {
+            crate::watch_loading::account_error(app, state, message);
+        }
         return;
     }
     if let Kind::Replacement { expiry } = job.kind {
@@ -656,6 +723,13 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     }
     let Some(config) = &state.account_media_network else {
         state.focus_intent.cancel(focus_scope);
+        if job.kind == Kind::Initial {
+            crate::watch_loading::account_error(
+                app,
+                state,
+                "The protected account media transport is unavailable.",
+            );
+        }
         app.set_status("The protected account media transport is unavailable.".into());
         return;
     };
@@ -689,6 +763,9 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
         paused,
     ) {
         state.focus_intent.cancel(focus_scope);
+        if job.kind == Kind::Initial {
+            crate::watch_loading::account_error(app, state, &error);
+        }
         app.set_status(error.into());
         if let Kind::Restart { load } = job.kind
             && state.player.snapshot().load_request_id == load
@@ -730,12 +807,29 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     crate::playback_ui::selected(app, state, &item);
     app.set_page(2);
     app.set_loaded(true);
+    crate::watch_loading::account_finished(app, state);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Account playback · Experimental ad filtering · Account captions and private local history are unavailable".into());
     state.account_ui.set_status(
         app,
         "Playing with this account. Disconnect stops playback and clears its private metadata.",
     );
+}
+
+/// Called after draining engine events. No timer polls the native stop state.
+pub fn observe_stopped(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) -> bool {
+    if snapshot.stop_pending {
+        return false;
+    }
+    let response = state.account_playback.waiting_stop.borrow_mut().take();
+    if let Some(response) = response {
+        state.account_playback.stop_deadline.stop();
+        // Exact selection/session, authorization and presentation admission are
+        // rechecked by receive; a stale response cannot install account media.
+        receive(app, state, response);
+        return true;
+    }
+    false
 }
 
 #[cfg(test)]

@@ -1188,6 +1188,12 @@ impl Player {
         self.inner.next_subtitle_reply.set(next);
         Ok(())
     }
+    /// Whether the pending terminal stop was rejected by dispatch, its native
+    /// reply, or output verification. Only an explicit user retry should call
+    /// `stop` again in this state; ordinary pending stops already coalesce.
+    pub fn stop_failed(&self) -> bool {
+        self.inner.stop_requested.get() && self.inner.stop_failed.get()
+    }
     /// Revoke registered streams immediately and request a terminal native stop.
     /// One reserved command bypasses ordinary queue saturation; repeated calls
     /// coalesce. Older load commands are fenced by their replies followed by a

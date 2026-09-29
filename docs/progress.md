@@ -6,7 +6,35 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current UI correction fixes the timeline/volume fill origin, removes the
+The current correction integrates the custom 56px shared header with the real
+macOS traffic lights through a transparent, hidden native titlebar and full-size
+content view. The system frame/corners remain native; PiP restoration reapplies
+the content-view style. Windows/Linux retain their native-frame fallback until
+separate integration validation. The watch-page scrollbar no longer overlays
+the player; wheel, trackpad and focus-driven scrolling remain available.
+
+Selecting a video now opens its watch page in the same UI callback, using known
+metadata and static pending-only skeletons. The old picture/metadata is retired;
+initial guest/account requests retain generation/session cancellation and exact
+native stop barriers. Inline failure/retry state replaces an indefinite pending
+view. See [opening a video](watch-loading.md) and [window appearance](window-appearance.md).
+
+Source inspection confirmed image HTTP/decode/cache work and media HTTP/DNS
+initialization already run off the UI thread. The UI image completion loop now
+publishes at most two results per callback, with coalesced bounded continuations.
+This avoids draining successive completion batches in one callback; it is not a
+measured attribution of the reported stalls or an extraction-speed claim.
+`cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
+and `cargo build --workspace --locked` passed on the macOS host. Initial concurrent
+integration checking briefly saw a not-yet-written media method; the completed
+source passes final checks. One thumbnail wake-coalescing regression was authored
+and compiled, not run. No test suite, native capture, live account operation or
+performance/usage run is part of this pass. The prior display-clock `-6661`
+blocker has not been re-tested; integrated traffic lights, skeleton transitions,
+scroll gestures, rapid selection and account-stop handoff still need targeted
+native functional qualification. Existing production/platform gates remain open.
+
+The preceding UI correction fixes the timeline/volume fill origin, removes the
 large seek focus rectangle, and holds accepted absolute seek intent until the
 existing native confirmation settles. Observed elapsed time remains separate.
 The creator avatar/name and Share/Save actions now share a vertically centered

@@ -1,7 +1,10 @@
 # Platform qualification
 
-Normal windows now use native system decorations; PiP temporarily removes them.
-Theatre mode and compact watch/library layouts remain shared Slint UI. Optional
+macOS now integrates its real native traffic lights into the shared custom
+header through a transparent titlebar/full-size content view. Windows/Linux
+retain native-frame fallback; their integrated-header adapters are unvalidated.
+PiP temporarily removes decorations. Theatre mode and watch/library/loading
+layouts remain shared Slint UI. Optional
 translucency is retained. Blur is
 exposed only as an experimental macOS request; Windows/X11/native Wayland blur
 remains unavailable in this implementation. These API paths have no new native

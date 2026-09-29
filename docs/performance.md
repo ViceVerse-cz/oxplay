@@ -1,5 +1,12 @@
 # Performance qualification
 
+The immediate-watch/header slice adds no measurements. Source inspection found
+an image-publication loop that could consume successive batches in one UI
+callback; publication is now capped at two results per coalesced callback.
+Thumbnail network/decode/cache work was already on its worker, and media HTTP/
+DNS setup remains on the demux thread. This is not measured proof that those
+changes resolve all reported loading stalls or improve extraction latency.
+
 The local-file, playlist organization and time/chapter navigation feature batch
 adds no performance or resource measurements. All earlier results retain their
 recorded binary/source scope; these additions do not pass or change any budget.

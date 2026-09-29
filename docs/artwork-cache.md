@@ -32,6 +32,14 @@ limits, not measured resource acceptance. Visible Slint references remain
 separately bounded by the existing viewport window. Queues retain at most forty
 requests, four active image tasks and eight ready images.
 
+Image/cache completions share a coalesced event-loop wake. The UI publishes at
+most two ready images per callback and schedules another handoff only if the
+queue still contains work. This prevents a completion burst from draining and
+refilling the queue indefinitely in one UI callback; decoding and disk work
+remain on the image worker. These scheduling bounds are source behavior, not a
+measured latency or frame-time claim. The scheduling change has not had a native
+interaction or resource run; those are separate from the earlier evidence below.
+
 Unix cache operations retain a private directory descriptor, reject symlinks and
 hardlinks, and use a nonblocking exclusive instance lock. Atomic replacement and
 bounded PNG structure/CRC checks protect stored files; the image decoder still
