@@ -123,7 +123,13 @@ shows the confirmation in view with Cancel focused. Post-exit read-only SQL agai
 confirmed both expected playlists and history disabled. Both owned processes were
 reaped. Evidence is in `artifacts/keyboard-release-v2`; executable SHA256 is
 `11659bbc976c2b6f8fd3c8bc9c9ac24bd50091b76644048dc2cdb9bad96f6dc8`.
-Remote CI is pending.
+Source `fa67cba` is pushed. Its
+[CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36594008344) failed before
+either runner started; both check annotations reported failed account payments
+or a spending-limit issue. There are no runner logs or remote compilation/test
+results for this source. The exact-commit source preview includes the new
+diagnostic module, shared widgets and these notes; all asset checksums verified.
+No tag or release was created.
 Tests exposed an unrelated existing DNS-fixture PID publication race: readiness
 now requires a complete newline-terminated PID, with process-reaping assertions
 unchanged. The integrated workspace suite then passed 414 Rust tests (four
@@ -145,5 +151,5 @@ cargo build --workspace --release --locked
   --ui-theme light --snapshot /absolute/path/new-keyboard-profile/keyboard.png
 ```
 
-It exits after38seconds and returns an error if any stage fails or never completes.
+It exits after 38 seconds and returns an error if any stage fails or never completes.
 The screenshot is an explicit one-shot capture; normal presentation is unchanged.

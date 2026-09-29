@@ -152,3 +152,22 @@ usage, desktop or live-account test ran in CI. The local exact-commit source
 preview includes `artwork.rs`, schema v6 and its documentation; all generated
 asset checksums were verified. The release workflow was not dispatched, and no
 tag or release was created.
+
+## Playlist keyboard and controlled settings checkpoint
+
+Source `fa67cba` is pushed. [Its CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36594008344)
+failed before either job started. Both check annotations say recent account
+payments failed or the spending limit must be increased; the macOS check also
+notes ARM64 runner capacity constraints. No checkout, build or test step ran,
+and there are no runner logs. This is a hosted-runner admission failure, not a
+passing CI result or evidence of a source compilation failure. Repository billing
+needs resolution before rerunning that exact source.
+
+Local locked checks passed 414 Rust tests (four explicit integrations ignored),
+163 Python tooling tests, formatting, strict Clippy and debug/release builds.
+The final native playlist keyboard diagnostic passed all twelve stages in both
+builds; its scope and captures are documented in
+[library reconciliation](library-reconciliation.md#keyboard-name-editing-and-confirmations).
+The exact-commit source preview and every checksum verified locally, including
+the new diagnostic and shared controls. No performance/usage test ran, and no
+release/tag was published. Linux compilation for this source remains unverified.

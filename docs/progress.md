@@ -25,7 +25,12 @@ disabled-control focus bug before the passing fix. Read-only SQL confirmed the
 two expected persisted playlists and history off. The final debug and release
 checks also passed deferred selector rollback and a subsequent real accepted
 selection; the compact 760×600 light release capture was inspected and shutdown
-returned 0. Both native processes were reaped. Remote CI is pending.
+returned 0. Both native processes were reaped. Source `fa67cba` is pushed.
+[CI](https://github.com/ViceVerse-cz/yt/actions/runs/36594008344) could not start
+either job: GitHub reported failed account payments or a spending-limit issue.
+No remote test/build result exists for this source; prior green runs remain
+historical evidence. The exact-commit source preview and all asset checksums
+verified locally; no tag or release was created.
 This tests Slint key delivery in a native window, not OS/physical keyboard, IME
 or screen-reader qualification. No performance/usage benchmark was run.
 
