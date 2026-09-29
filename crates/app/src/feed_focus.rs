@@ -250,6 +250,52 @@ fn request(app: &App, state: &UiState, surface: Surface, index: usize) {
         publish_request(app, state);
     }
 }
+/// Preserve a focused video across a same-page local membership reconciliation.
+/// Parking owns no row data borrow while model notifications run.
+pub fn reconcile_home(
+    app: &App,
+    state: &UiState,
+    change: impl FnOnce() -> Result<(), &'static str>,
+) -> Result<(), &'static str> {
+    let current = {
+        let intent = state.feed_focus.intent.borrow();
+        intent.current.clone().or_else(|| {
+            intent
+                .pending
+                .as_ref()
+                .map(|target| target.identity.clone())
+        })
+    };
+    let restore = current.filter(|key| {
+        key.surface == Surface::Feed
+            && app.get_page() == 0
+            && (app.get_feed_focused_index() >= 0 || app.get_feed_parking_active())
+    });
+    let parked = restore
+        .as_ref()
+        .and_then(|key| {
+            (0..state.model.row_count())
+                .find(|&i| identity(state, Surface::Feed, i).as_ref() == Some(key))
+        })
+        .is_some_and(|index| park(app, state, Surface::Feed, index));
+    let result = change();
+    if parked {
+        let index = restore.as_ref().and_then(|key| {
+            (0..state.model.row_count())
+                .find(|&i| identity(state, Surface::Feed, i).as_ref() == Some(key))
+        });
+        if let Some(index) = index {
+            if let Some(target) = state.feed_focus.intent.borrow_mut().pending.as_mut() {
+                target.index = index;
+            }
+            publish_request(app, state);
+        } else {
+            reset(app, state);
+            app.invoke_focus_browse();
+        }
+    }
+    result
+}
 /// Called before old row instances are dropped. The parked scope survives regroup.
 pub fn columns_changed(app: &App, state: &UiState, columns: usize) {
     let current = {

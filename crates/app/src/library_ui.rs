@@ -837,7 +837,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else { return };
         while let Some(response) = s.library.take() {
             match response {
+                library::Response::Home { ticket, result } => crate::home_ui::receive(&app, &s, ticket, result),
                 library::Response::Library(items, prefs, chosen) => {
+                    crate::home_ui::changed(&app, &s);
                     if chosen.is_some() { finish_name(&app,&s,NameKind::Create); }
                     complete(&app, &s);
                     if s.library_ui.reads.borrow().pending.is_none() {
@@ -938,6 +940,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     );
                 }
                 library::Response::Saved => {
+                    crate::home_ui::changed(&app, &s);
                     finish_name(&app,&s,NameKind::Rename);
                     complete(&app, &s);
                     status(&app, "Saved on this device.");
@@ -948,6 +951,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     }
                 }
                 library::Response::VideoSaved(serial) => {
+                    crate::home_ui::changed(&app, &s);
                     if let Some(saved) = s.library_ui.finish_video_save(serial) {
                         complete(&app, &s);
                         app.global::<SaveUi>().set_busy(false);
@@ -986,6 +990,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     }
                 }
                 library::Response::Imported(summary) => {
+                    crate::home_ui::changed(&app, &s);
                     complete(&app, &s);
                     status(
                         &app,
@@ -1015,6 +1020,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     );
                 }
                 library::Response::Cleared(prefs) => {
+                    crate::home_ui::cleared(&app, &s);
                     cancel_name(&app,&s);
                     s.library_ui.name_write.borrow_mut().take();
                     app.global::<LibraryUi>().set_name_draft("".into());

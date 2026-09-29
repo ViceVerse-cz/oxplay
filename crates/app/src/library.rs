@@ -57,6 +57,11 @@ pub enum Request {
         ticket: u64,
         page: PageQuery,
     },
+    /// Separate ticket namespace from the local-library page controller.
+    Home {
+        ticket: u64,
+        after: Option<PageCursor>,
+    },
     Rename(LocalPlaylistId, String),
     /// Caller must obtain explicit confirmation for a nonempty collection.
     Delete(LocalPlaylistId),
@@ -93,6 +98,10 @@ pub enum Response {
     PageRead {
         ticket: u64,
         result: Result<PageResult, String>,
+    },
+    Home {
+        ticket: u64,
+        result: Result<Page<VideoSummary>, String>,
     },
     HistoryRecorded(bool),
     Imported(ImportSummary),
@@ -140,12 +149,22 @@ impl Worker {
                 } else {
                     None
                 };
+                let home = if let Request::Home { ticket, .. } = &request {
+                    Some(*ticket)
+                } else {
+                    None
+                };
                 let response = match &mut store {
                     Ok(store) => handle(store, request),
                     Err(error) => Err(*error),
                 }
                 .unwrap_or_else(|e| {
-                    if let Some(ticket) = reading {
+                    if let Some(ticket) = home {
+                        Response::Home {
+                            ticket,
+                            result: Err(e.to_string()),
+                        }
+                    } else if let Some(ticket) = reading {
                         Response::PageRead {
                             ticket,
                             result: Err(e.to_string()),
@@ -256,6 +275,12 @@ fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Re
         Request::ReadPage { ticket, page } => Ok(Response::PageRead {
             ticket,
             result: read_page(store, page).map_err(|error| error.to_string()),
+        }),
+        Request::Home { ticket, after } => Ok(Response::Home {
+            ticket,
+            result: store
+                .recently_saved_videos(after, MAX_PAGE_SIZE)
+                .map_err(|error| error.to_string()),
         }),
         Request::Rename(id, name) => {
             store.rename_playlist(id, &name)?;
@@ -768,6 +793,106 @@ mod tests {
                 matches!(worker.take(),Some(Response::PageRead { ticket,result:Err(_) }) if ticket==expected)
             );
         }
+        assert!(worker.take().is_none());
+    }
+
+    #[test]
+    fn home_pages_are_bounded_deduplicated_and_independently_correlated() {
+        let mut store = LocalStore::in_memory().unwrap();
+        for name in ["Synthetic first", "Synthetic second"] {
+            let playlist = store.create_playlist(name).unwrap();
+            for index in 0..105 {
+                store.save_video(playlist, &video(index)).unwrap();
+            }
+        }
+        let Response::Home {
+            ticket: 41,
+            result: Ok(first),
+        } = handle(
+            &mut store,
+            Request::Home {
+                ticket: 41,
+                after: None,
+            },
+        )
+        .unwrap()
+        else {
+            panic!("correlated Home page expected")
+        };
+        assert_eq!(first.items.len(), 100);
+        assert_eq!(first.items[0].id, video(104).id);
+        assert_eq!(first.items[99].id, video(5).id);
+        let Response::Home {
+            ticket: 42,
+            result: Ok(second),
+        } = handle(
+            &mut store,
+            Request::Home {
+                ticket: 42,
+                after: first.next,
+            },
+        )
+        .unwrap()
+        else {
+            panic!("correlated Home continuation expected")
+        };
+        assert_eq!(second.items.len(), 5);
+        assert_eq!(second.items[4].id, video(0).id);
+        assert!(second.next.is_none());
+        assert!(
+            first
+                .items
+                .iter()
+                .chain(&second.items)
+                .all(|v| v.thumbnail_url.is_none())
+        );
+        // Identical serials in the independent library controller stay distinct.
+        assert!(matches!(
+            handle(
+                &mut store,
+                Request::ReadPage {
+                    ticket: 42,
+                    page: PageQuery::Collections(None),
+                }
+            )
+            .unwrap(),
+            Response::PageRead { ticket: 42, .. }
+        ));
+    }
+
+    #[test]
+    fn home_initialization_errors_retain_each_ticket_and_response_namespace() {
+        let directory = TestDirectory::new();
+        let non_directory = directory.0.join("file");
+        std::fs::write(&non_directory, b"not a directory").unwrap();
+        let (wake, received) = mpsc::channel();
+        let worker = Worker::new(non_directory.join("library.sqlite3"), move || {
+            let _ = wake.send(());
+        });
+        for ticket in [41, 42] {
+            assert!(worker.submit(Request::Home {
+                ticket,
+                after: None
+            }));
+        }
+        assert!(worker.submit(Request::ReadPage {
+            ticket: 42,
+            page: PageQuery::Collections(None)
+        }));
+        for expected in [41, 42] {
+            received.recv_timeout(Duration::from_secs(5)).unwrap();
+            assert!(
+                matches!(worker.take(), Some(Response::Home { ticket, result: Err(_) }) if ticket==expected)
+            );
+        }
+        received.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(matches!(
+            worker.take(),
+            Some(Response::PageRead {
+                ticket: 42,
+                result: Err(_)
+            })
+        ));
         assert!(worker.take().is_none());
     }
 }

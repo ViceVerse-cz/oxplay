@@ -105,11 +105,165 @@ impl Groups {
             self.child_changes.set(self.child_changes.get() + 1);
         }
     }
+
+    /// Reconcile an authoritative page at the existing column count. Retain
+    /// child model identities and notify only slots whose content/membership
+    /// changed. A removed flat row may shift cards across group boundaries;
+    /// those affected slots change, but unrelated groups never reset.
+    pub fn reconcile(&self, source: &CatalogModel<VideoRow>) {
+        let columns = self.columns.get();
+        let mut children = self.children.borrow().clone();
+        let count = source.row_count().div_ceil(columns);
+        children.truncate(count);
+        let mut groups = Vec::with_capacity(count);
+        for group in 0..count {
+            let start = group * columns;
+            let length = columns.min(source.row_count() - start);
+            let child = if let Some(child) = children.get(group) {
+                let child = child.clone();
+                while child.row_count() > length {
+                    child.remove(child.row_count() - 1);
+                    self.child_changes.set(self.child_changes.get() + 1);
+                }
+                for row in 0..length {
+                    let data = source.row_data(start + row).unwrap();
+                    if row == child.row_count() {
+                        child.push(data);
+                        self.child_changes.set(self.child_changes.get() + 1);
+                    } else if child.row_data(row).as_ref() != Some(&data) {
+                        child.set_row_data(row, data);
+                        self.child_changes.set(self.child_changes.get() + 1);
+                    }
+                }
+                child
+            } else {
+                let child = Rc::new(VecModel::from(
+                    (start..start + length)
+                        .map(|row| source.row_data(row).unwrap())
+                        .collect::<Vec<_>>(),
+                ));
+                children.push(child.clone());
+                child
+            };
+            groups.push(VideoGroup {
+                start: start as i32,
+                items: ModelRc::from(child),
+            });
+        }
+        *self.children.borrow_mut() = children;
+        // Starts are unique multiples of the nonzero bounded column count.
+        // The source and parent models both enforce MAX_CATALOG_ROWS.
+        self.model
+            .reconcile(groups, |group| group.start)
+            .expect("bounded unique video groups");
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use slint::private_unstable_api::re_exports::{
+        ModelChangeListener, ModelChangeListenerContainer,
+    };
+    use std::pin::Pin;
+
+    #[derive(Default)]
+    struct Observer {
+        events: RefCell<Vec<(&'static str, usize, usize)>>,
+    }
+    impl ModelChangeListener for Observer {
+        fn row_changed(self: Pin<&Self>, row: usize) {
+            self.events.borrow_mut().push(("change", row, 1));
+        }
+        fn row_added(self: Pin<&Self>, row: usize, count: usize) {
+            self.events.borrow_mut().push(("insert", row, count));
+        }
+        fn row_removed(self: Pin<&Self>, row: usize, count: usize) {
+            self.events.borrow_mut().push(("remove", row, count));
+        }
+        fn reset(self: Pin<&Self>) {
+            self.events.borrow_mut().push(("reset", 0, 0));
+        }
+    }
+
+    #[test]
+    fn same_page_reconciliation_keeps_models_and_notifies_only_changed_child() {
+        let flat = CatalogModel::default();
+        flat.replace((0..6).map(row).collect());
+        let grouped = Groups::default();
+        grouped.replace(&flat);
+        let first = grouped.children.borrow()[0].clone();
+        let second = grouped.children.borrow()[1].clone();
+        // Test-only pinned Slint observer API verifies actual emitted events.
+        let parent_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        let first_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        let second_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        grouped
+            .model
+            .model_tracker()
+            .attach_peer(parent_events.as_ref().model_peer());
+        first
+            .model_tracker()
+            .attach_peer(first_events.as_ref().model_peer());
+        second
+            .model_tracker()
+            .attach_peer(second_events.as_ref().model_peer());
+        grouped.reconcile(&flat);
+        assert!(parent_events.events.borrow().is_empty());
+        assert!(first_events.events.borrow().is_empty());
+        assert!(second_events.events.borrow().is_empty());
+        flat.set_row_data(1, row(99));
+        grouped.reconcile(&flat);
+        assert_eq!(*first_events.events.borrow(), [("change", 1, 1)]);
+        assert!(parent_events.events.borrow().is_empty());
+        assert!(second_events.events.borrow().is_empty());
+        assert!(Rc::ptr_eq(&grouped.children.borrow()[0], &first));
+        assert!(Rc::ptr_eq(&grouped.children.borrow()[1], &second));
+    }
+
+    #[test]
+    fn same_page_membership_trims_children_and_groups_without_reset() {
+        let flat = CatalogModel::default();
+        flat.replace((0..6).map(row).collect());
+        let grouped = Groups::default();
+        grouped.replace(&flat);
+        let first = grouped.children.borrow()[0].clone();
+        let second = grouped.children.borrow()[1].clone();
+        let parent_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        let first_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        let second_events = Box::pin(ModelChangeListenerContainer::new(Observer::default()));
+        grouped
+            .model
+            .model_tracker()
+            .attach_peer(parent_events.as_ref().model_peer());
+        first
+            .model_tracker()
+            .attach_peer(first_events.as_ref().model_peer());
+        second
+            .model_tracker()
+            .attach_peer(second_events.as_ref().model_peer());
+        flat.reconcile((0..5).map(row).collect(), |row| row.title.clone())
+            .unwrap();
+        grouped.reconcile(&flat);
+        assert_eq!(*second_events.events.borrow(), [("remove", 2, 1)]);
+        assert!(first_events.events.borrow().is_empty());
+        assert!(parent_events.events.borrow().is_empty());
+        flat.reconcile((0..3).map(row).collect(), |row| row.title.clone())
+            .unwrap();
+        grouped.reconcile(&flat);
+        assert_eq!(*parent_events.events.borrow(), [("remove", 1, 1)]);
+        assert!(first_events.events.borrow().is_empty());
+        assert!(Rc::ptr_eq(&grouped.children.borrow()[0], &first));
+        parent_events.events.borrow_mut().clear();
+        flat.reconcile((0..4).map(row).collect(), |row| row.title.clone())
+            .unwrap();
+        grouped.reconcile(&flat);
+        assert_eq!(*parent_events.events.borrow(), [("insert", 1, 1)]);
+        assert!(first_events.events.borrow().is_empty());
+        assert_eq!(grouped.model.row_data(1).unwrap().start, 3);
+        assert_eq!(grouped.model.resets.get(), 1);
+    }
+
     fn row(n: usize) -> VideoRow {
         VideoRow {
             title: n.to_string().into(),

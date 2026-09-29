@@ -20,6 +20,8 @@ mod guest_recovery;
 mod guest_ui;
 mod handoff_smoke;
 mod helper_paths;
+mod home_smoke;
+mod home_ui;
 pub mod library;
 mod library_fixture;
 mod library_resource_smoke;
@@ -77,6 +79,7 @@ struct UiState {
     worker: RefCell<Worker>,
     groups: groups::Groups,
     guest_ui: guest_ui::State,
+    home_ui: home_ui::State,
     feed_focus: feed_focus::State,
     focus_intent: focus_intent::State,
     playback_preferences: playback_preferences::State,
@@ -277,6 +280,7 @@ fn update(app: &App, state: &Rc<UiState>) {
         app.window().request_redraw();
     }
     playback_ui::maybe_refresh(app, state);
+    home_ui::maybe_refresh(app, state);
 }
 struct StartupMedia {
     local: Option<std::path::PathBuf>,
@@ -518,6 +522,11 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_navigate(move |page| {
         let Some(app) = weak.upgrade() else { return };
+        if page == 0 {
+            home_ui::open(&app, &s);
+            update(&app, &s);
+            return;
+        }
         let previous = app.get_page();
         if previous == page {
             return;
@@ -677,11 +686,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let minimized = options.minimized;
     // An explicit root keeps native validation isolated from the normal profile.
     // Only its Serein child is app-owned; never chmod the selected root itself.
+    let mut home_fixture = None;
     let library_path = if let Some(root) = options.data_root {
         if !root.is_absolute() {
             return Err("--data-root requires an absolute directory".into());
         }
-        if let Some(phase) = options.preferences_smoke {
+        if options.home_smoke {
+            home_fixture = Some(home_smoke::prepare_root(&root)?);
+        } else if let Some(phase) = options.preferences_smoke {
             preferences_smoke::prepare_root(&root, phase)?;
         } else if options.clear_local_smoke
             || options.save_smoke
@@ -814,6 +826,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         worker: RefCell::new(worker),
         groups: groups::Groups::default(),
         guest_ui: guest_ui::State::default(),
+        home_ui: home_ui::State::default(),
         feed_focus: feed_focus::State::default(),
         focus_intent: focus_intent::State::default(),
         playback_preferences: playback_preferences::State::default(),
@@ -1065,6 +1078,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     guest_ui::bind(&app, &state);
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_home_refresh(move || {
+        if let Some(app) = weak.upgrade() {
+            home_ui::refresh(&app, &s);
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_home_leave(move || {
+        if let Some(app) = weak.upgrade() {
+            home_ui::cancel(&app, &s);
+        }
+    });
     feed_focus::bind(&app, &state);
     comments_ui::bind(&app, &state);
     caption_ui::bind(&app, &state);
@@ -1107,6 +1134,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         playback_ui::maybe_refresh(&app, &s);
+        home_ui::maybe_refresh(&app, &s);
     });
     let weak = app.as_weak();
     let s = state.clone();
@@ -1329,6 +1357,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if let Some(url) = url {
         playback_preferences::startup(&app, &state, url.into());
+    } else if !local_startup && !smoke && !demo_related && state.library_fixture.is_none() {
+        home_ui::open(&app, &state);
     }
     let mut timers = Vec::new();
     if ui_page.is_some() || ui_theme.is_some() || ui_size.is_some() {
@@ -1478,6 +1508,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let recovery_diagnostic = options
         .recovery_smoke
         .then(|| recovery_smoke::Smoke::start(&app, &state));
+    let home_diagnostic = home_fixture.map(|fixture| {
+        app.set_diagnostic_fixture_label("TEST FIXTURE — offline local Home exercise".into());
+        home_smoke::Smoke::start(&app, &state, fixture)
+    });
     let pip_diagnostic = options.pip_smoke.then(|| {
         app.set_diagnostic_fixture_label("TEST FIXTURE — local picture-in-picture exercise".into());
         pip_smoke::Smoke::start(&app, &state)
@@ -1972,6 +2006,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = related_focus_diagnostic {
+        diagnostic.finish().map_err(std::io::Error::other)?;
+    }
+    if let Some(diagnostic) = home_diagnostic {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = pip_diagnostic {

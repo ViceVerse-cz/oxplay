@@ -511,6 +511,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         }
         if result.playback_selection.is_some() {
             crate::account_playback::receive(&app, &s, result);
+            crate::home_ui::maybe_refresh(&app, &s);
             return;
         }
         match result.result {

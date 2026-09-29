@@ -101,6 +101,12 @@ export component App inherits Window {
     in property <string> technical;
     in property <string> playback-status;
     in property <bool> can-retry-playback;
+    in property <bool> home-active;
+    in property <bool> home-loading;
+    in property <bool> home-error;
+    callback home-refresh();
+    callback home-leave();
+    public function reset-feed-scroll() { feed.content-y = 0px; }
     in property <bool> account-retry-ready: true;
     in property <bool> playback-failed;
     in property <string> diagnostic-warning;
@@ -238,7 +244,7 @@ export component App inherits Window {
     changed feed-thumbnail-end => { root.refresh-visible(); }
     changed related-first => { root.refresh-visible(); }
     changed related-last => { root.refresh-visible(); }
-    changed page => { if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
+    changed page => { if root.page != 0 { root.home-leave(); } if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
     changed video-only => {
         if root.video-only {
             // Retire parking before the related surface disappears.
@@ -508,7 +514,7 @@ export component App inherits Window {
         visible: !root.video-only;
         VerticalLayout {
             padding-left: 12px; padding-right: 12px; padding-top: 18px; padding-bottom: 20px; spacing: 6px;
-            Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0; clicked => { root.navigate(0); } }
+            Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
             Action { icon-name: "users"; label: "Local subscriptions"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
             Action { icon-name: "list-video"; label: "Local playlists"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
             if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
@@ -541,13 +547,15 @@ export component App inherits Window {
         Text { x: 0; y: 0; width: parent.width; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
         Text { x: 0; y: 43px; width: parent.width; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
         HorizontalLayout { y: 80px; height: 38px; spacing: 10px;
+            if root.home-active: Action { icon-name: "history"; label: root.home-loading ? "Loading…" : "Refresh"; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
+            if root.home-active: Action { icon-name: "list-video"; label: "Local playlists"; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
             if root.guest-can-back: Action { icon-name: "chevron-left"; label: "Back"; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
             if root.guest-scope == 0: ComboBox { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; current-index: root.search-kind; enabled: !root.native-video-child && !root.busy; selected(value) => { root.search-kind-changed(self.current-index); } }
             if root.guest-scope == 1: ComboBox { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; current-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; selected(value) => { root.channel-tab-changed(self.current-index); } }
             if root.guest-can-follow: Action { icon-name: "plus"; label: "Follow locally"; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
             if root.guest-scope == 2: Text { text: "Public YouTube playlist"; color: Colors.muted; vertical-alignment: center; }
             Rectangle { horizontal-stretch: 1; }
-            Text { text: "Guest browsing"; color: Colors.muted; vertical-alignment: center; }
+            Text { text: root.home-active ? "Saved on this device" : "Guest browsing"; color: Colors.muted; vertical-alignment: center; }
         }
         feed := ListView {
             y: 132px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
@@ -573,11 +581,11 @@ export component App inherits Window {
             }
         }
         if root.videos.length == 0: Rectangle {
-            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : 160px; width: min(480px, parent.width); height: root.catalog-title == "Find your next watch" ? 278px : 230px;
+            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
             Image { x: (parent.width - 46px) / 2; y: 7px; width: 46px; height: 46px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
-            Text { y: 86px; width: parent.width; height: 35px; text: root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 600; horizontal-alignment: center; overflow: elide; }
-            Text { y: 137px; width: parent.width; height: 84px; text: root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
-            if root.catalog-title == "Find your next watch": HorizontalLayout {
+            Text { y: 86px; width: parent.width; height: 35px; text: root.home-loading ? "Loading saved videos…" : root.home-active && root.home-error ? "Couldn’t load Home" : root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 600; horizontal-alignment: center; overflow: elide; }
+            Text { y: 137px; width: parent.width; height: 84px; text: root.home-loading ? "Reading your local playlists. No network request is needed." : root.home-active && root.home-error ? "Your saved library couldn’t be read. Use Refresh to try again, or open Message for details." : root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
+            if (root.home-active && !root.home-loading && !root.home-error) || root.catalog-title == "Find your next watch": HorizontalLayout {
                 x: 0px; y: 228px; width: parent.width; height: 38px; spacing: 12px;
                 Action { label: "Music"; accessible-label: "Search YouTube for music"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
                 Action { label: "Science"; accessible-label: "Search YouTube for science"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Science"; root.search(search.text); } }
@@ -586,8 +594,8 @@ export component App inherits Window {
         }
         if root.has-more || root.has-previous: HorizontalLayout { y: parent.height - 42px; height: 40px; spacing: 12px;
             Rectangle { horizontal-stretch: 1; }
-            Action { icon-name: "chevron-left"; label: "Previous page"; width: 170px; enabled: !root.native-video-child && !root.busy && root.has-previous; clicked => { root.guest-previous(); } }
-            Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; width: 170px; enabled: !root.native-video-child && !root.busy && root.has-more; clicked => { root.more(); } }
+            Action { icon-name: "chevron-left"; label: "Previous page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
+            Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
             Rectangle { horizontal-stretch: 1; }
         }
     }

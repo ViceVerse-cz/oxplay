@@ -2,6 +2,159 @@
 use super::*;
 
 #[test]
+fn recently_saved_deduplicates_across_pages_without_urls_or_history() {
+    let mut store = LocalStore::in_memory().unwrap();
+    let first = store.create_playlist("Synthetic first").unwrap();
+    let second = store.create_playlist("Synthetic second").unwrap();
+    for playlist in [first, second] {
+        for index in 0..205 {
+            let mut item = video(index);
+            if playlist == second {
+                item.title = format!("Synthetic newest metadata {index}");
+            }
+            store.save_video(playlist, &item).unwrap();
+        }
+    }
+    let mut prefs = store.preferences().unwrap();
+    prefs.privacy.local_history = true;
+    store.set_preferences(prefs).unwrap();
+    store
+        .record_history(
+            &video(900),
+            Duration::from_secs(1),
+            std::time::SystemTime::now(),
+        )
+        .unwrap();
+    let mut cursor = None;
+    let mut ids = Vec::new();
+    for expected_size in [100, 100, 5] {
+        let page = store.recently_saved_videos(cursor, 100).unwrap();
+        assert_eq!(page.items.len(), expected_size);
+        for item in page.items {
+            assert!(item.title.starts_with("Synthetic newest metadata "));
+            assert!(item.thumbnail_url.is_none());
+            ids.push(item.id);
+        }
+        cursor = page.next;
+    }
+    assert!(cursor.is_none());
+    assert_eq!(
+        ids,
+        (0..205)
+            .rev()
+            .map(|index| video(index).id)
+            .collect::<Vec<_>>()
+    );
+    for limit in [0, MAX_PAGE_SIZE + 1, u32::MAX] {
+        assert!(matches!(
+            store.recently_saved_videos(None, limit),
+            Err(StorageError::InvalidInput)
+        ));
+    }
+}
+
+#[test]
+fn recently_saved_removal_and_idempotent_resave_follow_surviving_memberships() {
+    let mut store = LocalStore::in_memory().unwrap();
+    let first = store.create_playlist("Synthetic first").unwrap();
+    let second = store.create_playlist("Synthetic second").unwrap();
+    store.save_video(first, &video(1)).unwrap();
+    store.save_video(first, &video(2)).unwrap();
+    let mut newer = video(1);
+    newer.title = "Synthetic newest membership".into();
+    store.save_video(second, &newer).unwrap();
+    let page = store.recently_saved_videos(None, 1).unwrap();
+    assert_eq!(page.items[0].id, video(1).id);
+    assert_eq!(page.items[0].title, newer.title);
+    // Deleting the newest copy reveals the older saved copy on a fresh query.
+    store.remove_video(second, &video(1).id).unwrap();
+    let page = store.recently_saved_videos(None, 100).unwrap();
+    assert_eq!(
+        page.items.iter().map(|v| v.id.clone()).collect::<Vec<_>>(),
+        vec![video(2).id, video(1).id]
+    );
+    store.save_video(first, &newer).unwrap();
+    let page = store.recently_saved_videos(None, 1).unwrap();
+    assert_eq!(page.items[0].id, video(2).id);
+    // Keyset pagination still reaches older rows if the preceding row is removed.
+    store.remove_video(first, &video(2).id).unwrap();
+    let older = store.recently_saved_videos(page.next, 100).unwrap();
+    assert_eq!(older.items.len(), 1);
+    assert_eq!(older.items[0].title, newer.title);
+    assert!(older.next.is_none());
+    store.delete_playlist(first).unwrap();
+    assert!(
+        store
+            .recently_saved_videos(None, 100)
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    store.save_video(second, &video(3)).unwrap();
+    store.clear_local_data().unwrap();
+    assert!(
+        store
+            .recently_saved_videos(None, 100)
+            .unwrap()
+            .items
+            .is_empty()
+    );
+}
+
+#[test]
+fn recently_saved_v4_migration_preserves_data_and_adds_lookup_index() {
+    let mut connection = Connection::open_in_memory().unwrap();
+    for schema in [
+        include_str!("schema_v1.sql"),
+        include_str!("schema_v2.sql"),
+        include_str!("schema_v3.sql"),
+        include_str!("schema_v4.sql"),
+    ] {
+        connection.execute_batch(schema).unwrap();
+    }
+    connection.pragma_update(None, "user_version", 4).unwrap();
+    let before = LocalStore { connection };
+    let playlist = before
+        .create_playlist("Synthetic preserved collection")
+        .unwrap();
+    before.save_video(playlist, &video(42)).unwrap();
+    connection = before.connection;
+    migrate(&mut connection).unwrap();
+    let store = LocalStore { connection };
+    assert_eq!(store.schema_version().unwrap(), 5);
+    assert_eq!(store.preferences().unwrap(), LocalPreferences::default());
+    assert_eq!(
+        store.recently_saved_videos(None, 100).unwrap().items[0].id,
+        video(42).id
+    );
+    let columns: Vec<String> = store
+        .connection
+        .prepare("PRAGMA index_info(local_playlist_item_video)")
+        .unwrap()
+        .query_map([], |row| row.get(2))
+        .unwrap()
+        .collect::<rusqlite::Result<_>>()
+        .unwrap();
+    assert_eq!(columns, ["video_id", "id"]);
+    assert_eq!(store.playlists(None, 100).unwrap().items[0].id, playlist);
+}
+
+#[test]
+fn recently_saved_corrupt_id_is_an_error_not_a_catalog_entry() {
+    let store = LocalStore::in_memory().unwrap();
+    let playlist = store.create_playlist("Synthetic collection").unwrap();
+    store.save_video(playlist, &video(1)).unwrap();
+    store
+        .connection
+        .execute("UPDATE local_playlist_items SET video_id='!!!!!!!!!!!'", [])
+        .unwrap();
+    assert!(matches!(
+        store.recently_saved_videos(None, 100),
+        Err(StorageError::CorruptData)
+    ));
+}
+
+#[test]
 fn creating_a_playlist_with_its_first_video_commits_or_rolls_back_together() {
     let mut store = LocalStore::in_memory().unwrap();
     let video = VideoSummary {
@@ -114,7 +267,7 @@ fn playback_preferences_migrate_v3_without_changing_existing_privacy_or_library(
             && !prefs.privacy.background_refresh
     );
     assert_eq!(store.playlists(None, 10).unwrap().items.len(), 1);
-    assert_eq!(store.schema_version().unwrap(), 4);
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
 }
 
 #[test]

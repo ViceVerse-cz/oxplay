@@ -78,6 +78,11 @@ slices; deep-page efficiency is not yet qualified. See the
 [guest catalog UI evidence](docs/guest-catalog-ui.md).
 The CC button opens the [guest caption selector](docs/captions.md) for online videos
 and cycles available tracks for local files. Info shows observed decoder and application counters. Local collections and YouTube account data remain separate.
+Home opens your recently saved local videos, deduplicated across playlists, with
+bounded Next/Previous pages. It starts without fetching thumbnails or remote
+recommendations. Save videos to a local playlist to populate it; local collections
+stay separate from your YouTube account. See [local Home](docs/local-home.md).
+
 The picture-in-picture button or **P** switches the same window into a floating
 player; **P**, **Escape** or closing that compact window restores browsing.
 It has been functionally exercised on the development Mac; native Wayland and

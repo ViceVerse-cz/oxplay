@@ -6,7 +6,31 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The newest slice adds [floating picture in picture](picture-in-picture.md) to the
+The current slice implements [local-first Home](local-home.md). Home is now a
+distinct route with a bounded, deduplicated page of saved local videos; clicking
+Home from a public catalog returns to local content. SQLite schema v5 adds the
+lookup index without changing existing data. Local reads have their own tickets,
+and committed mutations invalidate old cursors. Deferred refresh survives busy
+playback and cancellation without a recurring timer or automatic retry loop.
+The shared catalog/group models reconcile unchanged pages without notifications;
+metadata/membership changes retain model identity and restore focused video IDs.
+
+The final integrated test suite passed395 Rust tests (four ignored), all163
+Python tooling tests, formatting, strict Clippy and the locked release build. Debug native Home passed all11 offline functional stages and
+exited cleanly: three bounded pages, unchanged Home rereads, navigation, committed
+Save/Remove/Import/Delete and correct updated rows. Its 1000×720 capture was
+inspected; the synthetic labels remain visible and no remote thumbnails/playback
+started. These direct worker mutations do not claim coverage of the Save dialog
+or native picker. Evidence is in `artifacts/home-v1`. The final release also
+passed all11 stages and clean shutdown at760×600 in the light theme; its capture
+was inspected and its executable hash is recorded in the Home notes
+(`artifacts/home-release-v1`). An ordinary fresh-profile release launch also
+exited successfully, with its compact light-theme empty state visually inspected
+(`artifacts/home-empty-v1`). Remote CI for this source slice is pending.
+No performance/usage benchmark was run. Remote-account/platform/packaging and
+resource acceptance gates remain open.
+
+The preceding slice adds [floating picture in picture](picture-in-picture.md) to the
 same shared Slint window and implements explicit authenticated playback recovery.
 PiP preserves the existing player, window and presenter; P/Escape/close restore
 the main layout. Official Lucide supplies the new icon. Debug and release native
@@ -390,12 +414,10 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Implement a distinct local-first Home route backed by a bounded page of saved
-videos. Currently Home shares page 0 with public catalogs, so selecting Home
-while browsing can retain the last search instead of returning to a local feed.
-Keep startup networking off and local/account collections separate. Then complete
-native keyboard checks for playlist creation/renaming and failed-stream restart,
-and additional PiP monitor/fullscreen lifecycle cases.
+Complete native keyboard checks for playlist creation/renaming and failed-stream
+restart, followed by additional PiP monitor/fullscreen lifecycle cases. Home
+currently uses unavailable-image placeholders for saved summaries; consider a
+bounded local artwork cache that never makes startup network requests.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,

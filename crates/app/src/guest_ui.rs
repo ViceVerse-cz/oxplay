@@ -6,7 +6,7 @@ use serein_core::{CatalogItem, ChannelId, ChannelSummary, PlaylistId, ProviderEr
 use serein_youtube::catalog::{
     CatalogCursor, CatalogHeader, CatalogPage, CatalogRequest, ChannelTab, SearchKind,
 };
-use slint::ComponentHandle;
+use slint::{ComponentHandle, Model};
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
@@ -229,6 +229,8 @@ fn bounded_push<T>(list: &mut Vec<T>, item: T, limit: usize) {
     list.push(item);
 }
 fn load(app: &App, s: &UiState, location: Location, remember: bool) {
+    crate::home_ui::cancel(app, s);
+    app.set_home_active(false);
     if remember {
         s.guest_ui.remember();
     }
@@ -369,6 +371,80 @@ pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
         .into(),
     );
 }
+/// Retire provider navigation and thumbnail generations before any local rows.
+pub fn begin_home(app: &App, state: &UiState) {
+    state.thumbnails.borrow_mut().replace(Vec::new());
+    state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_range.set((usize::MAX, usize::MAX));
+    state.guest_ui.current.borrow_mut().take();
+    state.guest_ui.next.borrow_mut().take();
+    state.guest_ui.previous.borrow_mut().clear();
+    state.guest_ui.navigation.borrow_mut().clear();
+    state.guest_ui.channel.borrow_mut().take();
+    state.guest_ui.items.borrow_mut().clear();
+    state.guest_ui.presentation.borrow_mut().published();
+    crate::feed_focus::reset(app, state);
+    state.model.replace(Vec::new());
+    state.groups.replace(&state.model);
+    app.set_has_more(false);
+    app.set_has_previous(false);
+    app.set_guest_can_back(false);
+    app.set_guest_can_follow(false);
+    app.invoke_reset_feed_scroll();
+}
+pub fn local_videos(state: &UiState) -> Option<Vec<serein_core::VideoSummary>> {
+    state
+        .guest_ui
+        .items
+        .borrow()
+        .iter()
+        .map(|item| match item {
+            CatalogItem::Video(video) => Some(video.clone()),
+            _ => None,
+        })
+        .collect()
+}
+pub fn publish_home(
+    app: &App,
+    state: &UiState,
+    videos: Vec<serein_core::VideoSummary>,
+    same_page: bool,
+) -> Result<(), &'static str> {
+    if videos.len() > serein_storage::MAX_PAGE_SIZE as usize
+        || videos.iter().any(|video| video.thumbnail_url.is_some())
+        || videos
+            .iter()
+            .enumerate()
+            .any(|(i, video)| videos[..i].iter().any(|old| old.id == video.id))
+    {
+        return Err("Invalid local Home page. Use Refresh to try again.");
+    }
+    let items: Vec<_> = videos.into_iter().map(CatalogItem::Video).collect();
+    let rows: Vec<_> = items.iter().map(row).collect();
+    let changed = state.model.row_count() != rows.len()
+        || rows
+            .iter()
+            .enumerate()
+            .any(|(i, row)| state.model.row_data(i).as_ref() != Some(row));
+    if same_page && changed {
+        crate::feed_focus::reconcile_home(app, state, || {
+            state.model.reconcile(rows, |row| row.id.clone())?;
+            state.groups.reconcile(&state.model);
+            Ok(())
+        })?;
+    } else if !same_page {
+        crate::feed_focus::reset(app, state);
+        state.model.replace(rows);
+        state.groups.replace(&state.model);
+        app.invoke_reset_feed_scroll();
+    }
+    *state.guest_ui.items.borrow_mut() = items;
+    state.guest_ui.presentation.borrow_mut().published();
+    state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_range.set((usize::MAX, usize::MAX));
+    app.invoke_refresh_visible();
+    Ok(())
+}
 pub fn bind(app: &App, state: &Rc<UiState>) {
     let weak = app.as_weak();
     let state_weak = Rc::downgrade(state);
@@ -395,6 +471,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             let Some(kind) = RequestKind::from_request(request) else {
                 return;
             };
+            crate::home_ui::cancel(&app, &state);
             let visible = state
                 .guest_ui
                 .presentation
@@ -458,6 +535,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_more(move || {
         let Some(app) = weak.upgrade() else { return };
+        if app.get_home_active() {
+            crate::home_ui::page(&app, &s, true);
+            return;
+        }
         if app.get_busy() {
             return;
         }
@@ -479,6 +560,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_guest_previous(move || {
         let Some(app) = weak.upgrade() else { return };
+        if app.get_home_active() {
+            crate::home_ui::page(&app, &s, false);
+            return;
+        }
         if app.get_busy() {
             return;
         }

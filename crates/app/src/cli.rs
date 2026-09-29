@@ -27,6 +27,7 @@ pub struct Options {
     pub save_smoke: bool,
     pub recovery_smoke: bool,
     pub pip_smoke: bool,
+    pub home_smoke: bool,
     pub paused: bool,
     pub minimized: bool,
     pub smoke: bool,
@@ -72,6 +73,7 @@ impl Options {
                 "--save-smoke-test" => options.save_smoke = true,
                 "--recovery-smoke-test" => options.recovery_smoke = true,
                 "--pip-smoke-test" => options.pip_smoke = true,
+                "--home-smoke-test" => options.home_smoke = true,
                 "--refresh-smoke-test" => options.refresh_smoke = true,
                 "--demo-related" => options.demo_related = true,
                 "--ui-cache" => options.ui_cache = true,
@@ -205,6 +207,32 @@ impl Options {
         }
         if options.help {
             return Ok(options);
+        }
+        if options.home_smoke {
+            const ALLOWED: &[&str] = &[
+                "--home-smoke-test",
+                "--data-root",
+                "--quit-after",
+                "--ui-size",
+                "--ui-theme",
+                "--snapshot",
+            ];
+            if options
+                .data_root
+                .as_ref()
+                .is_none_or(|root| !root.is_absolute())
+                || options.quit_after.is_some_and(|seconds| seconds != 40)
+                || seen.iter().any(|key| {
+                    !ALLOWED
+                        .iter()
+                        .any(|allowed| key == std::ffi::OsStr::new(allowed))
+                })
+            {
+                return Err(
+                    "--home-smoke-test requires a NEW absolute --data-root, a 40-second watchdog and no network, media or other diagnostic inputs",
+                );
+            }
+            options.quit_after = Some(40);
         }
         if options.pip_smoke {
             const ALLOWED: &[&str] = &[
@@ -639,6 +667,7 @@ pub const HELP: &str = "Serein experimental native client
   --preferences-smoke-test write|verify  Offline preference/restart test (requires isolated --data-root)
   --soak-minutes N  Explicit 60–240 minute local lifecycle soak (requires --local, --demo-related, NEW --data-root)
   --related-focus-check  Finite offline related keyboard/resize/fullscreen checks (42s; exact fixture and NEW data root)
+  --home-smoke-test Finite offline local Home navigation/mutation checks (40s; NEW absolute --data-root)
   --pip-smoke-test  Finite offline picture-in-picture lifecycle checks (25s; local video and NEW absolute --data-root)
   --recovery-smoke-test  Finite synthetic failure/retry checks (20s; --yt-dlp /usr/bin/false and NEW private --data-root)
   --save-smoke-test  Finite real guest/local Save checks (75s; public --url and NEW private --data-root)
@@ -658,6 +687,26 @@ No network requests occur until search or URL submission.";
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn home_diagnostic_forbids_network_existing_modes_and_missing_private_root() {
+        let base = ["--home-smoke-test", "--data-root", "/synthetic/new-profile"];
+        let options = parse(&base).unwrap();
+        assert!(options.home_smoke);
+        assert_eq!(options.quit_after, Some(40));
+        assert!(parse(&["--home-smoke-test"]).is_err());
+        for extra in [
+            vec!["--url", "https://www.youtube.com/watch?v=abcdefghijk"],
+            vec!["--local", "/synthetic/clip.mp4"],
+            vec!["--ui-page", "account"],
+            vec!["--minimized"],
+            vec!["--pip-smoke-test"],
+            vec!["--quit-after", "5"],
+        ] {
+            let mut args = base.to_vec();
+            args.extend(extra);
+            assert!(parse(&args).is_err());
+        }
+    }
     #[test]
     fn pip_diagnostic_is_offline_isolated_and_has_a_finite_watchdog() {
         let base = [

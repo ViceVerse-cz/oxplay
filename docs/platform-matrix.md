@@ -2,6 +2,12 @@
 
 All targets are experimental. A native compile/run is not release support.
 
+The local-first Home slice passed debug/release functional checks on the same
+macOS host: bounded local pagination, unchanged refresh, navigation and committed
+collection mutations. Dark1000×720 and light760×600 captures were inspected.
+This is local UI/storage evidence, not a new platform or resource qualification.
+See [Home evidence](local-home.md).
+
 The current [PiP slice](picture-in-picture.md) passed debug and release native
 functional tests on Apple M1/macOS 27.0: P entry, pause, seek, resume, resize,
 Escape and close-request restoration preserved the same window/media/presenter.

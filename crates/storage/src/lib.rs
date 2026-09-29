@@ -16,7 +16,7 @@ use serein_core::{
 };
 use std::{fmt, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 4;
+const SCHEMA_VERSION: u32 = 5;
 pub const MAX_PAGE_SIZE: u32 = 100;
 const MAX_TEXT_BYTES: usize = 1024;
 
@@ -233,22 +233,39 @@ impl LocalStore {
         let mut query = statement.query(params![playlist.0, after, fetch])?;
         let mut rows = Vec::with_capacity(fetch as usize);
         while let Some(row) = query.next()? {
-            let video_id: String = row.get(1)?;
-            let seconds = row
-                .get::<_, Option<i64>>(5)?
-                .map(|seconds| u64::try_from(seconds).map_err(|_| StorageError::CorruptData))
-                .transpose()?;
-            rows.push((
-                row.get(0)?,
-                VideoSummary {
-                    id: VideoId::new(&video_id).map_err(|_| StorageError::CorruptData)?,
-                    title: row.get(2)?,
-                    channel: row.get(3)?,
-                    channel_id: row.get::<_, Option<String>>(4)?.map(ChannelId),
-                    duration: seconds.map(Duration::from_secs),
-                    thumbnail_url: None,
-                },
-            ));
+            rows.push((row.get(0)?, local_video_from_row(row)?));
+        }
+        Ok(finish_page(rows, limit))
+    }
+
+    /// Local Home, ordered by each video's newest surviving playlist membership.
+    /// Re-saving an existing membership updates metadata without changing its
+    /// order. The cursor is exclusive and descending, unlike playlist cursors.
+    /// Pages are live reads, not a transaction spanning UI navigation: callers
+    /// should discard their page cursors after local collection mutations.
+    /// Neither history nor account/cache data participates; URLs are never read.
+    pub fn recently_saved_videos(
+        &self,
+        after: Option<PageCursor>,
+        limit: u32,
+    ) -> Result<Page<VideoSummary>> {
+        let (_, fetch) = page_bounds(after, limit)?;
+        let upper = after.map_or(i64::MAX, |cursor| cursor.0.saturating_sub(1));
+        // Scan the primary key backwards and probe the covering video/id index.
+        // Filter newer memberships before applying LIMIT, including memberships
+        // beyond the cursor, so old copies cannot leak onto subsequent pages.
+        let mut statement = self.connection.prepare(
+            "SELECT item.id,item.video_id,item.title,item.channel_name,item.channel_id,item.duration_seconds
+             FROM local_playlist_items AS item
+             WHERE item.id<=?1 AND NOT EXISTS (
+                 SELECT 1 FROM local_playlist_items AS newer
+                 WHERE newer.video_id=item.video_id AND newer.id>item.id
+             ) ORDER BY item.id DESC LIMIT ?2",
+        )?;
+        let mut query = statement.query(params![upper, fetch])?;
+        let mut rows = Vec::with_capacity(fetch as usize);
+        while let Some(row) = query.next()? {
+            rows.push((row.get(0)?, local_video_from_row(row)?));
         }
         Ok(finish_page(rows, limit))
     }
@@ -335,6 +352,22 @@ impl LocalStore {
     }
 }
 
+fn local_video_from_row(row: &rusqlite::Row<'_>) -> Result<VideoSummary> {
+    let video_id: String = row.get(1)?;
+    let seconds = row
+        .get::<_, Option<i64>>(5)?
+        .map(|seconds| u64::try_from(seconds).map_err(|_| StorageError::CorruptData))
+        .transpose()?;
+    Ok(VideoSummary {
+        id: VideoId::new(&video_id).map_err(|_| StorageError::CorruptData)?,
+        title: row.get(2)?,
+        channel: row.get(3)?,
+        channel_id: row.get::<_, Option<String>>(4)?.map(ChannelId),
+        duration: seconds.map(Duration::from_secs),
+        thumbnail_url: None,
+    })
+}
+
 fn save_video_in(
     connection: &Connection,
     playlist: LocalPlaylistId,
@@ -416,6 +449,9 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     }
     if version < 4 {
         tx.execute_batch(include_str!("schema_v4.sql"))?;
+    }
+    if version < 5 {
+        tx.execute_batch(include_str!("schema_v5.sql"))?;
     }
     tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     tx.commit()?;
