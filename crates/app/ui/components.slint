@@ -1,39 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { ComboBox, CheckBox } from "std-widgets.slint";
+import { CheckBox, ListView } from "std-widgets.slint";
 
-// A controlled selector keeps its external acknowledgement binding alive even
-// after the underlying ComboBox assigns current-index during user navigation.
-export component ConfirmedChoice inherits ComboBox {
-    in property <int> acknowledged-index;
-    private property <string> acknowledged-value: root.acknowledged-index >= 0 && root.acknowledged-index < root.model.length ? root.model[root.acknowledged-index] : "";
-    callback choose(int);
-    current-index: root.acknowledged-index;
-    current-value: root.acknowledged-value;
-    function synchronize-acknowledgement() {
-        // ComboBox.select changes both fields before invoking selected. An
-        // index-only A -> B -> A rollback can coalesce its changed callback,
-        // leaving value B to reverse-select the rejected row next event turn.
-        root.current-index = root.acknowledged-index;
-        root.current-value = root.acknowledged-value;
-    }
-    changed acknowledged-index => { root.synchronize-acknowledgement(); }
-    changed acknowledged-value => { root.synchronize-acknowledgement(); }
-    selected(value) => {
-        root.choose(root.current-index);
-        root.synchronize-acknowledgement();
-    }
-}
-// Boolean controls have the same imperative-write binding loss as selectors.
-export component ConfirmedToggle inherits CheckBox {
-    in property <bool> acknowledged-checked;
-    callback choose(bool);
-    checked: root.acknowledged-checked;
-    changed acknowledged-checked => { root.checked = root.acknowledged-checked; }
-    toggled => {
-        root.choose(root.checked);
-        root.checked = root.acknowledged-checked;
-    }
-}
 export global Colors {
     in-out property <bool> dark: true;
     // One canvas tint sits over native compositor blur. Shared surfaces inherit
@@ -62,6 +29,146 @@ export global Colors {
     // Popups stay opaque above translucent chrome and video.
     out property <color> dialog: dark ? #212121 : #ffffff;
 }
+
+// A rounded, tonal drop-down. Arrow keys select the adjacent row immediately
+// (on the field or in its open list); Return opens, Return/Escape closes.
+export component ChoiceField inherits Rectangle {
+    in property <[string]> model;
+    in property <bool> enabled: true;
+    in-out property <int> current-index: 0;
+    in-out property <string> current-value: root.current-index >= 0 && root.current-index < root.model.length ? root.model[root.current-index] : "";
+    out property <bool> has-focus: (focus.has-focus || root.popup-focused) && root.enabled;
+    callback selected(string);
+    private property <bool> popup-focused;
+    private property <bool> pointer-focus;
+    private property <length> row-height: 36px;
+    private property <int> visible-rows: min(8, max(1, root.model.length));
+    height: 36px;
+    min-width: 96px;
+    border-radius: 10px;
+    background: touch.pressed ? Colors.strong : (touch.has-hover && root.enabled) || root.popup-focused ? Colors.pressed : Colors.hover;
+    border-width: focus.has-focus && !root.pointer-focus ? 2px : 0px;
+    border-color: Colors.focus;
+    opacity: root.enabled ? 1 : 0.4;
+    accessible-role: combobox;
+    accessible-enabled: root.enabled;
+    accessible-expandable: true;
+    accessible-expanded: root.popup-focused;
+    accessible-value: root.current-value;
+    accessible-action-expand => { root.open(); }
+    forward-focus: focus;
+    function select(index: int) {
+        if !root.enabled || index < 0 || index >= root.model.length { return; }
+        root.current-index = index;
+        root.current-value = root.model[index];
+        root.selected(root.current-value);
+    }
+    function open() { if root.enabled && root.model.length > 0 { popup.show(); } }
+    function step(delta: int) -> EventResult {
+        root.select(clamp(root.current-index + delta, 0, root.model.length - 1));
+        return accept;
+    }
+    focus := FocusScope {
+        enabled: root.enabled;
+        focus-gained(reason) => { root.popup-focused = false; }
+        focus-lost => { root.pointer-focus = false; }
+        key-pressed(event) => {
+            if event.text == Key.UpArrow { return root.step(-1); }
+            if event.text == Key.DownArrow { return root.step(1); }
+            if event.text == Key.Return || event.text == " " { root.open(); return accept; }
+            return reject;
+        }
+    }
+    Text {
+        x: 14px; width: parent.width - 44px; height: parent.height;
+        text: root.current-value; color: Colors.text; font-size: 14px;
+        vertical-alignment: center; overflow: elide;
+    }
+    Image {
+        x: parent.width - 30px; y: (parent.height - self.height) / 2; width: 16px; height: 16px;
+        source: @image-url("icons/chevron-down.svg"); colorize: Colors.muted;
+        transform-rotation: root.popup-focused ? 180deg : 0deg;
+    }
+    touch := TouchArea {
+        enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.pointer-focus = true; focus.focus(); root.open(); }
+    }
+    popup := PopupWindow {
+        x: 0px; y: root.height + 4px;
+        width: max(root.width, 160px);
+        height: root.visible-rows * root.row-height + 8px;
+        close-policy: close-on-click-outside;
+        forward-focus: list-focus;
+        Rectangle {
+            background: Colors.dialog; border-radius: 12px;
+            border-width: 1px; border-color: Colors.border;
+            clip: true;
+            list-focus := FocusScope {
+                focus-gained(reason) => { root.popup-focused = true; }
+                focus-lost => { root.popup-focused = false; }
+                key-pressed(event) => {
+                    if event.text == Key.UpArrow { return root.step(-1); }
+                    if event.text == Key.DownArrow { return root.step(1); }
+                    if event.text == Key.Return || event.text == Key.Escape { popup.close(); focus.focus(); return accept; }
+                    return reject;
+                }
+                ListView {
+                    x: 4px; y: 4px; width: parent.width - 8px; height: parent.height - 8px;
+                    horizontal-scrollbar-policy: always-off;
+                    content-y: -max(0, root.current-index - root.visible-rows + 1) * root.row-height;
+                    for value[index] in root.model: Rectangle {
+                        height: root.row-height;
+                        border-radius: 8px;
+                        background: row-touch.has-hover ? Colors.hover : index == root.current-index ? Colors.selected : transparent;
+                        Text {
+                            x: 12px; width: parent.width - 24px; height: parent.height;
+                            text: value; color: Colors.text; font-size: 14px;
+                            font-weight: index == root.current-index ? 600 : 400;
+                            vertical-alignment: center; overflow: elide;
+                        }
+                        row-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.select(index); popup.close(); root.pointer-focus = true; focus.focus(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+// A controlled selector keeps its external acknowledgement binding alive even
+// after the field assigns current-index during user navigation.
+export component ConfirmedChoice inherits ChoiceField {
+    in property <int> acknowledged-index;
+    private property <string> acknowledged-value: root.acknowledged-index >= 0 && root.acknowledged-index < root.model.length ? root.model[root.acknowledged-index] : "";
+    callback choose(int);
+    current-index: root.acknowledged-index;
+    current-value: root.acknowledged-value;
+    function synchronize-acknowledgement() {
+        // select() changes both fields before invoking selected. An
+        // index-only A -> B -> A rollback can coalesce its changed callback,
+        // leaving value B to reverse-select the rejected row next event turn.
+        root.current-index = root.acknowledged-index;
+        root.current-value = root.acknowledged-value;
+    }
+    changed acknowledged-index => { root.synchronize-acknowledgement(); }
+    changed acknowledged-value => { root.synchronize-acknowledgement(); }
+    selected(value) => {
+        root.choose(root.current-index);
+        root.synchronize-acknowledgement();
+    }
+}
+// Boolean controls have the same imperative-write binding loss as selectors.
+export component ConfirmedToggle inherits CheckBox {
+    in property <bool> acknowledged-checked;
+    callback choose(bool);
+    checked: root.acknowledged-checked;
+    changed acknowledged-checked => { root.checked = root.acknowledged-checked; }
+    toggled => {
+        root.choose(root.checked);
+        root.checked = root.acknowledged-checked;
+    }
+}
 export enum ActionVariant { quiet, primary, secondary, destructive }
 export component Action inherits Rectangle {
     out property <bool> has-focus: focus.has-focus;
@@ -83,6 +190,8 @@ export component Action inherits Rectangle {
     // Visual emphasis is independent of selection/check state and accessibility.
     in property <ActionVariant> variant: quiet;
     private property <bool> keyboard-pressed;
+    // Pointer activation focuses without a ring; keyboard focus keeps it.
+    private property <bool> pointer-focus;
     private property <bool> pressed: enabled && (touch.pressed || keyboard-pressed);
     private property <bool> hovered: touch.has-hover && enabled;
     private property <color> foreground: root.on-video ? #ffffff : variant == primary ? Colors.primary-text : variant == destructive ? Colors.destructive : Colors.text;
@@ -95,7 +204,7 @@ export component Action inherits Rectangle {
         : variant == primary ? (pressed ? Colors.primary-pressed : hovered ? Colors.primary-hover : Colors.primary)
         : variant == quiet ? (pressed ? Colors.strong : hovered ? (selected ? Colors.pressed : Colors.hover) : selected ? Colors.selected : transparent)
         : pressed ? Colors.strong : hovered || selected ? Colors.pressed : Colors.hover;
-    border-width: focus.has-focus ? 2px : 0px;
+    border-width: focus.has-focus && !root.pointer-focus ? 2px : 0px;
     border-color: Colors.focus;
     opacity: enabled ? 1 : 0.4;
     accessible-role: button;
@@ -110,7 +219,7 @@ export component Action inherits Rectangle {
     changed enabled => { if !root.enabled { root.keyboard-pressed = false; } }
     focus := FocusScope {
         enabled: root.enabled;
-        focus-lost => { root.keyboard-pressed = false; }
+        focus-lost => { root.keyboard-pressed = false; root.pointer-focus = false; }
         key-pressed(event) => {
             if event.text == " " || event.text == Key.Return {
                 // A held key is one activation, just like a held pointer.
@@ -152,6 +261,11 @@ export component Action inherits Rectangle {
             : root.icon-name == "ellipsis" ? @image-url("icons/ellipsis.svg")
             : root.icon-name == "clapperboard" ? @image-url("icons/clapperboard.svg")
             : root.icon-name == "image-off" ? @image-url("icons/image-off.svg")
+            : root.icon-name == "music" ? @image-url("icons/music.svg")
+            : root.icon-name == "gamepad-2" ? @image-url("icons/gamepad-2.svg")
+            : root.icon-name == "newspaper" ? @image-url("icons/newspaper.svg")
+            : root.icon-name == "trophy" ? @image-url("icons/trophy.svg")
+            : root.icon-name == "graduation-cap" ? @image-url("icons/graduation-cap.svg")
             : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
         colorize: root.variant == quiet && root.selected && !root.on-video ? Colors.accent : root.foreground;
         x: root.compact ? (root.width - root.icon-size) / 2 : root.variant == quiet ? 14px : 12px;
@@ -171,7 +285,7 @@ export component Action inherits Rectangle {
         font-weight: root.selected ? 600 : 400;
         horizontal-alignment: center; vertical-alignment: center; overflow: elide;
     }
-    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
+    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
     if root.compact && !root.stacked: Tooltip {
         Rectangle {
             width: tip.preferred-width + 16px; height: 30px;
@@ -228,7 +342,8 @@ export component VideoCard inherits Rectangle {
     private property <bool> channel: root.item.kind == "Channel";
     border-radius: root.compact ? 10px : 14px;
     background: transparent;
-    border-width: focus.has-focus ? 2px : 0px;
+    private property <bool> pointer-focus;
+    border-width: focus.has-focus && !root.pointer-focus ? 2px : 0px;
     border-color: Colors.focus;
     accessible-role: button;
     accessible-enabled: root.enabled;
@@ -238,7 +353,7 @@ export component VideoCard inherits Rectangle {
     focus := FocusScope {
         enabled: root.enabled;
         focus-gained => { root.card-focus(true); }
-        focus-lost => { root.card-focus(false); }
+        focus-lost => { root.pointer-focus = false; root.card-focus(false); }
         key-pressed(event) => {
             let command = CatalogKeys.command(event);
             if command >= 0 && root.keyboard-move(command) { return accept; }
@@ -292,5 +407,5 @@ export component VideoCard inherits Rectangle {
         text: root.item.channel; color: Colors.muted; font-size: root.compact ? 12px : 13px;
         horizontal-alignment: root.channel && !root.compact ? center : left; overflow: elide;
     }
-    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
+    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
 }
