@@ -88,7 +88,7 @@ impl Controller {
                     && window.is_decorated()
                     && window.fullscreen().is_none();
                 #[cfg(target_os = "macos")]
-                let integrated = normal && macos::integrate(window);
+                let integrated = normal && macos::integrate(window, app.get_native_header_height() as f64);
                 #[cfg(not(target_os = "macos"))]
                 let integrated = {
                     let _ = normal;
@@ -164,13 +164,15 @@ pub fn bind(app: &App) -> Rc<Controller> {
 #[cfg(target_os = "macos")]
 mod macos {
     use objc2::MainThreadMarker;
-    use objc2_app_kit::{NSView, NSWindowStyleMask, NSWindowTitleVisibility};
+    use objc2_app_kit::{
+        NSView, NSWindow, NSWindowButton, NSWindowStyleMask, NSWindowTitleVisibility,
+    };
     use slint::winit_030::winit::{
         raw_window_handle::{HasWindowHandle, RawWindowHandle},
         window::Window,
     };
 
-    pub(super) fn integrate(window: &Window) -> bool {
+    pub(super) fn integrate(window: &Window, header_height: f64) -> bool {
         let Some(_main_thread) = MainThreadMarker::new() else {
             return false;
         };
@@ -204,6 +206,85 @@ mod macos {
         if native.titleVisibility() != NSWindowTitleVisibility::Hidden {
             native.setTitleVisibility(NSWindowTitleVisibility::Hidden);
         }
+        center_traffic_lights(&native, view, header_height);
         true
+    }
+
+    fn center_traffic_lights(window: &NSWindow, content: &NSView, height: f64) {
+        if !(32.0..=64.0).contains(&height) {
+            return;
+        }
+        let buttons: Option<Vec<_>> = [
+            NSWindowButton::CloseButton,
+            NSWindowButton::MiniaturizeButton,
+            NSWindowButton::ZoomButton,
+        ]
+        .into_iter()
+        .map(|kind| window.standardWindowButton(kind))
+        .collect();
+        let Some(buttons) = buttons else { return };
+        // SAFETY: AppKit access stays synchronous on the main thread while the
+        // owning Winit window is alive. Native views are borrowed/retained only
+        // for this call; buttons are never replaced, reparented or restyled.
+        let Some(parent) = (unsafe { buttons[0].superview() }) else {
+            return;
+        };
+        let Some(container) = (unsafe { parent.superview() }) else {
+            return;
+        };
+        let Some(container_parent) = (unsafe { container.superview() }) else {
+            return;
+        };
+        if std::ptr::eq(parent.as_ref(), content)
+            || std::ptr::eq(container.as_ref(), content)
+            || buttons.iter().any(|button| {
+                unsafe { button.superview() }
+                    .is_none_or(|view| !std::ptr::eq::<NSView>(view.as_ref(), parent.as_ref()))
+            })
+        {
+            return;
+        }
+        let bounds = content.bounds();
+        let mut top = bounds.origin;
+        top.y = if content.isFlipped() {
+            bounds.origin.y
+        } else {
+            bounds.origin.y + bounds.size.height
+        };
+        // Native titlebar containers normally cover only the system title row.
+        // Extend their hit region to the shared header before moving buttons,
+        // so their centers remain inside every native ancestor's bounds.
+        let bars: [(&NSView, &NSView); 2] = [
+            (container.as_ref(), container_parent.as_ref()),
+            (parent.as_ref(), container.as_ref()),
+        ];
+        for (bar, host) in bars {
+            let top = host.convertPoint_fromView(top, Some(content));
+            let mut frame = bar.frame();
+            frame.size.height = height;
+            frame.origin.y = if host.isFlipped() {
+                top.y
+            } else {
+                top.y - height
+            };
+            if bar.frame() != frame {
+                bar.setFrame(frame);
+            }
+        }
+        let mut target = top;
+        target.y += if content.isFlipped() {
+            height / 2.0
+        } else {
+            -height / 2.0
+        };
+        let target = parent.convertPoint_fromView(target, Some(content));
+        for button in buttons {
+            let frame = button.frame();
+            let mut origin = frame.origin;
+            origin.y = target.y - frame.size.height / 2.0;
+            if (origin.y - frame.origin.y).abs() > 0.25 {
+                button.setFrameOrigin(origin);
+            }
+        }
     }
 }

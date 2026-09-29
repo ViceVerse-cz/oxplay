@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! One foreground public channel image, never persisted or account-derived.
+//! Two bounded public channel portraits: accepted watch creator and channel page.
 use crate::{App, UiState};
-use serein_core::{CancellationToken, ChannelId, OperationContext, VideoId, VideoSummary};
+use serein_core::{
+    CancellationToken, ChannelId, ChannelSummary, OperationContext, VideoId, VideoSummary,
+};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -12,26 +14,38 @@ use std::{
 };
 use tokio::sync::watch;
 
+#[derive(Clone, PartialEq, Eq)]
+enum Selection {
+    Watch { video: VideoId, channel: ChannelId },
+    Profile(ChannelId),
+}
+impl Selection {
+    fn channel(&self) -> &ChannelId {
+        match self {
+            Self::Watch { channel, .. } | Self::Profile(channel) => channel,
+        }
+    }
+}
 #[derive(Clone)]
 struct Job {
     generation: u64,
-    channel: ChannelId,
+    selection: Selection,
     cancel: CancellationToken,
     cancelled: watch::Receiver<bool>,
 }
 struct Ready {
     generation: u64,
+    selection: Selection,
     pixels: Option<image::RgbaImage>,
-}
-#[derive(Clone, PartialEq, Eq)]
-struct Selection {
-    video: VideoId,
-    channel: ChannelId,
+    subscribers: Option<u64>,
 }
 
 pub struct State {
     selection: RefCell<Option<Selection>>,
+    profile: RefCell<Option<ChannelId>>,
     attempted: Cell<bool>,
+    profile_attempted: Cell<bool>,
+    active: RefCell<Option<Selection>>,
     generation: Cell<u64>,
     command: Option<watch::Sender<Option<Job>>>,
     cancellation: RefCell<Option<(CancellationToken, watch::Sender<bool>)>>,
@@ -74,11 +88,16 @@ impl State {
                 if op.cancel.is_cancelled() {
                     continue;
                 }
-                let url = resolver
-                    .get_on_worker()
-                    .ok()
-                    .and_then(|provider| provider.channel_avatar(&job.channel, &op).ok().flatten());
-                let pixels = match url.filter(|_| !op.cancel.is_cancelled()) {
+                let profile = resolver.get_on_worker().ok().and_then(|provider| {
+                    provider.channel_profile(job.selection.channel(), &op).ok()
+                });
+                let subscribers = profile
+                    .as_ref()
+                    .and_then(|profile| profile.subscriber_count);
+                let pixels = match profile
+                    .and_then(|profile| profile.avatar_url)
+                    .filter(|_| !op.cancel.is_cancelled())
+                {
                     Some(url) => runtime.block_on(async {
                         tokio::select! {
                             biased;
@@ -89,10 +108,12 @@ impl State {
                     None => None,
                 };
                 if !op.cancel.is_cancelled() {
-                    // At most one decoded result. No video-frame transport.
+                    // One replaceable decoded result; never video-frame transport.
                     *out.lock().unwrap() = Some(Ready {
                         generation: job.generation,
+                        selection: job.selection,
                         pixels,
+                        subscribers,
                     });
                     let _ = app.upgrade_in_event_loop(|app| app.invoke_channel_avatar_wake());
                 }
@@ -100,7 +121,10 @@ impl State {
         });
         Self {
             selection: RefCell::new(None),
+            profile: RefCell::new(None),
             attempted: Cell::new(false),
+            profile_attempted: Cell::new(false),
+            active: RefCell::new(None),
             generation: Cell::new(0),
             command: Some(command),
             cancellation: RefCell::new(None),
@@ -118,16 +142,18 @@ impl State {
             command.send_replace(None);
         }
         self.result.lock().unwrap().take();
+        self.active.borrow_mut().take();
     }
-    fn request(&self, channel: ChannelId) {
+    fn request(&self, selection: Selection) {
         self.cancel();
         let cancel = CancellationToken::default();
         let (sender, cancelled) = watch::channel(false);
         *self.cancellation.borrow_mut() = Some((cancel.clone(), sender));
+        *self.active.borrow_mut() = Some(selection.clone());
         if let Some(command) = &self.command {
             command.send_replace(Some(Job {
                 generation: self.generation.get(),
-                channel,
+                selection,
                 cancel,
                 cancelled,
             }));
@@ -144,64 +170,114 @@ impl Drop for State {
     }
 }
 
-fn reset_image(app: &App) {
-    app.set_watch_channel_avatar_ready(false);
-    app.set_watch_channel_avatar(slint::Image::default());
-}
-
 pub fn clear(app: &App, state: &UiState) {
     app.set_watch_channel_available(false);
-    state.channel_avatar.cancel();
+    if matches!(
+        *state.channel_avatar.active.borrow(),
+        Some(Selection::Watch { .. })
+    ) {
+        state.channel_avatar.cancel();
+    }
     state.channel_avatar.selection.borrow_mut().take();
     state.channel_avatar.attempted.set(false);
-    reset_image(app);
+    app.set_watch_channel_avatar_ready(false);
+    app.set_watch_channel_avatar(slint::Image::default());
+    app.set_watch_channel_subscribers("".into());
 }
 
-/// Only the acknowledged guest playback path may admit metadata here.
+pub fn clear_profile(app: &App, state: &UiState) {
+    if matches!(
+        *state.channel_avatar.active.borrow(),
+        Some(Selection::Profile(..))
+    ) {
+        state.channel_avatar.cancel();
+    }
+    state.channel_avatar.profile.borrow_mut().take();
+    state.channel_avatar.profile_attempted.set(false);
+    app.set_channel_profile_avatar_ready(false);
+    app.set_channel_profile_avatar(slint::Image::default());
+    app.set_channel_profile_subscribers("".into());
+}
+
+pub fn selected_profile(app: &App, state: &UiState, channel: &ChannelSummary) {
+    if state.channel_avatar.profile.borrow().as_ref() != Some(&channel.id) {
+        clear_profile(app, state);
+        *state.channel_avatar.profile.borrow_mut() = Some(channel.id.clone());
+    }
+    if let Some(count) = channel.subscriber_count {
+        app.set_channel_profile_subscribers(
+            format!(
+                "{} subscribers",
+                crate::display_format::compact_count(count)
+            )
+            .into(),
+        );
+    }
+    observe(app, state);
+}
+
+/// Only acknowledged guest playback may admit public metadata here.
 pub fn selected_guest(app: &App, state: &UiState, video: &VideoSummary) {
     clear(app, state);
     app.set_watch_channel_available(video.channel_id.is_some());
     *state.channel_avatar.selection.borrow_mut() =
-        video.channel_id.clone().map(|channel| Selection {
+        video.channel_id.clone().map(|channel| Selection::Watch {
             video: video.id.clone(),
             channel,
         });
     observe(app, state);
 }
 
-fn relevant(app: &App, state: &UiState) -> bool {
-    let selected = state.channel_avatar.selection.borrow();
+fn relevant(app: &App, state: &UiState) -> Option<Selection> {
+    if state.hidden.get() || app.get_picture_in_picture() || app.get_fullscreen_active() {
+        return None;
+    }
+    let avatar = &state.channel_avatar;
+    if app.get_page() == 0 && app.get_guest_scope() == 1 && !app.get_home_active() {
+        return avatar.profile.borrow().clone().map(Selection::Profile);
+    }
+    if app.get_page() != 2
+        || !app.get_loaded()
+        || !app.get_remote_video()
+        || app.get_account_playback_active()
+        || crate::account_playback::authorization(state).is_some()
+        || state.caption_cache.active()
+    {
+        return None;
+    }
+    let selected = avatar.selection.borrow();
     let current = state.current_video.borrow();
-    selected.as_ref().is_some_and(|selected| {
-        current.as_ref().is_some_and(|video| {
-            selected.video == video.id && video.channel_id.as_ref() == Some(&selected.channel)
+    selected
+        .as_ref()
+        .filter(|selected| match selected {
+            Selection::Watch { video, channel } => current.as_ref().is_some_and(|current| {
+                *video == current.id && current.channel_id.as_ref() == Some(channel)
+            }),
+            Selection::Profile(..) => false,
         })
-    }) && app.get_page() == 2
-        && app.get_loaded()
-        && app.get_remote_video()
-        && !app.get_account_playback_active()
-        && crate::account_playback::authorization(state).is_none()
-        && !state.caption_cache.active()
-        && !state.hidden.get()
-        && !app.get_picture_in_picture()
-        && !app.get_fullscreen_active()
+        .cloned()
 }
 
 pub fn observe(app: &App, state: &UiState) {
     let avatar = &state.channel_avatar;
-    if !relevant(app, state) {
-        // Navigation and compact playback hide the creator row but do not
-        // change its identity. Retain the one accepted avatar; cancel only an
-        // unfinished request so invisible navigation cannot initiate work.
-        if !app.get_watch_channel_avatar_ready() && avatar.attempted.replace(false) {
-            avatar.cancel();
+    let desired = relevant(app, state);
+    let active = avatar.active.borrow().clone();
+    if active.is_some() && active != desired {
+        // Retain accepted portraits, cancel only unfinished invisible work.
+        match active {
+            Some(Selection::Watch { .. }) => avatar.attempted.set(false),
+            Some(Selection::Profile(..)) => avatar.profile_attempted.set(false),
+            None => {}
         }
-        return;
+        avatar.cancel();
     }
-    if !avatar.attempted.replace(true)
-        && let Some(selected) = avatar.selection.borrow().as_ref()
-    {
-        avatar.request(selected.channel.clone());
+    let Some(selection) = desired else { return };
+    let attempted = match selection {
+        Selection::Watch { .. } => &avatar.attempted,
+        Selection::Profile(..) => &avatar.profile_attempted,
+    };
+    if !attempted.replace(true) {
+        avatar.request(selection);
     }
 }
 
@@ -215,16 +291,45 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(ready) = state.channel_avatar.result.lock().unwrap().take() else {
             return;
         };
-        if ready.generation != state.channel_avatar.generation.get() || !relevant(&app, &state) {
+        if ready.generation != state.channel_avatar.generation.get()
+            || relevant(&app, &state).as_ref() != Some(&ready.selection)
+        {
             return;
         }
-        let Some(pixels) = ready.pixels else { return };
-        let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
-            pixels.as_raw(),
-            pixels.width(),
-            pixels.height(),
-        );
-        app.set_watch_channel_avatar(slint::Image::from_rgba8(buffer));
-        app.set_watch_channel_avatar_ready(true);
+        state.channel_avatar.active.borrow_mut().take();
+        let portrait = ready.pixels.map(|pixels| {
+            let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                pixels.as_raw(),
+                pixels.width(),
+                pixels.height(),
+            );
+            slint::Image::from_rgba8(buffer)
+        });
+        let subscribers = ready.subscribers.map(|count| {
+            format!(
+                "{} subscribers",
+                crate::display_format::compact_count(count)
+            )
+        });
+        match ready.selection {
+            Selection::Watch { .. } => {
+                if let Some(subscribers) = subscribers {
+                    app.set_watch_channel_subscribers(subscribers.into());
+                }
+                if let Some(portrait) = portrait {
+                    app.set_watch_channel_avatar(portrait);
+                    app.set_watch_channel_avatar_ready(true);
+                }
+            }
+            Selection::Profile(..) => {
+                if let Some(subscribers) = subscribers {
+                    app.set_channel_profile_subscribers(subscribers.into());
+                }
+                if let Some(portrait) = portrait {
+                    app.set_channel_profile_avatar(portrait);
+                    app.set_channel_profile_avatar_ready(true);
+                }
+            }
+        }
     });
 }

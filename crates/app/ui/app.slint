@@ -18,6 +18,7 @@ export component App inherits Window {
     in-out property <bool> window-borderless;
     in property <bool> native-header-integrated;
     callback window-header-drag();
+    out property <length> native-header-height: root.top-height;
     private property <length> header-leading-inset: root.native-header-integrated && !root.video-only ? 88px : 0px;
     callback pip-drag();
     in property <bool> window-translucency-available;
@@ -162,6 +163,10 @@ export component App inherits Window {
     in property <image> watch-channel-avatar;
     in property <bool> watch-channel-avatar-ready;
     in property <bool> watch-channel-available;
+    in property <string> watch-channel-subscribers;
+    in property <image> channel-profile-avatar;
+    in property <bool> channel-profile-avatar-ready;
+    in property <string> channel-profile-subscribers;
     callback open-watch-channel();
     callback channel-avatar-wake();
     callback channel-avatar-context-changed();
@@ -376,6 +381,8 @@ export component App inherits Window {
             root.visible-range(root.first-row * root.columns, root.last-row * root.columns, root.feed-thumbnail-first, root.feed-thumbnail-end);
         } else if root.page == 2 && !root.video-only {
             root.visible-range(root.related-first, root.related-last, -1, -1);
+        } else if root.page == 1 && LibraryUi.tab == 2 {
+            LibraryUi.visible-range(LibraryUi.viewport-offset, LibraryUi.viewport-height, LibraryUi.viewport-narrow);
         } else { root.visible-range(0, 0, -1, -1); }
     }
     public function focus-player() { root.prepare-native-overlay(); root.saved-watch-offset = 0px; watch.content-y = 0px; focus.focus(); }
@@ -545,20 +552,20 @@ export component App inherits Window {
             enabled: root.native-header-integrated;
             pointer-event(event) => { if event.kind == PointerEventKind.down && event.button == PointerEventButton.left { root.window-header-drag(); } }
         }
-        Action { x: root.header-leading-inset + 16px; y: 4px; width: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
-        Rectangle { x: root.header-leading-inset + 72px; y: 11px; width: 26px; height: 26px; border-radius: 8px; background: Colors.accent;
+        header-menu := Action { x: root.header-leading-inset + 16px; y: (parent.height - self.height) / 2; width: 40px; height: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
+        Rectangle { x: root.header-leading-inset + 72px; y: (parent.height - self.height) / 2; width: 26px; height: 26px; border-radius: 8px; background: Colors.accent;
             Image { x: 4px; y: 4px; width: 18px; height: 18px; source: @image-url("icons/clapperboard.svg"); colorize: #ffffff; }
         }
         Text { x: root.header-leading-inset + 106px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 23px; font-weight: 700; vertical-alignment: center; }
         search := SearchField {
-            x: max(root.header-leading-inset + 220px, (root.width - self.width) / 2); y: 5px;
+            x: max(root.header-leading-inset + 220px, (root.width - self.width) / 2); y: (parent.height - self.height) / 2;
             width: min(620px, root.width - 410px - root.header-leading-inset); height: 38px;
             enabled: !root.native-video-child; cache-rendering-hint: root.cache-search;
             placeholder: root.native-video-child ? "Local-only diagnostic" : "Search YouTube";
             edited => { root.cancel-playback-focus(); }
             accepted(text) => { root.search(text); }
         }
-        Action { enabled: !root.native-video-child; x: parent.width - 156px; y: 4px; width: 140px; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
+        header-account := Action { enabled: !root.native-video-child; x: parent.width - 156px; y: (parent.height - self.height) / 2; width: 140px; height: 40px; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
     }
     Rectangle {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
@@ -586,6 +593,14 @@ export component App inherits Window {
         x: root.sidebar-width + 28px; y: root.top-height + 22px;
         width: root.width - self.x - 28px; height: root.height - self.y - 20px;
         visible: root.page == 0;
+        private property <bool> channel-header: root.guest-scope == 1;
+        private property <length> toolbar-y: self.channel-header ? 112px : 80px;
+        if self.channel-header: Rectangle {
+            x: 2px; y: 2px; width: 80px; height: 80px; border-radius: 40px; clip: true; background: Colors.surface;
+            if root.channel-profile-avatar-ready: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; source: root.channel-profile-avatar; image-fit: cover; }
+            if !root.channel-profile-avatar-ready: Image { x: 18px; y: 18px; width: 44px; height: 44px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
+        }
+        if self.channel-header && root.channel-profile-subscribers != "": Text { x: 104px; y: 48px; width: parent.width - 104px; height: 22px; text: root.channel-profile-subscribers; color: Colors.muted; font-size: 14px; vertical-alignment: center; }
         // Survives virtualized row destruction. Never a normal Tab destination.
         feed-parking := FocusScope {
             x: feed.x; y: feed.y; width: feed.width; height: feed.height;
@@ -600,9 +615,9 @@ export component App inherits Window {
             }
             Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
         }
-        Text { x: 0; y: 0; width: parent.width; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
-        Text { x: 0; y: 43px; width: parent.width; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
-        HorizontalLayout { y: 80px; height: 38px; spacing: 10px;
+        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
+        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 43px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
+        HorizontalLayout { y: browse.toolbar-y; height: 38px; spacing: 10px;
             if root.home-active: Action { icon-name: "history"; label: root.home-loading ? "Loading…" : "Refresh"; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
             if root.home-active: Action { icon-name: "list-video"; label: "Local playlists"; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
             if root.guest-can-back: Action { icon-name: "chevron-left"; label: "Back"; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
@@ -614,7 +629,7 @@ export component App inherits Window {
             Text { text: root.home-active ? "Saved on this device" : "Guest browsing"; color: Colors.muted; vertical-alignment: center; }
         }
         feed := ListView {
-            y: 132px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
+            y: browse.toolbar-y + 52px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
             horizontal-scrollbar-policy: always-off;
             for group in root.groups: Rectangle {
                 height: root.row-height;
@@ -700,6 +715,8 @@ export component App inherits Window {
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Privacy by default"; color: Colors.text; font-size: 18px; height: 26px; }
             Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
+            ConfirmedToggle { text: "Show comments and load the first page automatically"; acknowledged-checked: CommentsUi.enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { CommentsUi.set-enabled(checked); } }
+            Text { text: "Public comments load when you open a guest video. Turning this off cancels comment requests and hides comments. No account comments are fetched."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             ConfirmedToggle { text: "Keep watch history on this device"; acknowledged-checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { LibraryUi.history(checked); } }
             Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Saved video artwork"; color: Colors.text; font-size: 18px; height: 26px; }
@@ -905,8 +922,8 @@ export component App inherits Window {
             if root.watch-loading && root.video-title == "": Rectangle { x: 0px; y: 10px; width: parent.width * 0.72; height: 20px; border-radius: 4px; background: Colors.raised; }
             if !root.video-only: HorizontalLayout {
                 x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
-                Action {
-                    horizontal-stretch: 1; min-width: 0px; height: 44px; compact: true;
+                creator-action := Action {
+                    horizontal-stretch: 0; width: min(max(creator-name.preferred-width, creator-subs.preferred-width) + 62px, max(54px, parent.width - (root.account-connected ? 432px : 332px))); height: 44px; compact: true;
                     label: "Open " + root.video-channel + " channel";
                     enabled: root.watch-channel-available && !root.watch-loading;
                     opacity: 1; clicked => { root.open-watch-channel(); }
@@ -915,9 +932,11 @@ export component App inherits Window {
                         if root.watch-channel-avatar-ready: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; source: root.watch-channel-avatar; image-fit: cover; }
                         if !root.watch-channel-avatar-ready: Image { x: 5px; y: 5px; width: 30px; height: 30px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
                     }
-                    Text { x: 50px; y: 0px; width: max(0px, parent.width - 54px); height: parent.height; text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; overflow: elide; vertical-alignment: center; }
+                    creator-name := Text { x: 50px; y: root.watch-channel-subscribers != "" ? 2px : 0px; width: max(0px, parent.width - 58px); height: root.watch-channel-subscribers != "" ? 22px : parent.height; text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; overflow: elide; vertical-alignment: center; }
+                    creator-subs := Text { visible: root.watch-channel-subscribers != ""; x: 50px; y: 24px; width: max(0px, parent.width - 58px); height: 18px; text: root.watch-channel-subscribers; color: Colors.muted; font-size: 12px; overflow: elide; vertical-alignment: center; }
                     if root.watch-loading && root.video-channel == "": Rectangle { x: 50px; y: 14px; width: min(160px, max(0px, parent.width - 54px)); height: 16px; border-radius: 4px; background: Colors.raised; }
                 }
+                Rectangle { horizontal-stretch: 1; min-width: 0px; }
                 if root.account-connected && !root.watch-loading && root.watch-load-error == "": Action { width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
                 Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
                 share-button := Action { width: 72px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
@@ -972,7 +991,7 @@ export component App inherits Window {
             for item[index] in root.watch-videos: VideoCard {
                 cache-rendering-hint: root.cache-related;
                 enabled: !root.native-video-child;
-                height: 106px; item: item; compact: true;
+                height: 106px; item: item; compact: true; show-channel: false;
                 focus-request: root.watching && !root.video-only && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;
                 focus-delivery: root.feed-focus-delivery;
                 focus-ready(serial) => { root.feed-focus-ready(1, index, item.kind, item.id, serial); }

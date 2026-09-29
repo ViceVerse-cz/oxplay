@@ -15,6 +15,7 @@ mod collection_window_smoke;
 mod comments_ui;
 mod controls_ui;
 mod decode_warning;
+mod display_format;
 mod feed_focus;
 mod fixture_quiescence;
 mod focus_intent;
@@ -496,35 +497,72 @@ fn video_row(video: &serein_core::VideoSummary) -> VideoRow {
         ..VideoRow::default()
     }
 }
-fn viewport(app: &App, state: &UiState, first: usize, end: usize, visible: Option<(usize, usize)>) {
-    if state.caption_cache.active() {
+fn switch_thumbnail_surface(state: &UiState, surface: i32) {
+    let previous = state.thumbnail_surface.replace(surface);
+    if previous == surface {
         return;
     }
-    let surface = if app.get_page() == 2 { 1 } else { 0 };
-    if state.thumbnail_surface.replace(surface) != surface {
-        state.thumbnails.borrow_mut().replace(Vec::new());
-        state.thumbnail_attempted.borrow_mut().clear();
-        state.thumbnail_range.set((usize::MAX, usize::MAX));
-        // Keep typed watch/browse metadata, but release image references held
-        // by the now-hidden surface. The worker's bounded cache can serve them
-        // again; preserving navigation does not retain two decoded viewports.
-        let hidden_model = if surface == 1 {
+    state.thumbnails.borrow_mut().replace(Vec::new());
+    state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_range.set((usize::MAX, usize::MAX));
+    if previous == 2 {
+        library_ui::release_thumbnails(state, 0..0);
+    } else if previous == 0 || previous == 1 {
+        let model = if previous == 0 {
             &state.model
         } else {
             &state.watch_context.model
         };
-        for index in 0..hidden_model.row_count() {
-            if let Some(mut row) = hidden_model.row_data(index)
+        for index in 0..model.row_count() {
+            if let Some(mut row) = model.row_data(index)
                 && row.thumbnail_ready
             {
                 row.thumbnail = slint::Image::default();
                 row.thumbnail_ready = false;
-                hidden_model.set_row_data(index, row.clone());
-                if surface == 1 {
+                model.set_row_data(index, row.clone());
+                if previous == 0 {
                     state.groups.update(index, row);
                 }
             }
         }
+    }
+}
+fn viewport(app: &App, state: &UiState, first: usize, end: usize, visible: Option<(usize, usize)>) {
+    if state.caption_cache.active() {
+        return;
+    }
+    let surface = if app.get_page() == 2 {
+        1
+    } else if app.get_page() == 1 && app.global::<LibraryUi>().get_tab() == 2 {
+        2
+    } else {
+        0
+    };
+    switch_thumbnail_surface(state, surface);
+    if surface == 2 {
+        let len = library_ui::thumbnail_count(state);
+        let (first, end) = groups::thumbnail_window(len, (first, end), visible);
+        if state.thumbnail_range.replace((first, end)) == (first, end) {
+            return;
+        }
+        state
+            .thumbnail_attempted
+            .borrow_mut()
+            .retain(|index| (first..end).contains(index));
+        library_ui::release_thumbnails(state, first..end);
+        let requests = (first..end)
+            .filter_map(|row| {
+                if state.thumbnail_attempted.borrow().contains(&row) {
+                    return None;
+                }
+                Some(thumbnails::Request {
+                    row,
+                    source: library_ui::thumbnail_source(state, row)?,
+                })
+            })
+            .collect();
+        state.thumbnails.borrow_mut().replace(requests);
+        return;
     }
     let model = if surface == 1 {
         &state.watch_context.model
@@ -602,6 +640,19 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
             visible,
         )
     });
+    let weak = app.as_weak();
+    let s = Rc::downgrade(state);
+    app.global::<LibraryUi>()
+        .on_visible_range(move |offset, height, narrow| {
+            let (Some(app), Some(s)) = (weak.upgrade(), s.upgrade()) else {
+                return;
+            };
+            if app.get_page() != 1 || app.global::<LibraryUi>().get_tab() != 2 {
+                return;
+            }
+            let (first, end) = library_ui::thumbnail_viewport(&s, offset, height, narrow);
+            viewport(&app, &s, first, end, Some((first, end)));
+        });
     let s = state.clone();
     let weak = app.as_weak();
     app.on_thumbnail_wake(move || {
@@ -625,6 +676,28 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
                 continue;
             }
             let surface = s.thumbnail_surface.get();
+            if surface == 2 {
+                s.thumbnail_attempted.borrow_mut().insert(ready.row);
+                let (Some(id), Some(pixels)) = (ready.video_id, ready.pixels) else {
+                    continue;
+                };
+                let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                    pixels.as_raw(),
+                    pixels.width(),
+                    pixels.height(),
+                );
+                if library_ui::publish_thumbnail(
+                    &s,
+                    ready.row,
+                    &id,
+                    slint::Image::from_rgba8(buffer),
+                ) {
+                    s.thumbnails
+                        .borrow()
+                        .record_publication(pixels.as_raw().len());
+                }
+                continue;
+            }
             let model = if surface == 1 {
                 &s.watch_context.model
             } else {
@@ -1305,7 +1378,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let Some(result) = s.worker.borrow().take() else {
             return;
         };
-        app.set_busy(false);
+        // Comment jobs own only their section state, including completion.
+        if !matches!(&result, Ok(Response::Comments(..))) {
+            app.set_busy(false);
+        }
         if result.is_ok() {
             guest_recovery::invalidate(&app, &s);
         }

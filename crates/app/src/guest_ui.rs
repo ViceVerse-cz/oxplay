@@ -287,7 +287,7 @@ pub(crate) fn row(item: &CatalogItem) -> VideoRow {
             title: channel.title.clone().into(),
             channel: channel
                 .subscriber_count
-                .map(|n| format!("{n} subscribers"))
+                .map(|n| format!("{} subscribers", crate::display_format::compact_count(n)))
                 .unwrap_or_else(|| "Public YouTube channel".into())
                 .into(),
             id: channel.id.as_str().into(),
@@ -297,9 +297,14 @@ pub(crate) fn row(item: &CatalogItem) -> VideoRow {
         CatalogItem::Playlist(playlist) => VideoRow {
             title: playlist.title.clone().into(),
             channel: match (&playlist.channel, playlist.video_count) {
-                (Some(channel), Some(count)) => format!("{channel} · {count} videos"),
+                (Some(channel), Some(count)) => format!(
+                    "{channel} · {} videos",
+                    crate::display_format::grouped_count(count)
+                ),
                 (Some(channel), None) => channel.clone(),
-                (None, Some(count)) => format!("{count} videos"),
+                (None, Some(count)) => {
+                    format!("{} videos", crate::display_format::grouped_count(count))
+                }
                 _ => "Public YouTube playlist".into(),
             }
             .into(),
@@ -320,6 +325,18 @@ fn load(app: &App, s: &UiState, location: Location, remember: bool) {
     app.set_home_active(false);
     if remember {
         s.guest_ui.remember();
+    }
+    let same_channel = match &location.request {
+        CatalogRequest::Channel { id, .. } => s
+            .guest_ui
+            .channel
+            .borrow()
+            .as_ref()
+            .is_some_and(|channel| &channel.id == id),
+        _ => false,
+    };
+    if !same_channel {
+        crate::channel_avatar::clear_profile(app, s);
     }
     s.guest_ui.channel.borrow_mut().take();
     app.set_guest_can_follow(false);
@@ -422,6 +439,7 @@ pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
             }
             *s.guest_ui.channel.borrow_mut() = Some(channel.clone());
             app.set_guest_can_follow(true);
+            crate::channel_avatar::selected_profile(app, s, &channel);
             app.set_catalog_title(channel.title.into());
             app.set_catalog_subtitle(
                 channel
@@ -480,6 +498,7 @@ pub fn begin_home(app: &App, state: &UiState) {
 /// local-data deletion. Account collection models have separate ownership.
 /// The caller controls navigation; clearing never initiates a provider request.
 pub fn clear_cached_catalog(app: &App, state: &UiState) {
+    crate::channel_avatar::clear_profile(app, state);
     state.guest_ui.local_home.set(false);
     state.thumbnails.borrow_mut().replace(Vec::new());
     state.thumbnail_attempted.borrow_mut().clear();

@@ -97,3 +97,9 @@ Guest video artwork may be retained within the configurable local disk limit
 even when history is disabled. Home reads them without HTTP fallback. Clear
 local data includes artwork and waits for acknowledged cleanup; account artwork
 is excluded from this cache. See [cache ownership and limitations](artwork-cache.md).
+
+Public comments now load their first bounded page after a selected guest video,
+as explicitly requested. The persisted Settings toggle disables/cancels/hides
+them. Launching, local playback and authenticated/private playback never start
+this anonymous comment request. Loading comments does not disable unrelated
+controls. See [comments policy and bounds](comments.md).

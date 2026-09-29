@@ -5,7 +5,7 @@ use serein_core::{ChannelId, VideoSummary};
 use serein_storage::{
     HistoryCursor, HistoryEntry, LocalPlaylistId, LocalSubscription, PageCursor, PlaylistWindow,
 };
-use slint::ComponentHandle;
+use slint::{ComponentHandle, Model};
 #[path = "library_model.rs"]
 mod library_model;
 #[path = "library_organization.rs"]
@@ -13,7 +13,7 @@ mod organization;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 #[derive(Clone)]
@@ -427,6 +427,11 @@ fn save_preferences(app: &App, state: &UiState, value: serein_storage::LocalPref
     app.set_default_quality_index(value.playback.quality.index());
     true
 }
+pub fn set_comments_enabled(app: &App, state: &UiState, enabled: bool) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.comments_enabled = enabled;
+    save_preferences(app, state, prefs)
+}
 pub fn save_quality(app: &App, state: &UiState, quality: serein_core::QualityCeiling) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.quality = quality;
@@ -725,6 +730,135 @@ pub fn clear_after_caption_purge(app: &App, s: &UiState) -> bool {
     app.global::<LibraryUi>().set_busy(true);
     true
 }
+fn unix_seconds(time: SystemTime) -> i64 {
+    time.duration_since(SystemTime::UNIX_EPOCH)
+        .ok()
+        .and_then(|value| i64::try_from(value.as_secs()).ok())
+        .unwrap_or(0)
+}
+fn clock(seconds: u64) -> String {
+    if seconds >= 3600 {
+        format!(
+            "{}:{:02}:{:02}",
+            seconds / 3600,
+            seconds / 60 % 60,
+            seconds % 60
+        )
+    } else {
+        format!("{}:{:02}", seconds / 60, seconds % 60)
+    }
+}
+fn history_row(entry: &HistoryEntry, heading: String) -> LibraryRow {
+    let position = entry.position.as_secs();
+    let duration = entry
+        .video
+        .duration
+        .map(|value| value.as_secs())
+        .filter(|value| *value > 0);
+    let detail = match duration {
+        Some(duration) if position >= duration => "Watched".into(),
+        Some(duration) => format!("Watched {} of {}", clock(position), clock(duration)),
+        None if position > 0 => format!("Watched {}", clock(position)),
+        None => String::new(),
+    };
+    LibraryRow {
+        title: entry.video.title.clone().into(),
+        channel: entry.video.channel.clone().into(),
+        detail: detail.into(),
+        day_heading: heading.into(),
+        duration: duration.map(clock).unwrap_or_default().into(),
+        progress: duration.map_or(0.0, |duration| {
+            (position as f64 / duration as f64).min(1.0) as f32
+        }),
+        action: "Remove from history".into(),
+        ..LibraryRow::default()
+    }
+}
+/// A cache miss stays offline; local history never synthesizes a CDN URL.
+pub fn thumbnail_source(state: &UiState, index: usize) -> Option<crate::thumbnails::Source> {
+    let items = state.library_ui.items.borrow();
+    let Item::History(entry) = items.get(index)? else {
+        return None;
+    };
+    (!state.library_ui.rows.row_data(index)?.thumbnail_ready)
+        .then(|| crate::thumbnails::Source::CachedVideo(entry.video.id.clone()))
+}
+pub fn publish_thumbnail(
+    state: &UiState,
+    index: usize,
+    id: &serein_core::VideoId,
+    image: slint::Image,
+) -> bool {
+    let matches = matches!(state.library_ui.items.borrow().get(index), Some(Item::History(entry)) if &entry.video.id == id);
+    if !matches {
+        return false;
+    }
+    let Some(mut row) = state.library_ui.rows.row_data(index) else {
+        return false;
+    };
+    row.thumbnail = image;
+    row.thumbnail_ready = true;
+    state.library_ui.rows.set_row_data(index, row);
+    state
+        .library_ui
+        .row_changes
+        .set(state.library_ui.row_changes.get() + 1);
+    true
+}
+pub fn release_thumbnails(state: &UiState, keep: std::ops::Range<usize>) {
+    for index in 0..state.library_ui.rows.row_count() {
+        if !keep.contains(&index)
+            && let Some(mut row) = state.library_ui.rows.row_data(index)
+            && row.thumbnail_ready
+        {
+            row.thumbnail = slint::Image::default();
+            row.thumbnail_ready = false;
+            state.library_ui.rows.set_row_data(index, row);
+            state
+                .library_ui
+                .row_changes
+                .set(state.library_ui.row_changes.get() + 1);
+        }
+    }
+}
+pub fn thumbnail_count(state: &UiState) -> usize {
+    state.library_ui.rows.row_count()
+}
+/// Determine actual visible indices from the bounded variable-height row page.
+/// Group headings are inside their video row, so callbacks retain video indices.
+pub fn thumbnail_viewport(
+    state: &UiState,
+    offset: f32,
+    height: f32,
+    narrow: bool,
+) -> (usize, usize) {
+    let top = offset.max(0.0);
+    let bottom = top + height.max(0.0);
+    let count = state.library_ui.rows.row_count();
+    let mut first = count;
+    let mut end = count;
+    let mut y = 0.0;
+    for index in 0..count {
+        let Some(row) = state.library_ui.rows.row_data(index) else {
+            break;
+        };
+        let row_height = (if narrow { 92.0 } else { 112.0 })
+            + if row.day_heading.is_empty() {
+                0.0
+            } else {
+                36.0
+            };
+        if y + row_height > top && first == count {
+            first = index;
+        }
+        if y >= bottom {
+            end = index;
+            break;
+        }
+        y += row_height;
+    }
+    (first, end.max(first))
+}
 fn publish(app: &App, s: &UiState, items: Vec<Item>, next: Option<Cursor>) -> bool {
     crate::fixture_quiescence::trace(
         s,
@@ -734,6 +868,8 @@ fn publish(app: &App, s: &UiState, items: Vec<Item>, next: Option<Cursor>) -> bo
             "publish-library-page"
         },
     );
+    let now = unix_seconds(SystemTime::now());
+    let mut previous_day = None;
     let rows: Vec<LibraryRow> = items
         .iter()
         .map(|item| match item {
@@ -741,23 +877,40 @@ fn publish(app: &App, s: &UiState, items: Vec<Item>, next: Option<Cursor>) -> bo
                 title: v.title.clone().into(),
                 detail: v.channel.clone().into(),
                 action: "Remove".into(),
+                ..LibraryRow::default()
             },
             Item::Follow(v) => LibraryRow {
                 title: v.name.clone().into(),
                 detail: "Local follow · Open public channel".into(),
                 action: "Unfollow".into(),
+                ..LibraryRow::default()
             },
-            Item::History(v) => LibraryRow {
-                title: v.video.title.clone().into(),
-                detail: format!(
-                    "{} · position {}:{:02}",
-                    v.video.channel,
-                    v.position.as_secs() / 60,
-                    v.position.as_secs() % 60
-                )
-                .into(),
-                action: "Delete entry".into(),
-            },
+            Item::History(v) => {
+                let day = crate::display_format::history_day(unix_seconds(v.watched_at), now);
+                let heading = if previous_day.as_ref() == Some(&day) {
+                    String::new()
+                } else {
+                    day.clone()
+                };
+                previous_day = Some(day);
+                let mut row = history_row(v, heading);
+                // A same-page deletion/metadata change must not discard cached
+                // artwork held by surviving row identities.
+                if s.library_ui.published_route.borrow().as_ref() == Some(&current_route(app, s)) {
+                    let previous = s
+                        .library_ui
+                        .items
+                        .borrow()
+                        .iter()
+                        .position(|old| old.key() == item.key());
+                    if let Some(old) = previous.and_then(|index| s.library_ui.rows.row_data(index))
+                    {
+                        row.thumbnail = old.thumbnail;
+                        row.thumbnail_ready = old.thumbnail_ready;
+                    }
+                }
+                row
+            }
         })
         .collect();
     let route = current_route(app, s);
@@ -790,6 +943,13 @@ fn publish(app: &App, s: &UiState, items: Vec<Item>, next: Option<Cursor>) -> bo
     ui.set_previous(has_previous);
     if let Some(videos) = fixture_videos(s) {
         crate::library_fixture::publish(app, s, &videos);
+    }
+    if app.get_page() == 1 && ui.get_tab() == 2 {
+        // A deletion/page change may preserve the numeric viewport while its
+        // row identities change. Cancel/re-admit cache-only work immediately.
+        s.thumbnail_attempted.borrow_mut().clear();
+        s.thumbnail_range.set((usize::MAX, usize::MAX));
+        app.invoke_refresh_visible();
     }
     true
 }
@@ -1093,6 +1253,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     }
                     if !s.playback_preferences.ready() {
                       s.preferences.set(prefs);
+                    crate::comments_ui::sync_preferences(&app, &s);
                       app.set_theme(match prefs.theme {
                         serein_storage::Theme::System => 0,
                         serein_storage::Theme::Light => 1,
@@ -1201,6 +1362,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 library::Response::BackgroundError(error) => status(&app, error),
                 library::Response::PreferencesFailed(write, error) => {
                     let latest = s.library_ui.finish_preferences(write);
+                    crate::comments_ui::sync_preferences(&app, &s);
                     app.set_thumbnail_cache_index(thumbnail_cache_index(s.preferences.get().thumbnail_cache_mib).unwrap_or(0));
                     if latest {
                         crate::playback_preferences::save_failed(&app, &s, write.value.playback);
@@ -1222,6 +1384,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let thumbnail_changed = s.preferences.get().thumbnail_cache_mib != prefs.thumbnail_cache_mib;
                     let theme_changed = s.preferences.get().theme != prefs.theme;
                     s.preferences.set(prefs);
+                    crate::comments_ui::sync_preferences(&app, &s);
                     app.set_thumbnail_cache_index(thumbnail_cache_index(prefs.thumbnail_cache_mib).unwrap_or(0));
                     // Keep newer admitted previews; unrelated writes must not
                     // override a session-only diagnostic appearance.
@@ -1240,6 +1403,15 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                         },
                     );
                     if thumbnail_changed { apply_thumbnail_cache(&app, &s, prefs.thumbnail_cache_mib); }
+                    if history_changed && app.get_page() == 1 && app.global::<LibraryUi>().get_tab() == 2 {
+                        if prefs.privacy.local_history {
+                            refresh(&app, &s);
+                        } else {
+                            // SQLite committed the disable-and-clear operation;
+                            // remove its corresponding UI metadata/artwork too.
+                            publish(&app, &s, Vec::new(), None);
+                        }
+                    }
                 }
                 library::Response::Saved => {
                     crate::home_ui::changed(&app, &s);
@@ -1333,6 +1505,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     // a theme/volume event must not restore an old history opt-in.
                     s.preferences.set(prefs);
                     s.library_ui.requested_preferences.set(None);
+                    crate::comments_ui::sync_preferences(&app, &s);
                     s.library_ui.last_record.borrow_mut().take();
                     s.library_ui.save_target.borrow_mut().take();
                     app.global::<SaveUi>().set_video_title("".into());
@@ -1939,12 +2112,47 @@ pub fn open_tab(app: &App, state: &UiState, tab: i32) -> bool {
         publish(app, state, Vec::new(), None);
     }
     app.set_page(1);
+    // Internal library tabs can change without a page change notification. End
+    // old history artwork work even when navigation stays on page one.
+    app.invoke_refresh_visible();
     true
 }
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn history_rows_format_long_positions_without_raw_ids_or_timestamps() {
+        let entry = HistoryEntry {
+            video: VideoSummary {
+                id: serein_core::VideoId::new("abcdefghijk").unwrap(),
+                title: "Synthetic title".into(),
+                channel: "Synthetic creator".into(),
+                channel_id: None,
+                duration: Some(Duration::from_secs(7_200)),
+                thumbnail_url: None,
+            },
+            position: Duration::from_secs(3_723),
+            watched_at: SystemTime::UNIX_EPOCH,
+        };
+        let row = history_row(&entry, "Today".into());
+        assert_eq!(row.detail.as_str(), "Watched 1:02:03 of 2:00:00");
+        assert_eq!(row.duration.as_str(), "2:00:00");
+        assert_eq!(row.channel.as_str(), "Synthetic creator");
+        assert_eq!(row.day_heading.as_str(), "Today");
+        assert!((row.progress - 0.517_083_35).abs() < 0.000_001);
+        assert!(!row.thumbnail_ready);
+        let completed = history_row(
+            &HistoryEntry {
+                position: Duration::MAX,
+                ..entry
+            },
+            String::new(),
+        );
+        assert_eq!(completed.detail.as_str(), "Watched");
+        assert_eq!(completed.progress, 1.0);
+        assert!(completed.day_heading.is_empty());
+    }
     #[test]
     fn created_selection_requires_its_exact_read_and_live_submission_context() {
         let store = serein_storage::LocalStore::in_memory().unwrap();

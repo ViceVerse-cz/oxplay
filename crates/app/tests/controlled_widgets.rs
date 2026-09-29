@@ -468,3 +468,123 @@ fn creator_avatar_and_name_share_one_keyboard_accessible_channel_action() {
     settle();
     assert_eq!(opens.get(), 2, "Unavailable creator must not navigate");
 }
+
+#[test]
+fn shared_header_centers_controls_and_bounds_the_creator_hit_region() {
+    let app = app();
+    app.set_native_header_integrated(true);
+    app.window().set_size(slint::LogicalSize::new(1440., 900.));
+    settle();
+    for id in ["header-menu", "header-account", "search"] {
+        let control = ElementHandle::find_by_element_id(&app, &format!("App::{id}"))
+            .next()
+            .unwrap();
+        let center = control.absolute_position().y + control.size().height / 2.;
+        assert!(
+            (center - app.get_native_header_height() / 2.).abs() < 0.1,
+            "{id}: {center}"
+        );
+    }
+    let search = ElementHandle::find_by_element_id(&app, "App::search")
+        .next()
+        .unwrap();
+    assert!((search.absolute_position().x + search.size().width / 2. - 720.).abs() < 0.1);
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    app.set_video_channel("TEST FIXTURE creator".into());
+    app.set_watch_channel_available(true);
+    app.set_watch_channel_subscribers("1.2M subscribers".into());
+    settle();
+    let creator = element(&app, "Open TEST FIXTURE creator channel");
+    assert!(
+        creator.size().width < 320.,
+        "Creator hover must fit its text, not the entire row"
+    );
+    let share = element(&app, "Share");
+    assert!(creator.absolute_position().x + creator.size().width < share.absolute_position().x);
+    assert!(
+        (creator.absolute_position().y + creator.size().height / 2.
+            - share.absolute_position().y
+            - share.size().height / 2.)
+            .abs()
+            < 0.1
+    );
+}
+
+#[test]
+fn comments_setting_uses_acknowledgement_and_supports_rollback() {
+    let app = app();
+    app.set_page(3);
+    let comments = app.global::<CommentsUi>();
+    comments.set_enabled(true);
+    let attempted = Rc::new(Cell::new(None));
+    let output = attempted.clone();
+    comments.on_set_enabled(move |enabled| output.set(Some(enabled)));
+    settle();
+    let label = "Show comments and load the first page automatically";
+    element(&app, label).mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(attempted.get(), Some(false));
+    assert!(
+        comments.get_enabled(),
+        "Unacknowledged setting stays authoritative"
+    );
+    comments.set_enabled(false);
+    settle();
+    assert_eq!(element(&app, label).accessible_checked(), Some(false));
+    comments.set_enabled(true);
+    settle();
+    assert_eq!(element(&app, label).accessible_checked(), Some(true));
+}
+
+#[test]
+fn history_removal_does_not_play_the_video_and_artwork_click_does() {
+    let app = app();
+    app.set_page(1);
+    let library = app.global::<LibraryUi>();
+    library.set_tab(2);
+    library.set_history_enabled(true);
+    library.set_rows(
+        Rc::new(slint::VecModel::from(vec![LibraryRow {
+            title: "TEST FIXTURE history video".into(),
+            channel: "TEST FIXTURE channel".into(),
+            day_heading: "Today".into(),
+            duration: "12:34".into(),
+            progress: 0.5,
+            ..LibraryRow::default()
+        }]))
+        .into(),
+    );
+    let plays = Rc::new(Cell::new(0));
+    let removes = Rc::new(Cell::new(0));
+    let output = plays.clone();
+    library.on_open(move |_| output.set(output.get() + 1));
+    let output = removes.clone();
+    library.on_remove(move |_| output.set(output.get() + 1));
+    settle();
+    element(&app, "Remove TEST FIXTURE history video from local history")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(removes.get(), 1);
+    assert_eq!(plays.get(), 0);
+    let play = element(&app, "Play TEST FIXTURE history video");
+    let origin = play.absolute_position();
+    let point = slint::LogicalPosition::new(origin.x + 50., origin.y + 30.);
+    for event in [
+        WindowEvent::PointerMoved { position: point },
+        WindowEvent::PointerPressed {
+            position: point,
+            button: slint::platform::PointerEventButton::Left,
+        },
+        WindowEvent::PointerReleased {
+            position: point,
+            button: slint::platform::PointerEventButton::Left,
+        },
+    ] {
+        app.window().dispatch_event(event);
+    }
+    settle();
+    assert_eq!(plays.get(), 1);
+    assert_eq!(removes.get(), 1);
+}

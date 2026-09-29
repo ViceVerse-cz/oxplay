@@ -515,6 +515,7 @@ pub struct VideoDetails {
     pub view_count: Option<u64>,
     pub like_count: Option<u64>,
     pub comment_count: Option<u64>,
+    pub channel_subscriber_count: Option<u64>,
     pub chapters: Vec<VideoChapter>,
     /// Present but malformed/oversized chapter metadata was rejected as a set.
     pub chapters_unavailable: bool,

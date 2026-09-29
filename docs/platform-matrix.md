@@ -189,3 +189,10 @@ acknowledgements. They render no pixels and do not exercise OS keyboard delivery
 IME or assistive technologies. The PiP monitor-identity restoration algorithm has
 regressions, but actual multiple-monitor/disconnect behavior is not qualified on
 any platform. No new platform support claim follows from either test category.
+
+The 2026-09-29 header/comments/history correction compiles and passes focused
+shared-UI/provider/storage checks on macOS. A fresh isolated native shell capture
+shows shared header alignment, but excludes AppKit decorations; real traffic-light
+centering/mouse routing is not visually qualified. Presenter setup again reports
+macOS display-clock `-6661`. There are no new Windows, X11 or native Wayland runs,
+resource measurements or account capability qualifications in this slice.

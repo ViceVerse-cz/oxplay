@@ -118,6 +118,7 @@ export component Action inherits Rectangle {
             : root.icon-name == "library-big" ? @image-url("icons/library-big.svg")
             : root.icon-name == "users" ? @image-url("icons/users.svg")
             : root.icon-name == "list-video" ? @image-url("icons/list-video.svg")
+            : root.icon-name == "refresh-cw" ? @image-url("icons/refresh-cw.svg")
             : root.icon-name == "history" ? @image-url("icons/rotate-ccw-clock.svg")
             : root.icon-name == "play" ? @image-url("icons/play.svg")
             : root.icon-name == "pause" ? @image-url("icons/pause.svg")
@@ -173,6 +174,7 @@ export global CatalogKeys {
 export component VideoCard inherits Rectangle {
     in property <bool> enabled: true;
     in property <VideoRow> item;
+    in property <bool> show-channel: true;
     in property <bool> compact;
     in property <int> focus-request;
     in property <int> focus-delivery;
@@ -241,7 +243,7 @@ export component VideoCard inherits Rectangle {
         text: root.item.title; color: Colors.text; font-size: 14px; font-weight: 600;
         wrap: word-wrap; overflow: elide;
     }
-    Text {
+    if root.show-channel: Text {
         x: root.compact ? 174px : 2px; y: root.compact ? 48px : preview.height + 57px;
         width: parent.width - self.x - 6px; height: 20px;
         text: root.item.channel; color: Colors.muted; font-size: 12px; overflow: elide;

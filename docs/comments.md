@@ -2,7 +2,34 @@
 
 `ResolvedPlayback.details` contains optional genuine description, upload date, views, likes and reported comment count from the already extracted video JSON. Resolving a video does not start a separate metadata request. Missing values stay absent. Descriptions are bounded to 20,000 Unicode characters; control characters other than line breaks/tabs are removed. The shared watch page displays the description directly below the video title/actions. Its selectable read-only preview shows up to three lines / 300 characters; Show more expands the actual bounded description inline. The outer watch page scrolls the content, without reconstructing the video host or opening a modal. Already-resolved account description/metadata can be displayed in memory too; disconnect clears it through the existing account lifecycle.
 
-Comments are an explicit guest-only read on the existing supervised catalog worker. The Comments heading is visible below the description; the user selects Load comments, then Refresh comments or Previous / Next. Viewing the watch page and expanding its description do not start a comment request. The current finite page contains at most 20 inline comments with selectable read-only bodies and an explicit Copy action, with bounded text and optional author/relative-time/like metadata. There is one outer watch-page scrollbar, not a nested comments pane. Successful explicit load/page completion emits a bounded wrapping publication epoch after rows/navigation are committed, so the outer watch scroll can reveal the comments heading without stealing keyboard focus. Failures and cancellation do not issue this scroll request. Pagination replaces this finite page instead of accumulating a catalog; the model and instantiated rows are bounded separately by the same explicit 20-row page cap. This is a finite-page rendering choice, not a claim of virtualizing an unbounded comment feed. Account playback instead shows its unsupported-comments disclosure and never offers the guest load action. Replies and account writes are not exposed. No account credentials are consulted, even when an account is connected. Replacing a guest request cancels its helper process group. The comments cancellation action records the worker generation, so an old comment request cannot cancel a newer video/search request. A synchronous generation-change notification clears comment loading presentation on supersession, even if the shared busy property never changes; the callback owns only weak UI/state references. Results must match the current video and worker request generation.
+Comments are guest-only reads on the existing supervised catalog worker. At the
+user's request, the first bounded page now loads automatically after an accepted
+public guest video selection. **Show comments and load the first page automatically**
+in Settings persists in SQLite schema 7 and defaults on; disabling it cancels
+only the comment request it owns and hides/clears the comment model. Launching,
+local playback and account playback do not start anonymous comment requests.
+Authenticated/private playback never falls back to guest comments. Existing
+profiles receive this preference through the checked migration, without changing
+history or other preferences.
+
+A zero-duration single-shot UI handoff defers submission until accepted playback
+state is committed. It checks the selected typed video, worker generation,
+loaded/remote/guest state and setting again before starting. Replacing the video,
+searching, account handoff or disabling comments retires stale work. Generation
+cancellation cannot stop a newer foreground request. Comment loading uses its
+own request-active state instead of disabling unrelated application controls;
+there is no polling timer or new helper stack.
+
+The finite page contains at most 20 inline comments with selectable bodies,
+author/date, genuine optional creator badge and compact likes. The Copy action
+and reply clutter are removed. Missing avatar data uses the existing attributed
+Lucide glyph. Refresh/cancel controls are compact, and pending-only skeletons
+have no animation. Dates and counts are presentation-only formatting; absent
+provider values remain absent. Explicit Previous/Next replaces the bounded page.
+Automatic publication preserves watch scrolling; an explicit load/page may
+reveal the comments heading without stealing focus. Account comments/writes
+and replies remain unsupported. No credentials are consulted even when an
+account is connected. The provider prefix-replay limits below are unchanged.
 
 ## Reviewed protocol path
 

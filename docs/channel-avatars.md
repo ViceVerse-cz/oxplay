@@ -1,4 +1,4 @@
-# Watch-page channel avatars
+# Public channel portraits and subscriber counts
 
 The watch page requests a genuine channel avatar only after public guest playback
 has selected a video with a typed channel ID. Account playback and local files
@@ -34,3 +34,21 @@ is joined during shutdown. No new progress timer or polling loop is added.
 
 Live provider behavior, native circular clipping and screen-reader behavior
 remain unqualified in this fast formatting/lint/build pass.
+
+## Channel-page integration
+
+The same bounded worker now serves public channel headers as well as the watch
+creator row. It retains at most one accepted watch profile and one current public
+channel profile. Accepted metadata must match the canonical typed channel; the
+page clears portrait/count state on a different channel identity. The verified
+profile contains an optional genuine follower count, so a missing/negative count
+stays absent and a known zero is displayed accurately. Extracted watch metadata
+can supply the count without another request; public channel metadata can update
+it even if image download fails. Count labels use compact English K/M/B notation.
+
+Channel pages show the genuine profile image beside the title and subscriber
+count, with the existing glyph if unavailable. Watch creator hover is limited to
+the avatar/name/count action rather than the full action row. Recommended cards
+omit the author line. No avatar/count is fabricated. Focused sanitized provider
+fixtures pass identity, explicit-avatar-marker and absent/negative-count checks;
+live portrait/native circle clipping remain unverified for this slice.

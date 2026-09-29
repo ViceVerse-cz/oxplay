@@ -13,3 +13,5 @@ The mute-state action includes the unchanged `icons/volume-x.svg` from this same
 The picture-in-picture control uses the unchanged `icons/picture-in-picture-2.svg` from this same revision. Its checksum is included alongside the existing icons.
 
 The retained `minus.svg`, `square.svg`, `copy.svg`, and `x.svg` also originate from this revision. Normal windows now use native system decorations. Theatre mode uses the unchanged `rectangle-horizontal.svg` from the same revision.
+
+Comment refresh uses unchanged `refresh-cw.svg` from the same pinned official Lucide revision, with its checksum and license retained.

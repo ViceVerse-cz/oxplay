@@ -92,7 +92,7 @@ fn v5_artwork_migration_preserves_collections_and_existing_preferences() {
     }
     let store = LocalStore::open(&path).unwrap();
     let prefs = store.preferences().unwrap();
-    assert_eq!(store.schema_version().unwrap(), 6);
+    assert_eq!(store.schema_version().unwrap(), 7);
     assert_eq!(prefs.thumbnail_cache_mib, 256);
     assert_eq!((prefs.volume_percent, prefs.theme), (43, Theme::Dark));
     assert_eq!(prefs.playback.quality, QualityCeiling::P720);
@@ -1087,4 +1087,54 @@ fn v2_database_migrates_to_history_without_enabling_it() {
     assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
     assert!(!store.preferences().unwrap().privacy.local_history);
     assert_eq!(store.history_retention_days().unwrap(), 30);
+}
+
+#[test]
+fn comments_setting_migrates_persists_and_clear_restores_enabled_default() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("comments.sqlite3");
+    {
+        let connection = Connection::open(&path).unwrap();
+        for schema in [
+            include_str!("schema_v1.sql"),
+            include_str!("schema_v2.sql"),
+            include_str!("schema_v3.sql"),
+            include_str!("schema_v4.sql"),
+            include_str!("schema_v5.sql"),
+            include_str!("schema_v6.sql"),
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+        connection.execute_batch("UPDATE local_preferences SET volume_percent=31,theme='dark'; PRAGMA user_version=6;").unwrap();
+    }
+    let mut store = LocalStore::open(&path).unwrap();
+    let mut prefs = store.preferences().unwrap();
+    assert!(prefs.comments_enabled);
+    assert_eq!(prefs.volume_percent, 31);
+    prefs.comments_enabled = false;
+    store.set_preferences(prefs).unwrap();
+    assert_eq!(
+        LocalStore::open(&path).unwrap().preferences().unwrap(),
+        prefs
+    );
+    store.clear_local_data().unwrap();
+    assert!(store.preferences().unwrap().comments_enabled);
+}
+
+#[test]
+fn comments_setting_rejects_corrupt_readback() {
+    let store = LocalStore::in_memory().unwrap();
+    assert!(
+        store
+            .connection
+            .execute("UPDATE local_preferences SET comments_enabled=2", [])
+            .is_err()
+    );
+    store
+        .connection
+        .execute_batch(
+            "PRAGMA ignore_check_constraints=ON; UPDATE local_preferences SET comments_enabled=2;",
+        )
+        .unwrap();
+    assert_eq!(store.preferences(), Err(StorageError::CorruptData));
 }

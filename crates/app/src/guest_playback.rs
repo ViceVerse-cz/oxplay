@@ -299,7 +299,7 @@ fn publish(
     state.quality_index.set(quality.index() as usize);
     app.set_video_title(item.video.title.clone().into());
     app.set_video_channel(item.video.channel.clone().into());
-    comments_ui::details(app, state, &item.video.id, &item.details);
+
     caption_ui::metadata(app, state, &item, false);
     crate::share_ui::clear(app, state);
     *state.current_video.borrow_mut() = Some(item.video.clone());
@@ -308,6 +308,7 @@ fn publish(
     app.set_loaded(true);
     crate::watch_loading::guest_finished(app, state, state.worker.borrow().generation());
     crate::channel_avatar::selected_guest(app, state, &item.video);
+    comments_ui::details(app, state, &item.video.id, &item.details);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Guest playback · Ad filtering is experimental and may miss some ads".into());
 }

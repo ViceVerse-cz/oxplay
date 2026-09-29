@@ -49,6 +49,7 @@ pub(crate) fn details(value: &Value) -> VideoDetails {
         view_count: value.get("view_count").and_then(Value::as_u64),
         like_count: value.get("like_count").and_then(Value::as_u64),
         comment_count: value.get("comment_count").and_then(Value::as_u64),
+        channel_subscriber_count: value.get("channel_follower_count").and_then(Value::as_u64),
         chapters: chapters.unwrap_or_default(),
         chapters_unavailable,
     }

@@ -6,6 +6,50 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
+The header/watch/history/comments correction centers shared header controls and
+aligns the real AppKit traffic-light centers to its 48px height. The native
+adapter preserves system button ownership/spacing/actions and updates existing
+view frames through public APIs, with guarded ancestor assumptions. Creator
+hover is bounded to avatar/name/count; subscriber counts are genuine optional
+metadata. Recommended cards hide the author line. Public channel headers now
+show their verified portrait and compact subscriber count through the existing
+bounded worker. English date/count formatting adds no runtime dependency.
+
+Comments automatically fetch the first public guest page after accepted selection,
+using a generation-checked single-shot handoff. The persisted schema-7 setting
+can cancel/hide them. Comment loading has section-local pending state and does
+not disable unrelated navigation/player controls. Rows use compact author/date,
+selectable body, optional genuine creator badge and likes; Copy/reply clutter is
+removed. History uses dated compact video rows, watched progress and existing
+cached thumbnails. It makes no artwork network request, retains bounded typed
+rows and releases images on viewport/surface changes. Play/Remove targets are
+separate and keyboard accessible.
+
+Validation: `cargo test -p serein --test controlled_widgets --locked` passed all
+13 tests, including header/search centering, bounded creator action geometry,
+comment-setting acknowledgement/rollback and history artwork/removal hit separation.
+Two focused comments tests, one history formatting test, two sanitized provider
+profile/count tests, two comment-preference storage tests and one formatter test
+passed. Formatting, strict workspace all-target Clippy, locked workspace build,
+`git diff --check` and all 30 icon/license manifest hashes passed. The new refresh
+icon is unchanged official Lucide from the previously pinned revision. These
+are focused functional tests, not a full suite or resource qualification.
+
+A fresh isolated offline native shell check exited 0 and produced an inspected
+[shared-header capture](evidence/2026-09-29-header-shell.png). That Slint snapshot
+shows centered shared controls but excludes native window decorations and cannot
+verify traffic-light hit regions, native blur or system frame corners. Presenter
+setup still failed with macOS display-clock error `-6661`; no moving-video or
+active decoder claim follows. No performance/resource, live provider/account or
+additional-platform test was run. Next: native traffic-light mouse/resize/PiP
+restoration checks on an active macOS display, then live public profile/automatic
+comment navigation. Release/platform/account gates remain open.
+
+The preceding pushed source `2b047ca` [CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36623317787)
+failed before either job began. GitHub's annotation reports failed recent account
+payments or a spending-limit restriction; it supplies no hosted test/build evidence.
+
+
 The latest correction keeps playback running while browsing and moves the same
 video host to a bottom-right in-app mini-player. This is separate from global
 floating PiP; both use the existing window/player/context. Accepted title,

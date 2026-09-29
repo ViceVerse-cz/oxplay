@@ -72,3 +72,21 @@ functional evidence does not qualify these newly added controls.
 The surrounding controls can scroll at the minimum window size; the nested row ListView keeps its own bounded viewport. Native visual/keyboard validation of the new page remains to be recorded separately from compilation and worker tests. There is no claim that these source-level bounds alone prove the large-library performance gate.
 
 Validation on the available macOS host: `cargo check --locked -p serein` passed; `cargo test --locked -p serein library` passed all four focused tests (worker paging/mutations, history opt-in/local clear, explicit safe transfer destinations, bounded backward navigation); `cargo clippy --locked -p serein --all-targets -- -D warnings` passed. These tests use synthetic local data and do not connect a YouTube account.
+
+## History presentation correction
+
+History uses compact dedicated video rows with real cached thumbnails, title,
+channel, formatted watched position/duration and a progress strip. Rows are grouped
+by Today, Yesterday, recent weekday or calendar date using UTC consistently with
+stored timestamps. Each row has separate keyboard play and remove controls;
+removal does not bubble into playback. History hides duplicated library tabs
+and general library management while retaining opt-in, retention and clear actions.
+
+The existing shared thumbnail worker reads only CachedVideo artwork for history:
+opening history adds no thumbnail network request. It publishes a bounded visible
+range, checks worker generation and typed video identity, and releases image
+references outside that range and on surface/tab changes. Existing ListView
+virtualization and the 100-record backing-page limit remain in place. Reconciliation
+preserves artwork for unchanged typed rows. Disabling history clears rendered
+rows after the persisted preference is acknowledged. This is source/functional
+validation, not a large-library resource qualification.

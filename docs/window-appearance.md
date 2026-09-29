@@ -4,10 +4,16 @@ The macOS application places its shared 48px Slint header inside the native
 window's titlebar area. The title is hidden, the titlebar is transparent, and
 `FullSizeContentView` lets search and application controls use the top of the
 window without a separate default title row. The leading 88px is reserved for
-the real AppKit traffic lights. AppKit retains their normal placement, hover,
-accessibility, and close/minimize/fullscreen behavior, as well as the rounded
-system frame. The application does not draw replacement traffic-light glyphs
-or restructure AppKit's undocumented titlebar subviews.
+the real AppKit traffic lights. Their centers are aligned to the shared header on the main thread. AppKit retains
+their native horizontal spacing, hover, accessibility and close/minimize/fullscreen
+behavior, as well as the rounded system frame. The application does not draw replacement traffic-light glyphs
+or reparent AppKit's titlebar subviews. The adapter borrows the three standard
+buttons and their existing ancestors for a synchronous call. It extends the two
+native titlebar view frames to the 48px header and converts the content-space
+center into button-parent coordinates with public NSView APIs. Native hierarchy
+shape is still an implementation assumption: unexpected/missing ancestors cause
+alignment to be skipped. No native view pointer survives the call, and relevant
+resize/mode observations reapply alignment without polling.
 
 Windows and Linux currently retain their native desktop decoration policy;
 integrating the shared header with those native system buttons requires a
@@ -77,7 +83,8 @@ Source reviewed for this implementation:
   transparent/hidden-title/full-size-content attributes.
 - Already-locked objc2 0.6.4 and objc2-app-kit 0.3.2, now direct macOS-only
   dependencies with limited AppKit features: `MainThreadMarker`, `NSView.window`,
-  and public `NSWindow` style/title methods. The adapter borrows Winit's live view
+  and public `NSWindow` style/title/standard-button methods; `NSButton` and
+  `NSControl` features permit accessing the real controls. The adapter borrows Winit's live view
   synchronously on the main thread and retains no raw handle across events.
 
 `window_chrome.rs` owns the native adapter. `BackendSelector` installs its window
@@ -94,13 +101,21 @@ window/mode changes. No appearance polling loop is introduced.
 
 The previous 56px integrated-header checkpoint is source
 `c75af56c87145c37769c46e9266f3cf6257029d8`; its formatting, strict Clippy and
-locked workspace build passed. The current 48px header and whole-window alpha
-changes have not been visually qualified on a native display. Earlier layout
-capture attempts were blocked by native display-clock setup error `-6661`, and
-no fresh native capture or resource measurement is claimed for this batch.
+locked workspace build passed. The current native traffic-light centering, 48px header and whole-window alpha
+changes have not been visually qualified on a native display. A fresh isolated native shell attempt exited 0 and produced a
+[shared-header snapshot](evidence/2026-09-29-header-shell.png), while presenter
+setup still reported native display-clock error `-6661`. The inspected image
+shows shared controls and omits native decorations, so cannot verify traffic
+lights or compositor appearance. No resource measurement is claimed.
 
 Source review alone does not qualify native appearance, accessibility, compositor,
 energy, or performance behavior. Remaining qualification includes resize/drag,
 maximize/minimize, close/PiP restoration, multi-monitor scale changes, fullscreen,
 screen-reader names/focus, opaque video composition, and system reduced-
 transparency behavior on each target.
+
+Shared menu/account controls are 40px high, the badge is 26px and search is 38px;
+each is vertically centered in the same 48px header. Headless shared-UI geometry
+can verify these bindings, but does not verify AppKit layout or mouse routing.
+The native adapter uses [standard window buttons](https://developer.apple.com/documentation/appkit/nswindow)
+and [NSView coordinate conversion](https://developer.apple.com/documentation/appkit/nsview/convert%28_%3Afrom%3A%29-1dq9l?language=objc).

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { Colors, Action, ActionVariant } from "components.slint";
-export struct CommentRow { author: string, metadata: string, content: string }
+import { Colors, Action } from "components.slint";
+export struct CommentRow { author: string, metadata: string, likes: string, creator: bool, content: string }
 export global CommentsUi {
     in property <string> description;
     in property <string> description-preview;
@@ -8,9 +8,10 @@ export global CommentsUi {
     in-out property <bool> description-expanded;
     in property <string> metadata;
     in property <string> heading: "Comments";
-    in property <string> status: "Load public comments when you're ready. Guest access · Read-only.";
+    in property <string> status;
     in property <[CommentRow]> rows;
     in property <bool> available;
+    in property <bool> enabled: true;
     in property <bool> has-loaded;
     in property <int> page-epoch;
     in property <bool> next;
@@ -19,9 +20,10 @@ export global CommentsUi {
     callback load();
     callback page(bool);
     callback cancel();
+    callback set-enabled(bool);
 }
-// Inline watch-page content, scrolled by the outer watch page. This finite
-// page contains at most 20 comments; pagination replaces it rather than appending.
+// At most 20 comments are instantiated. Explicit pagination replaces that
+// finite page; initial background publication preserves watch-page scrolling.
 export component WatchDetails inherits Rectangle {
     in property <bool> busy;
     public function focus-description() { description-text.focus(); }
@@ -29,19 +31,19 @@ export component WatchDetails inherits Rectangle {
     callback page-loaded();
     private property <int> publication: CommentsUi.page-epoch;
     changed publication => {
-        if CommentsUi.available && CommentsUi.has-loaded { root.page-loaded(); }
+        if CommentsUi.enabled && CommentsUi.available && CommentsUi.has-loaded { root.page-loaded(); }
     }
     preferred-height: content.preferred-height;
     vertical-stretch: 0;
     background: transparent;
     content := VerticalLayout {
-        spacing: 20px;
+        spacing: 24px;
         Rectangle {
             background: Colors.surface;
             border-radius: 12px;
             height: description-layout.preferred-height;
             description-layout := VerticalLayout {
-                padding: 14px; spacing: 8px;
+                padding: 16px; spacing: 8px;
                 if CommentsUi.metadata != "": Text {
                     text: CommentsUi.metadata; color: Colors.text;
                     font-size: 13px; font-weight: 600; wrap: word-wrap;
@@ -65,54 +67,79 @@ export component WatchDetails inherits Rectangle {
                 }
             }
         }
-        comments-content := VerticalLayout {
-            spacing: 12px;
-            HorizontalLayout {
-                height: 40px; spacing: 12px;
-                Text { text: CommentsUi.heading; color: Colors.text; font-size: 20px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
-                if CommentsUi.available: Action {
-                    width: 142px; height: 36px; horizontal-stretch: 0;
-                    label: CommentsUi.has-loaded ? "Refresh comments" : "Load comments";
-                    variant: ActionVariant.secondary; enabled: !root.busy;
-                    clicked => { CommentsUi.load(); }
-                }
-                if CommentsUi.request-active: Action {
-                    width: 76px; height: 36px; horizontal-stretch: 0;
-                    label: "Cancel"; clicked => { CommentsUi.cancel(); }
-                }
-            }
-            Text { text: CommentsUi.status; color: Colors.muted; font-size: 13px; wrap: word-wrap; }
-            if CommentsUi.rows.length > 0: VerticalLayout {
-                spacing: 12px;
-                for item in CommentsUi.rows: Rectangle {
-                    height: comment-text.preferred-height + 70px;
-                    background: transparent;
-                    Text {
-                        x: 0px; y: 4px; width: parent.width - 82px; height: 22px;
-                        text: item.author; color: Colors.text; font-size: 14px; font-weight: 600; overflow: elide;
+        comments-content := Rectangle {
+            height: CommentsUi.enabled ? comments-layout.preferred-height : 0px;
+            visible: CommentsUi.enabled;
+            background: transparent;
+            comments-layout := VerticalLayout {
+                spacing: 18px;
+                HorizontalLayout {
+                    height: 36px; spacing: 8px;
+                    Text { text: CommentsUi.heading; color: Colors.text; font-size: 20px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                    if CommentsUi.available && !CommentsUi.request-active: Action {
+                        width: 36px; height: 36px; horizontal-stretch: 0;
+                        label: CommentsUi.has-loaded ? "Refresh comments" : "Load comments";
+                        icon-name: "refresh-cw"; compact: true;
+                        enabled: !root.busy; clicked => { CommentsUi.load(); }
                     }
-                    Action {
-                        x: parent.width - 72px; y: 0px; width: 68px; height: 30px;
-                        label: "Copy";
-                        accessible-label: "Copy comment by " + item.author;
-                        clicked => { comment-text.select-all(); comment-text.copy(); }
-                    }
-                    Text {
-                        x: 0px; y: 30px; width: parent.width - 8px; height: 18px;
-                        text: item.metadata; color: Colors.muted; font-size: 12px; overflow: elide;
-                    }
-                    comment-text := TextInput {
-                        x: 0px; y: 54px; width: parent.width - 8px;
-                        text: item.content; accessible-label: "Comment by " + item.author;
-                        color: Colors.text; font-size: 14px; wrap: word-wrap; read-only: true; single-line: false;
+                    if CommentsUi.request-active: Action {
+                        width: 36px; height: 36px; horizontal-stretch: 0;
+                        label: "Cancel comment loading"; icon-name: "x"; compact: true;
+                        clicked => { CommentsUi.cancel(); }
                     }
                 }
-            }
-            if CommentsUi.previous || CommentsUi.next: HorizontalLayout {
-                height: 36px; spacing: 8px;
-                Action { width: 114px; label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
-                Action { width: 100px; label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && CommentsUi.next; clicked => { CommentsUi.page(true); } }
-                Rectangle { horizontal-stretch: 1; }
+                if CommentsUi.status != "": Text { text: CommentsUi.status; color: Colors.muted; font-size: 13px; wrap: word-wrap; }
+                if CommentsUi.request-active: VerticalLayout {
+                    spacing: 20px;
+                    for i in 3: Rectangle {
+                        height: 68px; background: transparent;
+                        Rectangle { width: 36px; height: 36px; border-radius: 18px; background: Colors.raised; }
+                        Rectangle { x: 50px; y: 3px; width: min(150px, parent.width - 50px); height: 12px; border-radius: 3px; background: Colors.raised; }
+                        Rectangle { x: 50px; y: 28px; width: max(0px, parent.width - 70px); height: 12px; border-radius: 3px; background: Colors.raised; }
+                        Rectangle { x: 50px; y: 49px; width: max(0px, (parent.width - 50px) * 0.65); height: 12px; border-radius: 3px; background: Colors.raised; }
+                    }
+                }
+                if CommentsUi.rows.length > 0: VerticalLayout {
+                    spacing: 24px;
+                    for item in CommentsUi.rows: Rectangle {
+                        height: comment-layout.preferred-height;
+                        background: transparent;
+                        Rectangle {
+                            x: 0px; y: 0px; width: 36px; height: 36px;
+                            background: Colors.raised; border-radius: 18px;
+                            Image {
+                                x: 7px; y: 7px; width: 22px; height: 22px;
+                                source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted;
+                            }
+                        }
+                        comment-layout := VerticalLayout {
+                            x: 50px; width: max(0px, parent.width - 50px);
+                            spacing: 7px;
+                            HorizontalLayout {
+                                height: 20px; spacing: 8px;
+                                Text { text: item.author; color: Colors.text; font-size: 13px; font-weight: 600; overflow: elide; horizontal-stretch: 0; max-width: parent.width * 0.65; vertical-alignment: center; }
+                                if item.creator: Rectangle {
+                                    width: 52px; height: 20px; border-radius: 5px; background: Colors.raised;
+                                    Text { text: "Creator"; color: Colors.text; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; }
+                                }
+                                Text { text: item.metadata; color: Colors.muted; font-size: 12px; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+                            }
+                            comment-text := TextInput {
+                                text: item.content; accessible-label: "Comment by " + item.author;
+                                color: Colors.text; font-size: 14px; wrap: word-wrap; read-only: true; single-line: false;
+                                selection-background-color: Colors.accent;
+                                selection-foreground-color: #fff;
+                            }
+                            if item.likes != "": Text { text: item.likes + " likes"; color: Colors.muted; font-size: 12px; height: 18px; }
+                        }
+                    }
+                }
+                if CommentsUi.previous || CommentsUi.next: HorizontalLayout {
+                    height: 36px; spacing: 8px;
+                    Action { width: 114px; label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
+                    Action { width: 100px; label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.next; clicked => { CommentsUi.page(true); } }
+                    Rectangle { horizontal-stretch: 1; }
+                }
             }
         }
     }

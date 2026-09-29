@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Explicit guest-only comments; independent bounded model, no playback timer.
-use crate::{App, CommentRow, CommentsUi, UiState, catalog::Request};
+//! Bounded guest comments with one deferred initial request and explicit paging.
+use crate::{App, CommentRow, CommentsUi, UiState, catalog::Request, display_format};
 use serein_core::{ProviderError, VideoDetails, VideoId};
 use serein_youtube::comments::{CommentCursor, CommentPage};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 #[derive(Default)]
 pub struct State {
@@ -16,9 +16,22 @@ pub struct State {
     cursor: RefCell<Option<CommentCursor>>,
     next: RefCell<Option<CommentCursor>>,
     previous: RefCell<Vec<Option<CommentCursor>>>,
+    auto_load: slint::Timer,
+    auto_generation: Cell<Option<u64>>,
+    auto_requested: Cell<bool>,
+    reveal_page: Cell<bool>,
+    owner: RefCell<Weak<UiState>>,
 }
 impl State {
     fn supersede(&self, generation: u64) -> bool {
+        if self
+            .auto_generation
+            .get()
+            .is_some_and(|expected| expected != generation)
+        {
+            self.auto_load.stop();
+            self.auto_generation.set(None);
+        }
         if self
             .pending
             .get()
@@ -34,8 +47,7 @@ impl State {
 pub fn details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetails) {
     set_details(app, state, video, details, true);
 }
-/// Show already-resolved account metadata without exposing the guest comment
-/// request path. Sign-out clears these fields through `clear_local`.
+/// Already-resolved account metadata never enables an anonymous comment request.
 pub fn account_details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetails) {
     set_details(app, state, video, details, false);
 }
@@ -46,13 +58,19 @@ fn set_details(
     details: &VideoDetails,
     guest_comments: bool,
 ) {
-    *state.comments_ui.video.borrow_mut() = guest_comments.then(|| video.clone());
-    state.comments_ui.pending.set(None);
-    state.comments_ui.rows.set_vec(Vec::new());
-    state.comments_ui.cursor.borrow_mut().take();
-    state.comments_ui.next.borrow_mut().take();
-    state.comments_ui.previous.borrow_mut().clear();
+    let s = &state.comments_ui;
+    s.auto_load.stop();
+    s.auto_generation.set(None);
+    s.auto_requested.set(false);
+    s.reveal_page.set(false);
+    *s.video.borrow_mut() = guest_comments.then(|| video.clone());
+    s.pending.set(None);
+    s.rows.set_vec(Vec::new());
+    s.cursor.borrow_mut().take();
+    s.next.borrow_mut().take();
+    s.previous.borrow_mut().clear();
     let ui = app.global::<CommentsUi>();
+    ui.set_enabled(crate::library_ui::desired_preferences(state).comments_enabled);
     ui.set_request_active(false);
     ui.set_next(false);
     ui.set_previous(false);
@@ -61,9 +79,9 @@ fn set_details(
     ui.set_has_loaded(false);
     ui.set_status(
         if guest_comments {
-            "Load public comments when you're ready. Guest access · Read-only."
+            ""
         } else {
-            "Comments are unavailable for account playback. No guest comment request will be made."
+            "Comments are unavailable for account playback."
         }
         .into(),
     );
@@ -79,34 +97,119 @@ fn set_details(
     ui.set_heading(
         details
             .comment_count
-            .map(|count| format!("{count} comments"))
+            .map(|count| format!("{} comments", display_format::grouped_count(count)))
             .unwrap_or_else(|| "Comments".into())
             .into(),
     );
     let mut metadata = Vec::new();
-    if let Some(date) = &details.upload_date {
-        metadata.push(format!("Uploaded {date}"));
-    }
     if let Some(count) = details.view_count {
-        metadata.push(format!("{count} views"));
+        metadata.push(format!("{} views", display_format::grouped_count(count)));
+    }
+    if let Some(date) = &details.upload_date {
+        metadata.push(display_format::date(date));
     }
     if let Some(count) = details.like_count {
-        metadata.push(format!("{count} likes"));
+        metadata.push(format!("{} likes", display_format::compact_count(count)));
     }
     ui.set_metadata(metadata.join(" · ").into());
+    app.set_watch_channel_subscribers(
+        details
+            .channel_subscriber_count
+            .map(|count| format!("{} subscribers", display_format::compact_count(count)))
+            .unwrap_or_default()
+            .into(),
+    );
+    if guest_comments {
+        schedule_auto(app, state);
+    }
 }
-/// Drop account-associated descriptions, identifiers, and comments without
-/// issuing a guest request for a previously authenticated video.
+/// Settings are admitted/persisted through the existing library worker.
+pub fn sync_preferences(app: &App, state: &UiState) {
+    let enabled = crate::library_ui::desired_preferences(state).comments_enabled;
+    let ui = app.global::<CommentsUi>();
+    ui.set_enabled(enabled);
+    if enabled {
+        schedule_auto(app, state);
+    } else {
+        state.comments_ui.auto_load.stop();
+        state.comments_ui.auto_generation.set(None);
+        cancel_owned(app, state);
+        state.comments_ui.rows.set_vec(Vec::new());
+        state.comments_ui.auto_requested.set(false);
+        ui.set_has_loaded(false);
+        ui.set_next(false);
+        ui.set_previous(false);
+    }
+}
+fn schedule_auto(app: &App, state: &UiState) {
+    let s = &state.comments_ui;
+    if !app.global::<CommentsUi>().get_enabled()
+        || s.auto_requested.get()
+        || s.pending.get().is_some()
+    {
+        return;
+    }
+    let Some(video) = s.video.borrow().clone() else {
+        return;
+    };
+    let generation = state.worker.borrow().generation();
+    let weak = app.as_weak();
+    let owner = s.owner.borrow().clone();
+    s.auto_generation.set(Some(generation));
+    // Resolve publication first commits current_video, playback, focus and busy.
+    // A finite next-event handoff avoids re-entering the resolving worker borrow
+    // or superseding a new search/caption/video request made in the meantime.
+    s.auto_load.start(
+        slint::TimerMode::SingleShot,
+        std::time::Duration::ZERO,
+        move || {
+            let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+                return;
+            };
+            let s = &state.comments_ui;
+            s.auto_generation.set(None);
+            if !automatic_admitted(&app, &state, &video, generation) {
+                return;
+            }
+            s.auto_requested.set(true);
+            s.previous.borrow_mut().clear();
+            s.reveal_page.set(false);
+            submit(&app, &state, None);
+        },
+    );
+}
+fn automatic_admitted(app: &App, state: &UiState, video: &VideoId, generation: u64) -> bool {
+    app.global::<CommentsUi>().get_enabled()
+        && !app.get_busy()
+        && app.get_loaded()
+        && app.get_remote_video()
+        && !app.get_account_playback_active()
+        && state.worker.borrow().generation() == generation
+        && state.current_video.borrow().as_ref().map(|v| &v.id) == Some(video)
+        && state.comments_ui.video.borrow().as_ref() == Some(video)
+}
+fn cancel_owned(app: &App, state: &UiState) {
+    if let Some(generation) = state.comments_ui.pending.take() {
+        state.worker.borrow_mut().cancel_generation(generation);
+    }
+    // Comments never own application-wide busy state. A concurrently
+    // admitted UI operation must retain its own admission indicator.
+    app.global::<CommentsUi>().set_request_active(false);
+}
+/// Clear descriptions and retire only this feature's work. Never stop a newer
+/// resolver request or reveal authenticated metadata to the guest reader.
 pub fn clear_local(app: &App, state: &UiState) {
     let s = &state.comments_ui;
-    s.pending.set(None);
+    s.auto_load.stop();
+    s.auto_generation.set(None);
+    s.auto_requested.set(false);
+    cancel_owned(app, state);
     s.video.borrow_mut().take();
     s.rows.set_vec(Vec::new());
     s.cursor.borrow_mut().take();
     s.next.borrow_mut().take();
     s.previous.borrow_mut().clear();
     let ui = app.global::<CommentsUi>();
-    ui.set_request_active(false);
     ui.set_next(false);
     ui.set_previous(false);
     ui.set_description_expanded(false);
@@ -117,10 +220,15 @@ pub fn clear_local(app: &App, state: &UiState) {
     ui.set_description_preview("Description unavailable for this playback mode.".into());
     ui.set_description("Description unavailable for this playback mode.".into());
     ui.set_metadata("".into());
-    ui.set_status("Account comments are not supported by the guest comments reader.".into());
+    ui.set_status("".into());
+    app.set_watch_channel_subscribers("".into());
 }
 fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
-    if app.get_busy() {
+    if app.get_busy()
+        || state.comments_ui.pending.get().is_some()
+        || !app.global::<CommentsUi>().get_enabled()
+        || app.get_account_playback_active()
+    {
         return;
     }
     let Some(video) = state.current_video.borrow().as_ref().map(|v| v.id.clone()) else {
@@ -140,13 +248,13 @@ fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
         .set(Some(state.worker.borrow().generation()));
     state.comments_ui.rows.set_vec(Vec::new());
     state.comments_ui.next.borrow_mut().take();
-    app.global::<CommentsUi>().set_next(false);
-    app.global::<CommentsUi>()
-        .set_previous(!state.comments_ui.previous.borrow().is_empty());
-    app.set_busy(true);
-    app.global::<CommentsUi>().set_request_active(true);
-    app.global::<CommentsUi>()
-        .set_status("Loading public comments…".into());
+    let ui = app.global::<CommentsUi>();
+    ui.set_next(false);
+    ui.set_previous(!state.comments_ui.previous.borrow().is_empty());
+    // Loading comments is local to this section. Playback/navigation stay
+    // interactive and may supersede this lower-priority shared-worker job.
+    ui.set_request_active(true);
+    ui.set_status("".into());
 }
 pub fn publish(
     app: &App,
@@ -154,7 +262,9 @@ pub fn publish(
     video: VideoId,
     result: Result<CommentPage, ProviderError>,
 ) {
-    if state.current_video.borrow().as_ref().map(|v| &v.id) != Some(&video)
+    if !app.global::<CommentsUi>().get_enabled()
+        || app.get_account_playback_active()
+        || state.current_video.borrow().as_ref().map(|v| &v.id) != Some(&video)
         || state.comments_ui.video.borrow().as_ref() != Some(&video)
     {
         return;
@@ -169,25 +279,20 @@ pub fn publish(
                 .comments
                 .into_iter()
                 .take(20)
-                .map(|comment| {
-                    let mut metadata = Vec::new();
-                    if let Some(time) = comment.published_text {
-                        metadata.push(time);
-                    }
-                    if let Some(likes) = comment.like_count {
-                        metadata.push(format!("{likes} likes"));
-                    }
-                    if comment.author_is_uploader {
-                        metadata.push("Creator".into());
-                    }
-                    CommentRow {
-                        author: comment
-                            .author
-                            .unwrap_or_else(|| "Author unavailable".into())
-                            .into(),
-                        metadata: metadata.join(" · ").into(),
-                        content: comment.text.into(),
-                    }
+                .map(|comment| CommentRow {
+                    author: comment
+                        .author
+                        .unwrap_or_else(|| "Author unavailable".into())
+                        .into(),
+                    metadata: comment.published_text.unwrap_or_default().into(),
+                    likes: comment
+                        .like_count
+                        .filter(|count| *count > 0)
+                        .map(display_format::compact_count)
+                        .unwrap_or_default()
+                        .into(),
+                    creator: comment.author_is_uploader,
+                    content: comment.text.into(),
                 })
                 .collect::<Vec<_>>();
             let empty = rows.is_empty();
@@ -199,97 +304,111 @@ pub fn publish(
                 if page.limit_reached {
                     "200-comment browsing limit reached."
                 } else if empty {
-                    "YouTube returned no public comments on this page."
+                    "No public comments to show."
                 } else {
-                    "Top comments · Guest access · Read-only · Replies are not loaded."
+                    ""
                 }
                 .into(),
             );
-            // One finite publication signal after rows and navigation state are
-            // committed. The watch page may reveal the heading without moving
-            // keyboard focus; failures/cancellation do not move its scroll.
-            ui.set_page_epoch(ui.get_page_epoch().wrapping_add(1));
+            // Automatic publication never scrolls away from the playing video.
+            // Only deliberate refresh/pagination may reveal its resulting page.
+            if state.comments_ui.reveal_page.replace(false) {
+                ui.set_page_epoch(ui.get_page_epoch().wrapping_add(1));
+            }
         }
         Ok(_) => ui.set_status("The provider returned comments for a different video.".into()),
         Err(error) => ui.set_status(if error == ProviderError::Unavailable {
-            "Comments are unavailable or their order changed. Try loading them again.".into()
+            "Comments are unavailable. Try again later.".into()
         } else {
             error.to_string().into()
         }),
     }
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
-    app.global::<CommentsUi>()
-        .set_rows(state.comments_ui.rows.clone().into());
-    // This runs synchronously on worker supersession, even if busy remains true.
-    // Weak ownership prevents Worker -> UiState -> Worker reference cycles.
+    *state.comments_ui.owner.borrow_mut() = Rc::downgrade(state);
+    let ui = app.global::<CommentsUi>();
+    ui.set_rows(state.comments_ui.rows.clone().into());
+    ui.set_enabled(true);
     let weak = app.as_weak();
-    let state_weak = Rc::downgrade(state);
+    let owner = Rc::downgrade(state);
     state
         .worker
         .borrow_mut()
         .on_generation_changed(move |generation| {
-            let (Some(app), Some(state)) = (weak.upgrade(), state_weak.upgrade()) else {
+            let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
                 return;
             };
             if state.comments_ui.supersede(generation) {
                 let ui = app.global::<CommentsUi>();
                 ui.set_request_active(false);
-                ui.set_status("Comment request cancelled by another action.".into());
+                ui.set_status("Comment loading was interrupted. Reload to try again.".into());
             }
         });
     let weak = app.as_weak();
-    let s = state.clone();
-    app.global::<CommentsUi>().on_load(move || {
-        let Some(app) = weak.upgrade() else { return };
-        if app.get_busy() {
+    let owner = Rc::downgrade(state);
+    ui.on_set_enabled(move |enabled| {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
             return;
+        };
+        if crate::library_ui::set_comments_enabled(&app, &state, enabled) {
+            sync_preferences(&app, &state);
         }
-        s.comments_ui.previous.borrow_mut().clear();
-        submit(&app, &s, None);
     });
     let weak = app.as_weak();
-    let s = state.clone();
-    app.global::<CommentsUi>().on_page(move |forward| {
-        let Some(app) = weak.upgrade() else { return };
-        if app.get_busy() {
+    let owner = Rc::downgrade(state);
+    ui.on_load(move || {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+            return;
+        };
+        if app.get_busy() || state.comments_ui.pending.get().is_some() {
+            return;
+        }
+        state.comments_ui.auto_load.stop();
+        state.comments_ui.auto_generation.set(None);
+        state.comments_ui.previous.borrow_mut().clear();
+        state.comments_ui.reveal_page.set(true);
+        submit(&app, &state, None);
+    });
+    let weak = app.as_weak();
+    let owner = Rc::downgrade(state);
+    ui.on_page(move |forward| {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+            return;
+        };
+        if app.get_busy() || state.comments_ui.pending.get().is_some() {
             return;
         }
         let cursor = if forward {
-            let Some(next) = s.comments_ui.next.borrow().clone() else {
+            let Some(next) = state.comments_ui.next.borrow().clone() else {
                 return;
             };
-            let mut previous = s.comments_ui.previous.borrow_mut();
+            let mut previous = state.comments_ui.previous.borrow_mut();
             if previous.len() >= 10 {
                 return;
             }
-            previous.push(s.comments_ui.cursor.borrow().clone());
+            previous.push(state.comments_ui.cursor.borrow().clone());
             Some(next)
         } else {
-            let Some(previous) = s.comments_ui.previous.borrow_mut().pop() else {
+            let Some(previous) = state.comments_ui.previous.borrow_mut().pop() else {
                 return;
             };
             previous
         };
-        submit(&app, &s, cursor);
+        state.comments_ui.reveal_page.set(true);
+        submit(&app, &state, cursor);
     });
     let weak = app.as_weak();
-    let s = state.clone();
-    app.global::<CommentsUi>().on_cancel(move || {
-        let Some(app) = weak.upgrade() else { return };
-        let Some(generation) = s.comments_ui.pending.take() else {
+    let owner = Rc::downgrade(state);
+    ui.on_cancel(move || {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
             return;
         };
-        if !s.worker.borrow_mut().cancel_generation(generation) {
-            return;
-        }
-        app.set_busy(false);
-        app.global::<CommentsUi>().set_request_active(false);
+        cancel_owned(&app, &state);
         app.global::<CommentsUi>()
-            .set_status("Comment request cancelled.".into());
+            .set_status("Comment loading cancelled.".into());
     });
 }
-/// Explicit finite native diagnostic only; no timers or auto-fetch in normal use.
+/// Explicit finite native diagnostic; separate from the one-shot product fetch.
 pub struct Smoke {
     verified: Rc<Cell<bool>>,
     _timers: Vec<slint::Timer>,
@@ -316,7 +435,7 @@ impl Smoke {
                     match stage {
                         15 => {
                             assert!(
-                                app.get_remote_video() && app.get_loaded() && !app.get_busy(),
+                                app.get_remote_video() && app.get_loaded(),
                                 "comments smoke needs resolved guest playback"
                             );
                             assert!(
@@ -328,8 +447,10 @@ impl Smoke {
                         }
                         17 => capture(&app, directory.as_deref(), "description.png", &captures),
                         20 => {
-                            ui.invoke_load();
-                            assert!(ui.get_request_active(), "comment request did not start");
+                            if !ui.get_has_loaded() && !ui.get_request_active() {
+                                ui.invoke_load();
+                                assert!(ui.get_request_active(), "comment request did not start");
+                            }
                         }
                         40 => {
                             assert!(
@@ -421,6 +542,23 @@ fn capture(app: &App, directory: Option<&std::path::Path>, name: &str, workers: 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn deferred_initial_fetch_retires_when_a_new_worker_generation_wins() {
+        i_slint_backend_testing::init_no_event_loop();
+        let state = State::default();
+        state.auto_generation.set(Some(7));
+        state.auto_load.start(
+            slint::TimerMode::SingleShot,
+            std::time::Duration::ZERO,
+            || panic!("retired auto fetch must not execute"),
+        );
+        assert!(state.auto_load.running());
+        assert!(!state.supersede(7));
+        assert!(state.auto_load.running());
+        assert!(!state.supersede(8));
+        assert!(!state.auto_load.running());
+        assert_eq!(state.auto_generation.get(), None);
+    }
     #[test]
     fn loading_ownership_clears_on_supersession_without_a_busy_transition() {
         let state = State::default();

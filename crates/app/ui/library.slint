@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { LineEdit, ListView, ScrollView } from "std-widgets.slint";
 import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle } from "components.slint";
-export struct LibraryRow { title: string, detail: string, action: string }
+export struct LibraryRow {
+    title: string, detail: string, action: string,
+    channel: string, day-heading: string, duration: string,
+    progress: float, thumbnail: image, thumbnail-ready: bool,
+}
 export global SaveUi {
     in property <[string]> collections;
     in property <string> video-title;
@@ -44,6 +48,10 @@ export global LibraryUi {
     in-out property <int> confirmation: 0;
     in property <int> retention: 30;
     in property <string> status: "Collections, follows and optional history stay on this device.";
+    in-out property <float> viewport-offset;
+    in-out property <float> viewport-height;
+    in-out property <bool> viewport-narrow;
+    callback visible-range(float, float, bool);
     callback change-tab(int);
     callback choose(int);
     callback page(bool);
@@ -71,8 +79,68 @@ export global LibraryUi {
     callback choose-destination(int);
     callback transfer-item(bool);
 }
+// History is a reading list: artwork and title form one playback target, with
+// a separate, named removal action. Only actual cached artwork is displayed.
+component HistoryItem inherits Rectangle {
+    in property <LibraryRow> item;
+    in property <bool> enabled;
+    in property <bool> narrow;
+    callback open();
+    callback remove();
+    private property <length> heading-height: item.day-heading == "" ? 0px : 36px;
+    private property <length> image-width: narrow ? 128px : 176px;
+    height: heading-height + (narrow ? 92px : 112px);
+    Text { x: 4px; height: root.heading-height; text: root.item.day-heading; color: Colors.text; font-size: 18px; font-weight: 600; vertical-alignment: center; }
+    entry := Rectangle {
+        y: root.heading-height; height: parent.height - root.heading-height; width: parent.width;
+        border-radius: 10px;
+        background: history-touch.has-hover && root.enabled ? Colors.surface : transparent;
+        border-width: play-focus.has-focus ? 2px : 0px; border-color: Colors.accent;
+        play-focus := FocusScope {
+            x: 0px; y: 0px; width: parent.width - 52px; height: parent.height;
+            enabled: root.enabled; accessible-role: button; accessible-enabled: root.enabled;
+            accessible-label: "Play " + root.item.title;
+            key-pressed(event) => { if event.text == " " || event.text == Key.Return { root.open(); return accept; } return reject; }
+            history-touch := TouchArea { enabled: root.enabled; mouse-cursor: pointer; clicked => { play-focus.focus(); root.open(); } }
+        }
+        artwork := Rectangle {
+            x: 4px; y: 6px; width: root.image-width; height: self.width * 9 / 16;
+            background: Colors.raised; border-radius: 8px; clip: true;
+            if root.item.thumbnail-ready: Image { source: root.item.thumbnail; width: parent.width; height: parent.height; image-fit: cover; }
+            if !root.item.thumbnail-ready: Image {
+                x: (parent.width - 30px) / 2; y: (parent.height - 30px) / 2; width: 30px; height: 30px;
+                source: @image-url("icons/clapperboard.svg"); colorize: Colors.muted;
+            }
+            if root.item.duration != "": Rectangle {
+                x: parent.width - badge.preferred-width - 12px; y: parent.height - 26px;
+                width: badge.preferred-width + 8px; height: 20px; border-radius: 4px; background: #000000c4;
+                badge := Text { x: 4px; text: root.item.duration; color: #ffffff; font-size: 11px; font-weight: 600; vertical-alignment: center; height: parent.height; }
+            }
+            if root.item.progress > 0: Rectangle { x: 0px; y: parent.height - 3px; height: 3px; width: parent.width; background: #00000050;
+                Rectangle { x: 0px; y: 0px; height: parent.height; width: parent.width * min(1, max(0, root.item.progress)); background: Colors.accent; }
+            }
+        }
+        title := Text {
+            x: root.image-width + 20px; y: 6px; width: parent.width - self.x - 52px;
+            height: root.narrow ? 40px : 44px; text: root.item.title;
+            color: Colors.text; font-size: root.narrow ? 14px : 16px; font-weight: 600; wrap: word-wrap; overflow: elide;
+        }
+        Text { x: title.x; y: root.narrow ? 49px : 55px; width: title.width; height: 20px; text: root.item.channel; color: Colors.muted; font-size: 12px; overflow: elide; }
+        Text { x: title.x; y: root.narrow ? 68px : 77px; width: title.width; height: 18px; text: root.item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+        Action { x: parent.width - 44px; y: 4px; width: 40px; height: 40px; compact: true;
+            icon-name: "x"; label: "Remove from history"; accessible-label: "Remove " + root.item.title + " from local history";
+            enabled: root.enabled; clicked => { root.remove(); }
+        }
+    }
+}
 export component LibraryPage inherits Rectangle {
     private property <bool> narrow: root.width < 720px;
+    changed narrow => {
+        if LibraryUi.tab == 2 {
+            LibraryUi.viewport-narrow = root.narrow;
+            LibraryUi.visible-range(LibraryUi.viewport-offset, LibraryUi.viewport-height, root.narrow);
+        }
+    }
     private property <bool> manage-open;
     private property <bool> playlist-tools;
     private property <bool> actions-enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
@@ -132,8 +200,8 @@ export component LibraryPage inherits Rectangle {
         // section at its intrinsic/fixed height instead of distributing it.
         vertical-stretch: 0;
         Text { text: LibraryUi.tab == 1 ? "Local subscriptions" : LibraryUi.tab == 2 ? "Watch history" : "Local playlists"; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
-        Text { text: "On this device · separate from your YouTube account"; color: Colors.muted; wrap: word-wrap; min-height: 24px; vertical-stretch: 0; }
-        HorizontalLayout { height: 40px; spacing: 10px;
+        Text { text: LibraryUi.tab == 2 ? "Only saved on this device" : "On this device · separate from your YouTube account"; color: Colors.muted; wrap: word-wrap; min-height: 24px; vertical-stretch: 0; }
+        if LibraryUi.tab != 2: HorizontalLayout { height: 40px; spacing: 10px;
             Action { width: 100px; horizontal-stretch: 0; label: "Playlists"; selectable: true; selected: LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(0); } }
             Action { width: 138px; horizontal-stretch: 0; label: "Subscriptions"; selectable: true; selected: LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(1); } }
             if LibraryUi.history-enabled: Action { width: 138px; horizontal-stretch: 0; label: "Watch history"; selectable: true; selected: LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(2); } }
@@ -350,15 +418,23 @@ export component LibraryPage inherits Rectangle {
             Action { x: root.narrow ? 0px : parent.width - 236px; y: root.narrow ? 44px : 0px; height: 38px; width: 236px; label: "Follow playing channel"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.follow-current(); } }
         }
         Rectangle { visible: LibraryUi.tab == 2; height: LibraryUi.tab == 2 ? (root.narrow ? 82px : 38px) : 0px;
-            ConfirmedToggle { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 280px; text: "Keep local watch history"; acknowledged-checked: LibraryUi.history-enabled; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; choose(checked) => { LibraryUi.history(checked); } }
+            ConfirmedToggle { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 280px; text: "Save watch history"; acknowledged-checked: LibraryUi.history-enabled; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; choose(checked) => { LibraryUi.history(checked); } }
             ConfirmedChoice { x: root.narrow ? 0px : parent.width - 272px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; accessible-label: "Local history retention"; model: ["7 days", "30 days", "90 days"]; acknowledged-index: LibraryUi.retention == 7 ? 0 : LibraryUi.retention == 90 ? 2 : 1; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; choose(index) => { LibraryUi.set-retention(index == 0 ? 7 : index == 2 ? 90 : 30); } }
             history-clear := Action { x: root.narrow ? 140px : parent.width - 132px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; label: "Clear history"; variant: ActionVariant.destructive; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.open-confirmation(2); } }
         }
-        list := ListView { visible: LibraryUi.rows.length > 0; height: LibraryUi.rows.length == 0 ? 0px : min(LibraryUi.rows.length * (LibraryUi.tab == 0 ? 92px : LibraryUi.tab == 1 ? 56px : 78px), max(180px, root.height - (root.narrow ? 400px : 300px))); horizontal-scrollbar-policy: always-off;
-            for item[index] in LibraryUi.rows: Rectangle { height: LibraryUi.tab == 0 ? 92px : LibraryUi.tab == 1 ? 56px : 78px;
-                Action { x: 0; y: LibraryUi.tab == 1 ? 6px : 0px; height: 44px; width: parent.width - 130px; label: item.title; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.open(index); } }
-                if LibraryUi.tab != 1: Text { x: 12px; y: 46px; height: 22px; width: parent.width - 166px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
-                Action { x: parent.width - 120px; y: LibraryUi.tab == 1 ? 8px : 2px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.remove(index); } }
+        list := ListView { visible: LibraryUi.rows.length > 0; height: LibraryUi.rows.length == 0 ? 0px : min(LibraryUi.rows.length * (LibraryUi.tab == 0 ? 92px : LibraryUi.tab == 1 ? 56px : (root.narrow ? 128px : 148px)), max(180px, root.height - (LibraryUi.tab == 2 ? 170px : root.narrow ? 400px : 300px))); horizontal-scrollbar-policy: always-off;
+            changed content-y => { if LibraryUi.tab == 2 { LibraryUi.viewport-offset = -self.content-y / 1px; LibraryUi.viewport-height = self.visible-height / 1px; LibraryUi.viewport-narrow = root.narrow; LibraryUi.visible-range(LibraryUi.viewport-offset, LibraryUi.viewport-height, root.narrow); } }
+            changed visible-height => { if LibraryUi.tab == 2 { LibraryUi.viewport-offset = -self.content-y / 1px; LibraryUi.viewport-height = self.visible-height / 1px; LibraryUi.viewport-narrow = root.narrow; LibraryUi.visible-range(LibraryUi.viewport-offset, LibraryUi.viewport-height, root.narrow); } }
+            init => { if LibraryUi.tab == 2 { LibraryUi.viewport-offset = -self.content-y / 1px; LibraryUi.viewport-height = self.visible-height / 1px; LibraryUi.viewport-narrow = root.narrow; LibraryUi.visible-range(LibraryUi.viewport-offset, LibraryUi.viewport-height, root.narrow); } }
+            for item[index] in LibraryUi.rows: Rectangle { height: LibraryUi.tab == 2 ? (item.day-heading == "" ? 0px : 36px) + (root.narrow ? 92px : 112px) : LibraryUi.tab == 0 ? 92px : 56px;
+                if LibraryUi.tab != 2: Action { x: 0; y: LibraryUi.tab == 1 ? 6px : 0px; height: 44px; width: parent.width - 130px; label: item.title; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.open(index); } }
+                if LibraryUi.tab == 0: Text { x: 12px; y: 46px; height: 22px; width: parent.width - 166px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+                if LibraryUi.tab != 2: Action { x: parent.width - 120px; y: LibraryUi.tab == 1 ? 8px : 2px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.remove(index); } }
+                if LibraryUi.tab == 2: HistoryItem {
+                    width: parent.width; item: item; narrow: root.narrow; enabled: root.actions-enabled;
+                    open => { LibraryUi.open(index); }
+                    remove => { LibraryUi.remove(index); }
+                }
                 if LibraryUi.tab == 0: Action { x: parent.width - 144px; y: 52px; width: 144px; height: 34px; label: "Copy / Move…"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.organize(false, index); } }
             }
         }
@@ -406,7 +482,7 @@ export component LibraryPage inherits Rectangle {
                 }
             }
         }
-        HorizontalLayout { height: 38px;
+        HorizontalLayout { height: LibraryUi.tab == 2 ? 0px : 38px; visible: LibraryUi.tab != 2;
             Action {
                 width: 180px; horizontal-stretch: 0; label: "Manage library"; icon-name: "settings";
                 checkable: true; selected: root.manage-open; enabled: root.actions-enabled;
@@ -415,7 +491,7 @@ export component LibraryPage inherits Rectangle {
             Rectangle { horizontal-stretch: 1; }
         }
         management := Rectangle {
-            visible: root.manage-open;
+            visible: root.manage-open && LibraryUi.tab != 2;
             height: self.visible ? (root.narrow ? 86px : 38px) : 0px;
             Action { x: 0; width: 100px; height: 38px; label: "Import…"; variant: ActionVariant.secondary; enabled: management.visible && root.actions-enabled; clicked => { LibraryUi.transfer(0); } }
             Action { x: 108px; width: 100px; height: 38px; label: "Export…"; variant: ActionVariant.secondary; enabled: management.visible && root.actions-enabled; clicked => { LibraryUi.transfer(1); } }

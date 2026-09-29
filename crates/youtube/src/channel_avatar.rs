@@ -4,14 +4,19 @@ use crate::YtDlp;
 use serde_json::Value;
 use serein_core::{ChannelId, OperationContext, ProviderError};
 
+pub struct ChannelProfile {
+    pub avatar_url: Option<String>,
+    pub subscriber_count: Option<u64>,
+}
+
 impl YtDlp {
     /// Metadata-only extraction through the existing isolated, supervised guest
     /// runner. `playlist-items=0` avoids enumerating a channel's uploads.
-    pub fn channel_avatar(
+    pub fn channel_profile(
         &self,
         id: &ChannelId,
         operation: &OperationContext,
-    ) -> Result<Option<String>, ProviderError> {
+    ) -> Result<ChannelProfile, ProviderError> {
         let value = self.run_with_priority(
             &[
                 "--flat-playlist".into(),
@@ -27,8 +32,15 @@ impl YtDlp {
         if operation.cancel.is_cancelled() {
             return Err(ProviderError::Cancelled);
         }
-        avatar(&value, id)
+        profile(&value, id)
     }
+}
+
+fn profile(value: &Value, id: &ChannelId) -> Result<ChannelProfile, ProviderError> {
+    Ok(ChannelProfile {
+        avatar_url: avatar(value, id)?,
+        subscriber_count: value.get("channel_follower_count").and_then(Value::as_u64),
+    })
 }
 
 fn avatar(value: &Value, id: &ChannelId) -> Result<Option<String>, ProviderError> {
@@ -83,6 +95,20 @@ fn safe_avatar(value: &str) -> Option<String> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn subscriber_count_is_optional_and_requires_the_matching_channel() {
+        let id = ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap();
+        let mut value =
+            json!({"_type":"playlist", "channel_id":id.as_str(), "channel_follower_count":12345});
+        let channel = profile(&value, &id).unwrap();
+        assert_eq!(channel.subscriber_count, Some(12345));
+        assert_eq!(channel.avatar_url, None);
+        value["channel_follower_count"] = json!(-1);
+        assert_eq!(profile(&value, &id).unwrap().subscriber_count, None);
+        value["channel_id"] = json!("UCzzzzzzzzzzzzzzzzzzzzzz");
+        assert!(profile(&value, &id).is_err());
+    }
 
     #[test]
     fn only_explicit_matching_channel_avatar_is_accepted() {

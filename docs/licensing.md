@@ -331,3 +331,8 @@ existing third-party inventory/notice generation must retain the selected route
 and notices when distributing them. This adds no vendored interface asset,
 changes no framework GPL route, and does not qualify binary redistribution.
 New loading and native-adapter source retains GPL-3.0-or-later headers.
+
+The header/comments/history correction adds unchanged official Lucide
+`refresh-cw.svg` from the same pinned upstream revision. Its checksum is recorded
+with the retained ISC and Feather MIT notices; source provenance remains in
+[icons/SOURCE.md](../crates/app/ui/icons/SOURCE.md). No licensing route changes.
