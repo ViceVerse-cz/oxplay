@@ -417,6 +417,12 @@ impl AccountClient {
         self.session = None;
         self.pending = None;
     }
+    /// A mutation may have reached YouTube without a verified outcome. This
+    /// nonsecret flag survives expiry; it never permits replay or transfers
+    /// pending private identifiers to another account/session.
+    pub fn has_unconfirmed_mutation(&self) -> bool {
+        self.pending.is_some()
+    }
     pub fn connection(&self) -> Option<ConnectionInfo> {
         self.session
             .as_ref()
@@ -673,6 +679,14 @@ impl AccountClient {
                 Ok(MutationOutcome::Verified)
             }
             Ok(false) => Ok(MutationOutcome::NeedsReconciliation),
+            // A write can have succeeded before its verification read loses
+            // authentication. Preserve the pending outcome, but surface loss
+            // of identity so the UI removes private rows and account playback.
+            // Treating it as an ordinary uncertain outcome leaves Connected
+            // visible despite request() having expired/revoked the session.
+            Err(error @ (AccountError::SessionExpired | AccountError::IdentityNotVerified)) => {
+                Err(error)
+            }
             Err(AccountError::Cancelled | AccountError::StaleSession) => {
                 Err(AccountError::Cancelled)
             }
@@ -1090,6 +1104,100 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         assert_eq!(
             client.http.fixture.as_ref().unwrap().calls.borrow().len(),
             2
+        );
+    }
+    #[test]
+    fn expired_reconciliation_revokes_identity_and_preserves_unknown_write_without_replay() {
+        for write_reply in [Ok(json!({})), Err(AccountError::Timeout)] {
+            let uncertain_submission = write_reply.is_err();
+            let mut client = fixture_client(vec![
+                Ok(identity_response()),
+                write_reply,
+                Err(AccountError::SessionExpired),
+            ]);
+            let lease = client.control.0.issue(0, None).unwrap();
+            *client
+                .session
+                .as_ref()
+                .unwrap()
+                .playback_authorization
+                .borrow_mut() = Some(lease.clone());
+            let mutation = AccountMutation::Rating {
+                video_id: VideoId::new("abcdefghijk").unwrap(),
+                liked: true,
+            };
+            let submitted = client.apply_user_mutation(mutation.clone(), &context());
+            if uncertain_submission {
+                assert_eq!(submitted, Ok(MutationOutcome::NeedsReconciliation));
+                assert_eq!(
+                    client.reconcile_pending(&context()),
+                    Err(AccountError::SessionExpired)
+                );
+            } else {
+                assert_eq!(submitted, Err(AccountError::SessionExpired));
+            }
+            assert!(
+                client.has_unconfirmed_mutation(),
+                "expiry must not claim the write failed or succeeded"
+            );
+            assert!(client.connection().is_none());
+            assert!(client.export_for_vault().is_err());
+            assert!(
+                !lease.is_valid(),
+                "a previously issued media authority must be revoked"
+            );
+            assert_eq!(
+                client.control.generation(),
+                0,
+                "the terminal expiry result must remain publishable"
+            );
+            assert_eq!(
+                client.reconcile_pending(&context()),
+                Err(AccountError::SessionExpired)
+            );
+            assert_eq!(
+                client.apply_user_mutation(mutation, &context()),
+                Err(AccountError::SessionExpired)
+            );
+            assert_eq!(
+                &*client.http.fixture.as_ref().unwrap().calls.borrow(),
+                &["account/accounts_list", "like/like", "next"]
+            );
+        }
+    }
+    #[test]
+    fn reconciliation_without_identity_is_terminal_but_transient_read_failure_is_not() {
+        let mut client = fixture_client(vec![
+            Ok(identity_response()),
+            Err(AccountError::Timeout),
+            Err(AccountError::Offline),
+        ]);
+        let mutation = AccountMutation::Rating {
+            video_id: VideoId::new("abcdefghijk").unwrap(),
+            liked: true,
+        };
+        assert_eq!(
+            client.apply_user_mutation(mutation.clone(), &context()),
+            Ok(MutationOutcome::NeedsReconciliation)
+        );
+        assert_eq!(
+            client.reconcile_pending(&context()),
+            Ok(MutationOutcome::NeedsReconciliation)
+        );
+        assert!(client.connection().is_some());
+        assert_eq!(
+            client.apply_user_mutation(mutation, &context()),
+            Err(AccountError::ReconciliationRequired)
+        );
+        client.session.take();
+        assert_eq!(
+            client.reconcile_pending(&context()),
+            Err(AccountError::IdentityNotVerified)
+        );
+        assert!(client.pending.is_some());
+        assert_eq!(
+            &*client.http.fixture.as_ref().unwrap().calls.borrow(),
+            &["account/accounts_list", "like/like", "next"]
         );
     }
     #[test]

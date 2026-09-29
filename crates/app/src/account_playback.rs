@@ -269,7 +269,7 @@ pub fn observe(app: &App, state: &Rc<UiState>) {
     if authorization(state).is_some_and(|lease| !lease.is_valid()) {
         clear(app, state);
         state.account_ui.clear_identity(app);
-        app.set_account_status("The account session expired or was disconnected. Reconnect explicitly to play with this account.".into());
+        state.account_ui.set_status(app, "The account session expired or was disconnected. Reconnect explicitly to play with this account.");
         app.set_status("Account playback stopped because its authorization ended.".into());
     }
 }
@@ -321,8 +321,9 @@ fn submit(
         session,
     });
     app.set_busy(true);
-    app.set_account_status(
-        "Resolving this video with the explicitly selected account session…".into(),
+    state.account_ui.set_status(
+        app,
+        "Resolving this video with the explicitly selected account session…",
     );
     Ok(())
 }
@@ -579,7 +580,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
                 clear(app, state);
                 state.account_ui.clear_identity(app);
             }
-            app.set_account_status(error.to_string().into());
+            state.account_ui.set_status(app, error.to_string());
             app.set_status(error.to_string().into());
             if let Kind::Restart { load } = job.kind
                 && state.player.snapshot().load_request_id == load
@@ -634,7 +635,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
                 "Video presentation became unavailable. Activate the display, then select the account video again."
             }
         };
-        app.set_account_status(message.into());
+        state.account_ui.set_status(app, message);
         app.set_status(message.into());
         return;
     }
@@ -705,9 +706,9 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     app.set_loaded(true);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Account playback · Experimental ad filtering · Account captions and private local history are unavailable".into());
-    app.set_account_status(
-        "Playing with this account. Disconnect stops playback and clears its private metadata."
-            .into(),
+    state.account_ui.set_status(
+        app,
+        "Playing with this account. Disconnect stops playback and clears its private metadata.",
     );
 }
 

@@ -676,6 +676,60 @@ mod tests {
     }
 
     #[test]
+    fn saturated_worker_rejects_unaccepted_write_and_drains_accepted_writes_on_drop() {
+        let directory = TestDirectory::new();
+        let path = directory.0.join("library.sqlite3");
+        let (wake, notified) = mpsc::channel();
+        let (release, resume) = mpsc::channel();
+        let calls = std::cell::Cell::new(0);
+        let worker = Worker::new(path.clone(), move || {
+            calls.set(calls.get() + 1);
+            let _ = wake.send(());
+            if calls.get() == 32 {
+                // The 32nd successful result send fills the actual result
+                // channel. Hold this existing callback before the next recv.
+                let _ = resume.recv();
+            }
+        });
+        struct ReleaseOnDrop(Option<mpsc::Sender<()>>);
+        impl Drop for ReleaseOnDrop {
+            fn drop(&mut self) {
+                if let Some(sender) = self.0.take() {
+                    let _ = sender.send(());
+                }
+            }
+        }
+        // Declared after Worker so assertion unwinding cannot strand its join
+        // behind this test's own callback gate.
+        let release = ReleaseOnDrop(Some(release));
+        for index in 0..32 {
+            assert!(worker.submit(Request::Create(format!("Synthetic accepted {index:02}"))));
+            notified.recv_timeout(Duration::from_secs(5)).unwrap();
+        }
+        // No result has been consumed. With the worker held at its last wake,
+        // exactly 32 more commands fit; this is real channel backpressure.
+        for index in 32..64 {
+            assert!(worker.submit(Request::Create(format!("Synthetic accepted {index:02}"))));
+        }
+        assert!(!worker.submit(Request::Create("Synthetic rejected write".into())));
+        drop(release);
+        // Results remain full: Drop must disconnect the receiver, release any
+        // blocked result send, drain accepted commands and join its thread.
+        drop(worker);
+        let store = LocalStore::open(&path).unwrap();
+        let page = store.playlists(None, 100).unwrap();
+        assert_eq!(page.items.len(), 64);
+        assert!(page.next.is_none());
+        for (index, item) in page.items.iter().enumerate() {
+            assert_eq!(item.name, format!("Synthetic accepted {index:02}"));
+        }
+        assert!(
+            page.items
+                .iter()
+                .all(|item| item.name != "Synthetic rejected write")
+        );
+    }
+    #[test]
     fn worker_create_and_save_has_correlated_failure_and_committed_success() {
         let directory = TestDirectory::new();
         let path = directory.0.join("library.sqlite3");

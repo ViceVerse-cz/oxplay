@@ -6,7 +6,28 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The current slice fixes acknowledged state in captions, quality, Appearance and
+The current slice propagates identity loss during post-write account
+reconciliation, clearing stale connected UI and account playback. Unconfirmed
+writes retain a generic in-memory warning across explicit reconnect, without
+replaying requests or transferring private identifiers to another session.
+See [account provider](account-provider.md). Automatic guest stream refresh now
+checks accepted pause intent and exact active load before extraction, closing
+the asynchronous pause/navigation gap; see [pause intent](pause-intent.md).
+The library diagnostic has 22 finite stages, including actual 101-entry storage
+and video-page Rename cancellation. A deterministic worker regression saturates
+both channels and verifies shutdown preserves accepted writes and excludes
+rejected work. Native UI saturation remains distinct from that worker test.
+Local validation passed 448 Rust tests (four explicit integrations ignored),
+163 Python tooling tests, formatting, strict all-target Clippy and locked debug
+and release builds. The debug native run passed all 22 checkpoints; post-exit
+SQL confirmed the unchanged names, two playlists, 101 items in the original
+playlist and history off. The release check also passed all 22 stages at
+760×600/light with the same persisted results and inspected confirmation capture.
+Both runs exited zero and their owned process groups were absent afterward.
+No performance/usage test was run. Push and hosted CI status are recorded below
+once the exact source revision is available.
+
+The preceding slice fixes acknowledged state in captions, quality, Appearance and
 catalog filters, and gives the local Save dialog an explicit destination draft.
 It also prevents diagnostic themes leaking into saved preferences through volume
 updates. See [shared controls](controlled-widgets.md). PiP restoration now prefers
@@ -530,10 +551,10 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Cover actual local-library queue saturation and page-navigation rename cancellation
-with native interaction checks. The shared controlled-widget review is implemented;
-its headless checks do not replace OS keyboard, IME or screen-reader qualification. Failed-stream restart and additional PiP monitor/fullscreen
-lifecycle cases remain next. Physical keyboard/IME/screen-reader qualification
+Implement remaining failed-stream restart and PiP monitor/fullscreen lifecycle
+cases. Actual UI queue-saturation coverage remains separate from the passing
+real-worker test. The shared controlled-widget and video-page Rename checks do
+not replace OS keyboard, IME or screen-reader qualification. Physical keyboard/IME/screen-reader qualification
 remains open despite the passing injected-key slice.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource

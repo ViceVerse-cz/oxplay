@@ -42,6 +42,28 @@ enum PendingKind {
     Connection,
     Inspection,
     Playback,
+    Mutation,
+}
+// In-memory warning for this application run only. It is not a persisted
+// reconciliation record and contains no identity or operation parameters.
+#[derive(Default)]
+struct WriteWarning {
+    current: Cell<bool>,
+    retired: Cell<bool>,
+}
+impl WriteWarning {
+    fn retire(&self, mutation_active: bool) {
+        if self.current.replace(false) || mutation_active {
+            self.retired.set(true);
+        }
+    }
+    fn status(&self, message: impl Into<String>) -> slint::SharedString {
+        let mut message = message.into();
+        if self.retired.get() {
+            message.push_str(" A previous account change has an unconfirmed outcome. Check YouTube before repeating it. Reconnecting does not reconcile or replay that change.");
+        }
+        message.into()
+    }
 }
 pub struct State {
     worker: account::Worker,
@@ -58,6 +80,7 @@ pub struct State {
     playback_capable: Cell<bool>,
     identity_epoch: Cell<u64>,
     pending_identity_epoch: Cell<u64>,
+    write_warning: WriteWarning,
 }
 impl State {
     pub fn new(
@@ -82,6 +105,7 @@ impl State {
             playback_capable: Cell::new(false),
             identity_epoch: Cell::new(0),
             pending_identity_epoch: Cell::new(0),
+            write_warning: WriteWarning::default(),
         }
     }
     pub fn stop_picker(&self) {
@@ -147,6 +171,7 @@ impl State {
             AccountRequest::Import { .. } | AccountRequest::Reconnect(_) => PendingKind::Connection,
             AccountRequest::InspectSaved => PendingKind::Inspection,
             AccountRequest::ResolvePlayback { .. } => PendingKind::Playback,
+            AccountRequest::Mutate(_) | AccountRequest::Reconcile => PendingKind::Mutation,
             _ => PendingKind::Other,
         };
         match self.worker.submit(request) {
@@ -156,7 +181,7 @@ impl State {
                 self.pending_identity_epoch.set(self.identity_epoch.get());
                 app.set_account_busy(true);
             }
-            Err(error) => app.set_account_status(error.to_string().into()),
+            Err(error) => self.set_status(app, error.to_string()),
         }
     }
     fn clear_rows(&self, app: &App) {
@@ -165,7 +190,14 @@ impl State {
         self.cursor.borrow_mut().take();
         app.set_account_more(false);
     }
+    pub fn set_status(&self, app: &App, message: impl Into<String>) {
+        app.set_account_status(self.write_warning.status(message));
+    }
     pub fn clear_identity(&self, app: &App) {
+        // Preserve only a generic warning across identity loss. Never carry a
+        // pending operation's private IDs into a newly verified account.
+        self.write_warning
+            .retire(self.pending_kind.get() == PendingKind::Mutation);
         self.identity_epoch
             .set(self.identity_epoch.get().wrapping_add(1));
         self.playback_capable.set(false);
@@ -303,7 +335,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         s.account_ui.clear_identity(&app);
         crate::account_playback::clear(&app, &s);
         app.set_account_status(
-            "Validating the selected export and verifying its YouTube identity…".into(),
+            s.account_ui
+                .write_warning
+                .status("Validating the selected export and verifying its YouTube identity…"),
         );
         s.account_ui.submit(
             &app,
@@ -324,6 +358,11 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         {
             s.account_ui.clear_identity(&app);
             crate::account_playback::clear(&app, &s);
+            app.set_account_status(
+                s.account_ui
+                    .write_warning
+                    .status("Verifying the saved YouTube session…"),
+            );
             s.account_ui.submit(&app, AccountRequest::Reconnect(saved));
         }
     });
@@ -333,8 +372,11 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else { return };
         s.account_ui.stop_picker();
         crate::account_playback::clear(&app, &s);
+        s.account_ui.clear_identity(&app);
         app.set_account_status(
-            "Disconnected. Removing saved credentials; local collections are kept.".into(),
+            s.account_ui
+                .write_warning
+                .status("Disconnected. Removing saved credentials; local collections are kept."),
         );
         s.account_ui.pending_kind.set(PendingKind::Other);
         // This invalidates the session synchronously, before filesystem/network work.
@@ -343,9 +385,8 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 s.account_ui.pending_id.set(Some(id));
                 app.set_account_busy(true);
             }
-            Err(error) => app.set_account_status(error.to_string().into()),
+            Err(error) => s.account_ui.set_status(&app, error.to_string()),
         }
-        s.account_ui.clear_identity(&app);
         s.account_ui.saved.borrow_mut().take();
         app.set_account_saved(false);
         app.set_account_forget_needed(true);
@@ -500,6 +541,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         if result.generation != s.account_ui.worker.control().generation() || s.account_ui.pending_id.get() != Some(result.request_id) { return; }
         app.set_account_busy(false); s.account_ui.pending_id.set(None);
         let kind = s.account_ui.pending_kind.replace(PendingKind::Other);
+        s.account_ui.write_warning.current.set(result.unconfirmed_mutation);
         let current_identity = s.account_ui.pending_identity_epoch.get() == s.account_ui.identity_epoch.get();
         // Expiry can clear identity while an unrelated account read is in flight.
         // It must never repopulate private rows afterward. Terminal mutation
@@ -521,9 +563,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 app.set_account_saved(false);
                 app.set_account_forget_needed(false);
                 match persistence {
-                    Persistence::SessionOnly => app.set_account_status("Identity verified. Session is kept in memory only. Public playback remains guest.".into()),
-                    Persistence::Remembered(saved) => { *s.account_ui.saved.borrow_mut() = Some(saved); app.set_account_saved(true); app.set_account_status("Identity verified. Session saved in protected storage. Public playback remains guest.".into()); }
-                    Persistence::SaveFailed(error) => { app.set_account_forget_needed(true); app.set_account_status(format!("Identity verified; using memory only. {error}").into()); }
+                    Persistence::SessionOnly => app.set_account_status(s.account_ui.write_warning.status("Identity verified. Session is kept in memory only. Public playback remains guest.")),
+                    Persistence::Remembered(saved) => { *s.account_ui.saved.borrow_mut() = Some(saved); app.set_account_saved(true); app.set_account_status(s.account_ui.write_warning.status("Identity verified. Session saved in protected storage. Public playback remains guest.")); }
+                    Persistence::SaveFailed(error) => { app.set_account_forget_needed(true); app.set_account_status(s.account_ui.write_warning.status(format!("Identity verified; using memory only. {error}"))); }
                 }
             }
             Ok(Response::SavedProfile(profile)) => { app.set_account_saved(profile.is_some()); *s.account_ui.saved.borrow_mut() = profile; }
@@ -547,7 +589,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             }
             Ok(Response::Disconnected { forget_error }) => {
                 app.set_account_forget_needed(forget_error.is_some());
-                app.set_account_status(forget_error.map(|e| format!("Disconnected, but saved credential removal needs another attempt: {e}")).unwrap_or_else(|| "Disconnected and saved credentials removed. Local collections were kept.".into()).into());
+                app.set_account_status(s.account_ui.write_warning.status(forget_error.map(|e| format!("Disconnected, but saved credential removal needs another attempt: {e}")).unwrap_or_else(|| "Disconnected and saved credentials removed. Local collections were kept.".into())));
             }
             Err(error) => {
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::SessionExpired | serein_youtube::account::AccountError::IdentityNotVerified | serein_youtube::account::AccountError::StaleSession)) {
@@ -555,7 +597,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     crate::account_playback::clear(&app, &s);
                 }
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::ReconciliationRequired)) { app.set_account_pending(true); }
-                app.set_account_status(error.to_string().into());
+                app.set_account_status(s.account_ui.write_warning.status(error.to_string()));
                 if kind == PendingKind::Connection { s.account_ui.submit(&app, AccountRequest::InspectSaved); }
             }
         }
@@ -590,6 +632,39 @@ fn is_private_read(result: &Result<Response, account::WorkerError>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn only_uncertain_or_inflight_writes_leave_generic_warning_across_reconnect() {
+        let warning = WriteWarning::default();
+        warning.current.set(false); // verified result / ordinary account read
+        warning.retire(false);
+        assert_eq!(warning.status("Disconnected.").as_str(), "Disconnected.");
+        warning.current.set(true); // worker reports pending mutation at expiry
+        warning.retire(false);
+        assert!(!warning.current.get());
+        let expired = warning.status("Session expired.");
+        assert!(expired.starts_with("Session expired."));
+        assert!(expired.contains("Check YouTube before repeating it"));
+        let removal_failure = warning.status("Saved credential removal failed.");
+        assert!(removal_failure.starts_with("Saved credential removal failed."));
+        assert!(removal_failure.contains("unconfirmed outcome"));
+        assert_eq!(
+            WriteWarning::default().status("New app run.").as_str(),
+            "New app run.",
+            "warning is session-only, not a persisted reconciliation record"
+        );
+        // A new connected session has no old pending mutation to reconcile.
+        // Keep only the explicit warning; do not pretend that reconnect verified it.
+        warning.current.set(false);
+        let connected = warning.status("Identity verified.");
+        assert!(connected.contains("Reconnecting does not reconcile or replay"));
+        let active = WriteWarning::default();
+        active.retire(true); // explicit sign-out can interrupt a submitted write
+        assert!(
+            active
+                .status("Disconnected.")
+                .contains("unconfirmed outcome")
+        );
+    }
     #[test]
     fn a_rating_result_cannot_cross_video_or_account_selection() {
         let first = serein_core::VideoId::new("aaaaaaaaaaa").unwrap();

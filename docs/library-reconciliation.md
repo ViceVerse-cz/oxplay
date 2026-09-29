@@ -150,8 +150,41 @@ cargo build --workspace --release --locked
   --ui-theme light --snapshot /absolute/path/new-keyboard-profile/keyboard.png
 ```
 
-It exits after 38 seconds and returns an error if any stage fails or never completes.
+It now exits after 68 seconds and returns an error if any stage fails or never completes.
 The screenshot is an explicit one-shot capture; normal presentation is unchanged.
+
+### Video-page cancellation and real worker backpressure
+
+The extended keyboard diagnostic retains the earlier twelve stages, then saves
+101 explicitly labeled, thumbnail-free fixture videos through the real bounded
+worker in batches of at most 20. A subsequent FIFO page read must publish the
+exact first 100 identities. Injected Slint keys begin and edit Rename; the actual
+Next callback must immediately cancel it and restore the separate Create draft.
+The last one-item page and return to the first 100 must retain the original
+playlist ID/name and draft. All 22 checkpoints are finite; the mode requires a
+fresh absolute data root and excludes unrelated media/network/helper inputs.
+
+A separate worker regression fills both actual 32-slot channels using the
+existing wake callback for deterministic synchronization. The next write must
+be rejected. Dropping the worker without consuming its results must unblock
+shutdown, join the thread and preserve all 64 accepted writes; reopening SQLite
+must find no rejected write. It adds no production hook, polling or sleep. This
+is actual worker backpressure coverage, not a native UI queue-saturation check;
+the native dropdown rejection stage still uses an explicitly rejecting callback.
+
+The extended native check passed all 22 stages in both debug (1000×800/dark) and
+release (760×600/light) on macOS 27 / Apple M1. Read-only post-exit SQL confirmed
+two playlists, exactly 101 videos in the original playlist, its unchanged name
+and history disabled. Both applications exited zero; the harness confirmed its
+owned process groups were gone. Captures of the earlier confirmation checkpoint
+were inspected, not treated as visual evidence of the later pagination stages.
+Artifacts are `artifacts/keyboard-page-debug-v1` and
+`artifacts/keyboard-page-release-v1`. Release executable SHA256:
+`3ab759dd848c2630aabf5e969ee741aa535e91400bb306c2b1e878c552eb1f0e`.
+The complete local suite passed 448 Rust tests (four explicit integrations
+ignored), 163 Python tooling tests, formatting, strict Clippy and locked
+debug/release builds. No performance/usage measurements or real-account tests
+were performed.
 
 ## Created playlist windows beyond the first page
 

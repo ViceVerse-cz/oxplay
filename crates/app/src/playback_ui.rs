@@ -199,6 +199,29 @@ fn remember(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
         maybe_refresh(&app, &state);
     });
 }
+/// Native pause observations can lag a just-accepted user pause/navigation.
+/// Both intent and exact native load identity must admit automatic replacement.
+fn refresh_admitted(
+    snapshot: &serein_media::Snapshot,
+    load: u64,
+    loaded: bool,
+    watching: bool,
+    presentation_ready: bool,
+    user_paused: bool,
+) -> bool {
+    loaded
+        && watching
+        && presentation_ready
+        && load != 0
+        && snapshot.load_request_id == load
+        && snapshot.active_load_request_id == load
+        && snapshot.failed_load_request_id != Some(load)
+        && !snapshot.stop_pending
+        && !user_paused
+        && !snapshot.paused
+        && snapshot.state == serein_media::PlaybackState::Playing
+}
+
 /// A due refresh waits for active playback and the existing single extractor.
 /// No periodic wakeups or retries are introduced while paused/hidden/busy.
 pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
@@ -207,7 +230,16 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
         return;
     }
     let snapshot = state.player.snapshot();
-    if snapshot.paused || !matches!(snapshot.state, serein_media::PlaybackState::Playing) {
+    if !refresh_admitted(
+        &snapshot,
+        s.current_load.get(),
+        app.get_loaded(),
+        app.get_page() == 2,
+        state.presentation_ready.get(),
+        state.player.user_pause_intent(),
+    ) {
+        // Retain due: a later real resume/media event can service this once.
+        // No timer/poll or automatic extraction is started while admission fails.
         return;
     }
     let current = s.current.borrow();
@@ -674,6 +706,78 @@ impl Smoke {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn automatic_refresh_respects_pause_intent_navigation_and_exact_live_load() {
+        use serein_media::{PlaybackState, Snapshot};
+        let playing = Snapshot {
+            load_request_id: 12,
+            active_load_request_id: 12,
+            state: PlaybackState::Playing,
+            paused: false,
+            ..Snapshot::default()
+        };
+        assert!(super::refresh_admitted(
+            &playing, 12, true, true, true, false
+        ));
+        assert!(
+            !super::refresh_admitted(&playing, 12, true, true, true, true),
+            "an accepted pause must win before its native observation arrives"
+        );
+        assert!(
+            !super::refresh_admitted(&playing, 12, true, false, true, false),
+            "leaving watch cannot launch extraction from a stale Playing snapshot"
+        );
+        assert!(!super::refresh_admitted(
+            &playing, 12, false, true, true, false
+        ));
+        assert!(!super::refresh_admitted(
+            &playing, 12, true, true, false, false
+        ));
+        assert!(!super::refresh_admitted(
+            &playing, 0, true, true, true, false
+        ));
+        assert!(!super::refresh_admitted(
+            &playing, 13, true, true, true, false
+        ));
+        for stale in [
+            Snapshot {
+                paused: true,
+                ..playing.clone()
+            },
+            Snapshot {
+                stop_pending: true,
+                ..playing.clone()
+            },
+            Snapshot {
+                load_request_id: 13,
+                ..playing.clone()
+            },
+            Snapshot {
+                active_load_request_id: 11,
+                ..playing.clone()
+            },
+            Snapshot {
+                failed_load_request_id: Some(12),
+                ..playing.clone()
+            },
+            Snapshot {
+                state: PlaybackState::Seeking,
+                ..playing.clone()
+            },
+            Snapshot {
+                state: PlaybackState::Failed,
+                ..playing.clone()
+            },
+        ] {
+            assert!(!super::refresh_admitted(
+                &stale, 12, true, true, true, false
+            ));
+        }
+        assert!(
+            super::refresh_admitted(&playing, 12, true, true, true, false),
+            "the same due load can become admissible after actual resume"
+        );
+    }
     use super::*;
     use serein_core::{MediaTrack, MediaUrl, OriginHeaders, VideoId, VideoSummary};
 

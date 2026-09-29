@@ -191,6 +191,19 @@ preserve exact item IDs and reject incomplete snapshots. Delegated-channel
 switching remains unsupported. Provider fixture tests use synthetic credentials
 and responses; these do not establish compatibility with a real account.
 
+If verification after a write loses authentication, reconciliation now returns
+the terminal identity error. This clears the connected UI and revokes account
+playback instead of showing an ordinary pending outcome under a stale identity.
+The provider retains the unconfirmed operation until the session is discarded;
+it never automatically repeats the write. A generic, memory-only warning survives
+expiry/disconnect and explicit reconnect in the running application. It carries
+no private mutation identifiers and tells the user to check YouTube before
+repeating the action. Reconnect does **not** reconcile a previous session's write:
+stable identity-bound recovery across sessions is not implemented. Restarting the
+application does not preserve this warning. Synthetic regressions cover both a
+successful write and a timeout followed by expiry during verification, revoked
+media authority, absent connection/vault export and zero replay.
+
 `crates/app/src/account.rs` connects these APIs to a bounded, sleeping worker.
 Only a user-selected regular file is opened and bounded to 4 MiB; no browser
 profile discovery occurs. Import and reconnect invalidate the previous session

@@ -19,6 +19,15 @@ Stream quality/expiry replacement preserves accepted user intent, independently
 of hidden policy. Its fresh-position request rejects an unsettled pause; native
 observations remain actual observations rather than optimistic UI state.
 
+Automatic guest stream refresh now checks accepted pause intent before starting
+extraction, in addition to the native pause observation. Admission requires the
+remembered, accepted and active native load to match, ready presentation and the
+loaded Watch page, with no stop or failure for that load. Browsing already pauses
+playback; this closes its asynchronous acknowledgement gap. A rejected refresh
+keeps its due flag for a later real resume/event rather than starting a retry
+timer. A deterministic admission regression covers pause, navigation, stale load,
+stop, failure and resumed playback; it is not a live expired-stream qualification.
+
 mpv keep-open pauses natively at EOF, and `pause=no` alone does not replay.
 A finite correlated `eof-reached` query reconciles the natural hold after pending
 writes and exact file admission. It owns one query slot through cancellation;

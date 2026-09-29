@@ -94,6 +94,8 @@ pub struct AccountResponse {
     pub playback_selection: Option<u64>,
     /// Latest verified identity/capabilities; None after expiry or disconnection.
     pub connection: Option<ConnectionInfo>,
+    /// Generic unknown-write warning; contains no account/playlist/video data.
+    pub unconfirmed_mutation: bool,
     /// Nonsecret remaining provider cooldown, measured after this operation.
     pub retry_after: Option<std::time::Duration>,
     pub result: Result<Response, WorkerError>,
@@ -270,6 +272,10 @@ impl Worker {
                         generation: work.operation.session_generation,
                         playback_selection,
                         connection: engine.client.as_ref().and_then(AccountClient::connection),
+                        unconfirmed_mutation: engine
+                            .client
+                            .as_ref()
+                            .is_some_and(AccountClient::has_unconfirmed_mutation),
                         retry_after: engine
                             .client
                             .as_ref()
@@ -974,6 +980,7 @@ mod tests {
                 generation: 0,
                 playback_selection: None,
                 connection: None,
+                unconfirmed_mutation: false,
                 retry_after: None,
                 result,
             });
@@ -985,6 +992,7 @@ mod tests {
             generation: 0,
             playback_selection: Some(42),
             connection: None,
+            unconfirmed_mutation: false,
             retry_after: None,
             result: Err(WorkerError::Resolver(ProviderError::Offline)),
         });
@@ -1213,6 +1221,7 @@ mod tests {
                 generation: 1,
                 playback_selection: None,
                 connection: None,
+                unconfirmed_mutation: false,
                 retry_after: None,
                 result: Ok(Response::SavedProfile(None)),
             });

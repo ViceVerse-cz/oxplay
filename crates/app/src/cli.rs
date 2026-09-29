@@ -348,7 +348,7 @@ impl Options {
                     .data_root
                     .as_ref()
                     .is_none_or(|root| !root.is_absolute())
-                || options.quit_after.is_some_and(|seconds| seconds != 38)
+                || options.quit_after.is_some_and(|seconds| seconds != 68)
                 || options.snapshot.as_ref().is_some_and(|path| {
                     path.parent() != options.data_root.as_deref()
                         || path.extension().is_none_or(|extension| extension != "png")
@@ -360,10 +360,10 @@ impl Options {
                 })
             {
                 return Err(
-                    "--library-keyboard-smoke-test requires only NEW absolute --data-root and its exact38-second watchdog; no media, network, helper or other diagnostic inputs",
+                    "--library-keyboard-smoke-test requires only NEW absolute --data-root and its exact68-second watchdog; no media, network, helper or other diagnostic inputs",
                 );
             }
-            options.quit_after = Some(38);
+            options.quit_after = Some(68);
         }
         if options.save_smoke {
             const ALLOWED: &[&str] = &[
@@ -724,7 +724,7 @@ pub const HELP: &str = "Serein experimental native client
   --captions-smoke-test 70-second guest caption/quality test (requires --url)
   --clear-local-smoke-test 85-second caption/cache deletion test (requires --url and NEW --data-root)
   --library-smoke-test 28-second offline local-navigation test (requires NEW --data-root)
-  --library-keyboard-smoke-test 38-second offline injected-key playlist test (requires NEW --data-root)
+  --library-keyboard-smoke-test 68-second offline injected-key playlist test (requires NEW --data-root)
   --collection-window-smoke-test 58-second offline playlist-window test (requires NEW --data-root)
   --library-resource-fixture ROOT  Prepared, labeled offline 10,000-item fixture (uses ROOT/Serein)
   --library-resource-smoke-test  Five 100-row page/input checks plus keyboard/resize checks (44s; requires prepared fixture; no resource qualification)
@@ -1188,13 +1188,13 @@ mod tests {
         if cfg!(unix) {
             let options = result.unwrap();
             assert!(options.library_keyboard_smoke);
-            assert_eq!(options.quit_after, Some(38));
+            assert_eq!(options.quit_after, Some(68));
         } else {
             assert!(result.is_err());
         }
         for extra in [
-            vec!["--quit-after", "37"],
-            vec!["--quit-after", "39"],
+            vec!["--quit-after", "67"],
+            vec!["--quit-after", "69"],
             vec!["--local", "clip"],
             vec!["--url", "https://youtu.be/aqz-KE-bpKQ"],
             vec!["--search", "fixture"],

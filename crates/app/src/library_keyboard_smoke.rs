@@ -13,11 +13,41 @@ use std::{
     time::Duration,
 };
 
-const STAGES: [u64; 12] = [3, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35];
+const STAGES: [u64; 22] = [
+    3, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65,
+];
 const CREATED: &str = "TEST FIXTURE keyboard /mf";
 const DRAFT: &str = "TEST FIXTURE separate create draft";
 const RENAMED: &str = "TEST FIXTURE renamed";
 const AWAY: &str = "TEST FIXTURE renamed while away";
+const PAGE_DRAFT: &str = "TEST FIXTURE create draft retained across video pages";
+const SAVES: usize = 101;
+const SAVE_BATCH: usize = 20;
+
+fn fixture_video(index: usize) -> serein_core::VideoSummary {
+    serein_core::VideoSummary {
+        id: serein_core::VideoId::new(&format!("k{index:010}")).unwrap(),
+        title: format!("TEST FIXTURE keyboard pagination video {index:03}"),
+        channel: "TEST FIXTURE offline local channel".into(),
+        channel_id: None,
+        duration: None,
+        thumbnail_url: None,
+    }
+}
+fn saved_page(state: &UiState, start: usize, end: usize) -> bool {
+    crate::library_ui::acknowledged_video_page(state).is_some_and(|items| {
+        items.len() == end - start
+            && items.iter().zip(start..end).all(|(item, index)| {
+                let expected = fixture_video(index);
+                item.id == expected.id
+                    && item.title == expected.title
+                    && item.channel == expected.channel
+                    && item.channel_id.is_none()
+                    && item.duration.is_none()
+                    && item.thumbnail_url.is_none()
+            })
+    })
+}
 
 #[derive(Default)]
 struct Progress {
@@ -429,6 +459,110 @@ fn stage(
                 "Offline keyboard flow admitted unrelated media/account/network work",
             )?;
         }
+        12 => {
+            settled(app)?;
+            app.invoke_open_local_tab(0);
+        }
+        13..=18 => {
+            settled(app)?;
+            let id = progress
+                .playlist
+                .get()
+                .ok_or("Missing original playlist identity")?;
+            check(
+                app.get_page() == 1
+                    && ui.get_tab() == 0
+                    && selected(app, state)
+                        .is_some_and(|(selected, name)| selected == id && name == AWAY),
+                "Fixture saves must remain on the original Library route",
+            )?;
+            let first = (index - 13) * SAVE_BATCH;
+            // Bounded synthetic input to the real worker; do not steal its
+            // response receiver from the ordinary application adapter. The
+            // subsequent FIFO read verifies every committed item and order.
+            for item in first..(first + SAVE_BATCH).min(SAVES) {
+                check(
+                    state.library.submit(crate::library::Request::Save(
+                        crate::library::VideoSave {
+                            serial: (1_u64 << 60) + item as u64,
+                            destination: crate::library::SaveDestination::Existing(id),
+                            video: fixture_video(item),
+                        },
+                    )),
+                    "The bounded diagnostic save batch was not admitted",
+                )?;
+            }
+            if index == 18 {
+                // Same-tab navigation intentionally no-ops. Reopen through a
+                // non-Home route so no Home read or thumbnail request is added.
+                app.invoke_navigate(3);
+                app.invoke_open_local_tab(0);
+                check(
+                    ui.get_busy(),
+                    "The committed fixture page read was not admitted",
+                )?;
+            }
+        }
+        19 => {
+            settled(app)?;
+            check(
+                saved_page(state, 0, 100) && ui.get_next() && !ui.get_previous(),
+                "The worker did not publish the exact first 100 saved videos",
+            )?;
+            focus(app, 1)?;
+            replace_text(app, PAGE_DRAFT)?;
+            focus(app, 3)?;
+            key(app, " ")?;
+            type_text(app, "TEST FIXTURE rename abandoned by video Next")?;
+            check(
+                ui.get_renaming()
+                    && ui.get_name_draft() == "TEST FIXTURE rename abandoned by video Next",
+                "The pagination case did not start an actual keyboard rename draft",
+            )?;
+            ui.invoke_page(true);
+            check(
+                ui.get_busy() && !ui.get_renaming() && ui.get_name_draft() == PAGE_DRAFT,
+                "Accepted video Next did not immediately cancel Rename and restore the Create draft",
+            )?;
+        }
+        20 => {
+            settled(app)?;
+            check(
+                saved_page(state, 100, SAVES)
+                    && ui.get_previous()
+                    && !ui.get_next()
+                    && !ui.get_renaming()
+                    && ui.get_name_draft() == PAGE_DRAFT
+                    && selected(app, state).is_some_and(|(id, name)| {
+                        Some(id) == progress.playlist.get() && name == AWAY
+                    }),
+                "Video Next changed the playlist name/identity or published the wrong final page",
+            )?;
+            ui.invoke_page(false);
+            check(ui.get_busy(), "Video Previous did not admit its real read")?;
+        }
+        21 => {
+            settled(app)?;
+            check(
+                saved_page(state, 0, 100)
+                    && !ui.get_previous()
+                    && ui.get_next()
+                    && !ui.get_renaming()
+                    && ui.get_name_draft() == PAGE_DRAFT
+                    && selection_display_matches(app)
+                    && selected(app, state).is_some_and(|(id, name)| {
+                        Some(id) == progress.playlist.get() && name == AWAY
+                    }),
+                "Video Previous did not restore the original page and unchanged name context",
+            )?;
+            check(
+                state.playlists.borrow().len() == 2
+                    && state.player.snapshot().file_loads == 0
+                    && !app.get_account_connected()
+                    && state.thumbnails.borrow().statistics().remote_started == 0,
+                "Offline pagination admitted unrelated media/account/network work",
+            )?;
+        }
         _ => return Err("Unexpected keyboard diagnostic stage"),
     }
     Ok(())
@@ -471,7 +605,8 @@ impl Smoke {
     pub fn finish(self) -> Result<(), &'static str> {
         self.progress.finish()?;
         eprintln!(
-            "library keyboard complete: stages=12 injected_slint_keys=true remote_thumbnail_starts=0 media_loads=0 account_connected=false"
+            "library keyboard complete: stages={} saved_fixture_videos=101 injected_slint_keys=true remote_thumbnail_starts=0 media_loads=0 account_connected=false",
+            STAGES.len()
         );
         Ok(())
     }
@@ -492,6 +627,10 @@ mod tests {
         progress.fail("later failure");
         assert_eq!(progress.finish(), Err("first failure"));
         assert!(STAGES.windows(2).all(|pair| pair[0] < pair[1]));
-        assert!(STAGES.last().unwrap() < &38);
+        assert!(STAGES.last().unwrap() < &68);
+        const {
+            assert!(SAVE_BATCH <= 20);
+            assert!(SAVES.div_ceil(SAVE_BATCH) == 6);
+        }
     }
 }
