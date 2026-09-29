@@ -283,6 +283,7 @@ fn publish(
     app.set_video_channel(item.video.channel.clone().into());
     comments_ui::details(app, state, &item.video.id, &item.details);
     caption_ui::metadata(app, state, &item, false);
+    crate::share_ui::clear(app, state);
     *state.current_video.borrow_mut() = Some(item.video.clone());
     playback_ui::selected(app, state, &item);
     app.set_page(2);

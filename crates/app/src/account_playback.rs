@@ -199,6 +199,7 @@ pub fn leave_for_guest(app: &App, state: &Rc<UiState>) {
     app.set_account_playback_active(false);
 }
 pub fn clear(app: &App, state: &Rc<UiState>) {
+    crate::share_ui::clear_account(app, state);
     cancel_pending(app, state);
     state.account_playback.expiry.stop();
     state.account_playback.restart_deadline.stop();
@@ -721,6 +722,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
         serein_core::QualityCeiling::from_height(job.policy.max_height).unwrap_or_default();
     app.set_quality_index(quality.index());
     state.quality_index.set(quality.index() as usize);
+    crate::share_ui::clear(app, state);
     *state.current_video.borrow_mut() = Some(item.video.clone());
     crate::playback_ui::selected(app, state, &item);
     app.set_page(2);

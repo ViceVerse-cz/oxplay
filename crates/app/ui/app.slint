@@ -41,6 +41,20 @@ export component App inherits Window {
         return false;
     }
     public function close-local-save() { save-popup.close(); }
+    in property <bool> share-available;
+    in property <string> share-link;
+    in property <string> share-status;
+    callback share-begin() -> bool;
+    callback share-copy-request(bool) -> bool;
+    callback share-closed();
+    private property <bool> share-open: share-popup.is-open;
+    changed share-open => { if !root.share-open { root.share-closed(); } }
+    public function close-share() { share-popup.close(); }
+    function show-share() {
+        if root.share-begin() {
+            root.prepare-native-overlay(); share-popup.show();
+        }
+    }
     private property <int> save-destination: -1;
     preferred-width: 1320px; preferred-height: 860px; min-width: root.picture-in-picture ? 360px : 760px; min-height: root.picture-in-picture ? 240px : 600px;
     background: Colors.canvas;
@@ -58,7 +72,7 @@ export component App inherits Window {
     out property <length> native-clip-y: watch.y;
     out property <length> native-clip-width: watch.visible-width;
     out property <length> native-clip-height: watch.visible-height;
-    private property <bool> native-overlay-open: save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
+    private property <bool> native-overlay-open: share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
     out property <bool> native-child-visible: native-video-child && watching && loaded && (!show-info || fullscreen-active) && !native-overlay-open;
     callback native-child-hide();
     function prepare-native-overlay() { if root.native-video-child { root.native-child-hide(); } }
@@ -466,6 +480,7 @@ export component App inherits Window {
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
                 Rectangle { horizontal-stretch: 1; }
                 if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                share-button := Action { width: 72px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
                 Action { width: 96px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "ellipsis"; label: "Show or hide controls"; clicked => { root.toggle-controls(); } }
@@ -514,6 +529,24 @@ export component App inherits Window {
                 claim-focus(serial) => { return root.feed-focus-claim(1, index, item.kind, item.id, serial); }
                 focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                 clicked => { root.select-video(index); }
+            }
+        }
+    }
+    share-popup := PopupWindow {
+        forward-focus: share-address;
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(420px, root.width - 24px); height: 340px;
+        Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
+            VerticalLayout { padding: 20px; spacing: 12px;
+                Text { text: "Share video"; color: Colors.text; font-size: 20px; font-weight: 600; height: 28px; }
+                Text { text: "Copies a public YouTube address. Private videos still require access. Nothing is sent automatically."; color: Colors.muted; wrap: word-wrap; font-size: 12px; height: 44px; }
+                share-address := LineEdit { accessible-label: "YouTube video link to share"; read-only: true; text: root.share-link; height: 38px; changed has-focus => { if self.has-focus { self.select-all(); } } }
+                HorizontalLayout { spacing: 8px; height: 38px;
+                    Action { label: "Copy video link"; variant: ActionVariant.primary; enabled: root.share-available; clicked => { if root.share-copy-request(false) { share-address.select-all(); share-address.copy(); } } }
+                    Action { label: "Copy at current time"; variant: ActionVariant.secondary; enabled: root.share-available; clicked => { if root.share-copy-request(true) { share-address.select-all(); share-address.copy(); } } }
+                }
+                Text { text: root.share-status; accessible-label: root.share-status; color: Colors.muted; wrap: word-wrap; font-size: 12px; height: 42px; }
+                Action { label: "Close"; variant: ActionVariant.secondary; height: 34px; clicked => { share-popup.close(); root.focus-video-mode(); } }
             }
         }
     }
@@ -793,7 +826,7 @@ export component App inherits Window {
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.
-    if save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
+    if share-popup.is-open || save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
         x: 0px; y: 0px; width: root.width; height: root.height;
         background: #00000070;
     }

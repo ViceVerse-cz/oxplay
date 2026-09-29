@@ -6,7 +6,22 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current feature slice adds automatic inline control visibility: video
+The current feature slice adds three shared-UI workflows: public channel handles,
+local playlist search, and explicit video-link sharing. A handle resolves through
+the existing guest worker, then its real stable channel ID owns subsequent
+navigation. Playlist search uses literal, parameterized title/channel matching
+on the SQLite worker with bounded pages and acknowledged filter state. Sharing
+constructs only canonical watch links, optionally with the current time, and
+retires its pinned selection when playback or account authority changes.
+See [handles](channel-handles.md), [local library](local-library-ui.md), and
+[sharing](sharing.md). Formatting, strict all-target Clippy and the locked debug
+workspace build passed. Initial compilation caught a Slint popup focus-scope
+error; the popup now uses the supported forward-focus contract and the final
+checks passed. Four focused source regressions were added and compiled, but not
+executed. No test suite, live provider/account check, native diagnostic,
+performance measurement or release build ran for this fast implementation pass.
+
+The preceding feature slice adds automatic inline control visibility: video
 pointer/keyboard activity reveals the transport, and a single three-second
 inactivity timer hides it during playback. Paused, hovered, focused and popup
 interaction keeps controls available; entering Watch or accepting a new native
@@ -18,7 +33,7 @@ failed load before replacement, preventing a stale retry from taking over newer
 playback. See [PiP and controls](picture-in-picture.md) and
 [recovery](guest-recovery.md).
 
-This slice follows the requested fast feature workflow. `cargo fmt --all -- --check`,
+That earlier slice followed the requested fast feature workflow. `cargo fmt --all -- --check`,
 `cargo check --workspace --locked`, strict all-target Clippy and the locked debug
 workspace build passed. Initial compilation caught incompatible Slint layout
 constraints; those were corrected before the passing checks. New runtime

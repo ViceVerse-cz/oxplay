@@ -23,6 +23,8 @@ export global LibraryUi {
     in property <bool> collections-previous;
     in property <bool> collections-next;
     in property <bool> history-enabled;
+    in-out property <string> filter-draft;
+    in property <string> active-filter;
     in-out property <string> name-draft;
     in property <bool> renaming;
     // Actual keyboard focus observation, also used by the finite UI diagnostic.
@@ -36,6 +38,7 @@ export global LibraryUi {
     callback change-tab(int);
     callback choose(int);
     callback page(bool);
+    callback filter(string);
     callback collection-page(bool);
     callback create(string);
     callback rename(string);
@@ -206,6 +209,37 @@ export component LibraryPage inherits Rectangle {
             }
         }
         if LibraryUi.tab == 0 && LibraryUi.name-status != "": Text { text: LibraryUi.name-status; color: Colors.muted; wrap: word-wrap; min-height: 26px; }
+        playlist-search := Rectangle {
+            visible: LibraryUi.tab == 0 && LibraryUi.selected >= 0;
+            height: self.visible ? 38px : 0px;
+            function apply() {
+                if LibraryUi.busy || LibraryUi.confirmation != 0 { return; }
+                search.focus();
+                LibraryUi.filter(LibraryUi.filter-draft);
+            }
+            search := LineEdit {
+                x: 0; y: 0; width: parent.width - 160px; height: 38px;
+                accessible-label: "Search saved titles and channels in this playlist";
+                placeholder-text: "Search this playlist";
+                text <=> LibraryUi.filter-draft;
+                enabled: playlist-search.visible && LibraryUi.confirmation == 0;
+                read-only: LibraryUi.busy;
+                accepted => { playlist-search.apply(); }
+            }
+            Action {
+                x: parent.width - 152px; width: 72px; height: 38px;
+                label: "Apply"; accessible-label: "Apply playlist search";
+                enabled: playlist-search.visible && !LibraryUi.busy && LibraryUi.confirmation == 0;
+                clicked => { playlist-search.apply(); }
+            }
+            Action {
+                x: parent.width - 72px; width: 72px; height: 38px;
+                label: "Clear"; accessible-label: "Clear playlist search";
+                enabled: playlist-search.visible && !LibraryUi.busy && LibraryUi.confirmation == 0 && (LibraryUi.active-filter != "" || LibraryUi.filter-draft != "");
+                clicked => { search.focus(); LibraryUi.filter(""); }
+            }
+        }
+        if LibraryUi.tab == 0 && LibraryUi.active-filter != "": Text { text: "Showing matches for “" + LibraryUi.active-filter + "” in saved titles and channel names."; color: Colors.muted; wrap: word-wrap; min-height: 24px; }
         if LibraryUi.tab == 1: Rectangle { height: root.narrow ? 82px : 40px;
             Text { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 244px; text: "Local follows do not subscribe on YouTube."; color: Colors.muted; wrap: word-wrap; vertical-alignment: center; }
             Action { x: root.narrow ? 0px : parent.width - 236px; y: root.narrow ? 44px : 0px; height: 38px; width: 236px; label: "Follow playing channel locally"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.follow-current(); } }
@@ -222,7 +256,7 @@ export component LibraryPage inherits Rectangle {
                 Action { x: parent.width - 120px; y: 16px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.remove(index); } }
             }
         }
-        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.collections.length == 0 ? (LibraryUi.collections-previous || LibraryUi.collections-next ? "No playlists on this page. Use the playlist page controls above." : "Create a playlist to keep videos on this device.") : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
+        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.active-filter != "" ? "No matching saved videos on this page. Change or clear the playlist search." : LibraryUi.collections.length == 0 ? (LibraryUi.collections-previous || LibraryUi.collections-next ? "No playlists on this page. Use the playlist page controls above." : "Create a playlist to keep videos on this device.") : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
         if LibraryUi.previous || LibraryUi.next: HorizontalLayout { height: 38px; spacing: 8px;
             Action { width: 126px; horizontal-stretch: 0; label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.previous; clicked => { LibraryUi.page(false); } }
             Action { width: 106px; horizontal-stretch: 0; label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.next; clicked => { LibraryUi.page(true); } }

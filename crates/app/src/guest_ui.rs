@@ -2,7 +2,9 @@
 //! Typed guest catalog adapter. Shared card models retain their identity;
 //! row replacement occurs only for an explicit catalog/page navigation.
 use crate::{App, UiState, VideoRow, catalog::Request};
-use serein_core::{CatalogItem, ChannelId, ChannelSummary, PlaylistId, ProviderError, VideoId};
+use serein_core::{
+    CatalogItem, ChannelHandle, ChannelId, ChannelSummary, PlaylistId, ProviderError, VideoId,
+};
 use serein_youtube::catalog::{
     CatalogCursor, CatalogHeader, CatalogPage, CatalogRequest, ChannelTab, SearchKind,
 };
@@ -32,7 +34,10 @@ impl RequestKind {
     fn from_request(request: &Request) -> Option<Self> {
         match request {
             Request::Catalog(CatalogRequest::Search { .. }, _) => Some(Self::Search),
-            Request::Catalog(CatalogRequest::Channel { .. }, _) => Some(Self::Channel),
+            Request::Catalog(
+                CatalogRequest::Channel { .. } | CatalogRequest::ChannelHandle { .. },
+                _,
+            ) => Some(Self::Channel),
             Request::Catalog(CatalogRequest::Playlist { .. }, _) => Some(Self::Playlist),
             Request::Resolve(..) => Some(Self::Video),
             _ => None,
@@ -207,13 +212,25 @@ fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, Pro
         if let Ok(id) = ChannelId::from_url(input) {
             return Ok(Input::Catalog(CatalogRequest::Channel {
                 id,
-                tab: ChannelTab::Videos,
+                tab: input_channel_tab(input),
+            }));
+        }
+        if let Ok(handle) = ChannelHandle::from_url(input) {
+            return Ok(Input::Catalog(CatalogRequest::ChannelHandle {
+                handle,
+                tab: input_channel_tab(input),
             }));
         }
         if let Ok(id) = PlaylistId::from_url(input) {
             return Ok(Input::Catalog(CatalogRequest::Playlist { id }));
         }
         return Err(ProviderError::InvalidInput);
+    }
+    if let Ok(handle) = ChannelHandle::new(input) {
+        return Ok(Input::Catalog(CatalogRequest::ChannelHandle {
+            handle,
+            tab: ChannelTab::Videos,
+        }));
     }
     if input.chars().count() > 200 {
         return Err(ProviderError::InvalidInput);
@@ -222,6 +239,15 @@ fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, Pro
         query: input.to_owned(),
         kind: search_kind,
     }))
+}
+fn input_channel_tab(input: &str) -> ChannelTab {
+    // Called only after typed URL validation has checked the complete path.
+    match input.rsplit('/').next() {
+        Some("shorts") => ChannelTab::Shorts,
+        Some("streams") => ChannelTab::Streams,
+        Some("playlists") => ChannelTab::Playlists,
+        _ => ChannelTab::Videos,
+    }
 }
 fn row(item: &CatalogItem) -> VideoRow {
     match item {
@@ -284,7 +310,7 @@ fn load(app: &App, s: &UiState, location: Location, remember: bool) {
             );
             app.set_guest_scope(0);
         }
-        CatalogRequest::Channel { tab, .. } => {
+        CatalogRequest::Channel { tab, .. } | CatalogRequest::ChannelHandle { tab, .. } => {
             app.set_catalog_title("YouTube channel".into());
             app.set_catalog_subtitle("Loading public channel metadata…".into());
             app.set_guest_scope(1);
@@ -357,6 +383,16 @@ pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
             "Public YouTube results · Choose a video, channel or playlist".into(),
         ),
         CatalogHeader::Channel(channel) => {
+            if let Some(location) = s.guest_ui.current.borrow_mut().as_mut()
+                && let CatalogRequest::ChannelHandle { tab, .. } = &location.request
+            {
+                // The provider's next cursor uses this same stable identity.
+                // Never keep following a handle that may later be reassigned.
+                location.request = CatalogRequest::Channel {
+                    id: channel.id.clone(),
+                    tab: *tab,
+                };
+            }
             *s.guest_ui.channel.borrow_mut() = Some(channel.clone());
             app.set_guest_can_follow(true);
             app.set_catalog_title(channel.title.into());
@@ -810,6 +846,33 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn handle_input_is_a_channel_but_mentions_with_search_terms_remain_searches() {
+        for input in [
+            "@synthetic-channel",
+            "https://www.youtube.com/@synthetic-channel",
+        ] {
+            assert!(matches!(
+                request_from_input(input, SearchKind::All),
+                Ok(Input::Catalog(CatalogRequest::ChannelHandle {
+                    tab: ChannelTab::Videos,
+                    ..
+                }))
+            ));
+        }
+        assert!(matches!(
+            request_from_input("https://youtube.com/@synthetic/shorts", SearchKind::All),
+            Ok(Input::Catalog(CatalogRequest::ChannelHandle {
+                tab: ChannelTab::Shorts,
+                ..
+            }))
+        ));
+        assert!(
+            matches!(request_from_input("@synthetic tutorial", SearchKind::All),
+            Ok(Input::Catalog(CatalogRequest::Search { query, .. })) if query == "@synthetic tutorial")
+        );
+    }
 
     #[test]
     fn filter_admission_rejects_hidden_routes_and_busy_privacy_transitions() {

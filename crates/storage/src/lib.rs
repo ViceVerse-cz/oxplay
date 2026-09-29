@@ -19,6 +19,7 @@ use std::{fmt, path::Path, time::Duration};
 
 const SCHEMA_VERSION: u32 = 6;
 pub const MAX_PAGE_SIZE: u32 = 100;
+pub const MAX_PLAYLIST_FILTER_BYTES: usize = 256;
 const MAX_TEXT_BYTES: usize = 1024;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -346,6 +347,38 @@ impl LocalStore {
         let (after, fetch) = page_bounds(after, limit)?;
         let mut statement = self.connection.prepare("SELECT id,video_id,title,channel_name,channel_id,duration_seconds FROM local_playlist_items WHERE playlist_id=?1 AND id>?2 ORDER BY id LIMIT ?3")?;
         let mut query = statement.query(params![playlist.0, after, fetch])?;
+        let mut rows = Vec::with_capacity(fetch as usize);
+        while let Some(row) = query.next()? {
+            rows.push((row.get(0)?, local_video_from_row(row)?));
+        }
+        Ok(finish_page(rows, limit))
+    }
+
+    /// Literal title/channel substring search in one local playlist. SQLite's
+    /// built-in lower() folds ASCII only; other Unicode text matches exactly.
+    /// The caller must discard cursors when changing either playlist or filter.
+    pub fn filtered_playlist_videos(
+        &self,
+        playlist: LocalPlaylistId,
+        after: Option<PageCursor>,
+        limit: u32,
+        filter: &str,
+    ) -> Result<Page<VideoSummary>> {
+        if filter.len() > MAX_PLAYLIST_FILTER_BYTES || filter.chars().any(char::is_control) {
+            return Err(StorageError::InvalidInput);
+        }
+        let filter = filter.trim();
+        if filter.is_empty() {
+            return self.playlist_videos(playlist, after, limit);
+        }
+        let (after, fetch) = page_bounds(after, limit)?;
+        let mut statement = self.connection.prepare(
+            "SELECT id,video_id,title,channel_name,channel_id,duration_seconds
+             FROM local_playlist_items WHERE playlist_id=?1 AND id>?2
+             AND (instr(lower(title),lower(?4))>0 OR instr(lower(channel_name),lower(?4))>0)
+             ORDER BY id LIMIT ?3",
+        )?;
+        let mut query = statement.query(params![playlist.0, after, fetch, filter])?;
         let mut rows = Vec::with_capacity(fetch as usize);
         while let Some(row) = query.next()? {
             rows.push((row.get(0)?, local_video_from_row(row)?));

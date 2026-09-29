@@ -110,6 +110,127 @@ impl fmt::Debug for VideoId {
 }
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ChannelId(pub String);
+/// Public channel address, never a verified/stable channel identity.
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct ChannelHandle(String);
+impl ChannelHandle {
+    pub fn new(value: &str) -> Result<Self, ProviderError> {
+        let value = value.strip_prefix('@').ok_or(ProviderError::InvalidInput)?;
+        // This is a bounded address parser, not YouTube's registration policy:
+        // mixed-script length and eligibility remain the provider's decision.
+        if value.is_empty()
+            || value.len() > 400
+            || value.chars().count() > 100
+            || value.starts_with(['_', '-', '.', '·'])
+            || value.ends_with(['_', '-', '.', '·'])
+            || value.chars().any(|c| {
+                c.is_control()
+                    || c.is_whitespace()
+                    || (c.is_ascii() && !c.is_ascii_alphanumeric() && !"_.-".contains(c))
+                    || matches!(c, '\u{200b}'..='\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2060}'..='\u{206f}' | '\u{feff}')
+            })
+        {
+            return Err(ProviderError::InvalidInput);
+        }
+        Ok(Self(value.to_owned()))
+    }
+    pub fn from_url(value: &str) -> Result<Self, ProviderError> {
+        // Reject path rewrites before URL parsing normalizes dot segments or
+        // treats backslashes as separators in special-scheme URLs.
+        if value.len() > MAX_URL_BYTES
+            || value.contains('\\')
+            || value.split('/').any(|part| {
+                matches!(
+                    part.replace("%2e", ".").replace("%2E", ".").as_str(),
+                    "." | ".."
+                )
+            })
+        {
+            return Err(ProviderError::InvalidInput);
+        }
+        let url = catalog_url(value)?;
+        if url.query().is_some() || url.fragment().is_some() {
+            return Err(ProviderError::InvalidInput);
+        }
+        let mut parts = url.path().strip_prefix('/').unwrap_or("").split('/');
+        let encoded = parts.next().ok_or(ProviderError::InvalidInput)?;
+        if let Some(tab) = parts.next()
+            && !["", "videos", "shorts", "streams", "playlists", "featured"].contains(&tab)
+        {
+            return Err(ProviderError::InvalidInput);
+        }
+        if parts.next().is_some() || encoded.len() > 1203 {
+            return Err(ProviderError::InvalidInput);
+        }
+        let mut decoded = Vec::with_capacity(encoded.len());
+        let mut bytes = encoded.bytes();
+        while let Some(byte) = bytes.next() {
+            if byte == b'%' {
+                let high = bytes.next().and_then(|b| (b as char).to_digit(16));
+                let low = bytes.next().and_then(|b| (b as char).to_digit(16));
+                let (Some(high), Some(low)) = (high, low) else {
+                    return Err(ProviderError::InvalidInput);
+                };
+                decoded.push((high * 16 + low) as u8);
+            } else {
+                decoded.push(byte);
+            }
+        }
+        let decoded = std::str::from_utf8(&decoded).map_err(|_| ProviderError::InvalidInput)?;
+        Self::new(decoded)
+    }
+    pub fn browse_url(&self) -> String {
+        let mut url = Url::parse("https://www.youtube.com/").expect("fixed HTTPS URL");
+        url.set_path(&format!("/@{}", self.0));
+        url.into()
+    }
+}
+impl fmt::Debug for ChannelHandle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ChannelHandle([redacted])")
+    }
+}
+#[cfg(test)]
+mod channel_handle_tests {
+    use super::*;
+
+    #[test]
+    fn handles_roundtrip_unicode_without_allowing_address_rewrites() {
+        for input in [
+            "@synthetic-channel",
+            "@日本語",
+            "@český·kanál",
+            "@a\u{301}bc",
+        ] {
+            let handle = ChannelHandle::new(input).unwrap();
+            assert_eq!(
+                ChannelHandle::from_url(&handle.browse_url()).unwrap(),
+                handle
+            );
+        }
+        for input in [
+            "https://youtube.com.evil/@synthetic",
+            "https://user@youtube.com/@synthetic",
+            "http://youtube.com/@synthetic",
+            "https://youtube.com:444/@synthetic",
+            "https://youtube.com/@synthetic?secret=value",
+            "https://youtube.com/@synthetic#fragment",
+            "https://youtube.com/@synthetic%2fother",
+            "https://youtube.com/@synthetic%00",
+            "https://youtube.com/@synthetic/../@other",
+            "https://youtube.com/@synthetic/%2e%2e/@other",
+            "https://youtube.com/@synthetic\\videos",
+            "https://youtube.com/@synthetic/videos/extra",
+            "https://youtube.com/@synthetic%FF",
+            "https://youtube.com/@synthetic%zz",
+        ] {
+            assert!(ChannelHandle::from_url(input).is_err(), "{input}");
+        }
+        assert!(ChannelHandle::new("@name tutorial").is_err());
+        assert!(ChannelHandle::new("@name\u{202e}").is_err());
+        assert!(ChannelHandle::new(&format!("@{}", "x".repeat(101))).is_err());
+    }
+}
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PlaylistId(pub String);
 impl ChannelId {

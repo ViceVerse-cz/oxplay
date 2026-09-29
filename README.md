@@ -73,7 +73,10 @@ The opt-in `--scoped-media` diagnostic on macOS requires the first-party
 helper is supervised and bounded; the experimental transport is not a proxy or
 production-network qualification claim.
 The shared watch controls offer a quality ceiling and selected-only guest VTT captions.
-Channel-handle resolution remains unfinished. Public paging uses bounded helper
+The search field opens standalone `@handles` and HTTPS channel-handle links,
+then uses the returned stable channel ID for paging, tabs and local following.
+See [channel handles](docs/channel-handles.md) for input and validation limits.
+Public paging uses bounded helper
 slices; deep-page efficiency is not yet qualified. See the
 [guest catalog UI evidence](docs/guest-catalog-ui.md).
 The CC button opens the [guest caption selector](docs/captions.md) for online videos
@@ -82,6 +85,13 @@ Home opens your recently saved local videos, deduplicated across playlists, with
 bounded Next/Previous pages. It starts without fetching thumbnails or remote
 recommendations. Save videos to a local playlist to populate it; local collections
 stay separate from your YouTube account. See [local Home](docs/local-home.md).
+Local playlists also offer **Search this playlist**, with Apply/Enter and Clear,
+to find saved titles and channel names beyond the visible page without network
+access. See [local library](docs/local-library-ui.md).
+
+**Share** on the watch page offers a public video link or a link at the current
+playback time. It copies neither signed media URLs nor account credentials, and
+sends nothing automatically. See [sharing](docs/sharing.md).
 
 The picture-in-picture button or **P** switches the same window into a borderless floating
 player with controls inside the video; **P**, **Escape** or closing that compact window restores browsing.

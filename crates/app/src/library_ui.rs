@@ -132,6 +132,11 @@ struct CreatedSelection {
     id: LocalPlaylistId,
     context: CreateContext,
 }
+struct PendingFilter {
+    ticket: u64,
+    origin: Route,
+    filter: String,
+}
 #[derive(Clone, Default)]
 struct CollectionWindow {
     current: PlaylistWindow,
@@ -219,6 +224,8 @@ impl Pagination {
 }
 #[derive(Default)]
 pub struct State {
+    filter: RefCell<String>,
+    pending_filter: RefCell<Option<PendingFilter>>,
     rename_target: RefCell<Option<RenameTarget>>,
     name_write: RefCell<Option<NameWrite>>,
     rows: Rc<slint::VecModel<LibraryRow>>,
@@ -481,7 +488,7 @@ fn selected(app: &App, s: &UiState) -> Option<LocalPlaylistId> {
 fn submit(app: &App, s: &UiState, request: library::Request) -> bool {
     let trace_kind = match &request {
         library::Request::ReadPage {
-            page: library::PageQuery::Videos(..),
+            page: library::PageQuery::Videos(..) | library::PageQuery::FilteredVideos(..),
             ..
         } => "video-page-queued",
         library::Request::ReadPage {
@@ -789,13 +796,80 @@ fn refresh(app: &App, s: &UiState) -> bool {
             library::PageQuery::Subscriptions(s.library_ui.pages.borrow().page())
         }
         Route::History(_) => library::PageQuery::History(s.library_ui.pages.borrow().history()),
-        Route::Videos(id, _) => library::PageQuery::Videos(*id, s.library_ui.pages.borrow().page()),
+        Route::Videos(id, _) => video_query(
+            *id,
+            s.library_ui.pages.borrow().page(),
+            &s.library_ui.filter.borrow(),
+        ),
         _ => {
             publish(app, s, Vec::new(), None);
             return false;
         }
     };
     read_page(app, s, route, page)
+}
+fn video_query(id: LocalPlaylistId, after: Option<PageCursor>, filter: &str) -> library::PageQuery {
+    if filter.is_empty() {
+        library::PageQuery::Videos(id, after)
+    } else {
+        library::PageQuery::FilteredVideos(id, after, filter.to_owned())
+    }
+}
+fn reset_filter(app: &App, state: &UiState) {
+    state.library_ui.filter.borrow_mut().clear();
+    state.library_ui.pending_filter.borrow_mut().take();
+    let ui = app.global::<LibraryUi>();
+    ui.set_filter_draft("".into());
+    ui.set_active_filter("".into());
+}
+fn apply_filter(app: &App, state: &UiState, draft: &str) {
+    let ui = app.global::<LibraryUi>();
+    if app.get_page() != 1
+        || ui.get_tab() != 0
+        || ui.get_confirmation() != 0
+        || state.library_ui.pending.get()
+    {
+        return;
+    }
+    let Some(id) = selected(app, state) else {
+        return;
+    };
+    if draft.len() > serein_storage::MAX_PLAYLIST_FILTER_BYTES
+        || draft.chars().any(char::is_control)
+    {
+        status(
+            app,
+            "Use a shorter playlist search without control characters (up to 256 bytes).",
+        );
+        return;
+    }
+    let filter = draft.trim();
+    let Some(epoch) = next_epoch(app, &state.library_ui.route_epoch) else {
+        return;
+    };
+    let origin = current_route(app, state);
+    if !read_page(
+        app,
+        state,
+        Route::Videos(id, epoch),
+        video_query(id, None, filter),
+    ) {
+        return;
+    }
+    let ticket = state
+        .library_ui
+        .reads
+        .borrow()
+        .pending
+        .as_ref()
+        .map(|(ticket, _)| *ticket);
+    if let Some(ticket) = ticket {
+        *state.library_ui.pending_filter.borrow_mut() = Some(PendingFilter {
+            ticket,
+            origin,
+            filter: filter.to_owned(),
+        });
+    }
 }
 /// Finite diagnostics request the same bounded production refresh and track
 /// its terminal ticket independently of model invalidation counts.
@@ -951,6 +1025,7 @@ fn publish_collections(
     if let Some(epoch) = next_route {
         s.library_ui.route_epoch.set(epoch);
         *s.library_ui.pages.borrow_mut() = Pagination::default();
+        reset_filter(app, s);
     }
     app.set_selected_playlist(index);
     app.global::<LibraryUi>().set_selected(index);
@@ -1050,6 +1125,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     // An old success OR failure cannot complete a newer request.
                     let route = s.library_ui.reads.borrow_mut().finish(ticket);
                     let Some(route) = route else { continue; };
+                    let filter_change = if s.library_ui.pending_filter.borrow().as_ref().is_some_and(|pending| pending.ticket == ticket) {
+                        s.library_ui.pending_filter.borrow_mut().take()
+                    } else { None };
                     let collection_origin=if matches!(route,Route::Collections(_)) {
                         s.library_ui.collection_origin.borrow_mut().take()
                     } else { None };
@@ -1057,6 +1135,11 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     complete(&app,&s);
                     let current = if matches!(route,Route::Collections(_)) {
                         Route::Collections(s.library_ui.collection_epoch.get())
+                    } else if let Some(change) = &filter_change {
+                        if change.origin != current_route(&app,&s) || app.get_page() != 1 {
+                            continue;
+                        }
+                        route.clone()
                     } else { current_route(&app,&s) };
                     if route != current || s.caption_cache.active() { continue; }
                     if created.as_ref().is_some_and(|selection| !context_matches(&app, &s, selection.context)) {
@@ -1067,6 +1150,17 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let result = match result { Ok(page) if route.accepts(&page) => page,
                         Ok(_) => { restore_collection_page(&s.library_ui,collection_origin); status(&app,"Unexpected local-library page. Please reopen this view."); continue; },
                         Err(error) => { restore_collection_page(&s.library_ui,collection_origin); status(&app,if created.is_some() { format!("Playlist created, but its page could not be loaded. {error}") } else { error }); continue; } };
+                    if let Some(change) = filter_change {
+                        let Route::Videos(_, epoch) = route else { continue };
+                        s.library_ui.route_epoch.set(epoch);
+                        cancel_name(&app, &s);
+                        *s.library_ui.pages.borrow_mut() = Pagination::default();
+                        let ui = app.global::<LibraryUi>();
+                        ui.set_active_filter(change.filter.as_str().into());
+                        ui.set_filter_draft(change.filter.as_str().into());
+                        *s.library_ui.filter.borrow_mut() = change.filter;
+                        status(&app, "Playlist search updated. Only saved titles and channel names on this device are searched.");
+                    }
                     let published = match result {
                         library::PageResult::Collections(page) => {
                             let prefer = created.map(|selection| selection.id);
@@ -1225,6 +1319,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     crate::guest_ui::clear_cached_catalog(&app, &s);
                     crate::home_ui::cleared(&app, &s);
                     cancel_name(&app,&s);
+                    reset_filter(&app, &s);
                     s.library_ui.name_write.borrow_mut().take();
                     app.global::<LibraryUi>().set_name_draft("".into());
                     // Install the committed defaults before reopening admission:
@@ -1271,6 +1366,13 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
+    app.global::<LibraryUi>().on_filter(move |draft| {
+        if let Some(app) = weak.upgrade() {
+            apply_filter(&app, &s, &draft);
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
     app.on_choose_playlist(move |index| {
         let Some(app) = weak.upgrade() else { return };
         if s.library_ui.pending.get() || app.global::<LibraryUi>().get_tab() != 0 {
@@ -1298,6 +1400,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         }
         s.library_ui.route_epoch.set(epoch);
         cancel_name(&app, &s);
+        reset_filter(&app, &s);
         app.set_selected_playlist(index);
         app.global::<LibraryUi>().set_selected(index);
         *s.library_ui.pages.borrow_mut() = Pagination::default();
@@ -1324,7 +1427,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             let (route, query) = match current_route(&app, &s) {
                 Route::Videos(id, _) => (
                     Route::Videos(id, epoch),
-                    library::PageQuery::Videos(id, page.page()),
+                    video_query(id, page.page(), &s.library_ui.filter.borrow()),
                 ),
                 Route::Subscriptions(_) => (
                     Route::Subscriptions(epoch),
@@ -1786,7 +1889,9 @@ pub fn open_tab(app: &App, state: &UiState, tab: i32) -> bool {
     if app.get_page() == 1 && ui.get_tab() == tab {
         return false;
     }
-    let route_changed = ui.get_tab() != tab || state.library_ui.pages.borrow().current.is_some();
+    let route_changed = ui.get_tab() != tab
+        || state.library_ui.pages.borrow().current.is_some()
+        || !state.library_ui.filter.borrow().is_empty();
     let epoch = if route_changed {
         let Some(epoch) = next_epoch(app, &state.library_ui.route_epoch) else {
             return false;
@@ -1815,6 +1920,7 @@ pub fn open_tab(app: &App, state: &UiState, tab: i32) -> bool {
     }
     state.library_ui.route_epoch.set(epoch);
     cancel_name(app, state);
+    reset_filter(app, state);
     ui.set_tab(tab);
     if route_changed {
         *state.library_ui.pages.borrow_mut() = Pagination::default();

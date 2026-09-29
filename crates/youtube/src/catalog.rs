@@ -4,8 +4,8 @@
 use crate::{YtDlp, is_promoted, safe_thumbnail, summary};
 use serde_json::Value;
 use serein_core::{
-    CatalogItem, ChannelId, ChannelSummary, OperationContext, PlaylistId, PlaylistSummary,
-    ProviderError,
+    CatalogItem, ChannelHandle, ChannelId, ChannelSummary, OperationContext, PlaylistId,
+    PlaylistSummary, ProviderError,
 };
 use url::Url;
 
@@ -28,9 +28,21 @@ pub enum ChannelTab {
 }
 #[derive(Clone, PartialEq, Eq)]
 pub enum CatalogRequest {
-    Search { query: String, kind: SearchKind },
-    Channel { id: ChannelId, tab: ChannelTab },
-    Playlist { id: PlaylistId },
+    Search {
+        query: String,
+        kind: SearchKind,
+    },
+    Channel {
+        id: ChannelId,
+        tab: ChannelTab,
+    },
+    ChannelHandle {
+        handle: ChannelHandle,
+        tab: ChannelTab,
+    },
+    Playlist {
+        id: PlaylistId,
+    },
 }
 #[derive(Clone)]
 pub struct CatalogCursor {
@@ -80,18 +92,19 @@ impl CatalogRequest {
                 }
                 Ok(url.into())
             }
-            Self::Channel { id, tab } => {
-                let id = ChannelId::new(id.as_str())?;
+            Self::Channel { tab, .. } | Self::ChannelHandle { tab, .. } => {
+                let base = match self {
+                    Self::Channel { id, .. } => ChannelId::new(id.as_str())?.browse_url(),
+                    Self::ChannelHandle { handle, .. } => handle.browse_url(),
+                    _ => unreachable!(),
+                };
                 let tab = match tab {
                     ChannelTab::Videos => "videos",
                     ChannelTab::Shorts => "shorts",
                     ChannelTab::Streams => "streams",
                     ChannelTab::Playlists => "playlists",
                 };
-                Ok(format!(
-                    "https://www.youtube.com/channel/{}/{tab}",
-                    id.as_str()
-                ))
+                Ok(format!("{base}/{tab}"))
             }
             Self::Playlist { id } => Ok(PlaylistId::new(id.as_str())?.browse_url()),
         }
@@ -122,6 +135,9 @@ impl CatalogRequest {
                 } | Self::Channel {
                     tab: ChannelTab::Videos | ChannelTab::Shorts | ChannelTab::Streams,
                     ..
+                } | Self::ChannelHandle {
+                    tab: ChannelTab::Videos | ChannelTab::Shorts | ChannelTab::Streams,
+                    ..
                 } | Self::Playlist { .. }
             ),
             CatalogItem::Channel(_) => matches!(
@@ -137,6 +153,9 @@ impl CatalogRequest {
                     kind: SearchKind::Playlists,
                     ..
                 } | Self::Channel {
+                    tab: ChannelTab::Playlists,
+                    ..
+                } | Self::ChannelHandle {
                     tab: ChannelTab::Playlists,
                     ..
                 }
@@ -291,6 +310,7 @@ fn parse_page(
             }
             CatalogHeader::Channel(item)
         }
+        CatalogRequest::ChannelHandle { .. } => CatalogHeader::Channel(channel(value)?),
         CatalogRequest::Playlist { id } => {
             let item = playlist(value)?;
             if item.id != *id {
@@ -322,8 +342,18 @@ fn parse_page(
     }
     let more = entries.len() > PAGE_SIZE;
     let limit_reached = more && start + PAGE_SIZE >= request.limit();
+    // Resolve mutable handles once; continuation follows the real UC identity.
+    let canonical = match (request, &header) {
+        (CatalogRequest::ChannelHandle { tab, .. }, CatalogHeader::Channel(channel)) => {
+            CatalogRequest::Channel {
+                id: channel.id.clone(),
+                tab: *tab,
+            }
+        }
+        _ => request.clone(),
+    };
     let next = (more && !limit_reached).then(|| CatalogCursor {
-        request: request.clone(),
+        request: canonical,
         offset: start + PAGE_SIZE,
         generation,
     });
@@ -493,5 +523,31 @@ mod tests {
             panic!("wrong header")
         };
         assert_eq!(header.video_count, Some(7));
+    }
+
+    #[test]
+    fn handle_resolution_requires_real_identity_and_pins_continuation_to_it() {
+        let request = CatalogRequest::ChannelHandle {
+            handle: ChannelHandle::new("@synthetic-channel").unwrap(),
+            tab: ChannelTab::Videos,
+        };
+        assert_eq!(
+            request.url().unwrap(),
+            "https://www.youtube.com/@synthetic-channel/videos"
+        );
+        let mut response = channel_item();
+        response["_type"] = json!("playlist");
+        response["entries"] = json!(vec![video(); 21]);
+        let page = parse_page(&response, &request, 0, 7).unwrap();
+        let cursor = page.next.unwrap();
+        assert!(
+            matches!(cursor.request, CatalogRequest::Channel { ref id, tab: ChannelTab::Videos }
+            if id.as_str() == "UCabcdefghijklmnopqrstuv")
+        );
+        assert_eq!(cursor.generation, 7);
+        assert_eq!(cursor.offset, PAGE_SIZE);
+        response["channel_id"] = json!("@synthetic-channel");
+        response["id"] = json!("@synthetic-channel");
+        assert!(parse_page(&response, &request, 0, 7).is_err());
     }
 }

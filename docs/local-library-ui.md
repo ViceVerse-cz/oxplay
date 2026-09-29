@@ -3,6 +3,19 @@
 The shared `ui/library.slint` page and `src/library_ui.rs` adapter expose the SQLite worker's local collection, follow, and history operations. These are device-local features. They do not perform YouTube account mutations.
 
 - Collection and video pages contain at most 100 records. Previous-page navigation retains at most 1,024 opaque cursors; each displayed page replaces the preceding page rather than accumulating the entire database. The shared Slint ListView virtualizes visible rows. Collection rename, deletion, video removal, and saving the current resolved video use typed IDs.
+- **Search this playlist** filters saved video titles and channel names with
+  Apply/Enter and Clear. It searches the selected local playlist on the SQLite
+  worker, including entries beyond the current page; it makes no network request.
+  Search text is limited to 256 UTF-8 bytes and matched literally, so `%`, `_`
+  and quotes are not SQL patterns. SQLite folds ASCII letter case; other Unicode
+  text currently matches exactly. Results remain bounded to 100 and use the
+  existing keyset cursor. A new filter gets a fresh first page; selection, tab or
+  browsing-context changes clear it. The typed draft is separate from the
+  acknowledged-results label and playlist Create/Rename draft. Failed queue
+  admission or a failed filter read preserves the preceding rows, filter and
+  cursors. The focused synthetic storage regression was added but has not been
+  executed in this implementation pass; native keyboard/visual qualification of
+  these new controls remains open. Historical validation below predates them.
 - Local follows retain channel IDs and names. Opening a follow validates the stored canonical channel ID and opens that public channel through the guest catalog; the display name is never substituted as a search query. Malformed stored identities fail closed. The channel page can save a local follow using its genuine returned header metadata. These actions never subscribe the YouTube account.
 - History is disabled initially. The UI's opt-in becomes active only after the storage worker acknowledges persistence, and SQLite rechecks the setting when recording. Playing-media notifications record at most once per video/30-second position bucket; this feature adds no periodic timer. The default retention is 30 days, with 7/30/90-day controls. Users can delete individual entries or clear history.
 - Collection deletion, history clearing, and local-data clearing require a confirmation in the shared UI. Other library controls are disabled while that confirmation is visible, and collection deletion names the selected collection.

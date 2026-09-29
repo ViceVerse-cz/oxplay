@@ -34,6 +34,7 @@ pub struct VideoSave {
 pub enum PageQuery {
     Collections(PlaylistWindow),
     Videos(LocalPlaylistId, Option<PageCursor>),
+    FilteredVideos(LocalPlaylistId, Option<PageCursor>, String),
     Subscriptions(Option<PageCursor>),
     History(Option<HistoryCursor>),
 }
@@ -233,6 +234,10 @@ fn read_page(store: &LocalStore, page: PageQuery) -> serein_storage::Result<Page
         PageQuery::Videos(id, after) => {
             PageResult::Videos(id, store.playlist_videos(id, after, MAX_PAGE_SIZE)?)
         }
+        PageQuery::FilteredVideos(id, after, filter) => PageResult::Videos(
+            id,
+            store.filtered_playlist_videos(id, after, MAX_PAGE_SIZE, &filter)?,
+        ),
         PageQuery::Subscriptions(after) => {
             PageResult::Subscriptions(store.subscriptions(after, MAX_PAGE_SIZE)?)
         }

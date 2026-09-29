@@ -46,6 +46,7 @@ mod recovery_smoke;
 mod related_focus_smoke;
 mod resolver;
 mod save_smoke;
+mod share_ui;
 mod soak_smoke;
 mod thumbnails;
 use catalog::{Response, Worker};
@@ -77,6 +78,7 @@ struct UiState {
     presentation_retry: Cell<bool>,
     progress: Timer,
     controls_ui: controls_ui::State,
+    share_ui: share_ui::State,
     clock_ui: clock_ui::State,
     hidden: Cell<bool>,
     model: Rc<CatalogModel<VideoRow>>,
@@ -141,6 +143,7 @@ fn apply_clock(app: &App, state: &UiState, values: clock_ui::Values) {
 fn update(app: &App, state: &Rc<UiState>) {
     account_playback::observe(app, state);
     let snapshot = state.player.drain_events();
+    share_ui::observe(app, state, &snapshot);
     playback_preferences::observe(app, state, &snapshot);
     caption_ui::observe(app, state, &snapshot);
     playback_ui::observe(app, state, &snapshot);
@@ -865,6 +868,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         presentation_retry: Cell::new(false),
         progress: Timer::default(),
         controls_ui: controls_ui::State::default(),
+        share_ui: share_ui::State::default(),
         clock_ui: clock_ui::State::new(options.stage_progress),
         hidden: Cell::new(false),
         model: Rc::new(CatalogModel::default()),
@@ -1066,6 +1070,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     controls_ui::connect(&app, &state);
+    share_ui::connect(&app, &state);
     let weak = app.as_weak();
     let s = state.clone();
     app.on_toggle_controls(move || {

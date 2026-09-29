@@ -642,6 +642,94 @@ fn updates_preserve_identity_and_removal_is_local() {
 }
 
 #[test]
+fn playlist_search_is_literal_scoped_and_keeps_filtered_keyset_pages() {
+    let store = LocalStore::in_memory().unwrap();
+    let one = store.create_playlist("Search fixture").unwrap();
+    let two = store.create_playlist("Separate fixture").unwrap();
+    for index in 0..203 {
+        let mut item = video(index);
+        item.title = if index % 2 == 0 {
+            "Match %_ title"
+        } else {
+            "Other title"
+        }
+        .into();
+        item.channel = "Fixture channel".into();
+        store.save_video(one, &item).unwrap();
+        store.save_video(two, &item).unwrap();
+    }
+    let first = store
+        .filtered_playlist_videos(one, None, 100, "MATCH %_")
+        .unwrap();
+    assert_eq!(first.items.len(), 100);
+    assert_eq!(first.items[99].id, video(198).id);
+    store.remove_video(one, &video(0).id).unwrap();
+    let second = store
+        .filtered_playlist_videos(one, first.next, 100, "MATCH %_")
+        .unwrap();
+    assert_eq!(
+        second
+            .items
+            .iter()
+            .map(|item| item.id.clone())
+            .collect::<Vec<_>>(),
+        vec![video(200).id, video(202).id]
+    );
+    assert!(second.next.is_none());
+    assert_eq!(
+        store
+            .filtered_playlist_videos(two, None, 1, "%_")
+            .unwrap()
+            .items[0]
+            .id,
+        video(0).id
+    );
+    assert_eq!(
+        store
+            .filtered_playlist_videos(one, None, 1, "fixture CHANNEL")
+            .unwrap()
+            .items[0]
+            .id,
+        video(1).id
+    );
+    assert!(
+        store
+            .filtered_playlist_videos(one, None, 100, "' OR 1=1 --")
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    assert!(
+        store
+            .filtered_playlist_videos(one, None, 101, "match")
+            .is_err()
+    );
+    assert!(
+        store
+            .filtered_playlist_videos(one, None, 0, "match")
+            .is_err()
+    );
+    assert!(
+        store
+            .filtered_playlist_videos(one, None, 100, &"x".repeat(MAX_PLAYLIST_FILTER_BYTES + 1))
+            .is_err()
+    );
+    assert!(
+        store
+            .filtered_playlist_videos(one, None, 100, "match\n")
+            .is_err()
+    );
+    assert_eq!(
+        store
+            .filtered_playlist_videos(one, None, 100, "  ")
+            .unwrap()
+            .items
+            .len(),
+        100
+    );
+}
+
+#[test]
 fn backup_is_consistent_and_never_overwrites() {
     let directory = tempfile::tempdir().unwrap();
     let backup = directory.path().join("backup.sqlite3");
