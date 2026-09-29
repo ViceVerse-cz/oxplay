@@ -171,3 +171,28 @@ builds; its scope and captures are documented in
 The exact-commit source preview and every checksum verified locally, including
 the new diagnostic and shared controls. No performance/usage test ran, and no
 release/tag was published. Linux compilation for this source remains unverified.
+
+## Inline controls, borderless PiP and collection windows checkpoint
+
+Source `aba082ebda0765e7444570ae40402a7cccf50b37` is pushed.
+[CI run 36598316363](https://github.com/ViceVerse-cz/yt/actions/runs/36598316363)
+failed before either job executed a step. Both annotations again report failed
+account payments or a spending-limit issue; macOS also has an ARM64 capacity
+notice. No remote compilation or test result exists for this source. Hosted
+runner admission remains blocked until repository billing is resolved.
+
+Local formatting, strict Clippy, 428 Rust tests (four explicit integrations
+ignored) and locked debug/release workspace builds passed. The final local
+PiP exercise passed nine stages and three correlated native frame/stacking
+probes in both builds. The collection diagnostic passed fourteen stages and
+persisted-state checks in both builds. Scope and captures are documented in
+[PiP](picture-in-picture.md#inline-controls-and-borderless-update) and
+[collection windows](library-reconciliation.md#created-playlist-windows-beyond-the-first-page).
+No performance or usage benchmarks were run. Python tooling was unchanged in
+this slice; its preceding 163-test pass remains historical evidence.
+
+The local exact-commit source preview includes `collection_window_smoke.rs`,
+`playlist_window_tests.rs` and both PiP modules. The source archive, release
+metadata and notes all passed their SHA-256 manifest verification. No workflow
+dispatch, tag or release was created. Linux compilation for this source remains
+unverified.

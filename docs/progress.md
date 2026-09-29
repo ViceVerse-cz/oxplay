@@ -27,8 +27,13 @@ recorded. Final locked debug and release builds passed. The release PiP check
 passed all nine stages and three native probes, including borderless 480×270
 geometry, readable subtitle/control capture and restoration. The release
 collection check passed all fourteen stages at 760×600/light with the same
-persisted results. All owned native test processes were reaped. The new remote
-run is pending. No performance or usage test was run.
+persisted results. All owned native test processes were reaped. Source `aba082e`
+is pushed. [Its CI run](https://github.com/ViceVerse-cz/yt/actions/runs/36598316363)
+failed before either job could execute: both annotations report failed account
+payments or a spending-limit issue. No remote build/test result exists for this
+source. The exact-commit source preview includes both new diagnostic/regression
+modules and PiP changes; all asset checksums verified. No tag/release was created
+and no performance or usage test was run.
 
 The preceding slice fixes [playlist keyboard editing and confirmation focus](library-reconciliation.md#keyboard-name-editing-and-confirmations).
 The editor stays focused/read-only during writes, Escape safely cancels unsubmitted
