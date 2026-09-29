@@ -1,0 +1,13 @@
+[package]
+name = "serein-media"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+slint.workspace = true
+glow = "0.18"
+
+[build-dependencies]
+pkg-config = "0.3"
+cc = "=1.5.1"

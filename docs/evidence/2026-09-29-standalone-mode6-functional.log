@@ -1,0 +1,12 @@
+swap_mode=6
+swap_interval_set=0
+native_swap_interval=0 set_result=0
+GL vendor=Apple renderer=Apple M1 version=4.1 Metal - 91.7
+drawable=1384x778
+display=1440x900@60Hz block=0 timing_offset=0.05 SDL=2.32.72
+advanced_control=0
+elapsed_ms=10075 notifications=594 draws=592 dropped=1 decoder_dropped=0 hwdec=videotoolbox ao=avfoundation codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 audio_codec=aac audio_rate=48000 video=1920x1080 fps=60.000 playing=1 paused=0 hidden=0
+clock starts=1 stops=0 ticks=595 active=1 prevents_display_sleep=1
+elapsed_ms=10076 notifications=594 draws=592 dropped=1 decoder_dropped=0 hwdec=videotoolbox ao=avfoundation codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 audio_codec=aac audio_rate=48000 video=1920x1080 fps=60.000 playing=1 paused=0 hidden=0
+clock starts=1 stops=0 ticks=595 active=1 prevents_display_sleep=1
+clock starts=1 stops=1 ticks=595

@@ -1,0 +1,455 @@
+{
+  "local_functional_evidence_complete": true,
+  "evidence_failures": [],
+  "full_spec_soak_gate": false,
+  "performance_acceptance": "not_qualified_by_mixed_use_soak",
+  "mixed_use_resource_observations": {
+    "rss_mib": {
+      "mean": 232.69028645833333,
+      "p95": 254.625,
+      "peak": 257.3125
+    },
+    "cpu_one_core_percent": {
+      "mean": 34.53858167839863,
+      "p95": 63.431519360917214,
+      "peak": 68.99644668405737
+    }
+  },
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "source_scope": "identity-label consistency only; captured build-input hashes require a separate comparison with Git",
+  "checkpoint_count": 120,
+  "observed_decoders": [
+    "videotoolbox"
+  ],
+  "observed_video": [
+    "1920x1080@60.000 H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"
+  ],
+  "maximum_decoder_drop_counter": 0,
+  "maximum_vo_drop_counter": 110,
+  "drop_counter_scope": "transition checkpoints; counters reset on seeks/loads, not a cumulative or steady frame-pacing result",
+  "rss_minute_medians": [
+    {
+      "minute": 1,
+      "sample_count": 59,
+      "rss_median_mib": 190.46875
+    },
+    {
+      "minute": 2,
+      "sample_count": 60,
+      "rss_median_mib": 195.9375
+    },
+    {
+      "minute": 3,
+      "sample_count": 60,
+      "rss_median_mib": 197.015625
+    },
+    {
+      "minute": 4,
+      "sample_count": 60,
+      "rss_median_mib": 197.640625
+    },
+    {
+      "minute": 5,
+      "sample_count": 60,
+      "rss_median_mib": 198.671875
+    },
+    {
+      "minute": 6,
+      "sample_count": 60,
+      "rss_median_mib": 204.640625
+    },
+    {
+      "minute": 7,
+      "sample_count": 60,
+      "rss_median_mib": 206.375
+    },
+    {
+      "minute": 8,
+      "sample_count": 60,
+      "rss_median_mib": 212.34375
+    },
+    {
+      "minute": 9,
+      "sample_count": 60,
+      "rss_median_mib": 214.125
+    },
+    {
+      "minute": 10,
+      "sample_count": 60,
+      "rss_median_mib": 216.1875
+    },
+    {
+      "minute": 11,
+      "sample_count": 60,
+      "rss_median_mib": 217.7265625
+    },
+    {
+      "minute": 12,
+      "sample_count": 60,
+      "rss_median_mib": 218.203125
+    },
+    {
+      "minute": 13,
+      "sample_count": 60,
+      "rss_median_mib": 219.1875
+    },
+    {
+      "minute": 14,
+      "sample_count": 60,
+      "rss_median_mib": 219.8203125
+    },
+    {
+      "minute": 15,
+      "sample_count": 60,
+      "rss_median_mib": 223.734375
+    },
+    {
+      "minute": 16,
+      "sample_count": 60,
+      "rss_median_mib": 224.6015625
+    },
+    {
+      "minute": 17,
+      "sample_count": 60,
+      "rss_median_mib": 225.578125
+    },
+    {
+      "minute": 18,
+      "sample_count": 60,
+      "rss_median_mib": 225.9609375
+    },
+    {
+      "minute": 19,
+      "sample_count": 60,
+      "rss_median_mib": 226.890625
+    },
+    {
+      "minute": 20,
+      "sample_count": 60,
+      "rss_median_mib": 227.3828125
+    },
+    {
+      "minute": 21,
+      "sample_count": 60,
+      "rss_median_mib": 228.671875
+    },
+    {
+      "minute": 22,
+      "sample_count": 60,
+      "rss_median_mib": 229.0625
+    },
+    {
+      "minute": 23,
+      "sample_count": 60,
+      "rss_median_mib": 229.9609375
+    },
+    {
+      "minute": 24,
+      "sample_count": 60,
+      "rss_median_mib": 230.3359375
+    },
+    {
+      "minute": 25,
+      "sample_count": 60,
+      "rss_median_mib": 231.203125
+    },
+    {
+      "minute": 26,
+      "sample_count": 60,
+      "rss_median_mib": 232.125
+    },
+    {
+      "minute": 27,
+      "sample_count": 60,
+      "rss_median_mib": 233.0078125
+    },
+    {
+      "minute": 28,
+      "sample_count": 60,
+      "rss_median_mib": 233.4140625
+    },
+    {
+      "minute": 29,
+      "sample_count": 60,
+      "rss_median_mib": 234.21875
+    },
+    {
+      "minute": 30,
+      "sample_count": 60,
+      "rss_median_mib": 234.609375
+    },
+    {
+      "minute": 31,
+      "sample_count": 60,
+      "rss_median_mib": 236.0
+    },
+    {
+      "minute": 32,
+      "sample_count": 60,
+      "rss_median_mib": 236.3828125
+    },
+    {
+      "minute": 33,
+      "sample_count": 60,
+      "rss_median_mib": 237.3046875
+    },
+    {
+      "minute": 34,
+      "sample_count": 60,
+      "rss_median_mib": 237.8046875
+    },
+    {
+      "minute": 35,
+      "sample_count": 60,
+      "rss_median_mib": 238.53125
+    },
+    {
+      "minute": 36,
+      "sample_count": 60,
+      "rss_median_mib": 239.3828125
+    },
+    {
+      "minute": 37,
+      "sample_count": 60,
+      "rss_median_mib": 240.21875
+    },
+    {
+      "minute": 38,
+      "sample_count": 60,
+      "rss_median_mib": 240.578125
+    },
+    {
+      "minute": 39,
+      "sample_count": 60,
+      "rss_median_mib": 241.4140625
+    },
+    {
+      "minute": 40,
+      "sample_count": 60,
+      "rss_median_mib": 241.828125
+    },
+    {
+      "minute": 41,
+      "sample_count": 60,
+      "rss_median_mib": 243.125
+    },
+    {
+      "minute": 42,
+      "sample_count": 60,
+      "rss_median_mib": 243.484375
+    },
+    {
+      "minute": 43,
+      "sample_count": 60,
+      "rss_median_mib": 244.390625
+    },
+    {
+      "minute": 44,
+      "sample_count": 60,
+      "rss_median_mib": 244.7734375
+    },
+    {
+      "minute": 45,
+      "sample_count": 60,
+      "rss_median_mib": 245.6484375
+    },
+    {
+      "minute": 46,
+      "sample_count": 60,
+      "rss_median_mib": 246.5
+    },
+    {
+      "minute": 47,
+      "sample_count": 60,
+      "rss_median_mib": 247.34375
+    },
+    {
+      "minute": 48,
+      "sample_count": 60,
+      "rss_median_mib": 247.7109375
+    },
+    {
+      "minute": 49,
+      "sample_count": 60,
+      "rss_median_mib": 248.5703125
+    },
+    {
+      "minute": 50,
+      "sample_count": 60,
+      "rss_median_mib": 248.9921875
+    },
+    {
+      "minute": 51,
+      "sample_count": 60,
+      "rss_median_mib": 250.1875
+    },
+    {
+      "minute": 52,
+      "sample_count": 60,
+      "rss_median_mib": 250.6015625
+    },
+    {
+      "minute": 53,
+      "sample_count": 60,
+      "rss_median_mib": 251.4375
+    },
+    {
+      "minute": 54,
+      "sample_count": 60,
+      "rss_median_mib": 251.890625
+    },
+    {
+      "minute": 55,
+      "sample_count": 60,
+      "rss_median_mib": 252.765625
+    },
+    {
+      "minute": 56,
+      "sample_count": 60,
+      "rss_median_mib": 253.5703125
+    },
+    {
+      "minute": 57,
+      "sample_count": 60,
+      "rss_median_mib": 254.328125
+    },
+    {
+      "minute": 58,
+      "sample_count": 60,
+      "rss_median_mib": 254.7890625
+    },
+    {
+      "minute": 59,
+      "sample_count": 60,
+      "rss_median_mib": 255.59375
+    },
+    {
+      "minute": 60,
+      "sample_count": 60,
+      "rss_median_mib": 256.046875
+    }
+  ],
+  "rss_matched_minute_comparisons": [
+    {
+      "earlier_minute": 11,
+      "later_minute": 41,
+      "growth_percent": 11.665291183752547
+    },
+    {
+      "earlier_minute": 12,
+      "later_minute": 42,
+      "growth_percent": 11.586108127461504
+    },
+    {
+      "earlier_minute": 13,
+      "later_minute": 43,
+      "growth_percent": 11.498431708012546
+    },
+    {
+      "earlier_minute": 14,
+      "later_minute": 44,
+      "growth_percent": 11.35160109464406
+    },
+    {
+      "earlier_minute": 15,
+      "later_minute": 45,
+      "growth_percent": 9.79467839932957
+    },
+    {
+      "earlier_minute": 16,
+      "later_minute": 46,
+      "growth_percent": 9.749904344498939
+    },
+    {
+      "earlier_minute": 17,
+      "later_minute": 47,
+      "growth_percent": 9.648819006718856
+    },
+    {
+      "earlier_minute": 18,
+      "later_minute": 48,
+      "growth_percent": 9.625557514780624
+    },
+    {
+      "earlier_minute": 19,
+      "later_minute": 49,
+      "growth_percent": 9.555127057365187
+    },
+    {
+      "earlier_minute": 20,
+      "later_minute": 50,
+      "growth_percent": 9.503521731661223
+    },
+    {
+      "earlier_minute": 21,
+      "later_minute": 51,
+      "growth_percent": 9.408951144516564
+    },
+    {
+      "earlier_minute": 22,
+      "later_minute": 52,
+      "growth_percent": 9.403137789904491
+    },
+    {
+      "earlier_minute": 23,
+      "later_minute": 53,
+      "growth_percent": 9.339222014608461
+    },
+    {
+      "earlier_minute": 24,
+      "later_minute": 54,
+      "growth_percent": 9.35793508123326
+    },
+    {
+      "earlier_minute": 25,
+      "later_minute": 55,
+      "growth_percent": 9.326214773264851
+    },
+    {
+      "earlier_minute": 26,
+      "later_minute": 56,
+      "growth_percent": 9.238691437802915
+    },
+    {
+      "earlier_minute": 27,
+      "later_minute": 57,
+      "growth_percent": 9.150041911148366
+    },
+    {
+      "earlier_minute": 28,
+      "later_minute": 58,
+      "growth_percent": 9.157545938347234
+    },
+    {
+      "earlier_minute": 29,
+      "later_minute": 59,
+      "growth_percent": 9.126084056037364
+    },
+    {
+      "earlier_minute": 30,
+      "later_minute": 60,
+      "growth_percent": 9.137529137529143
+    }
+  ],
+  "rss_growth_median_percent": 9.456236438088894,
+  "rss_pairs_above_ten_percent": 4,
+  "rss_trend_scope": "approximate whole-minute alignment; distinct app/sampler clocks; investigate growth, do not certify absence of leaks",
+  "memory_scope": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "helper_audit_scope": "15-second descendant observations including sampler; tracked birth time/executable and process group after exit; very short-lived or unobserved reparented processes can escape",
+  "remaining_scope": [
+    "search/cancellation and extractor helpers",
+    "authorized account operations and expiry",
+    "forced decoder fallback",
+    "large raster library",
+    "steady playback and idle budgets",
+    "exact GPU allocation/leak accounting",
+    "other target platforms"
+  ],
+  "evidence_sha256": {
+    "resource.json": "8a0643180b8fca1c14b33fcb3b883107270cb801cb55e757942be38658ecb16c",
+    "summary.json": "dfa0135d3539b745546f8a11508b19ab70aaaa05bdfd174b31be412160489a6b",
+    "source.json": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+    "resource.json.log": "28e8fad4222bd2ee59c4e372c16a1e06e390a86c6e164d16f77833cb73b1012a"
+  }
+}

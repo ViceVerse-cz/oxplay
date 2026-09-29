@@ -1,0 +1,455 @@
+{
+  "local_functional_evidence_complete": true,
+  "evidence_failures": [],
+  "full_spec_soak_gate": false,
+  "performance_acceptance": "not_qualified_by_mixed_use_soak",
+  "mixed_use_resource_observations": {
+    "rss_mib": {
+      "mean": 234.1582421875,
+      "p95": 254.46875,
+      "peak": 256.8125
+    },
+    "cpu_one_core_percent": {
+      "mean": 33.66888966036874,
+      "p95": 62.499543741089674,
+      "peak": 101.2828718839185
+    }
+  },
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "source_scope": "identity-label consistency only; captured build-input hashes require a separate comparison with Git",
+  "checkpoint_count": 120,
+  "observed_decoders": [
+    "videotoolbox"
+  ],
+  "observed_video": [
+    "1920x1080@60.000 H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10"
+  ],
+  "maximum_decoder_drop_counter": 0,
+  "maximum_vo_drop_counter": 109,
+  "drop_counter_scope": "transition checkpoints; counters reset on seeks/loads, not a cumulative or steady frame-pacing result",
+  "rss_minute_medians": [
+    {
+      "minute": 1,
+      "sample_count": 59,
+      "rss_median_mib": 201.1875
+    },
+    {
+      "minute": 2,
+      "sample_count": 60,
+      "rss_median_mib": 208.125
+    },
+    {
+      "minute": 3,
+      "sample_count": 60,
+      "rss_median_mib": 209.4375
+    },
+    {
+      "minute": 4,
+      "sample_count": 60,
+      "rss_median_mib": 210.125
+    },
+    {
+      "minute": 5,
+      "sample_count": 60,
+      "rss_median_mib": 211.25
+    },
+    {
+      "minute": 6,
+      "sample_count": 60,
+      "rss_median_mib": 213.734375
+    },
+    {
+      "minute": 7,
+      "sample_count": 60,
+      "rss_median_mib": 214.671875
+    },
+    {
+      "minute": 8,
+      "sample_count": 60,
+      "rss_median_mib": 215.1171875
+    },
+    {
+      "minute": 9,
+      "sample_count": 60,
+      "rss_median_mib": 215.96875
+    },
+    {
+      "minute": 10,
+      "sample_count": 60,
+      "rss_median_mib": 216.390625
+    },
+    {
+      "minute": 11,
+      "sample_count": 60,
+      "rss_median_mib": 219.015625
+    },
+    {
+      "minute": 12,
+      "sample_count": 60,
+      "rss_median_mib": 219.828125
+    },
+    {
+      "minute": 13,
+      "sample_count": 60,
+      "rss_median_mib": 222.671875
+    },
+    {
+      "minute": 14,
+      "sample_count": 60,
+      "rss_median_mib": 223.2421875
+    },
+    {
+      "minute": 15,
+      "sample_count": 60,
+      "rss_median_mib": 223.984375
+    },
+    {
+      "minute": 16,
+      "sample_count": 60,
+      "rss_median_mib": 224.9765625
+    },
+    {
+      "minute": 17,
+      "sample_count": 60,
+      "rss_median_mib": 225.828125
+    },
+    {
+      "minute": 18,
+      "sample_count": 60,
+      "rss_median_mib": 226.2109375
+    },
+    {
+      "minute": 19,
+      "sample_count": 60,
+      "rss_median_mib": 227.046875
+    },
+    {
+      "minute": 20,
+      "sample_count": 60,
+      "rss_median_mib": 227.53125
+    },
+    {
+      "minute": 21,
+      "sample_count": 60,
+      "rss_median_mib": 228.75
+    },
+    {
+      "minute": 22,
+      "sample_count": 60,
+      "rss_median_mib": 229.1796875
+    },
+    {
+      "minute": 23,
+      "sample_count": 60,
+      "rss_median_mib": 229.984375
+    },
+    {
+      "minute": 24,
+      "sample_count": 60,
+      "rss_median_mib": 230.34375
+    },
+    {
+      "minute": 25,
+      "sample_count": 60,
+      "rss_median_mib": 231.21875
+    },
+    {
+      "minute": 26,
+      "sample_count": 60,
+      "rss_median_mib": 232.0859375
+    },
+    {
+      "minute": 27,
+      "sample_count": 60,
+      "rss_median_mib": 232.8828125
+    },
+    {
+      "minute": 28,
+      "sample_count": 60,
+      "rss_median_mib": 233.3125
+    },
+    {
+      "minute": 29,
+      "sample_count": 60,
+      "rss_median_mib": 234.15625
+    },
+    {
+      "minute": 30,
+      "sample_count": 60,
+      "rss_median_mib": 234.546875
+    },
+    {
+      "minute": 31,
+      "sample_count": 60,
+      "rss_median_mib": 236.0
+    },
+    {
+      "minute": 32,
+      "sample_count": 60,
+      "rss_median_mib": 236.3984375
+    },
+    {
+      "minute": 33,
+      "sample_count": 60,
+      "rss_median_mib": 237.203125
+    },
+    {
+      "minute": 34,
+      "sample_count": 60,
+      "rss_median_mib": 237.6015625
+    },
+    {
+      "minute": 35,
+      "sample_count": 60,
+      "rss_median_mib": 238.4296875
+    },
+    {
+      "minute": 36,
+      "sample_count": 60,
+      "rss_median_mib": 239.28125
+    },
+    {
+      "minute": 37,
+      "sample_count": 60,
+      "rss_median_mib": 240.109375
+    },
+    {
+      "minute": 38,
+      "sample_count": 60,
+      "rss_median_mib": 240.484375
+    },
+    {
+      "minute": 39,
+      "sample_count": 60,
+      "rss_median_mib": 241.265625
+    },
+    {
+      "minute": 40,
+      "sample_count": 60,
+      "rss_median_mib": 241.703125
+    },
+    {
+      "minute": 41,
+      "sample_count": 60,
+      "rss_median_mib": 242.9921875
+    },
+    {
+      "minute": 42,
+      "sample_count": 60,
+      "rss_median_mib": 243.3671875
+    },
+    {
+      "minute": 43,
+      "sample_count": 60,
+      "rss_median_mib": 244.265625
+    },
+    {
+      "minute": 44,
+      "sample_count": 60,
+      "rss_median_mib": 244.6875
+    },
+    {
+      "minute": 45,
+      "sample_count": 60,
+      "rss_median_mib": 245.40625
+    },
+    {
+      "minute": 46,
+      "sample_count": 60,
+      "rss_median_mib": 246.359375
+    },
+    {
+      "minute": 47,
+      "sample_count": 60,
+      "rss_median_mib": 247.109375
+    },
+    {
+      "minute": 48,
+      "sample_count": 60,
+      "rss_median_mib": 247.515625
+    },
+    {
+      "minute": 49,
+      "sample_count": 60,
+      "rss_median_mib": 248.3203125
+    },
+    {
+      "minute": 50,
+      "sample_count": 60,
+      "rss_median_mib": 248.7421875
+    },
+    {
+      "minute": 51,
+      "sample_count": 60,
+      "rss_median_mib": 250.0
+    },
+    {
+      "minute": 52,
+      "sample_count": 60,
+      "rss_median_mib": 250.3828125
+    },
+    {
+      "minute": 53,
+      "sample_count": 60,
+      "rss_median_mib": 251.2109375
+    },
+    {
+      "minute": 54,
+      "sample_count": 60,
+      "rss_median_mib": 251.640625
+    },
+    {
+      "minute": 55,
+      "sample_count": 60,
+      "rss_median_mib": 252.4375
+    },
+    {
+      "minute": 56,
+      "sample_count": 60,
+      "rss_median_mib": 253.46875
+    },
+    {
+      "minute": 57,
+      "sample_count": 60,
+      "rss_median_mib": 254.265625
+    },
+    {
+      "minute": 58,
+      "sample_count": 60,
+      "rss_median_mib": 254.640625
+    },
+    {
+      "minute": 59,
+      "sample_count": 60,
+      "rss_median_mib": 255.4140625
+    },
+    {
+      "minute": 60,
+      "sample_count": 60,
+      "rss_median_mib": 255.8671875
+    }
+  ],
+  "rss_matched_minute_comparisons": [
+    {
+      "earlier_minute": 11,
+      "later_minute": 41,
+      "growth_percent": 10.947420988799305
+    },
+    {
+      "earlier_minute": 12,
+      "later_minute": 42,
+      "growth_percent": 10.70793944132491
+    },
+    {
+      "earlier_minute": 13,
+      "later_minute": 43,
+      "growth_percent": 9.69756508315205
+    },
+    {
+      "earlier_minute": 14,
+      "later_minute": 44,
+      "growth_percent": 9.606299212598435
+    },
+    {
+      "earlier_minute": 15,
+      "later_minute": 45,
+      "growth_percent": 9.564004185559828
+    },
+    {
+      "earlier_minute": 16,
+      "later_minute": 46,
+      "growth_percent": 9.504462270375381
+    },
+    {
+      "earlier_minute": 17,
+      "later_minute": 47,
+      "growth_percent": 9.423649069397367
+    },
+    {
+      "earlier_minute": 18,
+      "later_minute": 48,
+      "growth_percent": 9.418062510792602
+    },
+    {
+      "earlier_minute": 19,
+      "later_minute": 49,
+      "growth_percent": 9.369623563416152
+    },
+    {
+      "earlier_minute": 20,
+      "later_minute": 50,
+      "growth_percent": 9.322208487845085
+    },
+    {
+      "earlier_minute": 21,
+      "later_minute": 51,
+      "growth_percent": 9.289617486338809
+    },
+    {
+      "earlier_minute": 22,
+      "later_minute": 52,
+      "growth_percent": 9.251747059826144
+    },
+    {
+      "earlier_minute": 23,
+      "later_minute": 53,
+      "growth_percent": 9.229567226034385
+    },
+    {
+      "earlier_minute": 24,
+      "later_minute": 54,
+      "growth_percent": 9.24569257902592
+    },
+    {
+      "earlier_minute": 25,
+      "later_minute": 55,
+      "growth_percent": 9.176915799432361
+    },
+    {
+      "earlier_minute": 26,
+      "later_minute": 56,
+      "growth_percent": 9.213316726697407
+    },
+    {
+      "earlier_minute": 27,
+      "later_minute": 57,
+      "growth_percent": 9.181790734341977
+    },
+    {
+      "earlier_minute": 28,
+      "later_minute": 58,
+      "growth_percent": 9.14144120010716
+    },
+    {
+      "earlier_minute": 29,
+      "later_minute": 59,
+      "growth_percent": 9.078473241692242
+    },
+    {
+      "earlier_minute": 30,
+      "later_minute": 60,
+      "growth_percent": 9.090000666178133
+    }
+  ],
+  "rss_growth_median_percent": 9.305912987091947,
+  "rss_pairs_above_ten_percent": 2,
+  "rss_trend_scope": "approximate whole-minute alignment; distinct app/sampler clocks; investigate growth, do not certify absence of leaks",
+  "memory_scope": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "helper_audit_scope": "15-second descendants including sampler; birth-time/basename checked. Transient/reparented processes may escape. XPC membership is temporal.",
+  "remaining_scope": [
+    "search/cancellation and extractor helpers",
+    "authorized account operations and expiry",
+    "forced decoder fallback",
+    "large raster library",
+    "steady playback and idle budgets",
+    "exact GPU allocation/leak accounting",
+    "other target platforms"
+  ],
+  "evidence_sha256": {
+    "resource.json": "97b447165b53b70959a615cea985fb68da4221faf710f476ed4405e5ce5da99a",
+    "summary.json": "fb45882fdff5d6990462e35b863d8f2b31902ca87e2a4b4b752eda3d42f933de",
+    "source.json": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+    "resource.json.log": "894d6858e4210bbb48a9548b4408f5555360ef48c5e146f40284d10c02ee8ecb"
+  }
+}

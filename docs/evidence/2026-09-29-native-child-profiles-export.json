@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "files": [
+    {
+      "export": "2026-09-29-native-child-profiles-default-summary.json",
+      "export_sha256": "56a4469e3b80cedbbd97b56b445f86555f1abbee78b524e0faf7c5abd86b4604",
+      "original_relative_path": "default/summary.json",
+      "original_sha256": "f7faf3f7d4f3034f707d41024990027cc64d0aad3aec2b6ccdd68bdfbad337c4",
+      "bytes": 2717,
+      "transformation": "sanitized diagnostic summary; known private command paths replaced"
+    },
+    {
+      "export": "2026-09-29-native-child-profiles-default.log",
+      "export_sha256": "5805bde2170374391174d75b89ca45a1dff5ff7c32dcec5495da0b586c9c2e03",
+      "original_relative_path": "default/native.log",
+      "original_sha256": "5805bde2170374391174d75b89ca45a1dff5ff7c32dcec5495da0b586c9c2e03",
+      "bytes": 6303,
+      "transformation": "exact"
+    },
+    {
+      "export": "2026-09-29-native-child-profiles-native-summary.json",
+      "export_sha256": "4d7d1e07f989eee0911ba233b953083233265ed7ffa714e94d1a4772905f23d4",
+      "original_relative_path": "native/summary.json",
+      "original_sha256": "ba5a2880fbd3308a49c41027d396ca386297f3720ebd40d849da884c6c2d474a",
+      "bytes": 2741,
+      "transformation": "sanitized diagnostic summary; known private command paths replaced"
+    },
+    {
+      "export": "2026-09-29-native-child-profiles-native.log",
+      "export_sha256": "dd477ef7ee6e7da3cfa803f7556af734a309666fa0181840a15972e295eb68d3",
+      "original_relative_path": "native/native.log",
+      "original_sha256": "dd477ef7ee6e7da3cfa803f7556af734a309666fa0181840a15972e295eb68d3",
+      "bytes": 6137,
+      "transformation": "exact"
+    },
+    {
+      "export": "2026-09-29-native-child-profiles-stacks.json",
+      "export_sha256": "dbd618683c7909b6dbe76a38bdedfa7a1d4419b9e04491dd92fab3a64cab5e7c",
+      "original_relative_path": "stack-analysis.json",
+      "original_sha256": "dbd618683c7909b6dbe76a38bdedfa7a1d4419b9e04491dd92fab3a64cab5e7c",
+      "bytes": 8642,
+      "transformation": "exact"
+    }
+  ],
+  "performance_measurement": false,
+  "cpu_attribution_verified": false,
+  "raw_private_files_retained": true,
+  "scope": "One owned app at a time, two28-second lifetimes,5-second /usr/bin/sample requested1ms run time between samples starting12s afterlaunch and observedPlaying at10s. Other-agent compilation permitted; these are diagnostic profiles, not CPU/RAM benchmarks. Each app/profiler/caffeinate group was anchored until kill/reap/absence proof.",
+  "stack_method": "Parse the callgraph by indentation; sum selected disjoint same-symbol subtrees and compute leaf residence as node count minus direct-child counts. Main and selected-thread leaf totals exactly match their root observation count. Recursive generic renderer symbols are not aggregated. Sample top-of-stack global totals are not interpreted asCPU.",
+  "wait_classification": "Explicit semaphore/condition/kevent/Mach IPC boundary labels distinguish waiting/IPC from other captured leaves. Other leaves are NOT guaranteedCPU-active; IPC can include kernel work. Requested1ms does not mean1000 actual observations persecond.",
+  "raw_profile_hashes": {
+    "default": "f7d05c6e56fd49f9baf7f92685feb30d7ccbdb671c4911af4d5e1b9d9e760880",
+    "native": "7068d949c26875e791dedec58a93c04ddba7861e4823afeae29a989453b2cfed"
+  },
+  "loaded_images": "Both Binary Images lists show libmpv UUID1869BFE9-CAA0-373D-8FA2-DAC87D0CC5DF and anonymizedHomebrew path. xcrun dwarfdump independently reported the same UUID for installed0.41.0_10 arm64 SHA12c400d4ec2740ebf225c3965f4e9963c55de9212094f1337d055b0573812e08. This confirms the named library image in these diagnostic runs, not the earlier ABBA loaded-image inventory.",
+  "available_cpu_profiler": "xcrun --find xctrace resolved Xcode developer tooling. No trace recording, installation or extra application launch performed. Availability is not authorization/capability proof for attaching a TimeProfiler recording.",
+  "source_backed_paths": [
+    "mpv0.41 timer_pool_stop -> gl_timer_stop -> EndQuery(GL_TIME_ELAPSED); capturedApple gldGetQueryInfo -> flushContext -> Metal submission -> IOKit/Mach IPC.",
+    "mpv0.41 gl_timer_start recycles8queries, GetQueryObjectui64v(GL_QUERY_RESULT) withoutavailabilitycheck; only2/default and0/native observations of named resultgetter, not proof itneverblocks.",
+    "Native child serein_child_flush -> NSOpenGLContext.flushBuffer -> CGLFlushDrawable; capturedpresent pathincludessemaphorewait and WindowServer IPC. No new swap/clock change justified by wall-stack counts."
+  ],
+  "next_candidate": "First obtain a CPU-aware boundedTimeProfiler record withsamebinary/geometry ifattachworks. The already-authored isolatedmpv timerON/OFF diagnostic is a bounded follow-up candidate for native mode becausequery-inducedsubmissionrecurs; prior defaultON/OFF failedrepeatableceiling, and removal maymerelymoveworktoflush. Do notadoptpatchorchangequality/clockwithoutcontrolledresourceandframeevidence."
+}

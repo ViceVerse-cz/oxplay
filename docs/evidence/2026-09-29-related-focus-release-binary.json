@@ -1,0 +1,11 @@
+{
+  "source_revision": "d78332c23602b1bfaec87688eccba657a208b9be",
+  "app_sha256": "e32cfa128282c781a80eeba06a8259207b07f54da946056b77185fa04efb88b9",
+  "source_inventory_sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+  "build_input_count": 138,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "Finished release profile [optimized] in 1m 56s",
+  "native_qualified": false,
+  "performance_qualified": false
+}

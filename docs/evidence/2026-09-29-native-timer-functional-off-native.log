@@ -1,0 +1,48 @@
+native child owning window number: 5134
+native child graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=312
+native-child lifecycle observed stage=5 state=Playing paused=false position=4.517 decoder=videotoolbox native_visible=true native_publications=276 native_renders=276 ui_draws=25
+native-child lifecycle stage=5 passed; compositor pixels not measured
+checkpoint seconds=5: Snapshot { stop_pending: false, state: Playing, paused: false, paused_for_cache: false, playback_restarted: true, position: 4.516666666666667, duration: 90.0, volume: 100.0, muted: false, mute_observed: true, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "aac", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 3, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 2, error: None, events_received: 68, file_loads: 1, file_starts: 1, load_request_id: 4611686018427387904, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 301, render_notifications: 278, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 278, display_clock_starts: 1, display_clock_stops: 0, display_clock_active: true, prevents_display_sleep: true }; ui_draws=25 catalog_changes=0 catalog_resets=1
+presentation geometry seconds=5: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=true geometry_events=4
+native geometry seconds=5: backing_px=1328x747 geometry_changes=3 visible=true renders=276 publications=276
+native-child lifecycle observed stage=8 state=Paused paused=true position=4.517 decoder=videotoolbox native_visible=true native_publications=279 native_renders=279 ui_draws=26
+native-child lifecycle stage=8 passed; compositor pixels not measured
+checkpoint seconds=10: Snapshot { stop_pending: false, state: Paused, paused: true, paused_for_cache: false, playback_restarted: true, position: 20.0, duration: 90.0, volume: 100.0, muted: false, mute_observed: true, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "aac", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 3, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 0, error: None, events_received: 80, file_loads: 1, file_starts: 1, load_request_id: 4611686018427387904, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 312, render_notifications: 283, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 284, display_clock_starts: 1, display_clock_stops: 1, display_clock_active: false, prevents_display_sleep: false }; ui_draws=29 catalog_changes=0 catalog_resets=1
+presentation geometry seconds=10: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=true geometry_events=4
+native geometry seconds=10: backing_px=1328x747 geometry_changes=3 visible=true renders=281 publications=281
+native-child lifecycle observed stage=11 state=Paused paused=true position=20.000 decoder=videotoolbox native_visible=true native_publications=281 native_renders=281 ui_draws=29
+native-child lifecycle stage=11 passed; compositor pixels not measured
+native-child lifecycle observed stage=14 state=Paused paused=true position=20.000 decoder=videotoolbox native_visible=false native_publications=281 native_renders=281 ui_draws=31
+native-child lifecycle stage=14 passed; compositor pixels not measured
+native-child lifecycle observed stage=17 state=Paused paused=true position=20.000 decoder=videotoolbox native_visible=true native_publications=282 native_renders=282 ui_draws=33
+native-child lifecycle stage=17 passed; compositor pixels not measured
+window occluded=true at_ms=17225
+window occluded=false at_ms=17802
+native-child lifecycle observed stage=20 state=Playing paused=false position=22.317 decoder=videotoolbox native_visible=true native_publications=405 native_renders=405 ui_draws=48
+native-child lifecycle stage=20 passed; compositor pixels not measured
+window occluded=true at_ms=20110
+window occluded=false at_ms=20695
+native-child lifecycle observed stage=23 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=true native_publications=409 native_renders=409 ui_draws=55
+native-child lifecycle stage=23 passed; compositor pixels not measured
+checkpoint seconds=25: Snapshot { stop_pending: false, state: Paused, paused: true, paused_for_cache: false, playback_restarted: true, position: 22.316666666666666, duration: 90.0, volume: 100.0, muted: false, mute_observed: true, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "aac", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 3, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 22, error: None, events_received: 112, file_loads: 1, file_starts: 1, load_request_id: 4611686018427387904, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 461, render_notifications: 411, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 424, display_clock_starts: 3, display_clock_stops: 3, display_clock_active: false, prevents_display_sleep: false }; ui_draws=57 catalog_changes=0 catalog_resets=1
+presentation geometry seconds=25: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=true geometry_events=10
+native geometry seconds=25: backing_px=1328x747 geometry_changes=8 visible=false renders=409 publications=409
+native-child lifecycle observed stage=26 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=false native_publications=409 native_renders=409 ui_draws=57
+native-child lifecycle stage=26 passed; compositor pixels not measured
+native-child lifecycle observed stage=29 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=true native_publications=410 native_renders=410 ui_draws=59
+native-child lifecycle stage=29 passed; compositor pixels not measured
+native-child lifecycle observed stage=32 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=false native_publications=410 native_renders=410 ui_draws=61
+native-child lifecycle stage=32 passed; compositor pixels not measured
+native-child lifecycle observed stage=35 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=true native_publications=411 native_renders=411 ui_draws=64
+native-child lifecycle stage=35 passed; compositor pixels not measured
+window occluded=true at_ms=35702
+native-child lifecycle observed stage=38 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=false native_publications=412 native_renders=412 ui_draws=66
+native-child lifecycle stage=38 passed; compositor pixels not measured
+window occluded=false at_ms=38614
+native-child lifecycle observed stage=41 state=Paused paused=true position=22.317 decoder=videotoolbox native_visible=true native_publications=413 native_renders=413 ui_draws=69
+native-child lifecycle stage=41 passed; compositor pixels not measured
+native-child lifecycle observed stage=44 state=Idle paused=true position=0.000 decoder= native_visible=false native_publications=413 native_renders=413 ui_draws=71
+native-child lifecycle stage=44 passed; compositor pixels not measured
+native child stats: NativeChildStats { media_wakeups: 465, render_notifications: 411, display_clock_ticks: 424, render_calls: 547, updates: 412, renders: 413, skipped_frames: 4, publications: 413, geometry_changes: 12, render_us: 582382, max_render_us: 33162, flush_us: 664401, max_flush_us: 21658, target_samples: 404, early_us: 3961, late_us: 7899555, max_early_us: 3961, max_late_us: 255729, backing_width: 1664, backing_height: 936, estimated_color_bytes: 12460032, visible: false }
+session counters: ui=58 catalog_changes=0 catalog_resets=1 redraw_requests=0 draw_callbacks=71 media=Snapshot { stop_pending: true, state: Idle, paused: true, paused_for_cache: false, playback_restarted: false, position: 0.0, duration: 0.0, volume: 100.0, muted: false, mute_observed: true, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "", codec: "", audio_codec: "", audio_output: "", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 4, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 0, width: 0, height: 0, fps: 0.0, dropped_frames: 22, error: None, events_received: 135, file_loads: 1, file_starts: 1, load_request_id: 0, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 464, render_notifications: 411, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 424, display_clock_starts: 3, display_clock_stops: 3, display_clock_active: false, prevents_display_sleep: false }

@@ -1,0 +1,7 @@
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=184
+window occluded=true at_ms=1666
+minimized diagnostic: observed=Some(true)
+minimized diagnostic before quit: observed=Some(true) at_ms=85096
+session counters: ui=2 catalog_changes=0 catalog_resets=0 redraw_requests=0 draw_callbacks=4 media=Snapshot { state: Idle, paused: true, position: 0.0, duration: 0.0, volume: 100.0, hwdec_current: "unverified", codec: "", audio_codec: "", audio_output: "", diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 0, width: 0, height: 0, fps: 0.0, dropped_frames: 0, error: None, events_received: 18, wakeups: 2, render_notifications: 1, decoder_dropped_frames: 0, timing_lead_ms: 0, prepare_ms: 0 }
+render stats: RenderStats { updates: 1, video_draws: 0, ui_draws: 4, target_allocations: 0, target_bytes: 0, timing_samples: 0, gl_save_us: 0, mpv_update_us: 0, mpv_render_us: 0, gl_restore_us: 0, max_mpv_render_us: 0, target_time_samples: 0, early_us: 0, late_us: 0, max_early_us: 0, max_late_us: 0, scheduled_wakes: 0, callback_latency_samples: 0, callback_latency_us: 0, max_callback_latency_us: 0 }

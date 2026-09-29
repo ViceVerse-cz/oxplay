@@ -1,0 +1,12 @@
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=286
+comments smoke stage=15 completed
+comments smoke stage=17 completed
+comments smoke stage=20 completed
+comments smoke stage=40 completed
+comments smoke second page rows=20
+comments smoke stage=60 completed
+comments smoke stage=62 completed
+comments smoke stage=65 completed
+session counters: ui=409 catalog_changes=0 catalog_resets=0 redraw_requests=4092 draw_callbacks=4346 media=Snapshot { state: Playing, paused: false, position: 67.83333333333333, duration: 634.5666666666666, volume: 100.0, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "opus", audio_output: "avfoundation", diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 60, error: None, events_received: 367, wakeups: 4316, render_notifications: 4019, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 4075, display_clock_starts: 1, display_clock_stops: 0, display_clock_active: true, prevents_display_sleep: true }
+render stats: RenderStats { updates: 4019, video_draws: 4018, ui_draws: 4346, target_allocations: 2, target_bytes: 5581824, timing_samples: 0, gl_save_us: 0, mpv_update_us: 0, mpv_render_us: 0, gl_restore_us: 0, max_mpv_render_us: 0, target_time_samples: 0, early_us: 0, late_us: 0, max_early_us: 0, max_late_us: 0, scheduled_wakes: 0, callback_latency_samples: 0, callback_latency_us: 0, max_callback_latency_us: 0 }

@@ -1,0 +1,350 @@
+{
+  "media_start": null,
+  "media_end": null,
+  "warmup_seconds": 10,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "rss_mib": {
+    "mean": 194.70364583333333,
+    "p95": 196.03125,
+    "peak": 196.09375
+  },
+  "cpu_one_core_percent": {
+    "mean": 45.995951082941765,
+    "p95": 62.70455854970988,
+    "peak": 63.002927050998636
+  },
+  "process_count_peak": 2,
+  "samples": [
+    {
+      "rss_mib": 193.046875,
+      "cpu_one_core_percent": 52.08332727859862,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.3125,
+      "cpu_one_core_percent": 63.00190057791793,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.109375,
+      "cpu_one_core_percent": 44.00033915606981,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.265625,
+      "cpu_one_core_percent": 54.35499245368786,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.390625,
+      "cpu_one_core_percent": 33.779058208113284,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.390625,
+      "cpu_one_core_percent": 63.002927050998636,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.34375,
+      "cpu_one_core_percent": 43.779853527127976,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.421875,
+      "cpu_one_core_percent": 62.45715577273139,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.59375,
+      "cpu_one_core_percent": 49.82317314837934,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.625,
+      "cpu_one_core_percent": 62.70455854970988,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.65625,
+      "cpu_one_core_percent": 57.77461027576981,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.765625,
+      "cpu_one_core_percent": 58.19839363333772,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.703125,
+      "cpu_one_core_percent": 61.00576248201642,
+      "processes": 2
+    },
+    {
+      "rss_mib": 193.96875,
+      "cpu_one_core_percent": 51.99636675193405,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.03125,
+      "cpu_one_core_percent": 61.999516963065425,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.203125,
+      "cpu_one_core_percent": 54.000222751043324,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.21875,
+      "cpu_one_core_percent": 62.0009196596427,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.359375,
+      "cpu_one_core_percent": 44.999169405397744,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.3125,
+      "cpu_one_core_percent": 62.00012654185041,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.328125,
+      "cpu_one_core_percent": 48.00086603106668,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.359375,
+      "cpu_one_core_percent": 45.99829038207131,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.390625,
+      "cpu_one_core_percent": 45.001089430187335,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.484375,
+      "cpu_one_core_percent": 58.00125665507213,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.46875,
+      "cpu_one_core_percent": 40.6662504901084,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.484375,
+      "cpu_one_core_percent": 50.72061442398546,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.78125,
+      "cpu_one_core_percent": 39.20022517103295,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.515625,
+      "cpu_one_core_percent": 62.780415077919294,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.578125,
+      "cpu_one_core_percent": 53.62198548476191,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.65625,
+      "cpu_one_core_percent": 60.062450648151696,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.640625,
+      "cpu_one_core_percent": 57.4486524326687,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.59375,
+      "cpu_one_core_percent": 58.54435658858742,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.703125,
+      "cpu_one_core_percent": 51.00055463377036,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.65625,
+      "cpu_one_core_percent": 36.80248448317022,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.640625,
+      "cpu_one_core_percent": 25.134824251694177,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.734375,
+      "cpu_one_core_percent": 29.404297381309526,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.90625,
+      "cpu_one_core_percent": 39.99943500949899,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.96875,
+      "cpu_one_core_percent": 39.08043904232795,
+      "processes": 2
+    },
+    {
+      "rss_mib": 194.953125,
+      "cpu_one_core_percent": 25.890199663542557,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.09375,
+      "cpu_one_core_percent": 21.926513528194363,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.0625,
+      "cpu_one_core_percent": 22.475606934983407,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.078125,
+      "cpu_one_core_percent": 20.917384176972007,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.125,
+      "cpu_one_core_percent": 19.880535377169466,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.125,
+      "cpu_one_core_percent": 25.17327604244843,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.296875,
+      "cpu_one_core_percent": 44.34351278259801,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.296875,
+      "cpu_one_core_percent": 53.0010556237074,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.640625,
+      "cpu_one_core_percent": 37.92758220904498,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.78125,
+      "cpu_one_core_percent": 42.94931480664015,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.671875,
+      "cpu_one_core_percent": 42.03669316461993,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.796875,
+      "cpu_one_core_percent": 50.7482294046894,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.765625,
+      "cpu_one_core_percent": 46.839138782921445,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.84375,
+      "cpu_one_core_percent": 44.55946234260857,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.90625,
+      "cpu_one_core_percent": 40.59292245485263,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.03125,
+      "cpu_one_core_percent": 36.39072723958175,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.890625,
+      "cpu_one_core_percent": 44.48652608993068,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.09375,
+      "cpu_one_core_percent": 41.43123333659347,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.03125,
+      "cpu_one_core_percent": 43.29093940625253,
+      "processes": 2
+    },
+    {
+      "rss_mib": 195.984375,
+      "cpu_one_core_percent": 38.744584149227116,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.078125,
+      "cpu_one_core_percent": 44.989230703387264,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.046875,
+      "cpu_one_core_percent": 40.24823450231881,
+      "processes": 2
+    },
+    {
+      "rss_mib": 196.015625,
+      "cpu_one_core_percent": 46.48330044944466,
+      "processes": 2
+    }
+  ],
+  "include_new_vt_services": true,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed.",
+  "exit_code": 0,
+  "forced_termination": false,
+  "qualification": "Uncontrolled: unrelated-project compilation observed during measurement window; no acceptance or causal A/B claim.",
+  "provenance": {
+    "base_commit": "6ccd0e8f1712f39cec9c124b3393da2974cfa85b",
+    "dirty_source": true,
+    "sha256": {
+      "target/release/serein": "3b24ba9e770e8b6525bc280473c214caae44734ff64547627f0822d8eb9cda30",
+      "crates/media/src/lib.rs": "c74b0520d8fc071303d305b00d3bce23c810d9dfb36f16e2470edc2d3364cf3c",
+      "crates/media/src/macos.rs": "6bca2569544dff3b3039478c191f45d9fa2948431477e8f12be0bd2d9c531304",
+      "crates/media/src/commands.rs": "a6779a07244a9233030c329e24cde4bddd77456f546becac54c9409592b62f91",
+      "crates/media/src/ffi.rs": "b9daef9bed2eb0bc3f3b6472ba482c67ad3de88cfcc43dd63a104a0ee16de04a",
+      "crates/app/src/main.rs": "e0fa5cf1a9576d60685ca54ed3e4b9d83728b4853fd9e9a8be89d9f7b13620f0",
+      "crates/app/ui/app.slint": "4d163fcaca2186ec11f323d2358bba6931a6c0096878d435143093ac59123cc2",
+      "Cargo.lock": "0093cc4029531b0566a25f074bee8ea576135ccefce6c449089306c220254fb6",
+      "artifacts/local-1080p60.mp4": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0"
+    },
+    "flags_common": [
+      "--local",
+      "artifacts/local-1080p60.mp4",
+      "--demo-related",
+      "--diagnostics",
+      "--quit-after",
+      "85"
+    ],
+    "cache_control": "default off; candidate --ui-cache",
+    "scope": "Phase-continuous CVDisplayLink; same binary both runs; 30 labeled related text rows, no thumbnail images; 10s warmup then60samples; 1384x778 physical target expected and must verify logs."
+  }
+}

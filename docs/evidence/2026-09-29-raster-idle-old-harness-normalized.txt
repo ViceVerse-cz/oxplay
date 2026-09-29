@@ -1,0 +1,24 @@
+from pathlib import Path
+import hashlib,json,os,signal,subprocess,sys,time
+repo=Path('[workspace]');out=repo/'artifacts/raster-native-v2/resources';out.mkdir(exist_ok=False)
+app=repo/'target/release/serein';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();assert sha(app)=='96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645'
+(out/'sampler.py').write_bytes((repo/'scripts/measure.py').read_bytes())
+provenance={'source_revision':'ca21de92a94abf209b76576c8b584751d3d20b4f','app_sha256':sha(app),'sampler_sha256':sha(out/'sampler.py'),'harness_sha256':sha(Path(__file__)),'fixture_provenance_sha256':sha(repo/'artifacts/library-resource-fixture-v1/fixture-provenance.json'),'scope':'Actual10000row SQLite fixture with30distinct rasters; no interaction smoke; about30visible-thumbnail SPEC gate remains open. Whole owned process RSS/CPU; no extra GPU attribution.','requested_window':'1320x860 logical, dark, nativeOS may constrain height','real_account':False}
+(out/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');env={k:v for k,v in os.environ.items() if not k.startswith(('SEREIN_','DYLD_'))}
+for mode in ('settled','minimized'):
+ print('Starting '+mode,flush=True);wake=subprocess.Popen(['/usr/bin/caffeinate','-d','-u','-t','110'])
+ try:
+  time.sleep(1)
+  args=[sys.executable,str(out/'sampler.py'),'--per-process-rss','--warmup','10','--seconds','60','--output',str(out/(mode+'.json')),'--',str(app),'--library-resource-fixture',str(repo/'artifacts/library-resource-fixture-v1'),'--ui-size','1320x860','--ui-theme','dark','--quit-after','85']
+  if mode=='minimized':args+=['--minimized']
+  with (out/(mode+'.sampler.log')).open('wb') as log:
+   process=subprocess.Popen(args,cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+   try:code=process.wait(timeout=100)
+   except subprocess.TimeoutExpired:
+    os.killpg(process.pid,signal.SIGTERM)
+    try:process.wait(timeout=5)
+    except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
+    raise RuntimeError('measurement timed out')
+  if code:raise RuntimeError('measurement failed')
+ finally:wake.terminate();wake.wait(timeout=5)
+ r=json.loads((out/(mode+'.json')).read_text());assert r['sample_count']==60 and r['exit_code']==0 and not r['forced_termination'];print(json.dumps({'mode':mode,'cpu':r['cpu_one_core_percent'],'rss':r['rss_mib'],'process_count_peak':r['process_count_peak']}),flush=True)

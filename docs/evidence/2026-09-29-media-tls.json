@@ -1,0 +1,12 @@
+{
+  "untrusted_chain_rejected": true,
+  "explicit_ca_accepted": true,
+  "hostname_mismatch_rejected": true,
+  "trusted_http_requests": 1,
+  "mismatched_host_http_requests": 0,
+  "network_scope": "loopback only",
+  "script": "python3 scripts/test_media_tls.py",
+  "native_library": "Homebrew libmpv0.41.0 clientAPI2.5 / FFmpeg9.0.2",
+  "outputs": "null audio and video; no GUI",
+  "scope": "Production Player TLS options; synthetic loopback certificates only. Not full transport or bundle qualification."
+}

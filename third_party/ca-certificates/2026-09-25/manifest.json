@@ -1,0 +1,25 @@
+{
+  "bundle_sha256": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505",
+  "bundle_source_url": "https://curl.se/ca/cacert-2026-09-25.pem",
+  "certdata_sha256": "beb7e6dfe6499926e52c075c27bcfbe4c957f8609c575b3860273ae2806f63eb",
+  "declared_license": "MPL-2.0",
+  "files": [
+    {
+      "bytes": 1375050,
+      "path": "certdata.txt",
+      "sha256": "beb7e6dfe6499926e52c075c27bcfbe4c957f8609c575b3860273ae2806f63eb",
+      "source_url": "https://raw.githubusercontent.com/mozilla-firefox/firefox/9afcd4459e1f26aab45882f7d9df0f0c1e1b23f4/security/nss/lib/ckfw/builtins/certdata.txt"
+    },
+    {
+      "bytes": 16726,
+      "path": "LICENSE-MPL-2.0",
+      "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+      "source_url": "https://www.mozilla.org/media/MPL/2.0/index.txt"
+    }
+  ],
+  "formula": "ca-certificates",
+  "mozilla_revision": "9afcd4459e1f26aab45882f7d9df0f0c1e1b23f4",
+  "review_limit": "Original source hash matches the bundled PEM source-hash header. Conversion has not been reproduced; complete distribution review remains required.",
+  "schema": 1,
+  "version": "2026-09-25"
+}

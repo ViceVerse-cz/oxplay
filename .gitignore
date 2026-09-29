@@ -1,0 +1,19 @@
+/target/
+/.upstream/
+/artifacts/
+.DS_Store
+
+__pycache__/
+
+# Explicit session imports and local development data must stay private.
+.env
+.env.*
+!.env.example
+cookies.txt
+cookies-*.txt
+*.cookies.txt
+*.sqlite3
+*.sqlite3-*
+private-profile/
+*.p12
+*.pfx

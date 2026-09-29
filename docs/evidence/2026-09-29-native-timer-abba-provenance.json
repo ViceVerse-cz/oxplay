@@ -1,0 +1,67 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "unmodified_app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "variants": {
+    "on": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-on",
+      "app_sha256": "e32aea7ebe8b0c4b29f10859819f5585bb7ad5db3a026f462eb5caaf3b225e80",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    },
+    "off": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-off",
+      "app_sha256": "bc6010464fb9312f10cc666def369303212bab3cb15905e07def77e463adad7f",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    }
+  },
+  "run_order": [
+    "a1-on",
+    "b1-off",
+    "b2-off",
+    "a2-on"
+  ],
+  "source_inventory_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+  "preparation_sha256": "514d3add6b322feff797460f8f59633d2dd5465f1137d595a7fd9eadb0e3c50b",
+  "prior_functional_analysis_sha256": "ba9a2f5e7f0cf2f293abac768415d2360c10dfe9cc703ffd5b3d0d8a05bb37ee",
+  "fixture_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "harness_sha256": "88d1eed9598c8e035d1198caf6d7c281ecb01589045131a399716f6727412448",
+  "protocol_sha256": "5ded095108519ce2953d779360983b1538f8c3513f64268c0017ceb19182cb15",
+  "sampler_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+  "python_executable_sha256": "f2bb9677ea7661fcf4703fa704c2049d7b7066dc4a1ffb0cfd1ceceed3b2a79c",
+  "app_linkage_sha256": {
+    "on": "65204fae7f3b320da1581a1d6afeb841369f65431cf279dfac3a7d6dec57581d",
+    "off": "8c4e2682fba18f23e3ec398d604247459e803bd6f29bd326deaecf1c33220639"
+  },
+  "warmup_seconds": 10,
+  "samples": 60,
+  "quit_after_seconds": 85,
+  "requested_window_logical": [
+    1320,
+    860
+  ],
+  "theme": "dark",
+  "macos_footprint_required_complete": true,
+  "actual_loaded_image_inventory_during_resource": false,
+  "actual_loaded_image_inventory_in_prior_functional_runs": true,
+  "real_account": false,
+  "production_patch_adopted": false,
+  "performance_qualified": false,
+  "scope": "Matched private libmpv ON/OFF/OFF/ON with same historicala45 native-child application, fixed local1080p60,30empty-thumbnail related fixtures. No screenshots/profilers/loader logging or network/account work in resource windows.",
+  "limitations": [
+    "NewVT attribution temporal, preexisting reused services excluded; never signal shared services.",
+    "Process snapshots can miss short-lived/reparented helpers and PID reuse.",
+    "Footprint separate non-additive ledger; RSS may double-count shared pages.",
+    "Shared WindowServer/coreaudiod observations not exclusively attributable to app.",
+    "Finite engine/geometry checkpoints not display cadence or perceptual A/V proof.",
+    "Prior actual-loaded-image proof is not enumeration during these resource runs."
+  ]
+}

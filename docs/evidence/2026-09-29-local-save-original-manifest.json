@@ -1,0 +1,46 @@
+{
+  "files": [
+    {
+      "name": "binary.json",
+      "bytes": 502,
+      "sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864"
+    },
+    {
+      "name": "database-assertions.json",
+      "bytes": 745,
+      "sha256": "e5bc235275f7529c67e98e1eeafadef77b75c1e75708c46d0c68c8fcd75e0985"
+    },
+    {
+      "name": "harness.py",
+      "bytes": 14711,
+      "sha256": "d00076f1ad78c55e32e5dce4c34823f90b4f245709311763610af3ee949d9d9c"
+    },
+    {
+      "name": "native.log",
+      "bytes": 7834,
+      "sha256": "ced504a305096335955d00b8d92e30138f25691b6165a069c9dcd7a0df8c8aaa"
+    },
+    {
+      "name": "provenance.json",
+      "bytes": 1696,
+      "sha256": "1c342a9178efd38c3a81ed986ac077eb24bff7f5c896ccc353d1c37b22aa9a5c"
+    },
+    {
+      "name": "source-inventory.json",
+      "bytes": 55897,
+      "sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 2285,
+      "sha256": "8ffc1b34507a70b237eb27ab4dfaaa84a4dbc53aaa1136c06c82a0490ef410ba"
+    },
+    {
+      "name": "supervisor.json",
+      "bytes": 395,
+      "sha256": "a9e8be8d2e8f42324ef6f57382f043f94f9acb8a61395e067eeef9e78d5c465f"
+    }
+  ],
+  "profile_retained_privately": true,
+  "failed_evidence_removed": false
+}

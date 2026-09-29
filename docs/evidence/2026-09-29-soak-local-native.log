@@ -1,0 +1,366 @@
+local soak started: minutes=60 related_rows=30 network=false; resource/helper evidence requires external whole-tree sampler
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=283
+local soak checkpoint cycle=1 phase=5 elapsed_ms=5001 loads=1 load_id=4611686018427387904 position=4.533 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=55 wakes=300 media_notifications=278 clock_ticks=278 ui_draws=302 redraw_requests=282 ui_assignments=30 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=45612
+window occluded=false at_ms=50568
+window occluded=true at_ms=53094
+window occluded=false at_ms=53614
+window occluded=true at_ms=55059
+window occluded=false at_ms=55672
+local soak checkpoint cycle=1 phase=57 elapsed_ms=56999 loads=1 load_id=4611686018427387904 position=27.033 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=73 decoder_drops=0 events=212 wakes=2297 media_notifications=2143 clock_ticks=2202 ui_draws=2267 redraw_requests=2176 ui_assignments=182 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=2 phase=5 elapsed_ms=65002 loads=1 load_id=4611686018427387904 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=250 wakes=2804 media_notifications=2615 clock_ticks=2680 ui_draws=2771 redraw_requests=2664 ui_assignments=230 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=105591
+window occluded=false at_ms=110591
+local soak checkpoint cycle=2 phase=57 elapsed_ms=117003 loads=1 load_id=4611686018427387904 position=32.950 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=58 decoder_drops=0 events=398 wakes=4856 media_notifications=4550 clock_ticks=4665 ui_draws=4808 redraw_requests=4641 ui_assignments=382 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=3 phase=5 elapsed_ms=125003 loads=1 load_id=4611686018427387904 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=436 wakes=5362 media_notifications=5024 clock_ticks=5144 ui_draws=5315 redraw_requests=5130 ui_assignments=433 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=165586
+window occluded=false at_ms=170561
+window occluded=true at_ms=173088
+window occluded=false at_ms=173600
+window occluded=true at_ms=175045
+window occluded=false at_ms=175656
+local soak checkpoint cycle=3 phase=57 elapsed_ms=177003 loads=1 load_id=4611686018427387904 position=37.067 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=76 decoder_drops=0 events=597 wakes=7359 media_notifications=6891 clock_ticks=7075 ui_draws=7280 redraw_requests=7027 ui_assignments=582 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=4 phase=5 elapsed_ms=185003 loads=1 load_id=4611686018427387904 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=635 wakes=7869 media_notifications=7368 clock_ticks=7553 ui_draws=7790 redraw_requests=7519 ui_assignments=631 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=225596
+window occluded=false at_ms=230558
+local soak checkpoint cycle=4 phase=57 elapsed_ms=237004 loads=1 load_id=4611686018427387904 position=27.933 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=52 decoder_drops=0 events=777 wakes=9934 media_notifications=9311 clock_ticks=9542 ui_draws=9835 redraw_requests=9511 ui_assignments=783 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=5 phase=5 elapsed_ms=245004 loads=1 load_id=4611686018427387904 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=815 wakes=10441 media_notifications=9789 clock_ticks=10020 ui_draws=10346 redraw_requests=9997 ui_assignments=834 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=285606
+window occluded=false at_ms=290561
+window occluded=true at_ms=293063
+window occluded=false at_ms=293601
+window occluded=true at_ms=295055
+window occluded=false at_ms=295589
+local soak checkpoint cycle=5 phase=57 elapsed_ms=297005 loads=1 load_id=4611686018427387904 position=32.033 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=79 decoder_drops=0 events=983 wakes=12450 media_notifications=11653 clock_ticks=11950 ui_draws=12307 redraw_requests=11895 ui_assignments=984 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=6 phase=5 elapsed_ms=305006 loads=2 load_id=4611686018427387905 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=4 decoder_drops=0 events=1056 wakes=12964 media_notifications=12123 clock_ticks=12426 ui_draws=12812 redraw_requests=12386 ui_assignments=1034 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=345614
+window occluded=false at_ms=350613
+local soak checkpoint cycle=6 phase=57 elapsed_ms=357005 loads=2 load_id=4611686018427387905 position=38.033 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=64 decoder_drops=0 events=1208 wakes=15028 media_notifications=14056 clock_ticks=14420 ui_draws=14847 redraw_requests=14356 ui_assignments=1184 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=7 phase=5 elapsed_ms=365006 loads=2 load_id=4611686018427387905 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=1247 wakes=15534 media_notifications=14526 clock_ticks=14898 ui_draws=15350 redraw_requests=14840 ui_assignments=1233 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=405607
+window occluded=false at_ms=410567
+window occluded=true at_ms=413114
+window occluded=false at_ms=413780
+window occluded=true at_ms=415089
+window occluded=false at_ms=415621
+local soak checkpoint cycle=7 phase=57 elapsed_ms=417006 loads=2 load_id=4611686018427387905 position=26.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=91 decoder_drops=0 events=1422 wakes=17519 media_notifications=16364 clock_ticks=16824 ui_draws=17287 redraw_requests=16711 ui_assignments=1382 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=8 phase=5 elapsed_ms=425006 loads=2 load_id=4611686018427387905 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=0 decoder_drops=0 events=1459 wakes=18027 media_notifications=16838 clock_ticks=17302 ui_draws=17794 redraw_requests=17203 ui_assignments=1431 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=465600
+window occluded=false at_ms=470607
+local soak checkpoint cycle=8 phase=57 elapsed_ms=477007 loads=2 load_id=4611686018427387905 position=33.083 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=65 decoder_drops=0 events=1600 wakes=20081 media_notifications=18772 clock_ticks=19291 ui_draws=19829 redraw_requests=19176 ui_assignments=1583 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=9 phase=5 elapsed_ms=484999 loads=2 load_id=4611686018427387905 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=4 decoder_drops=0 events=1641 wakes=20584 media_notifications=19237 clock_ticks=19769 ui_draws=20327 redraw_requests=19658 ui_assignments=1632 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=525610
+window occluded=false at_ms=530633
+window occluded=true at_ms=533081
+window occluded=false at_ms=533746
+window occluded=true at_ms=535096
+window occluded=false at_ms=535763
+local soak checkpoint cycle=9 phase=57 elapsed_ms=537010 loads=2 load_id=4611686018427387905 position=36.533 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=93 decoder_drops=0 events=1817 wakes=22567 media_notifications=21063 clock_ticks=21674 ui_draws=22252 redraw_requests=21514 ui_assignments=1776 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=10 phase=5 elapsed_ms=545000 loads=2 load_id=4611686018427387905 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=1855 wakes=23068 media_notifications=21531 clock_ticks=22152 ui_draws=22753 redraw_requests=21994 ui_assignments=1825 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=585601
+window occluded=false at_ms=590659
+local soak checkpoint cycle=10 phase=57 elapsed_ms=597001 loads=2 load_id=4611686018427387905 position=27.867 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=69 decoder_drops=0 events=2019 wakes=25127 media_notifications=23448 clock_ticks=24136 ui_draws=24771 redraw_requests=23964 ui_assignments=1977 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=11 phase=5 elapsed_ms=605000 loads=3 load_id=4611686018427387906 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=2089 wakes=25635 media_notifications=23918 clock_ticks=24612 ui_draws=25276 redraw_requests=24449 ui_assignments=2027 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=645599
+window occluded=false at_ms=650585
+window occluded=true at_ms=653115
+window occluded=false at_ms=653761
+window occluded=true at_ms=655098
+window occluded=false at_ms=655743
+local soak checkpoint cycle=11 phase=57 elapsed_ms=657004 loads=3 load_id=4611686018427387906 position=31.633 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=92 decoder_drops=0 events=2265 wakes=27621 media_notifications=25753 clock_ticks=26523 ui_draws=27208 redraw_requests=26311 ui_assignments=2174 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=12 phase=5 elapsed_ms=665000 loads=3 load_id=4611686018427387906 position=5.583 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=2307 wakes=28124 media_notifications=26220 clock_ticks=27001 ui_draws=27708 redraw_requests=26785 ui_assignments=2223 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=705614
+window occluded=false at_ms=710617
+local soak checkpoint cycle=12 phase=57 elapsed_ms=716999 loads=3 load_id=4611686018427387906 position=37.867 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=51 decoder_drops=0 events=2450 wakes=30187 media_notifications=28155 clock_ticks=28987 ui_draws=29745 redraw_requests=28765 ui_assignments=2373 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=13 phase=5 elapsed_ms=725003 loads=3 load_id=4611686018427387906 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=3 decoder_drops=0 events=2490 wakes=30692 media_notifications=28622 clock_ticks=29466 ui_draws=30244 redraw_requests=29243 ui_assignments=2422 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=765613
+window occluded=false at_ms=770608
+window occluded=true at_ms=773112
+window occluded=false at_ms=773780
+window occluded=true at_ms=775102
+window occluded=false at_ms=775627
+local soak checkpoint cycle=13 phase=57 elapsed_ms=776999 loads=3 load_id=4611686018427387906 position=26.900 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=97 decoder_drops=0 events=2659 wakes=32671 media_notifications=30459 clock_ticks=31382 ui_draws=32177 redraw_requests=31108 ui_assignments=2569 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=14 phase=5 elapsed_ms=784999 loads=3 load_id=4611686018427387906 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=2698 wakes=33179 media_notifications=30931 clock_ticks=31861 ui_draws=32683 redraw_requests=31585 ui_assignments=2621 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=825588
+window occluded=false at_ms=830588
+local soak checkpoint cycle=14 phase=57 elapsed_ms=837004 loads=3 load_id=4611686018427387906 position=32.933 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=70 decoder_drops=0 events=2845 wakes=35224 media_notifications=32852 clock_ticks=33841 ui_draws=34707 redraw_requests=33544 ui_assignments=2773 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=15 phase=5 elapsed_ms=845005 loads=3 load_id=4611686018427387906 position=5.600 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=2883 wakes=35724 media_notifications=33320 clock_ticks=34319 ui_draws=35208 redraw_requests=34020 ui_assignments=2824 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=885621
+window occluded=false at_ms=890665
+window occluded=true at_ms=893063
+window occluded=false at_ms=893594
+window occluded=true at_ms=895050
+window occluded=false at_ms=895581
+local soak checkpoint cycle=15 phase=57 elapsed_ms=896999 loads=3 load_id=4611686018427387906 position=36.967 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=82 decoder_drops=0 events=3058 wakes=37730 media_notifications=35177 clock_ticks=36256 ui_draws=37163 redraw_requests=35912 ui_assignments=2970 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=16 phase=5 elapsed_ms=904999 loads=4 load_id=4611686018427387907 position=5.533 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=3131 wakes=38237 media_notifications=35641 clock_ticks=36733 ui_draws=37660 redraw_requests=36392 ui_assignments=3019 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=945603
+window occluded=false at_ms=950566
+local soak checkpoint cycle=16 phase=57 elapsed_ms=956999 loads=4 load_id=4611686018427387907 position=27.983 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=65 decoder_drops=0 events=3273 wakes=40285 media_notifications=37571 clock_ticks=38722 ui_draws=39692 redraw_requests=38355 ui_assignments=3171 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=17 phase=5 elapsed_ms=965000 loads=4 load_id=4611686018427387907 position=5.867 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=13 decoder_drops=0 events=3322 wakes=40792 media_notifications=38035 clock_ticks=39200 ui_draws=40189 redraw_requests=38830 ui_assignments=3222 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1005574
+window occluded=false at_ms=1010550
+window occluded=true at_ms=1013105
+window occluded=false at_ms=1013749
+window occluded=true at_ms=1015104
+window occluded=false at_ms=1015754
+local soak checkpoint cycle=17 phase=57 elapsed_ms=1017001 loads=4 load_id=4611686018427387907 position=31.633 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=83 decoder_drops=0 events=3488 wakes=42778 media_notifications=39877 clock_ticks=41113 ui_draws=42127 redraw_requests=40691 ui_assignments=3370 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=18 phase=5 elapsed_ms=1024999 loads=4 load_id=4611686018427387907 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=7 decoder_drops=0 events=3533 wakes=43289 media_notifications=40347 clock_ticks=41592 ui_draws=42631 redraw_requests=41181 ui_assignments=3420 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1065599
+window occluded=false at_ms=1070561
+local soak checkpoint cycle=18 phase=57 elapsed_ms=1077002 loads=4 load_id=4611686018427387907 position=38.000 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=65 decoder_drops=0 events=3690 wakes=45355 media_notifications=42279 clock_ticks=43588 ui_draws=44665 redraw_requests=43158 ui_assignments=3572 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=19 phase=5 elapsed_ms=1085002 loads=4 load_id=4611686018427387907 position=5.600 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=4 decoder_drops=0 events=3730 wakes=45856 media_notifications=42744 clock_ticks=44065 ui_draws=45163 redraw_requests=43631 ui_assignments=3621 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1125621
+window occluded=false at_ms=1130630
+window occluded=true at_ms=1133086
+window occluded=false at_ms=1133599
+window occluded=true at_ms=1135060
+window occluded=false at_ms=1135599
+local soak checkpoint cycle=19 phase=57 elapsed_ms=1137001 loads=4 load_id=4611686018427387907 position=27.150 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=95 decoder_drops=0 events=3910 wakes=47866 media_notifications=44598 clock_ticks=46001 ui_draws=47115 redraw_requests=45511 ui_assignments=3771 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=20 phase=5 elapsed_ms=1145003 loads=4 load_id=4611686018427387907 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=3952 wakes=48373 media_notifications=45070 clock_ticks=46479 ui_draws=47620 redraw_requests=45996 ui_assignments=3820 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1185620
+window occluded=false at_ms=1190663
+local soak checkpoint cycle=20 phase=57 elapsed_ms=1197004 loads=4 load_id=4611686018427387907 position=32.967 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=66 decoder_drops=0 events=4106 wakes=50432 media_notifications=46993 clock_ticks=48460 ui_draws=49647 redraw_requests=47966 ui_assignments=3972 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=21 phase=5 elapsed_ms=1205004 loads=5 load_id=4611686018427387908 position=5.533 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=6 decoder_drops=0 events=4180 wakes=50940 media_notifications=47455 clock_ticks=48937 ui_draws=50142 redraw_requests=48451 ui_assignments=4021 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1245603
+window occluded=false at_ms=1250620
+window occluded=true at_ms=1253107
+window occluded=false at_ms=1253772
+window occluded=true at_ms=1255087
+window occluded=false at_ms=1255617
+local soak checkpoint cycle=21 phase=57 elapsed_ms=1257005 loads=5 load_id=4611686018427387908 position=36.900 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=101 decoder_drops=0 events=4363 wakes=52930 media_notifications=49289 clock_ticks=50862 ui_draws=52075 redraw_requests=50312 ui_assignments=4165 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=22 phase=5 elapsed_ms=1265005 loads=5 load_id=4611686018427387908 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=3 decoder_drops=0 events=4403 wakes=53440 media_notifications=49764 clock_ticks=51340 ui_draws=52583 redraw_requests=50806 ui_assignments=4216 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1305585
+window occluded=false at_ms=1310692
+local soak checkpoint cycle=22 phase=57 elapsed_ms=1317006 loads=5 load_id=4611686018427387908 position=27.733 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=79 decoder_drops=0 events=4569 wakes=55495 media_notifications=51673 clock_ticks=53323 ui_draws=54593 redraw_requests=52760 ui_assignments=4367 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=23 phase=5 elapsed_ms=1325006 loads=5 load_id=4611686018427387908 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=6 decoder_drops=0 events=4614 wakes=56002 media_notifications=52143 clock_ticks=53801 ui_draws=55097 redraw_requests=53249 ui_assignments=4417 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1365629
+window occluded=false at_ms=1370655
+window occluded=true at_ms=1373078
+window occluded=false at_ms=1373603
+window occluded=true at_ms=1375063
+window occluded=false at_ms=1375603
+local soak checkpoint cycle=23 phase=57 elapsed_ms=1377007 loads=5 load_id=4611686018427387908 position=31.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=91 decoder_drops=0 events=4793 wakes=57989 media_notifications=53982 clock_ticks=55715 ui_draws=57037 redraw_requests=55116 ui_assignments=4565 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=24 phase=5 elapsed_ms=1385005 loads=5 load_id=4611686018427387908 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=0 decoder_drops=0 events=4830 wakes=58496 media_notifications=54456 clock_ticks=56193 ui_draws=57544 redraw_requests=55602 ui_assignments=4614 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1425612
+window occluded=false at_ms=1430669
+local soak checkpoint cycle=24 phase=57 elapsed_ms=1437005 loads=5 load_id=4611686018427387908 position=38.067 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=65 decoder_drops=0 events=4988 wakes=60567 media_notifications=56386 clock_ticks=58185 ui_draws=59577 redraw_requests=57583 ui_assignments=4764 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=25 phase=5 elapsed_ms=1445006 loads=5 load_id=4611686018427387908 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=5025 wakes=61068 media_notifications=56853 clock_ticks=58663 ui_draws=60075 redraw_requests=58063 ui_assignments=4811 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1485627
+window occluded=false at_ms=1490568
+window occluded=true at_ms=1493079
+window occluded=false at_ms=1493610
+window occluded=true at_ms=1495091
+window occluded=false at_ms=1495621
+local soak checkpoint cycle=25 phase=57 elapsed_ms=1497009 loads=5 load_id=4611686018427387908 position=26.917 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=93 decoder_drops=0 events=5195 wakes=63054 media_notifications=58696 clock_ticks=60594 ui_draws=62014 redraw_requests=59937 ui_assignments=4959 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=26 phase=5 elapsed_ms=1505000 loads=6 load_id=4611686018427387909 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=5269 wakes=63569 media_notifications=59168 clock_ticks=61071 ui_draws=62521 redraw_requests=60426 ui_assignments=5009 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1545584
+window occluded=false at_ms=1550558
+local soak checkpoint cycle=26 phase=57 elapsed_ms=1557010 loads=6 load_id=4611686018427387909 position=32.933 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=80 decoder_drops=0 events=5434 wakes=65632 media_notifications=61083 clock_ticks=63061 ui_draws=64538 redraw_requests=62388 ui_assignments=5161 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=27 phase=5 elapsed_ms=1565000 loads=6 load_id=4611686018427387909 position=5.583 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=5475 wakes=66134 media_notifications=61550 clock_ticks=63539 ui_draws=65037 redraw_requests=62867 ui_assignments=5212 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1605602
+window occluded=false at_ms=1610662
+window occluded=true at_ms=1613066
+window occluded=false at_ms=1613605
+window occluded=true at_ms=1615084
+window occluded=false at_ms=1615730
+local soak checkpoint cycle=27 phase=57 elapsed_ms=1617009 loads=6 load_id=4611686018427387909 position=36.617 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=81 decoder_drops=0 events=5645 wakes=68124 media_notifications=63394 clock_ticks=65453 ui_draws=66981 redraw_requests=64739 ui_assignments=5357 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=28 phase=5 elapsed_ms=1625001 loads=6 load_id=4611686018427387909 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=3 decoder_drops=0 events=5685 wakes=68626 media_notifications=63861 clock_ticks=65931 ui_draws=67480 redraw_requests=65216 ui_assignments=5406 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1665602
+window occluded=false at_ms=1670603
+local soak checkpoint cycle=28 phase=57 elapsed_ms=1677001 loads=6 load_id=4611686018427387909 position=27.900 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=59 decoder_drops=0 events=5832 wakes=70683 media_notifications=65789 clock_ticks=67919 ui_draws=69512 redraw_requests=67171 ui_assignments=5558 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=29 phase=5 elapsed_ms=1685000 loads=6 load_id=4611686018427387909 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=4 decoder_drops=0 events=5873 wakes=71194 media_notifications=66262 clock_ticks=68397 ui_draws=70017 redraw_requests=67651 ui_assignments=5607 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1725609
+window occluded=false at_ms=1730567
+window occluded=true at_ms=1733118
+window occluded=false at_ms=1733786
+window occluded=true at_ms=1735061
+window occluded=false at_ms=1735609
+local soak checkpoint cycle=29 phase=57 elapsed_ms=1737003 loads=6 load_id=4611686018427387909 position=31.683 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=105 decoder_drops=0 events=6057 wakes=73172 media_notifications=68082 clock_ticks=70307 ui_draws=71937 redraw_requests=69494 ui_assignments=5755 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=30 phase=5 elapsed_ms=1745001 loads=6 load_id=4611686018427387909 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=6096 wakes=73683 media_notifications=68556 clock_ticks=70785 ui_draws=72444 redraw_requests=69976 ui_assignments=5804 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1785619
+window occluded=false at_ms=1790655
+local soak checkpoint cycle=30 phase=57 elapsed_ms=1796999 loads=6 load_id=4611686018427387909 position=37.700 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=63 decoder_drops=0 events=6243 wakes=75738 media_notifications=70479 clock_ticks=72770 ui_draws=74471 redraw_requests=71939 ui_assignments=5953 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=31 phase=5 elapsed_ms=1804999 loads=7 load_id=4611686018427387910 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=7 decoder_drops=0 events=6320 wakes=76255 media_notifications=70949 clock_ticks=73248 ui_draws=74976 redraw_requests=72419 ui_assignments=6003 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1845589
+window occluded=false at_ms=1850625
+window occluded=true at_ms=1853133
+window occluded=false at_ms=1853799
+window occluded=true at_ms=1855101
+window occluded=false at_ms=1855735
+local soak checkpoint cycle=31 phase=57 elapsed_ms=1857000 loads=7 load_id=4611686018427387910 position=26.567 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=83 decoder_drops=0 events=6483 wakes=78230 media_notifications=72783 clock_ticks=75164 ui_draws=76910 redraw_requests=74282 ui_assignments=6150 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=32 phase=5 elapsed_ms=1865000 loads=7 load_id=4611686018427387910 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=6523 wakes=78739 media_notifications=73258 clock_ticks=75643 ui_draws=77419 redraw_requests=74761 ui_assignments=6200 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1905585
+window occluded=false at_ms=1910666
+local soak checkpoint cycle=32 phase=57 elapsed_ms=1916999 loads=7 load_id=4611686018427387910 position=32.933 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=49 decoder_drops=0 events=6651 wakes=80787 media_notifications=75196 clock_ticks=77619 ui_draws=79456 redraw_requests=76733 ui_assignments=6352 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=33 phase=5 elapsed_ms=1925006 loads=7 load_id=4611686018427387910 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=7 decoder_drops=0 events=6695 wakes=81299 media_notifications=75667 clock_ticks=78098 ui_draws=79959 redraw_requests=77222 ui_assignments=6400 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=1965619
+window occluded=false at_ms=1970633
+window occluded=true at_ms=1973054
+window occluded=false at_ms=1973619
+window occluded=true at_ms=1975057
+window occluded=false at_ms=1975738
+local soak checkpoint cycle=33 phase=57 elapsed_ms=1977000 loads=7 load_id=4611686018427387910 position=36.767 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=99 decoder_drops=0 events=6871 wakes=83286 media_notifications=77502 clock_ticks=80022 ui_draws=81893 redraw_requests=79086 ui_assignments=6545 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=34 phase=5 elapsed_ms=1985000 loads=7 load_id=4611686018427387910 position=5.583 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=8 decoder_drops=0 events=6916 wakes=83787 media_notifications=77963 clock_ticks=80500 ui_draws=82387 redraw_requests=79555 ui_assignments=6596 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2025574
+window occluded=false at_ms=2030659
+local soak checkpoint cycle=34 phase=57 elapsed_ms=2037001 loads=7 load_id=4611686018427387910 position=27.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=67 decoder_drops=0 events=7068 wakes=85833 media_notifications=79879 clock_ticks=82474 ui_draws=84407 redraw_requests=81522 ui_assignments=6748 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=35 phase=5 elapsed_ms=2045001 loads=7 load_id=4611686018427387910 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=7110 wakes=86342 media_notifications=80352 clock_ticks=82952 ui_draws=84913 redraw_requests=82011 ui_assignments=6797 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2085583
+window occluded=false at_ms=2090623
+window occluded=true at_ms=2093058
+window occluded=false at_ms=2093714
+window occluded=true at_ms=2095057
+window occluded=false at_ms=2095719
+local soak checkpoint cycle=35 phase=57 elapsed_ms=2097002 loads=7 load_id=4611686018427387910 position=31.367 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=70 decoder_drops=0 events=7272 wakes=88320 media_notifications=82194 clock_ticks=84847 ui_draws=86852 redraw_requests=83884 ui_assignments=6944 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=36 phase=5 elapsed_ms=2105002 loads=8 load_id=4611686018427387911 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=3 decoder_drops=0 events=7345 wakes=88837 media_notifications=82666 clock_ticks=85325 ui_draws=87359 redraw_requests=84363 ui_assignments=6994 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2145609
+window occluded=false at_ms=2150624
+local soak checkpoint cycle=36 phase=57 elapsed_ms=2157001 loads=8 load_id=4611686018427387911 position=37.983 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=70 decoder_drops=0 events=7501 wakes=90897 media_notifications=84587 clock_ticks=87314 ui_draws=89383 redraw_requests=86317 ui_assignments=7143 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=37 phase=5 elapsed_ms=2165003 loads=8 load_id=4611686018427387911 position=5.850 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=6 decoder_drops=0 events=7544 wakes=91409 media_notifications=85059 clock_ticks=87792 ui_draws=89888 redraw_requests=86801 ui_assignments=7194 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2205620
+window occluded=false at_ms=2210591
+window occluded=true at_ms=2213107
+window occluded=false at_ms=2213773
+window occluded=true at_ms=2215050
+window occluded=false at_ms=2215600
+local soak checkpoint cycle=37 phase=57 elapsed_ms=2217004 loads=8 load_id=4611686018427387911 position=26.900 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=110 decoder_drops=0 events=7735 wakes=93402 media_notifications=86885 clock_ticks=89715 ui_draws=91813 redraw_requests=88664 ui_assignments=7340 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=38 phase=5 elapsed_ms=2225002 loads=8 load_id=4611686018427387911 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=7776 wakes=93903 media_notifications=87349 clock_ticks=90193 ui_draws=92310 redraw_requests=89145 ui_assignments=7391 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2265605
+window occluded=false at_ms=2270693
+local soak checkpoint cycle=38 phase=57 elapsed_ms=2277003 loads=8 load_id=4611686018427387911 position=32.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=62 decoder_drops=0 events=7926 wakes=95946 media_notifications=89264 clock_ticks=92165 ui_draws=94326 redraw_requests=91109 ui_assignments=7542 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=39 phase=5 elapsed_ms=2285000 loads=8 load_id=4611686018427387911 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=7969 wakes=96449 media_notifications=89730 clock_ticks=92643 ui_draws=94825 redraw_requests=91587 ui_assignments=7592 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2325612
+window occluded=false at_ms=2330572
+window occluded=true at_ms=2333126
+window occluded=false at_ms=2333789
+window occluded=true at_ms=2335088
+window occluded=false at_ms=2335761
+local soak checkpoint cycle=39 phase=57 elapsed_ms=2337006 loads=8 load_id=4611686018427387911 position=36.533 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=82 decoder_drops=0 events=8134 wakes=98429 media_notifications=91568 clock_ticks=94553 ui_draws=96760 redraw_requests=93452 ui_assignments=7737 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=40 phase=5 elapsed_ms=2345006 loads=8 load_id=4611686018427387911 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=8173 wakes=98935 media_notifications=92043 clock_ticks=95032 ui_draws=97269 redraw_requests=93939 ui_assignments=7787 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2385607
+window occluded=false at_ms=2390639
+local soak checkpoint cycle=40 phase=57 elapsed_ms=2397007 loads=8 load_id=4611686018427387911 position=27.667 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=70 decoder_drops=0 events=8333 wakes=100993 media_notifications=93957 clock_ticks=97008 ui_draws=99284 redraw_requests=95890 ui_assignments=7938 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=41 phase=5 elapsed_ms=2405007 loads=9 load_id=4611686018427387912 position=5.567 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=8 decoder_drops=0 events=8410 wakes=101502 media_notifications=94418 clock_ticks=97484 ui_draws=99778 redraw_requests=96363 ui_assignments=7987 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2445611
+window occluded=false at_ms=2450632
+window occluded=true at_ms=2453093
+window occluded=false at_ms=2453741
+window occluded=true at_ms=2455061
+window occluded=false at_ms=2455590
+local soak checkpoint cycle=41 phase=57 elapsed_ms=2457008 loads=9 load_id=4611686018427387912 position=31.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=90 decoder_drops=0 events=8588 wakes=103497 media_notifications=96260 clock_ticks=99406 ui_draws=101717 redraw_requests=98229 ui_assignments=8135 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=42 phase=5 elapsed_ms=2465008 loads=9 load_id=4611686018427387912 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=0 decoder_drops=0 events=8625 wakes=104009 media_notifications=96738 clock_ticks=99884 ui_draws=102228 redraw_requests=98722 ui_assignments=8184 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2505606
+window occluded=false at_ms=2510641
+local soak checkpoint cycle=42 phase=57 elapsed_ms=2516999 loads=9 load_id=4611686018427387912 position=38.100 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=78 decoder_drops=0 events=8796 wakes=106081 media_notifications=98657 clock_ticks=101873 ui_draws=104248 redraw_requests=100680 ui_assignments=8334 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=43 phase=5 elapsed_ms=2525009 loads=9 load_id=4611686018427387912 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=1 decoder_drops=0 events=8833 wakes=106581 media_notifications=99124 clock_ticks=102351 ui_draws=104747 redraw_requests=101159 ui_assignments=8382 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2565592
+window occluded=false at_ms=2570592
+window occluded=true at_ms=2573067
+window occluded=false at_ms=2573590
+window occluded=true at_ms=2575092
+window occluded=false at_ms=2575762
+local soak checkpoint cycle=43 phase=57 elapsed_ms=2577003 loads=9 load_id=4611686018427387912 position=26.650 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=78 decoder_drops=0 events=8998 wakes=108566 media_notifications=100973 clock_ticks=104267 ui_draws=106696 redraw_requests=103036 ui_assignments=8529 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=44 phase=5 elapsed_ms=2585010 loads=9 load_id=4611686018427387912 position=5.567 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=9040 wakes=109066 media_notifications=101436 clock_ticks=104744 ui_draws=107192 redraw_requests=103516 ui_assignments=8578 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2625618
+window occluded=false at_ms=2630652
+local soak checkpoint cycle=44 phase=57 elapsed_ms=2637001 loads=9 load_id=4611686018427387912 position=33.083 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=67 decoder_drops=0 events=9198 wakes=111134 media_notifications=103367 clock_ticks=106732 ui_draws=109227 redraw_requests=105487 ui_assignments=8730 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=45 phase=5 elapsed_ms=2645002 loads=9 load_id=4611686018427387912 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=9240 wakes=111640 media_notifications=103836 clock_ticks=107210 ui_draws=109729 redraw_requests=105974 ui_assignments=8779 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2685591
+window occluded=false at_ms=2690605
+window occluded=true at_ms=2693116
+window occluded=false at_ms=2693786
+window occluded=true at_ms=2695095
+window occluded=false at_ms=2695765
+local soak checkpoint cycle=45 phase=57 elapsed_ms=2697002 loads=9 load_id=4611686018427387912 position=36.600 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=91 decoder_drops=0 events=9417 wakes=113622 media_notifications=105669 clock_ticks=109124 ui_draws=111662 redraw_requests=107836 ui_assignments=8924 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=46 phase=5 elapsed_ms=2705010 loads=10 load_id=4611686018427387913 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=4 decoder_drops=0 events=9491 wakes=114141 media_notifications=106142 clock_ticks=109602 ui_draws=112170 redraw_requests=108324 ui_assignments=8974 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2745604
+window occluded=false at_ms=2750667
+local soak checkpoint cycle=46 phase=57 elapsed_ms=2757002 loads=10 load_id=4611686018427387913 position=27.633 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=56 decoder_drops=0 events=9636 wakes=116196 media_notifications=108068 clock_ticks=111575 ui_draws=114197 redraw_requests=110280 ui_assignments=9125 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=47 phase=5 elapsed_ms=2765000 loads=10 load_id=4611686018427387913 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=9675 wakes=116696 media_notifications=108534 clock_ticks=112053 ui_draws=114695 redraw_requests=110763 ui_assignments=9174 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2805620
+window occluded=false at_ms=2810665
+window occluded=true at_ms=2813057
+window occluded=false at_ms=2813593
+window occluded=true at_ms=2815071
+window occluded=false at_ms=2815751
+local soak checkpoint cycle=47 phase=57 elapsed_ms=2817003 loads=10 load_id=4611686018427387913 position=31.333 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=75 decoder_drops=0 events=9833 wakes=118665 media_notifications=110369 clock_ticks=113951 ui_draws=116630 redraw_requests=112633 ui_assignments=9321 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=48 phase=5 elapsed_ms=2825000 loads=10 load_id=4611686018427387913 position=5.567 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=0 decoder_drops=0 events=9870 wakes=119162 media_notifications=110837 clock_ticks=114428 ui_draws=117131 redraw_requests=113114 ui_assignments=9370 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2865617
+window occluded=false at_ms=2870542
+local soak checkpoint cycle=48 phase=57 elapsed_ms=2877006 loads=10 load_id=4611686018427387913 position=38.117 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=76 decoder_drops=0 events=10025 wakes=121225 media_notifications=112766 clock_ticks=116426 ui_draws=119163 redraw_requests=115083 ui_assignments=9520 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=49 phase=5 elapsed_ms=2884999 loads=10 load_id=4611686018427387913 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=10063 wakes=121728 media_notifications=113235 clock_ticks=116903 ui_draws=119665 redraw_requests=115564 ui_assignments=9569 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2925604
+window occluded=false at_ms=2930682
+window occluded=true at_ms=2933057
+window occluded=false at_ms=2933595
+window occluded=true at_ms=2935052
+window occluded=false at_ms=2935581
+local soak checkpoint cycle=49 phase=57 elapsed_ms=2936999 loads=10 load_id=4611686018427387913 position=26.650 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=63 decoder_drops=0 events=10220 wakes=123717 media_notifications=115093 clock_ticks=118810 ui_draws=121622 redraw_requests=117456 ui_assignments=9717 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=50 phase=5 elapsed_ms=2945000 loads=10 load_id=4611686018427387913 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=9 decoder_drops=0 events=10267 wakes=124219 media_notifications=115554 clock_ticks=119288 ui_draws=122117 redraw_requests=117930 ui_assignments=9767 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=2985598
+window occluded=false at_ms=2990618
+local soak checkpoint cycle=50 phase=57 elapsed_ms=2997002 loads=10 load_id=4611686018427387913 position=32.900 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=69 decoder_drops=0 events=10421 wakes=126276 media_notifications=117473 clock_ticks=121270 ui_draws=124139 redraw_requests=119884 ui_assignments=9918 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=51 phase=5 elapsed_ms=3004999 loads=11 load_id=4611686018427387914 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=10495 wakes=126792 media_notifications=117944 clock_ticks=121747 ui_draws=124645 redraw_requests=120373 ui_assignments=9968 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3045604
+window occluded=false at_ms=3050669
+window occluded=true at_ms=3053106
+window occluded=false at_ms=3053753
+window occluded=true at_ms=3055068
+window occluded=false at_ms=3055597
+local soak checkpoint cycle=51 phase=57 elapsed_ms=3057002 loads=11 load_id=4611686018427387914 position=36.733 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=95 decoder_drops=0 events=10667 wakes=128769 media_notifications=119776 clock_ticks=123664 ui_draws=126575 redraw_requests=122238 ui_assignments=10114 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=52 phase=5 elapsed_ms=3065000 loads=11 load_id=4611686018427387914 position=5.783 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=3 decoder_drops=0 events=10707 wakes=129275 media_notifications=120250 clock_ticks=124142 ui_draws=127082 redraw_requests=122725 ui_assignments=10163 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3105624
+window occluded=false at_ms=3110629
+local soak checkpoint cycle=52 phase=57 elapsed_ms=3117001 loads=11 load_id=4611686018427387914 position=28.017 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=76 decoder_drops=0 events=10874 wakes=131344 media_notifications=122168 clock_ticks=126129 ui_draws=129106 redraw_requests=124689 ui_assignments=10317 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=53 phase=5 elapsed_ms=3125003 loads=11 load_id=4611686018427387914 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=10916 wakes=131850 media_notifications=122639 clock_ticks=126607 ui_draws=129610 redraw_requests=125171 ui_assignments=10366 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3165623
+window occluded=false at_ms=3170645
+window occluded=true at_ms=3173125
+window occluded=false at_ms=3173638
+window occluded=true at_ms=3175086
+window occluded=false at_ms=3175617
+local soak checkpoint cycle=53 phase=57 elapsed_ms=3177004 loads=11 load_id=4611686018427387914 position=31.883 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=85 decoder_drops=0 events=11085 wakes=133842 media_notifications=124487 clock_ticks=128525 ui_draws=131560 redraw_requests=127056 ui_assignments=10514 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=54 phase=5 elapsed_ms=3185004 loads=11 load_id=4611686018427387914 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=11126 wakes=134349 media_notifications=124958 clock_ticks=129003 ui_draws=132064 redraw_requests=127539 ui_assignments=10563 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3225594
+window occluded=false at_ms=3230680
+local soak checkpoint cycle=54 phase=57 elapsed_ms=3237005 loads=11 load_id=4611686018427387914 position=37.667 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=68 decoder_drops=0 events=11281 wakes=136402 media_notifications=126875 clock_ticks=130983 ui_draws=134084 redraw_requests=129499 ui_assignments=10712 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=55 phase=5 elapsed_ms=3245005 loads=11 load_id=4611686018427387914 position=5.550 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=5 decoder_drops=0 events=11323 wakes=136902 media_notifications=127339 clock_ticks=131461 ui_draws=134581 redraw_requests=129978 ui_assignments=10761 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3285606
+window occluded=false at_ms=3290637
+window occluded=true at_ms=3293082
+window occluded=false at_ms=3293747
+window occluded=true at_ms=3295054
+window occluded=false at_ms=3295602
+local soak checkpoint cycle=55 phase=57 elapsed_ms=3297006 loads=11 load_id=4611686018427387914 position=26.700 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=65 decoder_drops=0 events=11474 wakes=138885 media_notifications=129198 clock_ticks=133379 ui_draws=136540 redraw_requests=131872 ui_assignments=10909 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=56 phase=5 elapsed_ms=3305006 loads=12 load_id=4611686018427387915 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=0 decoder_drops=0 events=11543 wakes=139403 media_notifications=129675 clock_ticks=133857 ui_draws=137052 redraw_requests=132370 ui_assignments=10959 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3345614
+window occluded=false at_ms=3350678
+local soak checkpoint cycle=56 phase=57 elapsed_ms=3357005 loads=12 load_id=4611686018427387915 position=32.950 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=74 decoder_drops=0 events=11704 wakes=141455 media_notifications=131590 clock_ticks=135837 ui_draws=139069 redraw_requests=134331 ui_assignments=11111 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=57 phase=5 elapsed_ms=3365007 loads=12 load_id=4611686018427387915 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=17 decoder_drops=0 events=11757 wakes=141964 media_notifications=132049 clock_ticks=136316 ui_draws=139559 redraw_requests=134802 ui_assignments=11159 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3405595
+window occluded=false at_ms=3410668
+window occluded=true at_ms=3413095
+window occluded=false at_ms=3413775
+window occluded=true at_ms=3415091
+window occluded=false at_ms=3415797
+local soak checkpoint cycle=57 phase=57 elapsed_ms=3417006 loads=12 load_id=4611686018427387915 position=36.483 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=99 decoder_drops=0 events=11942 wakes=143933 media_notifications=133863 clock_ticks=138217 ui_draws=141473 redraw_requests=136642 ui_assignments=11304 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=58 phase=5 elapsed_ms=3425006 loads=12 load_id=4611686018427387915 position=5.817 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=2 decoder_drops=0 events=11982 wakes=144440 media_notifications=134338 clock_ticks=138695 ui_draws=141982 redraw_requests=137136 ui_assignments=11354 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3465626
+window occluded=false at_ms=3470661
+local soak checkpoint cycle=58 phase=57 elapsed_ms=3476999 loads=12 load_id=4611686018427387915 position=27.933 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=63 decoder_drops=0 events=12130 wakes=146497 media_notifications=136263 clock_ticks=140678 ui_draws=144009 redraw_requests=139105 ui_assignments=11506 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=59 phase=5 elapsed_ms=3484999 loads=12 load_id=4611686018427387915 position=5.833 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=6 decoder_drops=0 events=12172 wakes=147002 media_notifications=136731 clock_ticks=141156 ui_draws=144510 redraw_requests=139590 ui_assignments=11555 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3525597
+window occluded=false at_ms=3530660
+window occluded=true at_ms=3533097
+window occluded=false at_ms=3533762
+window occluded=true at_ms=3535091
+window occluded=false at_ms=3535623
+local soak checkpoint cycle=59 phase=57 elapsed_ms=3537002 loads=12 load_id=4611686018427387915 position=31.700 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=83 decoder_drops=0 events=12335 wakes=148978 media_notifications=138570 clock_ticks=143062 ui_draws=146449 redraw_requests=141468 ui_assignments=11702 model_changes_delta=0 model_resets_delta=0
+local soak checkpoint cycle=60 phase=5 elapsed_ms=3545001 loads=12 load_id=4611686018427387915 position=5.800 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=6 decoder_drops=0 events=12378 wakes=149483 media_notifications=139040 clock_ticks=143540 ui_draws=146952 redraw_requests=141950 ui_assignments=11751 model_changes_delta=0 model_resets_delta=0
+window occluded=true at_ms=3585616
+window occluded=false at_ms=3590614
+local soak checkpoint cycle=60 phase=57 elapsed_ms=3597001 loads=12 load_id=4611686018427387915 position=37.950 codec=H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 decoder=videotoolbox size=1920x1080 fps=60.000 vo_drops=71 decoder_drops=0 events=12536 wakes=151538 media_notifications=140960 clock_ticks=145523 ui_draws=148976 redraw_requests=143911 ui_assignments=11901 model_changes_delta=0 model_resets_delta=0
+local soak finished: completed_cycles=60 elapsed_ms=3603040 outcome=local-functional-pass helper_leak_check=external_not_measured
+session counters: ui=11922 catalog_changes=0 catalog_resets=1 redraw_requests=144098 draw_callbacks=149171 media=Snapshot { stop_pending: true, state: Idle, paused: false, paused_for_cache: false, playback_restarted: false, position: 0.0, duration: 0.0, volume: 100.0, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "", codec: "", audio_codec: "", audio_output: "", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 25, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 0, width: 0, height: 0, fps: 0.0, dropped_frames: 71, error: None, events_received: 12570, file_loads: 12, file_starts: 12, load_request_id: 0, active_load_request_id: 4611686018427387915, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 151736, render_notifications: 141142, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 145707, display_clock_starts: 300, display_clock_stops: 300, display_clock_active: false, prevents_display_sleep: false }
+render stats: RenderStats { updates: 140920, video_draws: 140826, ui_draws: 149171, target_allocations: 302, target_bytes: 7936128, stable_video_target: false, stable_target_draws: 0, private_target_draws: 47, target_publications: 140779, timing_samples: 0, gl_save_us: 0, mpv_update_us: 0, mpv_render_us: 0, gl_restore_us: 0, max_mpv_render_us: 0, target_time_samples: 0, early_us: 0, late_us: 0, max_early_us: 0, max_late_us: 0, scheduled_wakes: 0, callback_latency_samples: 0, callback_latency_us: 0, max_callback_latency_us: 0, gpu: GpuTimingStats { requested: false, supported: false, query_api_available: false, counter_bits: 0, elapsed_counter_bits: 0, ui_elapsed_requested: false, ui_elapsed_samples: 0, ui_elapsed_ns: 0, max_ui_elapsed_ns: 0, elapsed_conflicts: 0, allocation_failed: false, disjoint_supported: false, frame_samples: 0, media_samples: 0, frame_ns: 0, media_ns: 0, ui_after_media_ns: 0, max_frame_ns: 0, max_media_ns: 0, max_ui_after_media_ns: 0, dropped_samples: 0, invalid_samples: 0, disjoint_events: 0, pending_samples: 0 } }

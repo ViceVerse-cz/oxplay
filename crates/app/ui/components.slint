@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+export global Colors {
+    in-out property <bool> dark: true;
+    out property <color> canvas: dark ? #0f0f0f : #ffffff;
+    out property <color> surface: dark ? #181818 : #f5f5f5;
+    out property <color> raised: dark ? #282828 : #eeeeee;
+    out property <color> border: dark ? #3a3a3a : #dedede;
+    out property <color> text: dark ? #f1f1f1 : #0f0f0f;
+    out property <color> muted: dark ? #aaaaaa : #606060;
+    out property <color> accent: dark ? #ff0033 : #d9002b;
+    out property <color> selected: dark ? #282828 : #eeeeee;
+    // Filled actions keep white text above 4.5:1 in both themes.
+    out property <color> primary: #d9002b;
+    out property <color> primary-hover: #c50027;
+    out property <color> primary-pressed: #ad0022;
+    out property <color> destructive: dark ? #ff8295 : #b00020;
+}
+export enum ActionVariant { quiet, primary, secondary, destructive }
+export component Action inherits Rectangle {
+    in property <string> label;
+    in property <string> icon-name;
+    in property <bool> selected;
+    in property <bool> selectable;
+    in property <bool> checkable;
+    in property <bool> enabled: true;
+    in property <bool> compact;
+    // Visual emphasis is independent of selection/check state and accessibility.
+    in property <ActionVariant> variant: quiet;
+    private property <bool> keyboard-pressed;
+    private property <bool> pressed: enabled && (touch.pressed || keyboard-pressed);
+    private property <color> foreground: variant == primary ? #ffffff : variant == destructive ? Colors.destructive : Colors.text;
+    callback clicked;
+    height: 40px;
+    min-width: compact ? 40px : 70px;
+    border-radius: 8px;
+    background: variant == primary ? (pressed ? Colors.primary-pressed : touch.has-hover && enabled ? Colors.primary-hover : Colors.primary)
+        : pressed ? Colors.border : touch.has-hover && enabled ? Colors.raised
+        : selected ? Colors.selected : variant == quiet ? transparent : Colors.surface;
+    border-width: focus.has-focus ? 2px : variant == secondary || variant == destructive ? 1px : 0px;
+    border-color: focus.has-focus ? (variant == primary ? Colors.text : Colors.accent)
+        : variant == destructive ? Colors.destructive : Colors.border;
+    opacity: enabled ? 1 : 0.4;
+    accessible-role: button;
+    accessible-label: label;
+    accessible-enabled: enabled;
+    accessible-item-selectable: selectable;
+    accessible-item-selected: selected;
+    accessible-checkable: checkable;
+    accessible-checked: selected;
+    accessible-action-default => { if root.enabled { root.clicked(); } }
+    forward-focus: focus;
+    changed enabled => { if !root.enabled { root.keyboard-pressed = false; } }
+    focus := FocusScope {
+        enabled: root.enabled;
+        focus-lost => { root.keyboard-pressed = false; }
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                // A held key is one activation, just like a held pointer.
+                if !root.keyboard-pressed { root.keyboard-pressed = true; root.clicked(); }
+                return accept;
+            }
+            return reject;
+        }
+        key-released(event) => {
+            if event.text == " " || event.text == Key.Return { root.keyboard-pressed = false; return accept; }
+            return reject;
+        }
+    }
+    if root.icon-name != "": Image {
+        source: root.icon-name == "menu" ? @image-url("icons/menu.svg")
+            : root.icon-name == "house" ? @image-url("icons/house.svg")
+            : root.icon-name == "library-big" ? @image-url("icons/library-big.svg")
+            : root.icon-name == "users" ? @image-url("icons/users.svg")
+            : root.icon-name == "list-video" ? @image-url("icons/list-video.svg")
+            : root.icon-name == "history" ? @image-url("icons/rotate-ccw-clock.svg")
+            : root.icon-name == "play" ? @image-url("icons/play.svg")
+            : root.icon-name == "pause" ? @image-url("icons/pause.svg")
+            : root.icon-name == "circle-user-round" ? @image-url("icons/circle-user-round.svg")
+            : root.icon-name == "settings" ? @image-url("icons/settings.svg")
+            : root.icon-name == "search" ? @image-url("icons/search.svg")
+            : root.icon-name == "plus" ? @image-url("icons/plus.svg")
+            : root.icon-name == "captions" ? @image-url("icons/captions.svg")
+            : root.icon-name == "maximize" ? @image-url("icons/maximize.svg")
+            : root.icon-name == "volume-2" ? @image-url("icons/volume-2.svg")
+            : root.icon-name == "volume-x" ? @image-url("icons/volume-x.svg")
+            : root.icon-name == "info" ? @image-url("icons/info.svg")
+            : root.icon-name == "ellipsis" ? @image-url("icons/ellipsis.svg")
+            : root.icon-name == "clapperboard" ? @image-url("icons/clapperboard.svg")
+            : root.icon-name == "image-off" ? @image-url("icons/image-off.svg")
+            : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
+        colorize: root.variant == quiet && root.selected ? Colors.accent : root.foreground;
+        x: root.compact ? (root.width - 20px) / 2 : 12px;
+        y: (root.height - 20px) / 2; width: 20px; height: 20px;
+    }
+    if !root.compact: Text { x: root.icon-name != "" ? 44px : 12px; y: 0; width: parent.width - self.x - 12px; height: parent.height; text: root.label; color: root.foreground; font-size: 14px; font-weight: root.variant == primary ? 600 : 400; vertical-alignment: center; overflow: elide; }
+    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
+    if root.compact: Tooltip {
+        Rectangle {
+            width: tip.preferred-width + 20px; height: 34px;
+            background: Colors.raised; border-radius: 6px;
+            border-width: 1px; border-color: Colors.border;
+            tip := Text { text: root.label; color: Colors.text; x: 10px; height: parent.height; vertical-alignment: center; font-size: 12px; }
+        }
+    }
+}
+export struct AccountRow { title: string, detail: string, action: string, can-account-play: bool }
+export struct VideoRow { kind: string, title: string, channel: string, id: string, duration: string, thumbnail: image, thumbnail-ready: bool }
+export struct VideoGroup { items: [VideoRow], start: int }
+export global CatalogKeys {
+    public pure function command(event: KeyEvent) -> int {
+        if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return -1; }
+        if event.text == Key.Tab { return event.modifiers.shift ? 0 : 1; }
+        if event.text == Key.Backtab { return 0; }
+        if event.text == Key.UpArrow { return 2; }
+        if event.text == Key.DownArrow { return 3; }
+        if event.text == Key.Home { return 4; }
+        if event.text == Key.End { return 5; }
+        if event.text == Key.PageUp { return 6; }
+        if event.text == Key.PageDown { return 7; }
+        if event.text == Key.LeftArrow { return 8; }
+        if event.text == Key.RightArrow { return 9; }
+        return -1;
+    }
+}
+export component VideoCard inherits Rectangle {
+    in property <bool> enabled: true;
+    in property <VideoRow> item;
+    in property <bool> compact;
+    in property <int> focus-request;
+    in property <int> focus-delivery;
+    callback keyboard-move(int) -> bool;
+    callback card-focus(bool);
+    callback claim-focus(int) -> bool;
+    callback focus-ready(int);
+    callback focus-complete(int, bool);
+    function try-requested-focus() {
+        if root.focus-request > 0 && root.focus-delivery == root.focus-request {
+            let serial = root.focus-request;
+            if root.claim-focus(serial) {
+                focus.focus();
+                root.focus-complete(serial, focus.has-focus);
+            }
+        }
+    }
+    // Data is available during init, but outer ListView row geometry is not.
+    init => { if root.focus-request > 0 { root.focus-ready(root.focus-request); } }
+    changed focus-request => { if root.focus-request > 0 { root.focus-ready(root.focus-request); } }
+    changed focus-delivery => { root.try-requested-focus(); }
+    callback clicked;
+    border-radius: 10px;
+    background: touch.has-hover ? Colors.surface : transparent;
+    border-width: focus.has-focus ? 2px : 0px;
+    border-color: Colors.accent;
+    accessible-role: button;
+    accessible-enabled: root.enabled;
+    accessible-label: item.kind + ", " + item.title + ", " + item.channel;
+    accessible-action-default => { if root.enabled { root.clicked(); } }
+    forward-focus: focus;
+    focus := FocusScope {
+        enabled: root.enabled;
+        focus-gained => { root.card-focus(true); }
+        focus-lost => { root.card-focus(false); }
+        key-pressed(event) => {
+            let command = CatalogKeys.command(event);
+            if command >= 0 && root.keyboard-move(command) { return accept; }
+            if event.text == " " || event.text == Key.Return { root.clicked(); return accept; }
+            return reject;
+        }
+    }
+    preview := Rectangle {
+        x: 0; y: 0;
+        width: root.compact ? 160px : parent.width;
+        height: self.width * 9 / 16;
+        background: Colors.raised;
+        border-radius: 10px;
+        clip: true;
+        if root.item.thumbnail-ready: Image { source: root.item.thumbnail; width: parent.width; height: parent.height; image-fit: root.item.kind == "Channel" ? contain : cover; }
+        if !root.item.thumbnail-ready: Image { x: (parent.width - 30px) / 2; y: (parent.height - 30px) / 2; width: 30px; height: 30px; source: root.item.kind == "Channel" ? @image-url("icons/circle-user-round.svg") : root.item.kind == "Playlist" ? @image-url("icons/library-big.svg") : @image-url("icons/image-off.svg"); colorize: Colors.muted; }
+        if root.item.kind == "Channel" || root.item.kind == "Playlist": Rectangle {
+            x: 7px; y: 7px; height: 23px; width: kind-label.preferred-width + 14px;
+            border-radius: 4px; background: #000000cc;
+            kind-label := Text { text: root.item.kind; color: white; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        if root.item.duration != "": Rectangle {
+            x: parent.width - self.width - 7px; y: parent.height - 25px;
+            width: length-label.preferred-width + 10px; height: 19px; border-radius: 4px; background: #000000d9;
+            length-label := Text { text: root.item.duration; font-size: 11px; font-weight: 600; color: white; horizontal-alignment: center; vertical-alignment: center; }
+        }
+    }
+    Text {
+        x: root.compact ? 174px : 2px; y: root.compact ? 3px : preview.height + 12px;
+        width: parent.width - self.x - 6px; height: 40px;
+        text: root.item.title; color: Colors.text; font-size: 14px; font-weight: 600;
+        wrap: word-wrap; overflow: elide;
+    }
+    Text {
+        x: root.compact ? 174px : 2px; y: root.compact ? 48px : preview.height + 57px;
+        width: parent.width - self.x - 6px; height: 20px;
+        text: root.item.channel; color: Colors.muted; font-size: 12px; overflow: elide;
+    }
+    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
+}

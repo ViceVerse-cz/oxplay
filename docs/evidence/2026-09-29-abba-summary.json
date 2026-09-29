@@ -1,0 +1,290 @@
+{
+  "provenance": {
+    "source_revision": "bc2e53f",
+    "binary_sha256": "6791c634802d1649b5d4ff26a7c5cfd6d3e1c334527a527760fe26233edcf874",
+    "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+    "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+    "run_order": [
+      "a1-off",
+      "b1-on",
+      "b2-on",
+      "a2-off"
+    ],
+    "geometry": "1320x860 logical requested; native targets recorded by app",
+    "fixture": "30 explicitly labeled related rows, empty thumbnails",
+    "diagnostics": "finite checkpoints only; no screenshot/GPU/HTTP timing",
+    "scope": "same-binary cache experiment; review pacing, visibility and foreign-work audit before qualification"
+  },
+  "runs": [
+    {
+      "mode": "a1-off",
+      "measurement_start_utc": "2026-09-29T03:52:08Z",
+      "cpu_one_core_percent": {
+        "mean": 52.00482522955144,
+        "p95": 62.73088975123119,
+        "peak": 64.00041068981409
+      },
+      "rss_mib": {
+        "mean": 189.2203125,
+        "p95": 189.953125,
+        "peak": 190.015625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 58.07853715033833,
+        "p95": 75.15248270386105,
+        "peak": 83.99968147354643
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "target_allocations": 2,
+      "target_bytes": 8614016,
+      "occlusion_events": [],
+      "host_top_mean_from_per_sample_top8": [
+        [
+          "WindowServer",
+          42.004708602011554
+        ],
+        [
+          "coreaudiod",
+          6.365255275909953
+        ],
+        [
+          "codex",
+          1.9685127366148463
+        ],
+        [
+          "zeron",
+          1.6686762686833685
+        ],
+        [
+          "com.apple.DriverKit-AppleBCMWLAN",
+          1.3011815940017721
+        ],
+        [
+          "launchd",
+          0.7771318511549427
+        ],
+        [
+          "Python",
+          0.483974104230693
+        ],
+        [
+          "cloudflared",
+          0.2976394494972545
+        ]
+      ]
+    },
+    {
+      "mode": "b1-on",
+      "measurement_start_utc": "2026-09-29T03:53:39Z",
+      "cpu_one_core_percent": {
+        "mean": 51.92559482101782,
+        "p95": 64.00110401999997,
+        "peak": 65.00010829145896
+      },
+      "rss_mib": {
+        "mean": 195.08046875,
+        "p95": 195.859375,
+        "peak": 196.0625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 61.8103015000376,
+        "p95": 79.397406713682,
+        "peak": 119.02191783512068
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 4,
+        "10": 4,
+        "25": 4,
+        "70": 4
+      },
+      "target_allocations": 2,
+      "target_bytes": 8614016,
+      "occlusion_events": [],
+      "host_top_mean_from_per_sample_top8": [
+        [
+          "WindowServer",
+          42.98214892722692
+        ],
+        [
+          "coreaudiod",
+          6.6768962128135545
+        ],
+        [
+          "codex",
+          1.9757605187413636
+        ],
+        [
+          "zeron",
+          1.6760744764563706
+        ],
+        [
+          "com.apple.DriverKit-AppleBCMWLAN",
+          1.6501594764139196
+        ],
+        [
+          "launchd",
+          0.7639672207266067
+        ],
+        [
+          "spotlightknowledged.updater",
+          0.6420321675578609
+        ],
+        [
+          "Python",
+          0.49706493175648375
+        ]
+      ]
+    },
+    {
+      "mode": "b2-on",
+      "measurement_start_utc": "2026-09-29T03:55:10Z",
+      "cpu_one_core_percent": {
+        "mean": 52.548290052459414,
+        "p95": 63.000960764633064,
+        "peak": 63.99996799977231
+      },
+      "rss_mib": {
+        "mean": 194.90572916666667,
+        "p95": 195.59375,
+        "peak": 195.625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 63.00698182001318,
+        "p95": 94.56249282279536,
+        "peak": 195.9863954175088
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "target_allocations": 2,
+      "target_bytes": 8614016,
+      "occlusion_events": [],
+      "host_top_mean_from_per_sample_top8": [
+        [
+          "WindowServer",
+          42.79956348852344
+        ],
+        [
+          "coreaudiod",
+          6.704778044952927
+        ],
+        [
+          "runningboardd",
+          2.591809012321649
+        ],
+        [
+          "zeron",
+          2.1213655846481294
+        ],
+        [
+          "PerfPowerServices",
+          2.0699993476759895
+        ],
+        [
+          "com.apple.DriverKit-AppleBCMWLAN",
+          0.9283180803729215
+        ],
+        [
+          "launchd",
+          0.8652784234809217
+        ],
+        [
+          "codex",
+          0.5699420246844037
+        ]
+      ]
+    },
+    {
+      "mode": "a2-off",
+      "measurement_start_utc": "2026-09-29T03:56:41Z",
+      "cpu_one_core_percent": {
+        "mean": 52.6780648347283,
+        "p95": 62.999034035570006,
+        "peak": 65.99887524843825
+      },
+      "rss_mib": {
+        "mean": 188.56848958333333,
+        "p95": 189.234375,
+        "peak": 189.359375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 57.335122735622654,
+        "p95": 68.00566997434166,
+        "peak": 98.99829227795894
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 3,
+        "10": 3,
+        "25": 3,
+        "70": 3
+      },
+      "target_allocations": 2,
+      "target_bytes": 8614016,
+      "occlusion_events": [],
+      "host_top_mean_from_per_sample_top8": [
+        [
+          "WindowServer",
+          41.74627297334806
+        ],
+        [
+          "coreaudiod",
+          6.434861366539564
+        ],
+        [
+          "zeron",
+          1.5504276097015006
+        ],
+        [
+          "codex",
+          1.5047264487111083
+        ],
+        [
+          "com.apple.DriverKit-AppleBCMWLAN",
+          1.231007482359744
+        ],
+        [
+          "launchd",
+          0.7286193356000781
+        ],
+        [
+          "Python",
+          0.5510625024288288
+        ],
+        [
+          "cloudflared",
+          0.31525416848954074
+        ]
+      ]
+    }
+  ],
+  "interpretation": "All four means exceed 50% CPU release ceiling. Warm VO drops0 in each, decoder drops0, no observed occlusion; same persistent GPU targets and unrelated catalog model counters unchanged after fixture initialization. Whole-chrome caching did not improve CPU in this series and raised RSS. Host audit mostly WindowServer/coreaudiod, not application-owned; no GPU execution/energy/AV-sync qualification.",
+  "power_settings_after_run": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                0\n lessbright           1\n tcpkeepalive         1\n disksleep            0\n SleepServices        0\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             0\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                0\n tcpkeepalive         1\n disksleep            0\n SleepServices        0\n"
+}

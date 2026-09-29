@@ -1,0 +1,91 @@
+{
+  "binary_source_association_verified": false,
+  "candidate_bytes_with_duplicates": 11230,
+  "checks": {
+    "all_candidate_selection_flags_null": true,
+    "all_retained_payload_hashes_and_lengths_match": true,
+    "cargo_or_native_app_run": false,
+    "no_incomplete_marker": true,
+    "notice_file_modes": "0600",
+    "output_directory_mode": "0700",
+    "source_extraction_or_execution": false
+  },
+  "collector": {
+    "path": "scripts/deno_source_inventory.py",
+    "sha256": "6e07388a0ede8cf710b8f8b25b4c3a81796b09a8e7e06be2fbb795f07d5be744"
+  },
+  "command": "python3 scripts/deno_source_inventory.py --archive artifacts/deno-source-20260929/deno_src.tar.gz --output artifacts/deno-source-20260929/inventory",
+  "complete_corresponding_source": false,
+  "compressed_bytes": 34255299,
+  "date": "2026-09-29",
+  "exit_code": 0,
+  "expanded_bytes": 114636800,
+  "installed_root_notice_comparison": {
+    "does_not_establish_binary_source_association": true,
+    "input_label": "installed-deno-2.9.7/LICENSE.md",
+    "matches_archive_root_notice": true,
+    "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+  },
+  "inventory": {
+    "bytes": 413884,
+    "path": "artifacts/deno-source-20260929/inventory/inventory.json",
+    "sha256": "981c6d318af849a26f50da011db6c7ecda95fd329b494acddfd1417d85a1f8e7"
+  },
+  "license_clearance": false,
+  "limits": [
+    "Lock candidates include unselected target, dev and optional packages; no Cargo feature resolution was run",
+    "Nested manifests/notices are inventoried, not proven to be compiled or applicable",
+    "Only named regular notice files are retained; inline comments and generated notices are not collected",
+    "Link members are not followed; linked notices and source content remain uncollected",
+    "V8, generated snapshots, embedded JavaScript, native dependencies and build-tool closure are unverified",
+    "No comparison with the installed Homebrew bottle, build logs or binary was performed",
+    "Fixed byte/count limits and cooperative time checks are not a hard real-time I/O guarantee",
+    "Inputs must remain quiescent; archive checksum is an integrity association, not publisher authentication"
+  ],
+  "lock_candidate_count": 1128,
+  "lock_candidate_source_counts": {
+    "registry": 1046,
+    "workspace_or_path": 82
+  },
+  "manifest_and_lock_count": 95,
+  "members": 22005,
+  "named_candidate_false_positive": "deno/tools/copyright_checker.js is executable source, not a complete standalone license grant; it is retained by the broad filename matcher, not treated as an authoritative notice",
+  "named_notice_candidate_count": 66,
+  "non_test_candidates": [
+    {
+      "bytes": 1074,
+      "path": "deno/LICENSE.md",
+      "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+    },
+    {
+      "bytes": 1141,
+      "path": "deno/cli/tsc/dts/node/LICENSE",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "bytes": 1090,
+      "path": "deno/cli/tsc/dts/node/undici/LICENSE",
+      "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27"
+    },
+    {
+      "bytes": 1074,
+      "path": "deno/ext/webgpu/LICENSE.md",
+      "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+    },
+    {
+      "bytes": 3501,
+      "path": "deno/tools/copyright_checker.js",
+      "sha256": "f195d207eb201ec22812c57dab5bc605bd8101348062e2c8e0faea09a77ac251"
+    }
+  ],
+  "publisher_authenticated": false,
+  "purpose": "bounded_verified_Deno_source_inventory_observation",
+  "root_lock_sha256": "4b501f05a28bf12c453593f0b558407890575b5f34b9dcbb2dc8e172d58a0c95",
+  "schema": 1,
+  "selected_graph_status": "absent_not_derivable_from_Cargo.lock",
+  "source_sha256": "21069d2f4dd65b6832e3f5c373c24a43a8d35cb3d68d3841e15d0582bed39ea8",
+  "source_url": "https://github.com/denoland/deno/releases/download/v2.9.7/deno_src.tar.gz",
+  "test_tree_candidate_count": 61,
+  "unfollowed_link_members": 9,
+  "unique_candidate_byte_payloads": 10
+}

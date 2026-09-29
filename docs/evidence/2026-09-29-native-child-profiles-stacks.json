@@ -1,0 +1,260 @@
+[
+  {
+    "mode": "default",
+    "sample_sha256": "f7d05c6e56fd49f9baf7f92685feb30d7ccbdb671c4911af4d5e1b9d9e760880",
+    "main_root_stack_observations": 961,
+    "main_leaf_observations": {
+      "mach_msg2_trap": 480,
+      "iokit_user_client_trap": 71,
+      "objc_msgSend": 11,
+      "_platform_memmove": 9,
+      "os_unfair_lock_lock": 9,
+      "???": 8,
+      "-[AGXG13GFamilyRenderContext initWithCommandBuffer:descriptor:subEncoderIndex:framebuffer:]": 6,
+      "_xzm_xzone_malloc_tiny": 6,
+      "-[_MTLDevice supportsFamily:withFamilyArray:count:]": 5,
+      "__vfprintf": 5,
+      "_xzm_free_tc": 5,
+      "GLDContextRec::buildPipelineStateDescriptor()": 4
+    },
+    "selected_inclusive_main_stack_observations": {
+      "mpv_render_context_render": 230,
+      "gl_video_render_frame": 229,
+      "timer_pool_stop": 92,
+      "gl_timer_stop": 91,
+      "glEndQuery_Exec": 90,
+      "gl_timer_start": 3,
+      "glGetQueryObjectui64v_Exec": 2,
+      "CGLFlushDrawable": 152,
+      "-[NSOpenGLContext flushBuffer]": 152,
+      "GLDContextRec::flushContext(bool)": 185,
+      "glTexImage2D_Exec": 13,
+      "glDrawArrays_GL3Exec": 101,
+      "gldGetQueryInfo": 91
+    },
+    "media_render_subtree": {
+      "observations": 230,
+      "kernel_wait_or_ipc_boundary_observations": 83,
+      "other_leaf_observations": 147
+    },
+    "child_flush_subtrees": {
+      "observations": 0,
+      "semaphore_wait_observations": 0,
+      "kernel_wait_or_ipc_boundary_observations": 0
+    },
+    "gpu_timer_stop_subtrees": {
+      "observations": 91,
+      "kernel_wait_or_ipc_boundary_observations": 78,
+      "other_leaf_observations": 13
+    },
+    "threads": [
+      {
+        "name": "main",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 481,
+        "other_leaf_observations": 480
+      },
+      {
+        "name": "core",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 855,
+        "other_leaf_observations": 106
+      },
+      {
+        "name": "demux",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 950,
+        "other_leaf_observations": 11
+      },
+      {
+        "name": "vo",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 953,
+        "other_leaf_observations": 8
+      },
+      {
+        "name": "av:h264:df0",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 954,
+        "other_leaf_observations": 7
+      },
+      {
+        "name": "av:h264:df1",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 950,
+        "other_leaf_observations": 11
+      },
+      {
+        "name": "av:h264:df2",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 949,
+        "other_leaf_observations": 12
+      },
+      {
+        "name": "av:h264:df3",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 954,
+        "other_leaf_observations": 7
+      },
+      {
+        "name": "CVDisplayLink",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 960,
+        "other_leaf_observations": 1
+      },
+      {
+        "name": "com.apple.coremedia.audioqueue.source",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 959,
+        "other_leaf_observations": 2
+      },
+      {
+        "name": "AQConverterThread",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 961,
+        "other_leaf_observations": 0
+      },
+      {
+        "name": "com.apple.audio.IOThread.client",
+        "root_stack_observations": 961,
+        "kernel_wait_or_ipc_boundary_observations": 955,
+        "other_leaf_observations": 6
+      }
+    ],
+    "loaded_libmpv": {
+      "name": "libmpv.2.dylib",
+      "mach_o_uuid": "1869BFE9-CAA0-373D-8FA2-DAC87D0CC5DF",
+      "sample_anonymized_install_path": "/opt/homebrew/*/libmpv.2.dylib"
+    },
+    "limitations": "Requested1ms for5s; observed sample-root counts differ. Counts are inclusive wall-stack observations, not CPU cycles, call counts, percentCPU, or comparable timing fractions. Wait/IPC boundary includes kernel work and cannot be called pure idle time."
+  },
+  {
+    "mode": "native",
+    "sample_sha256": "7068d949c26875e791dedec58a93c04ddba7861e4823afeae29a989453b2cfed",
+    "main_root_stack_observations": 789,
+    "main_leaf_observations": {
+      "mach_msg2_trap": 358,
+      "semaphore_wait_trap": 128,
+      "iokit_user_client_trap": 43,
+      "objc_msgSend": 17,
+      "__vfprintf": 9,
+      "os_unfair_lock_lock": 8,
+      "_platform_memmove": 6,
+      "checkForSlug": 6,
+      "???": 4,
+      "_platform_memset": 4,
+      "_free": 4,
+      "-[AGXG13GFamilyRenderContext initWithCommandBuffer:descriptor:subEncoderIndex:framebuffer:]": 3
+    },
+    "selected_inclusive_main_stack_observations": {
+      "mpv_render_context_render": 316,
+      "gl_video_render_frame": 313,
+      "timer_pool_stop": 113,
+      "gl_timer_stop": 113,
+      "glEndQuery_Exec": 113,
+      "gl_timer_start": 1,
+      "glGetQueryObjectui64v_Exec": 0,
+      "CGLFlushDrawable": 216,
+      "-[NSOpenGLContext flushBuffer]": 216,
+      "GLDContextRec::flushContext(bool)": 284,
+      "glTexImage2D_Exec": 1,
+      "glDrawArrays_GL3Exec": 99,
+      "gldGetQueryInfo": 108
+    },
+    "media_render_subtree": {
+      "observations": 316,
+      "kernel_wait_or_ipc_boundary_observations": 109,
+      "other_leaf_observations": 207
+    },
+    "child_flush_subtrees": {
+      "observations": 197,
+      "semaphore_wait_observations": 128,
+      "kernel_wait_or_ipc_boundary_observations": 160
+    },
+    "gpu_timer_stop_subtrees": {
+      "observations": 113,
+      "kernel_wait_or_ipc_boundary_observations": 98,
+      "other_leaf_observations": 15
+    },
+    "threads": [
+      {
+        "name": "main",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 490,
+        "other_leaf_observations": 299
+      },
+      {
+        "name": "core",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 762,
+        "other_leaf_observations": 27
+      },
+      {
+        "name": "demux",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 782,
+        "other_leaf_observations": 7
+      },
+      {
+        "name": "vo",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 784,
+        "other_leaf_observations": 5
+      },
+      {
+        "name": "av:h264:df0",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 776,
+        "other_leaf_observations": 13
+      },
+      {
+        "name": "av:h264:df1",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 779,
+        "other_leaf_observations": 10
+      },
+      {
+        "name": "av:h264:df2",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 784,
+        "other_leaf_observations": 5
+      },
+      {
+        "name": "com.apple.coremedia.audioqueue.source",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 789,
+        "other_leaf_observations": 0
+      },
+      {
+        "name": "AQConverterThread",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 789,
+        "other_leaf_observations": 0
+      },
+      {
+        "name": "com.apple.audio.IOThread.client",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 785,
+        "other_leaf_observations": 4
+      },
+      {
+        "name": "CVDisplayLink",
+        "root_stack_observations": 789,
+        "kernel_wait_or_ipc_boundary_observations": 788,
+        "other_leaf_observations": 1
+      },
+      {
+        "name": "av:h264:df3",
+        "root_stack_observations": 788,
+        "kernel_wait_or_ipc_boundary_observations": 779,
+        "other_leaf_observations": 9
+      }
+    ],
+    "loaded_libmpv": {
+      "name": "libmpv.2.dylib",
+      "mach_o_uuid": "1869BFE9-CAA0-373D-8FA2-DAC87D0CC5DF",
+      "sample_anonymized_install_path": "/opt/homebrew/*/libmpv.2.dylib"
+    },
+    "limitations": "Requested1ms for5s; observed sample-root counts differ. Counts are inclusive wall-stack observations, not CPU cycles, call counts, percentCPU, or comparable timing fractions. Wait/IPC boundary includes kernel work and cannot be called pure idle time."
+  }
+]

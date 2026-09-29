@@ -1,0 +1,62 @@
+{
+  "mode": "default",
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "harness_sha256": "11a2087e3e6148ba87471e2178c1a44c00af5071200e981bc4589bf3bfaa50cc",
+  "xctrace_executable_sha256": "eae812b1fd9926082706ea88bfa089d78a89186fefc66054ef55535ed1ba30f7",
+  "original_summary_sha256": "27db389ca1635c94cde5f8c6512fd4b7a29d519afb46cd3eddd0ec5cb428ebe9",
+  "app_exit": 0,
+  "record_exit": 0,
+  "toc_export_exit": 0,
+  "cpu_export_exit": 0,
+  "cleanup": {
+    "trace_group_absent": true,
+    "export_group_absent": true,
+    "app_group_absent": true,
+    "wake_group_absent": true
+  },
+  "elapsed_seconds": 38.6345414170064,
+  "command_start_finish_after_launch_seconds": [
+    12.07435800001258,
+    22.83418441703543
+  ],
+  "template": "Time Profiler",
+  "instruments_version": "27.0 (27A266a)",
+  "reported_recording_seconds": 5.75591,
+  "recording_end_reason": "Time limit reached",
+  "requested_recording_limit": "5s",
+  "waiting_threads_recorded": false,
+  "kernel_callstacks_recorded": false,
+  "raw_sample_rate_microseconds": 1000,
+  "target_scope": "SINGLE known owned application PID, exact process identity checked for every CPU row; no all-process recording",
+  "privacy_prompt_suppressed": false,
+  "raw_cpu_xml_sha256": "8fc7c63a0fa65fd0cbce716ff74ccff4b798790498b83158e8592937d0097ca6",
+  "raw_toc_sha256": "55b7d7ed481cbb07fe337eb20086aa7e9088c7c68b5433468490660c211b9301",
+  "trace_bundle": {
+    "file_count": 227,
+    "total_bytes": 16409482,
+    "private_sorted_manifest_sha256": "f320990c0293bcda967b4ababd95833f0102ff6add3246fa98f5fb8b801c8e04",
+    "manifest_method": "Sorted relative file records containing path, byte count, SHA256; compact JSON with sort_keys=True and separators comma/colon, followed by LF. No symlinks. Per-file manifest retained privately; digest binds all trace files."
+  },
+  "observations": [
+    {
+      "seconds": 10,
+      "playing": true,
+      "decoder": "videotoolbox",
+      "audio": "AAC48000 AVFoundation",
+      "vo_drops": 3,
+      "decoder_drops": 0,
+      "geometry": "presentation geometry seconds=10: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=false geometry_events=4"
+    },
+    {
+      "seconds": 25,
+      "playing": true,
+      "decoder": "videotoolbox",
+      "audio": "AAC48000 AVFoundation",
+      "vo_drops": 3,
+      "decoder_drops": 0,
+      "geometry": "presentation geometry seconds=25: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=false geometry_events=4"
+    }
+  ],
+  "performance_measurement": false
+}

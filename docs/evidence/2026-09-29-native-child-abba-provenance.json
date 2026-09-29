@@ -1,0 +1,52 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "source_inventory_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+  "build_input_count": 135,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "Finished `release` profile [optimized] target(s) in 1m 47s",
+  "native_qualified": false,
+  "performance_qualified": false,
+  "run_order": [
+    "a1-default",
+    "b1-native",
+    "b2-native",
+    "a2-default"
+  ],
+  "fixture_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "sampler_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+  "harness_sha256": "5ded095108519ce2953d779360983b1538f8c3513f64268c0017ceb19182cb15",
+  "python_executable_sha256": "f2bb9677ea7661fcf4703fa704c2049d7b7066dc4a1ffb0cfd1ceceed3b2a79c",
+  "python_version": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "installed_libmpv": {
+    "requested_path": "/opt/homebrew/opt/mpv/lib/libmpv.2.dylib",
+    "resolved_path": "/opt/homebrew/Cellar/mpv/0.41.0_10/lib/libmpv.2.dylib",
+    "sha256": "12c400d4ec2740ebf225c3965f4e9963c55de9212094f1337d055b0573812e08",
+    "app_linkage_sha256": "1c3752e7e9c8e830a32064acfe331d27c07adadeef32565331b7dd48a9a448f7",
+    "runtime_loaded_image_inventory": false
+  },
+  "lifecycle_result_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+  "requested_window_logical": [
+    1320,
+    860
+  ],
+  "theme": "dark",
+  "warmup_seconds": 10,
+  "samples": 60,
+  "quit_after_seconds": 85,
+  "macos_footprint": true,
+  "scope": "Same frozen app; default borrowed-texture vs opt-in native child only. Thirty explicit demo related rows with EMPTY thumbnails, not thirty decoded rasters. Candidate warning is visible; identical UI composition is not claimed.",
+  "limitations": [
+    "Finite media/geometry observations are not atomic with resource sampling boundaries.",
+    "Geometry/event counters prove only their observed scope; no pixel/compositor visibility claim.",
+    "New VT service attribution is temporal, not exclusive ownership; preexisting reused services are excluded.",
+    "Whole-process-tree ps snapshots may miss short-lived/reparented children or PID reuse.",
+    "RSS may double-count shared pages; physical footprint is a separate ledger, not additive to RSS/GPU.",
+    "No screenshots/profilers or DYLD image logging in the measurement interval.",
+    "Installed libmpv linkage/hash is recorded; this run does not independently enumerate loaded images.",
+    "Native startup copies/hash-verifies the fixed fixture, unlike default; startup is outside the warm comparison only if ready at the ten-second observation."
+  ],
+  "real_account": false,
+  "accepted_as_default": false
+}

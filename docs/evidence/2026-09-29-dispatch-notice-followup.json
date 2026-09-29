@@ -1,0 +1,384 @@
+{
+  "changes_to_dependency_or_license_text": false,
+  "current_commit": "f540a2d8ccaebf0e87f5805033b9e287e8d01ba5",
+  "current_default_branch": "master",
+  "current_root_tree": "6bd26acc457aa3054b5608abc4e685fd614b916a",
+  "current_tree": {
+    "entries": [
+      {
+        "mode": "100644",
+        "path": ".gitignore",
+        "sha": "38188daccfd7d76e011b3323d417e7f9c8991681",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": ".travis.yml",
+        "sha": "aea8edb6851c851815ff5e64c3638d284a44d7ca",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "Cargo.toml",
+        "sha": "8cc82a81526484217820b15c59af4bae8fb924fd",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "README.md",
+        "sha": "42bda2e1210a5871243830c4a59254ced898b766",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "examples",
+        "sha": "697c546014fe68189c05b23a74edcfe6fc2207c5",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "examples/main.rs",
+        "sha": "c92dcf16baf9824855957481bb871591d80a21ca",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "src",
+        "sha": "369fafb0f92e15b49d7ed3cdc7e18f39cb5a923e",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "src/ffi.rs",
+        "sha": "91dad6f6b02197103c30271540091ea01310f63f",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/group.rs",
+        "sha": "6ba6c5be4a6cb138d37395056d3aa500f869bf22",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/lib.rs",
+        "sha": "c5cd981fa25dba443e6a661475709da7d2d9a0b5",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/once.rs",
+        "sha": "c1dbfa8718a5f26af6a7af2726e0b7ef8c4b211e",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/queue.rs",
+        "sha": "46ed9cd552c1a90b0ecbb6c126d0456a4546531b",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/sem.rs",
+        "sha": "b6faa242d9a81fb0f9cd7bf004c1127f686e34bd",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "tests-ios",
+        "sha": "8d4ccf68e9efab60b04754425d3546d16b59242c",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "tests-ios/prelude.rs",
+        "sha": "80307c2e5321c89e818a0cbd9040534191744882",
+        "type": "blob"
+      },
+      {
+        "mode": "100755",
+        "path": "travis_install.sh",
+        "sha": "75e5dd8c1faf88769e854c4c3c29c5043fa024cd",
+        "type": "blob"
+      },
+      {
+        "mode": "100755",
+        "path": "travis_test.sh",
+        "sha": "7c12f440edb50e4e28db5a85b72beb0f9d91ee44",
+        "type": "blob"
+      }
+    ],
+    "truncated": false
+  },
+  "date": "2026-09-29",
+  "github_detected_repository_license": null,
+  "issue_18": {
+    "closed_at": "2024-05-16T13:38:02Z",
+    "closed_by": "Jake-Shadle",
+    "comment_count": 0,
+    "original_reporter": "Jake-Shadle",
+    "public_timeline": [
+      {
+        "actor": "Jake-Shadle",
+        "commit_id": null,
+        "created_at": "2021-10-21T14:09:15Z",
+        "cross_reference": "https://github.com/EmbarkStudios/rust-ecosystem/issues/36",
+        "event": "cross-referenced"
+      },
+      {
+        "actor": "Jake-Shadle",
+        "commit_id": null,
+        "created_at": "2024-05-16T13:38:02Z",
+        "cross_reference": null,
+        "event": "closed"
+      }
+    ],
+    "state": "closed",
+    "state_reason": "completed",
+    "url": "https://github.com/SSheldon/rust-dispatch/issues/18"
+  },
+  "license_clearance": false,
+  "license_declaration": "MIT",
+  "limits": [
+    "The cached official crate bytes match Cargo.lock and bind to the recorded upstream revision; this does not supply a missing grant/attribution file.",
+    "Untruncated public tree listings have no named license/copying file; phrase scanning the published crate found neither a copyright marker nor the standard MIT grant opening. This is factual source inspection, not a legal conclusion.",
+    "Issue closure by the original reporter, zero comments and no resolving-commit field do not establish author-granted license text or applicability.",
+    "No maintainer contact, credential access, build, native application, dependency update or substituted generic MIT notice occurred.",
+    "Raw API responses are retained privately with hashes; the shareable record omits irrelevant account-profile metadata and local filesystem paths."
+  ],
+  "locked_tree": {
+    "entries": [
+      {
+        "mode": "100644",
+        "path": ".gitignore",
+        "sha": "38188daccfd7d76e011b3323d417e7f9c8991681",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": ".travis.yml",
+        "sha": "aea8edb6851c851815ff5e64c3638d284a44d7ca",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "Cargo.toml",
+        "sha": "8cc82a81526484217820b15c59af4bae8fb924fd",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "README.md",
+        "sha": "2a6d1a4bb64a4014061265b2337f164bbe7799a0",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "examples",
+        "sha": "697c546014fe68189c05b23a74edcfe6fc2207c5",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "examples/main.rs",
+        "sha": "c92dcf16baf9824855957481bb871591d80a21ca",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "src",
+        "sha": "369fafb0f92e15b49d7ed3cdc7e18f39cb5a923e",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "src/ffi.rs",
+        "sha": "91dad6f6b02197103c30271540091ea01310f63f",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/group.rs",
+        "sha": "6ba6c5be4a6cb138d37395056d3aa500f869bf22",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/lib.rs",
+        "sha": "c5cd981fa25dba443e6a661475709da7d2d9a0b5",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/once.rs",
+        "sha": "c1dbfa8718a5f26af6a7af2726e0b7ef8c4b211e",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/queue.rs",
+        "sha": "46ed9cd552c1a90b0ecbb6c126d0456a4546531b",
+        "type": "blob"
+      },
+      {
+        "mode": "100644",
+        "path": "src/sem.rs",
+        "sha": "b6faa242d9a81fb0f9cd7bf004c1127f686e34bd",
+        "type": "blob"
+      },
+      {
+        "mode": "040000",
+        "path": "tests-ios",
+        "sha": "8d4ccf68e9efab60b04754425d3546d16b59242c",
+        "type": "tree"
+      },
+      {
+        "mode": "100644",
+        "path": "tests-ios/prelude.rs",
+        "sha": "80307c2e5321c89e818a0cbd9040534191744882",
+        "type": "blob"
+      },
+      {
+        "mode": "100755",
+        "path": "travis_install.sh",
+        "sha": "75e5dd8c1faf88769e854c4c3c29c5043fa024cd",
+        "type": "blob"
+      },
+      {
+        "mode": "100755",
+        "path": "travis_test.sh",
+        "sha": "7c12f440edb50e4e28db5a85b72beb0f9d91ee44",
+        "type": "blob"
+      }
+    ],
+    "source_revision": "82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748",
+    "truncated": false
+  },
+  "original_notice_supplied": false,
+  "package": {
+    "archive_files": [
+      {
+        "bytes": 472,
+        "path": "Cargo.toml.orig",
+        "sha256": "05c60b829931ef7f1f130735843c11f5cf9cc69546eca5fc941d014781c68e31"
+      },
+      {
+        "bytes": 982,
+        "path": "Cargo.toml",
+        "sha256": "bd6cecbea33be54304d73d48e29182b4baff69695a25e68d7ac67ff3e69263a9"
+      },
+      {
+        "bytes": 1551,
+        "path": "examples/main.rs",
+        "sha256": "da1d4571dd62e1fcef114a68c15bd340dbb5e83b84391e3bbb7a13cd8e57e88a"
+      },
+      {
+        "bytes": 1365,
+        "path": "README.md",
+        "sha256": "9e581e0edb3dcc8238feda4bc709c8c91d43c286ac91f42cf6b0004c9335da58"
+      },
+      {
+        "bytes": 10702,
+        "path": "src/ffi.rs",
+        "sha256": "320c101bdd43517d8cdb5663861733aa569705495ca97ab547571afcf2820b87"
+      },
+      {
+        "bytes": 4977,
+        "path": "src/group.rs",
+        "sha256": "22d17cacb1401da31acfca71ce8cead89dfc728f1873de7192b000f1c7456707"
+      },
+      {
+        "bytes": 3761,
+        "path": "src/lib.rs",
+        "sha256": "1f75d8f3bb8dbc57449c8727c68d7c75e6a5cf20347617c96ab6a608f186612b"
+      },
+      {
+        "bytes": 1559,
+        "path": "src/once.rs",
+        "sha256": "b67a020f1ba3ebecf52f065cb058aba61d97b5b1155e6495e5b0fc0b996f7931"
+      },
+      {
+        "bytes": 15508,
+        "path": "src/queue.rs",
+        "sha256": "efffe03ab4615c85f0708ed47b41973b2ccd4d578e146743b455986ffc95da87"
+      },
+      {
+        "bytes": 3646,
+        "path": "src/sem.rs",
+        "sha256": "5d74917749799a8b3385bf694caf0c344a11e8a9363c4512a21d956bcf7a14ac"
+      },
+      {
+        "bytes": 74,
+        "path": ".cargo_vcs_info.json",
+        "sha256": "313a7abcf98d6834fdf27109ae9bf62f318efe8e4c6ac27b41fbeb2e4ff6a1f8"
+      },
+      {
+        "bytes": 140,
+        "path": "Cargo.lock",
+        "sha256": "122b2c045123aa5f9c1d7452839a6f8e9b200323478e3699490b40ff1fd01ed3"
+      }
+    ],
+    "crate_bytes": 10229,
+    "crate_sha256": "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+    "name": "dispatch",
+    "permission_or_copyright_marker_paths": [],
+    "scan_limit": "Case-insensitive phrase search assists inspection; absence alone is not a legal conclusion.",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info_sha256": "313a7abcf98d6834fdf27109ae9bf62f318efe8e4c6ac27b41fbeb2e4ff6a1f8",
+    "vcs_revision": "82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748",
+    "version": "0.2.0"
+  },
+  "primary_requests": [
+    {
+      "bytes": 5290,
+      "label": "repository",
+      "pagination_link": null,
+      "sha256": "35783e1174504eeef94523326ec7b003cd169a3473bb0a020dc68f0c6177f35f",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch"
+    },
+    {
+      "bytes": 3467,
+      "label": "issue-18",
+      "pagination_link": null,
+      "sha256": "8870e00fcdc8ff089bb00847f89c65672917556c3cee74cee71982156cba8724",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch/issues/18"
+    },
+    {
+      "bytes": 10887,
+      "label": "timeline-18",
+      "pagination_link": null,
+      "sha256": "cf614b4ee6858780448e935465a81d3e7b3673f9a76cc333508047629a56dd3a",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch/issues/18/timeline?per_page=100"
+    },
+    {
+      "bytes": 3977,
+      "label": "locked-tree",
+      "pagination_link": null,
+      "sha256": "80d7a1c412152e910f3346c99756e58fe89b5d55106eec4044bd11b16b8e14ae",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch/git/trees/82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748?recursive=1"
+    },
+    {
+      "bytes": 4915,
+      "label": "current-commit",
+      "pagination_link": null,
+      "sha256": "b5b25c17b22b3ec0ff217c9e73ce664fcb414e81f6b7da69fb5c7851e08ead40",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch/commits/master"
+    },
+    {
+      "bytes": 3977,
+      "label": "current-tree",
+      "pagination_link": null,
+      "sha256": "de8708fbff4284a820ae5caa3d8afa231c81ac8b658ccf46366ff7b7c6fa2b0c",
+      "status": 200,
+      "url": "https://api.github.com/repos/SSheldon/rust-dispatch/git/trees/master?recursive=1"
+    }
+  ],
+  "purpose": "authoritative_upstream_notice_availability_followup",
+  "schema": 1,
+  "status": "original_complete_notice_not_recovered"
+}

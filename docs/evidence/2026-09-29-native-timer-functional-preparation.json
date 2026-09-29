@@ -1,0 +1,521 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "source_inventory_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+  "build_input_count": 135,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "Finished `release` profile [optimized] target(s) in 1m 47s",
+  "native_qualified": false,
+  "performance_qualified": false,
+  "unmodified_app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "preparer_sha256": "ed68ce6c79c7dbe528dc03064f6b4fba66f072230717f1cc9448f14ab6ffbd17",
+  "prior_linked_audit_sha256": "c8971466383822d9975128001f33eee4d1c95019f1a0304122455c9c4c75d12f",
+  "method": "Private a45 executable copies: one LC_LOAD_DYLIB replacement, then ad-hoc sign. Original executable and both paired libraries remain unchanged. No app launch.",
+  "system_dyld_cache_hashed": false,
+  "current_non_system_dependency_records_verified": [
+    {
+      "variant": "on",
+      "label": "cellar/dav1d/1.5.4/lib/libdav1d.7.dylib",
+      "sha256": "c7939084000fb430b9d846a56d7a153879f6f2b8549e335cc14a8da2b107dc0d"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavcodec.63.1.102.dylib",
+      "sha256": "f3359c960778d4f8469700a051d5e9adbacaeeeb7ffdc68c87a1d5d66cd74680"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavdevice.63.1.102.dylib",
+      "sha256": "9e7e49632247d1b7fa3e5dd1b4ae929091ca46d7a34faff77027c298c85eb033"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavfilter.12.1.102.dylib",
+      "sha256": "7370aba5ef05f70bedff45ef3c1662c3239691868ffea6a909b2c4c26b73cb90"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavformat.63.1.102.dylib",
+      "sha256": "7037cf9835b02aca3ae66b8cb2c2eed380e5083fa432c3f9ef71e3efebb61262"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavutil.61.1.102.dylib",
+      "sha256": "d8735f7e878ea9f44d7ec15f0aee0bf473bacb5d44f7a46df1a299462372f664"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libswresample.7.1.102.dylib",
+      "sha256": "cb7096d9fbedbec10b878e68244167e2c9cc7ba8907f9840b6b39becc91969ad"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/ffmpeg/9.0.2/lib/libswscale.10.1.102.dylib",
+      "sha256": "5677ad33d0c49eb31262e3a4a7fe0eec06544756b53e816f19f598cd8a94bd9e"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/fontconfig/2.18.3/lib/libfontconfig.1.dylib",
+      "sha256": "cfff804ed1ed742ede239e93281db4ab51a1c95140e13e81b04dcd43cb7a9bfc"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+      "sha256": "1e9248ae3052f82989dfe62a3635b002b8ce1907220b5b2f001e4ae119f1d520"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/fribidi/1.0.17/lib/libfribidi.0.dylib",
+      "sha256": "62eb4c3a15adb71884407c7bda6cdaad7b0e84d00472630a98f8870b346de1af"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/gettext/1.0/lib/libintl.8.dylib",
+      "sha256": "9a03af49734a6efa39cb5bfd5e49ac36117835a9aa4aa7e63f15390413855579"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/glib/2.90.0/lib/libglib-2.0.0.dylib",
+      "sha256": "934e63c138b92bb530478bc5d17abc694e99ee98ecd6252e583a6f612fc3c860"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/graphite2/1.3.15/lib/libgraphite2.3.3.1.dylib",
+      "sha256": "16368a6b70e65ff2d27c6e3380f875a763b6e983ce39da5d98cbf1ab869cdae2"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/harfbuzz/14.5.0/lib/libharfbuzz.0.dylib",
+      "sha256": "5894ad09e43e8805edd1f97b2823bca44ab87e26a59472f8e6cc87f8dffbd596"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/jpeg-turbo/3.2.0/lib/libjpeg.8.3.2.dylib",
+      "sha256": "b26a2bfeec68b9d5d000e308cfc9b7a203793a10bfd1c66cb695e97aac0f68f4"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/lame/4.0/lib/libmp3lame.0.dylib",
+      "sha256": "60d64aa53ac90a2fb0af33feada0a2149efbfebd1add281d4d978bf1339e72ec"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libarchive/3.8.9/lib/libarchive.13.dylib",
+      "sha256": "e8b5b8dd2e5a6f8d0c3ac925d4a91f5ea54c7b05adadad43e9afa6e507e25dd7"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libass/0.17.5_1/lib/libass.9.dylib",
+      "sha256": "d33ad7743360f5858e5464c526053353c59b81647d5436c424fa1a27e6ce7d5c"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libb2/0.98.1/lib/libb2.1.dylib",
+      "sha256": "1c5d26d250ce0e61b8a187d4616f7ce00cad71abf59a2bda7192fd42e931dfec"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libbluray/1.5.0/lib/libbluray.4.dylib",
+      "sha256": "cdefbd68904359bd29902e84b462a084da213b0666867e00eaf0c82bc266a9ff"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libplacebo/7.360.1/lib/libplacebo.360.dylib",
+      "sha256": "a312f9dafbc689c2fcf0c02f4f4fa8dc1bffe460b4edd5b645bafb46375fdf3c"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libpng/1.6.58/lib/libpng16.16.dylib",
+      "sha256": "8da1fd86c98b2d78a12255242d8629c703b04ad90512b9627e9873db2e35fd7f"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libsamplerate/0.2.2/lib/libsamplerate.0.2.2.dylib",
+      "sha256": "8080562154f56cbf3af1333cbfdc96b85e314f0db91de699ebabc644d9f7f0e1"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libudfread/1.2.0/lib/libudfread.3.dylib",
+      "sha256": "fcee189132250752a24e94ccae3306496d260edbd9fd745d4d3b6c0d6c01e20e"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libunibreak/8.0/lib/libunibreak.8.dylib",
+      "sha256": "956081523d9bc76c1d50cf3ca685d266e4626e9cbca45b7dcc41ca4cabad209c"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libvmaf/3.2.1/lib/libvmaf.3.dylib",
+      "sha256": "a825cdd3ff46fa6282aa1cb9328c701e9950e944f2c8821d88481779b3472d46"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/libvpx/1.17.0/lib/libvpx.12.dylib",
+      "sha256": "7cbbd0ab0d9f53a699761a3caccf0ea18bf779d46f7225693cb2c1ac4e7bca3b"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/little-cms2/2.19.1/lib/liblcms2.2.dylib",
+      "sha256": "b43de9af9f34128b5c5d12a37510383208e96d352147d31f486cf01341fd16cb"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/luajit/2.1.1788856981/lib/libluajit-5.1.2.1.1788856981.dylib",
+      "sha256": "34ce866c86a66cf983c58588ebef4714e30900e740fab791ea6156d8c730c69a"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/lz4/1.10.0/lib/liblz4.1.10.0.dylib",
+      "sha256": "b952cda4c132b44c1cdc894ebebd45100d8f103de56e8ff1e138c02f7ecb10be"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/mpg123/1.33.7/lib/libmpg123.0.dylib",
+      "sha256": "c1a5e757f35ca4e15d7888c07c02605a2e583387899ee440176d4e63670f75c8"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/mujs/1.3.10/lib/libmujs.dylib",
+      "sha256": "a5e331a3b524787a9c9e8e4027eac6c56c1328efd5e091c05059304e1ffe3055"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/openssl@3/3.6.4/lib/libcrypto.3.dylib",
+      "sha256": "380d32d4d229136f9ded004906634491c8d416779d031abadc3d6463b1ef8e3d"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/openssl@3/3.6.4/lib/libssl.3.dylib",
+      "sha256": "ebee4a51513f22f6efc6d3b9ff9d638015d2d924c0e443b31df2735798cb8dcb"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/opus/1.6.1/lib/libopus.0.dylib",
+      "sha256": "f7df13ab572e991e6bea300c1f5a113d1690de651b8c3a6b0f0e57e54b724453"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/pcre2/10.48/lib/libpcre2-8.0.dylib",
+      "sha256": "689fff363f155ed88a5b4bbd79c3d4ea5871ac8f5701f7a0e17e22cebebc0adb"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/rubberband/4.0.0/lib/librubberband.3.dylib",
+      "sha256": "c826643344cafa1cd613de55a7c79152082d45fb7f5e5d64865cbef7289fea7b"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/shaderc/2026.4/lib/libshaderc_shared.1.dylib",
+      "sha256": "90987a60123cebb6c01221b03979ace770c8b8ace971f37814cd5261b3352354"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/svt-av1/4.2.0/lib/libSvtAv1Enc.4.2.0.dylib",
+      "sha256": "84cbb6f982111cf963663834bdeee22a694fcd578202e5719f1e4a8a463f270c"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/uchardet/0.0.8/lib/libuchardet.0.0.8.dylib",
+      "sha256": "faea4b8ae57312217319f19e5482558e665461e05c29b26715a809b27d501384"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/vulkan-loader/1.4.357.0/lib/libvulkan.1.4.357.dylib",
+      "sha256": "b634d74b97f694dfad13d7c23ffdbff3d8349832db2c8c3e15f4deba45ac5d13"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/x264/r3222/lib/libx264.165.dylib",
+      "sha256": "72994dd5df8639f67eb6404e7c352748bb0a264495ff7518295ba98692358fb7"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/x265/4.3/lib/libx265.217.dylib",
+      "sha256": "77c26ea29afca3c99cdc45354539eca99c1bbd902d6c1e08f7f5ab0156c11cb0"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/xz/5.8.4/lib/liblzma.5.dylib",
+      "sha256": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/zimg/3.0.6/lib/libzimg.2.dylib",
+      "sha256": "21166740edf07d074de498d8d97aa4982bfd06a25218e47bffe748a3e13c5624"
+    },
+    {
+      "variant": "on",
+      "label": "cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+      "sha256": "f07bd1a16d06bc648ba2111516487cb6156abacbcc14f995228fcd82fc5dc2d1"
+    },
+    {
+      "variant": "on",
+      "label": "pair/prefix-on/lib/libmpv.2.dylib",
+      "sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/dav1d/1.5.4/lib/libdav1d.7.dylib",
+      "sha256": "c7939084000fb430b9d846a56d7a153879f6f2b8549e335cc14a8da2b107dc0d"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavcodec.63.1.102.dylib",
+      "sha256": "f3359c960778d4f8469700a051d5e9adbacaeeeb7ffdc68c87a1d5d66cd74680"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavdevice.63.1.102.dylib",
+      "sha256": "9e7e49632247d1b7fa3e5dd1b4ae929091ca46d7a34faff77027c298c85eb033"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavfilter.12.1.102.dylib",
+      "sha256": "7370aba5ef05f70bedff45ef3c1662c3239691868ffea6a909b2c4c26b73cb90"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavformat.63.1.102.dylib",
+      "sha256": "7037cf9835b02aca3ae66b8cb2c2eed380e5083fa432c3f9ef71e3efebb61262"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libavutil.61.1.102.dylib",
+      "sha256": "d8735f7e878ea9f44d7ec15f0aee0bf473bacb5d44f7a46df1a299462372f664"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libswresample.7.1.102.dylib",
+      "sha256": "cb7096d9fbedbec10b878e68244167e2c9cc7ba8907f9840b6b39becc91969ad"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/ffmpeg/9.0.2/lib/libswscale.10.1.102.dylib",
+      "sha256": "5677ad33d0c49eb31262e3a4a7fe0eec06544756b53e816f19f598cd8a94bd9e"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/fontconfig/2.18.3/lib/libfontconfig.1.dylib",
+      "sha256": "cfff804ed1ed742ede239e93281db4ab51a1c95140e13e81b04dcd43cb7a9bfc"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+      "sha256": "1e9248ae3052f82989dfe62a3635b002b8ce1907220b5b2f001e4ae119f1d520"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/fribidi/1.0.17/lib/libfribidi.0.dylib",
+      "sha256": "62eb4c3a15adb71884407c7bda6cdaad7b0e84d00472630a98f8870b346de1af"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/gettext/1.0/lib/libintl.8.dylib",
+      "sha256": "9a03af49734a6efa39cb5bfd5e49ac36117835a9aa4aa7e63f15390413855579"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/glib/2.90.0/lib/libglib-2.0.0.dylib",
+      "sha256": "934e63c138b92bb530478bc5d17abc694e99ee98ecd6252e583a6f612fc3c860"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/graphite2/1.3.15/lib/libgraphite2.3.3.1.dylib",
+      "sha256": "16368a6b70e65ff2d27c6e3380f875a763b6e983ce39da5d98cbf1ab869cdae2"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/harfbuzz/14.5.0/lib/libharfbuzz.0.dylib",
+      "sha256": "5894ad09e43e8805edd1f97b2823bca44ab87e26a59472f8e6cc87f8dffbd596"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/jpeg-turbo/3.2.0/lib/libjpeg.8.3.2.dylib",
+      "sha256": "b26a2bfeec68b9d5d000e308cfc9b7a203793a10bfd1c66cb695e97aac0f68f4"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/lame/4.0/lib/libmp3lame.0.dylib",
+      "sha256": "60d64aa53ac90a2fb0af33feada0a2149efbfebd1add281d4d978bf1339e72ec"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libarchive/3.8.9/lib/libarchive.13.dylib",
+      "sha256": "e8b5b8dd2e5a6f8d0c3ac925d4a91f5ea54c7b05adadad43e9afa6e507e25dd7"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libass/0.17.5_1/lib/libass.9.dylib",
+      "sha256": "d33ad7743360f5858e5464c526053353c59b81647d5436c424fa1a27e6ce7d5c"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libb2/0.98.1/lib/libb2.1.dylib",
+      "sha256": "1c5d26d250ce0e61b8a187d4616f7ce00cad71abf59a2bda7192fd42e931dfec"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libbluray/1.5.0/lib/libbluray.4.dylib",
+      "sha256": "cdefbd68904359bd29902e84b462a084da213b0666867e00eaf0c82bc266a9ff"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libplacebo/7.360.1/lib/libplacebo.360.dylib",
+      "sha256": "a312f9dafbc689c2fcf0c02f4f4fa8dc1bffe460b4edd5b645bafb46375fdf3c"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libpng/1.6.58/lib/libpng16.16.dylib",
+      "sha256": "8da1fd86c98b2d78a12255242d8629c703b04ad90512b9627e9873db2e35fd7f"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libsamplerate/0.2.2/lib/libsamplerate.0.2.2.dylib",
+      "sha256": "8080562154f56cbf3af1333cbfdc96b85e314f0db91de699ebabc644d9f7f0e1"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libudfread/1.2.0/lib/libudfread.3.dylib",
+      "sha256": "fcee189132250752a24e94ccae3306496d260edbd9fd745d4d3b6c0d6c01e20e"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libunibreak/8.0/lib/libunibreak.8.dylib",
+      "sha256": "956081523d9bc76c1d50cf3ca685d266e4626e9cbca45b7dcc41ca4cabad209c"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libvmaf/3.2.1/lib/libvmaf.3.dylib",
+      "sha256": "a825cdd3ff46fa6282aa1cb9328c701e9950e944f2c8821d88481779b3472d46"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/libvpx/1.17.0/lib/libvpx.12.dylib",
+      "sha256": "7cbbd0ab0d9f53a699761a3caccf0ea18bf779d46f7225693cb2c1ac4e7bca3b"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/little-cms2/2.19.1/lib/liblcms2.2.dylib",
+      "sha256": "b43de9af9f34128b5c5d12a37510383208e96d352147d31f486cf01341fd16cb"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/luajit/2.1.1788856981/lib/libluajit-5.1.2.1.1788856981.dylib",
+      "sha256": "34ce866c86a66cf983c58588ebef4714e30900e740fab791ea6156d8c730c69a"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/lz4/1.10.0/lib/liblz4.1.10.0.dylib",
+      "sha256": "b952cda4c132b44c1cdc894ebebd45100d8f103de56e8ff1e138c02f7ecb10be"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/mpg123/1.33.7/lib/libmpg123.0.dylib",
+      "sha256": "c1a5e757f35ca4e15d7888c07c02605a2e583387899ee440176d4e63670f75c8"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/mujs/1.3.10/lib/libmujs.dylib",
+      "sha256": "a5e331a3b524787a9c9e8e4027eac6c56c1328efd5e091c05059304e1ffe3055"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/openssl@3/3.6.4/lib/libcrypto.3.dylib",
+      "sha256": "380d32d4d229136f9ded004906634491c8d416779d031abadc3d6463b1ef8e3d"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/openssl@3/3.6.4/lib/libssl.3.dylib",
+      "sha256": "ebee4a51513f22f6efc6d3b9ff9d638015d2d924c0e443b31df2735798cb8dcb"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/opus/1.6.1/lib/libopus.0.dylib",
+      "sha256": "f7df13ab572e991e6bea300c1f5a113d1690de651b8c3a6b0f0e57e54b724453"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/pcre2/10.48/lib/libpcre2-8.0.dylib",
+      "sha256": "689fff363f155ed88a5b4bbd79c3d4ea5871ac8f5701f7a0e17e22cebebc0adb"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/rubberband/4.0.0/lib/librubberband.3.dylib",
+      "sha256": "c826643344cafa1cd613de55a7c79152082d45fb7f5e5d64865cbef7289fea7b"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/shaderc/2026.4/lib/libshaderc_shared.1.dylib",
+      "sha256": "90987a60123cebb6c01221b03979ace770c8b8ace971f37814cd5261b3352354"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/svt-av1/4.2.0/lib/libSvtAv1Enc.4.2.0.dylib",
+      "sha256": "84cbb6f982111cf963663834bdeee22a694fcd578202e5719f1e4a8a463f270c"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/uchardet/0.0.8/lib/libuchardet.0.0.8.dylib",
+      "sha256": "faea4b8ae57312217319f19e5482558e665461e05c29b26715a809b27d501384"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/vulkan-loader/1.4.357.0/lib/libvulkan.1.4.357.dylib",
+      "sha256": "b634d74b97f694dfad13d7c23ffdbff3d8349832db2c8c3e15f4deba45ac5d13"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/x264/r3222/lib/libx264.165.dylib",
+      "sha256": "72994dd5df8639f67eb6404e7c352748bb0a264495ff7518295ba98692358fb7"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/x265/4.3/lib/libx265.217.dylib",
+      "sha256": "77c26ea29afca3c99cdc45354539eca99c1bbd902d6c1e08f7f5ab0156c11cb0"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/xz/5.8.4/lib/liblzma.5.dylib",
+      "sha256": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/zimg/3.0.6/lib/libzimg.2.dylib",
+      "sha256": "21166740edf07d074de498d8d97aa4982bfd06a25218e47bffe748a3e13c5624"
+    },
+    {
+      "variant": "off",
+      "label": "cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+      "sha256": "f07bd1a16d06bc648ba2111516487cb6156abacbcc14f995228fcd82fc5dc2d1"
+    },
+    {
+      "variant": "off",
+      "label": "pair/prefix-off/lib/libmpv.2.dylib",
+      "sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e"
+    }
+  ],
+  "runtime_loaded_library_verified": false,
+  "variants": {
+    "on": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-on",
+      "app_sha256": "e32aea7ebe8b0c4b29f10859819f5585bb7ad5db3a026f462eb5caaf3b225e80",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    },
+    "off": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-off",
+      "app_sha256": "bc6010464fb9312f10cc666def369303212bab3cb15905e07def77e463adad7f",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    }
+  }
+}

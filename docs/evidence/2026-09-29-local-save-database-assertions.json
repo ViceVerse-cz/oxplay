@@ -1,0 +1,20 @@
+{
+  "playlist_count": 1,
+  "video_count": 1,
+  "membership_idempotent": true,
+  "playlist_id": 1,
+  "playlist_name": "TEST FIXTURE \u2014 explicit local Save diagnostic",
+  "public_video": {
+    "id": "aqz-KE-bpKQ",
+    "title": "Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film",
+    "channel": "Blender",
+    "channel_id": "UCSMOQeBJ2RAnuFungnQOxLg",
+    "duration_seconds": 635
+  },
+  "local_history_rows": 0,
+  "local_subscriptions": 0,
+  "privacy_defaults_off": true,
+  "signed_urls_or_credentials_selected": false,
+  "account_session_files": 0,
+  "database_files_exported": false
+}

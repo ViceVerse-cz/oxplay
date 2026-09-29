@@ -1,0 +1,23 @@
+{
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "unmodified_app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+  "method": "Private executable copies; exact LC_LOAD_DYLIB replacement then ad-hoc signing; installed app/library untouched. Runtime path verification pending.",
+  "variants": {
+    "on": {
+      "app_sha256": "e7ecb8a71ade690b996d4109fcd8b4069b03fcb68d48e523de8a2818afc23f8b",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "app_relative_path": "artifacts/mpv-timer-apps-v1/serein-on",
+      "signature_verified": true,
+      "runtime_loaded_library_verified": false
+    },
+    "off": {
+      "app_sha256": "9a3adccf774fb628d68b624b431b7f3056954caf44e5873eb3b65d511e6c76c5",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "app_relative_path": "artifacts/mpv-timer-apps-v1/serein-off",
+      "signature_verified": true,
+      "runtime_loaded_library_verified": false
+    }
+  }
+}

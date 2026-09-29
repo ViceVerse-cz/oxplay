@@ -1,0 +1,34 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+repo=Path('[workspace]');sys.path.insert(0,str(repo/'scripts'));from git_source_export import reap_group
+base=repo/'artifacts/native-child-v1';out=base/'idle-resources';out.mkdir(mode=0o700,exist_ok=False)
+app=base/'serein-frozen';sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();identity=json.loads((base/'binary.json').read_text());assert sha(app)==identity['app_sha256']
+(out/'sampler.py').write_bytes((repo/'scripts/measure.py').read_bytes())
+provenance={**identity,'sampler_sha256':sha(out/'sampler.py'),'harness_sha256':sha(Path(__file__)),'fixture_provenance_sha256':sha(repo/'artifacts/library-resource-fixture-v1/fixture-provenance.json'),'scope':'Frozen d7,actual10000row SQLite and30distinct rasters; native viewport determines actual intersections. No interaction smoke. Separate physical-footprint ledger,not additive to RSS/GPU. Readiness then10s warmup60samples. Idle30visible gate remains open.','requested_window':'1320x860 logical,dark','real_account':False}
+(out/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');env={k:v for k,v in os.environ.items() if not k.startswith(('SEREIN_','DYLD_'))}
+for mode in ('settled','minimized'):
+ print('Starting '+mode,flush=True);wake=None;process=None;code=None;failure=None;clean=False;started=time.monotonic()
+ try:
+  wake=subprocess.Popen(['/usr/bin/caffeinate','-d','-u','-t','125'],start_new_session=True);time.sleep(1)
+  args=[sys.executable,str(out/'sampler.py'),'--library-fixture-ready','--macos-footprint','--per-process-rss','--warmup','10','--seconds','60','--output',str(out/(mode+'.json')),'--',str(app),'--library-resource-fixture',str(repo/'artifacts/library-resource-fixture-v1'),'--ui-size','1320x860','--ui-theme','dark','--quit-after','85']
+  if mode=='minimized':args+=['--minimized']
+  with (out/(mode+'.sampler.log')).open('xb') as log:
+   process=subprocess.Popen(args,cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True);deadline=time.monotonic()+120
+   while True:
+    status=os.waitid(os.P_PID,process.pid,os.WEXITED|os.WNOHANG|os.WNOWAIT)
+    if status is not None:
+     code=status.si_status if status.si_code==os.CLD_EXITED else -status.si_status;break
+    if time.monotonic()>deadline:raise TimeoutError('measurement deadline')
+    time.sleep(.25)
+ except BaseException as error:failure=type(error).__name__
+ finally:
+  if process is not None:
+   try:reap_group(process);clean=True
+   except BaseException as error:failure=failure or type(error).__name__
+  if wake is not None:
+   try:reap_group(wake)
+   except BaseException as error:failure=failure or type(error).__name__
+ summary={'mode':mode,'exit_code':code,'failure_type':failure,'group_absence_after_reap_confirmed':clean,'elapsed_seconds':time.monotonic()-started,'resource_sha256':sha(out/(mode+'.json')) if (out/(mode+'.json')).exists() else None,'qualified':False}
+ (out/(mode+'.supervisor.json')).write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary),flush=True)
+ if code!=0 or failure or not clean:raise SystemExit(1)
+ r=json.loads((out/(mode+'.json')).read_text());assert r['sample_count']==60 and r['exit_code']==0 and not r['forced_termination'];print(json.dumps({'mode':mode,'cpu':r['cpu_one_core_percent'],'rss':r['rss_mib'],'footprint':r['macos_footprint'],'readiness':r['library_fixture_readiness']}),flush=True)

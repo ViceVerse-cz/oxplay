@@ -1,0 +1,16 @@
+{
+  "source_revision": "9c70e8e3cd077a56c1b08fc3cd738cebdebcce3c",
+  "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+  "run_order": [
+    "a1-off",
+    "b1-staged",
+    "b2-staged",
+    "a2-off"
+  ],
+  "fixture": "30 explicitly labeled related rows, empty thumbnails",
+  "geometry": "1320x860 logical, dark theme",
+  "display_awake_fixture": "bounded caffeinate -d -u during each run; not power or sleep-prevention evidence",
+  "scope": "Cosmetic clock staging only; all cache flags off, no screenshot, profiler, or GPU query enabled"
+}

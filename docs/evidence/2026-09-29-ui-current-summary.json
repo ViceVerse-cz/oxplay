@@ -1,0 +1,110 @@
+{
+  "source_revision": "e97ad3f916db5b42c7f1a0a3291b8c0fe149ca69",
+  "app_sha256": "f61a860fad7d31d5200dd36a00cf4d37912fb946407a27a16d05bb38a0b4d634",
+  "inspection": "Root agent directly inspected all three images using view_image. This export records that inspection; no new native run occurred.",
+  "source_association": "112 source hashes independently verified; see 2026-09-29-ui-navigation-summary.json.",
+  "performance_measurement": false,
+  "real_account_used": false,
+  "images_exported": false,
+  "runs": [
+    {
+      "mode": "browse-dark",
+      "logical_size": [
+        1320,
+        860
+      ],
+      "requested_run_seconds": 20,
+      "exports": [
+        {
+          "file": "2026-09-29-ui-current-browse-dark.json",
+          "sha256": "d7b286415dfe363398952f1fc7898379868dc00897e9811a345a14199baa4e58"
+        },
+        {
+          "file": "2026-09-29-ui-current-browse-dark.log",
+          "sha256": "00db16c756f12b37abc015384be87032b9dd894d1866ba52b19bd53094af4a44"
+        }
+      ],
+      "metadata": {
+        "mode": "browse-dark",
+        "app_sha256": "f61a860fad7d31d5200dd36a00cf4d37912fb946407a27a16d05bb38a0b4d634",
+        "exit_code": 0,
+        "screenshot_present": true,
+        "private_profile": true,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "display_awake_fixture": true
+      },
+      "local_ignored_image": {
+        "workspace_relative_path": "artifacts/ui-current/browse-dark.png",
+        "sha256": "aa8e2d6045da8dabf2c3cca6abb73652e9d458d94ad45aa6df8636b6b0786e0c",
+        "bytes": 2072813
+      }
+    },
+    {
+      "mode": "watch-light-small",
+      "logical_size": [
+        760,
+        600
+      ],
+      "requested_run_seconds": 20,
+      "exports": [
+        {
+          "file": "2026-09-29-ui-current-watch-light-small.json",
+          "sha256": "fb5b8b10586947be4dc41f06f2644694e1b113bab640feb7b8521fcabcee8c7e"
+        },
+        {
+          "file": "2026-09-29-ui-current-watch-light-small.log",
+          "sha256": "a46126c9aaf92f01b7928b7403da2eac788d52f3a19ec5fb48b6f30e9cd21846"
+        }
+      ],
+      "metadata": {
+        "mode": "watch-light-small",
+        "app_sha256": "f61a860fad7d31d5200dd36a00cf4d37912fb946407a27a16d05bb38a0b4d634",
+        "exit_code": 0,
+        "screenshot_present": true,
+        "private_profile": true,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "display_awake_fixture": true
+      },
+      "local_ignored_image": {
+        "workspace_relative_path": "artifacts/ui-current/watch-light-small.png",
+        "sha256": "20f460bd33ed176a84439fbc24d660393a8c3cc5a6360280b489e76c1a514ccd",
+        "bytes": 880485
+      }
+    },
+    {
+      "mode": "settings-dark-small",
+      "logical_size": [
+        760,
+        600
+      ],
+      "requested_run_seconds": 20,
+      "exports": [
+        {
+          "file": "2026-09-29-ui-current-settings-dark-small.json",
+          "sha256": "7f07e2a9001b6829477829a96eecb5286092c0f7d56a7545c7c3b1fa2131ca7d"
+        },
+        {
+          "file": "2026-09-29-ui-current-settings-dark-small.log",
+          "sha256": "4f0240b45a37b361defd062e40e303544737b90f2de5caaf864517c63aa67140"
+        }
+      ],
+      "metadata": {
+        "mode": "settings-dark-small",
+        "app_sha256": "f61a860fad7d31d5200dd36a00cf4d37912fb946407a27a16d05bb38a0b4d634",
+        "exit_code": 0,
+        "screenshot_present": true,
+        "private_profile": true,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "display_awake_fixture": true
+      },
+      "local_ignored_image": {
+        "workspace_relative_path": "artifacts/ui-current/settings-dark-small.png",
+        "sha256": "1f07f858522dd6a5ecbebb076510286eda7b775c16aaa974d71ed91d892615f2",
+        "bytes": 235296
+      }
+    }
+  ]
+}

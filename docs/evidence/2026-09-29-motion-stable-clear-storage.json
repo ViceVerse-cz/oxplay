@@ -1,0 +1,26 @@
+{
+  "schema_version": 3,
+  "table_row_counts": {
+    "local_playlists": 0,
+    "local_playlist_items": 0,
+    "local_subscriptions": 0,
+    "local_history": 0
+  },
+  "preferences": {
+    "local_history": 0,
+    "autoplay": 0,
+    "thumbnail_previews": 0,
+    "background_refresh": 0,
+    "telemetry": 0,
+    "volume_percent": 100,
+    "theme": "system",
+    "history_retention_days": 30
+  },
+  "remaining_vtt_files": 0,
+  "remaining_regular_file_kinds": [
+    "SQLite local library",
+    "caption registry lock"
+  ],
+  "inspection": "Read-only SQLite mode and file enumeration within the isolated harness-selected profile, after process exit. Profile paths, database contents, credential material and filenames outside known application storage kinds are not exported.",
+  "scope": "Logical application rows and files; not forensic secure erasure or a real-account sign-out test."
+}

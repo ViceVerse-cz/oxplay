@@ -1,0 +1,11 @@
+Executable=<workspace>/artifacts/native-child-timer-pair-v1/serein-on
+Identifier=serein-on-55554944ab21241a8031398a8c3a0e556df9028c
+Format=Mach-O thin (arm64)
+CodeDirectory v=20400 size=50155 flags=0x2(adhoc) hashes=1561+2 location=embedded
+Signature=adhoc
+Info.plist=not bound
+TeamIdentifier=not set
+Sealed Resources=none
+Internal requirements count=0 size=12
+Total signatures=1
+Chosen signature=1

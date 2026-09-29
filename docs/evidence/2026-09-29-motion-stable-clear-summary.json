@@ -1,0 +1,45 @@
+{
+  "source_revision": "83a07b4b493a7d411fc21fdbc55daf529596be7e",
+  "app_sha256": "c2ff7d1c0f93145713e2de039e9aa6b574051afcba5d07ed331650c025568398",
+  "source_capture": "2026-09-29-motion-stable-source.json",
+  "independently_verified_source_input_hashes": 115,
+  "exports": [
+    {
+      "artifact": "artifacts/motion-stable/functional/clear.json",
+      "export": "2026-09-29-motion-stable-clear.json",
+      "sha256": "f175094deba9399de39fbbd8b8046bcfeb12eefced8707dd6c52a062a2373d38"
+    },
+    {
+      "artifact": "artifacts/motion-stable/functional/clear.log",
+      "export": "2026-09-29-motion-stable-clear.log",
+      "sha256": "cb833df2170524a1c9a1b256e94e4839914f8e7dcb7a7986c87c49920782810d"
+    }
+  ],
+  "storage_inspection": {
+    "export": "2026-09-29-motion-stable-clear-storage.json",
+    "sha256": "9ad410eb096ba4a8bc4d822651db99e6f30f9ac764063cbaddc324bc5218197b"
+  },
+  "elapsed_seconds": 85.198,
+  "exit_code": 0,
+  "real_account_used": false,
+  "performance_measurement": false,
+  "stable_video_target": true,
+  "stage_progress": false,
+  "clear_stages": {
+    "67_active": true,
+    "80_active": false,
+    "file_loads_before_and_after": 2
+  },
+  "final_render_counters": {
+    "video_draws": 532,
+    "ui_draws": 664,
+    "stable_target_draws": 525,
+    "private_target_draws": 5,
+    "target_publications": 2,
+    "target_allocations": 2,
+    "target_bytes": 7936128
+  },
+  "final_catalog_changes": 0,
+  "final_catalog_resets": 1,
+  "qualification": "Finite native subtitle/refresh/clear lifecycle, blank image and neutral UI clocks asserted before completion. No resource, power, compositor, perceptual A/V, real-account or other-platform qualification."
+}

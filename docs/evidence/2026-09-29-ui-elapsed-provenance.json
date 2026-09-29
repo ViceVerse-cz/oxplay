@@ -1,0 +1,11 @@
+{
+  "base_commit": "bc2e53f6a3eb620dad52d4934a43869aadba8a5a",
+  "binary_sha256": "ac87f2c3ad53ff066fcb5596ec9ffc614c5f0e81c737700ed25f1a7f8628ea80",
+  "modified_files": {
+    "crates/app/ui/app.slint": "41e0f74c19aaac35c3867cadd36c5eeeb196e0d8e9c66d427cab34f8eb99201c",
+    "crates/app/src/main.rs": "39a1c83d9887552d1c7ce524b7e7cfa665d878e7b3d36d4b1c711f1bb5bbf152",
+    "crates/app/src/cli.rs": "1c05e78adbf033292cb65310d160e15d421910603fb9c4a6eb0311ba1e78d36f",
+    "crates/media/src/gpu_timing.rs": "fd3a3b542efd78330772b54049df9fd994d82a5c89ccac5728f33843c27233ce",
+    "crates/media/src/presenter.rs": "1dda6a248b6c55d80e73fa98a1ec790fb1e4666427689ecda18e0142c9601417"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "phase": "verify",
+  "app_sha256": "b6d39791e3535466abaeb9b7cce2a737577af6c2b11d6efc126c75129f8435e3",
+  "exit_code": 0,
+  "elapsed_seconds": 24.28429641603725,
+  "real_account": false,
+  "performance_measurement": false,
+  "user_version": 4,
+  "preferences": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      100,
+      "system",
+      1080,
+      1000
+    ]
+  ]
+}

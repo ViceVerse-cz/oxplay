@@ -1,0 +1,48 @@
+{
+  "status": "completed_not_automatically_qualified",
+  "warmup_seconds": 10,
+  "requested_sample_count": 60,
+  "include_new_vt_services": true,
+  "per_process_rss": {
+    "enabled": true,
+    "entry_limit_per_sample": 64,
+    "baseline_vt_service_count": 2,
+    "baseline_vt_services": [
+      {
+        "pid": 503,
+        "executable": "VTDecoderXPCService"
+      },
+      {
+        "pid": 80397,
+        "executable": "VTDecoderXPCService"
+      }
+    ],
+    "baseline_vt_services_omitted": 0,
+    "scope": "Same ps scan; root and descendants are distinct from temporally attributed new VT services. Preexisting VT services are excluded even if reused by this app; absent new-service RSS is not evidence of absent or unchanged decoder memory. PIDs are sample identities, not birth-time verified lifetimes. Shared RSS pages may be double-counted; no physical-footprint, private-allocation, or GPU-memory attribution. Short-lived or reparented descendants may be missed. No argv or executable directories."
+  },
+  "media_start": null,
+  "media_end": null,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "measurement_start_utc": "2026-09-29T09:00:16Z",
+  "host_other_cpu_one_core_percent": {
+    "mean": 56.88107850923248,
+    "p95": 74.53429552343961,
+    "peak": 88.96297289896556
+  },
+  "host_audit_top_limit": 8,
+  "rss_mib": {
+    "mean": 189.721875,
+    "p95": 190.390625,
+    "peak": 190.46875
+  },
+  "cpu_one_core_percent": {
+    "mean": 50.94253384996393,
+    "p95": 63.265438565065935,
+    "peak": 64.00220807436456
+  },
+  "process_count_peak": 2,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "exit_code": 0,
+  "forced_termination": false
+}

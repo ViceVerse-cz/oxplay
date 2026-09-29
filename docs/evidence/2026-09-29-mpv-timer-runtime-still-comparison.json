@@ -1,0 +1,10 @@
+{
+  "png_dimensions": [
+    2640,
+    1528
+  ],
+  "encoded_png_byte_identical": true,
+  "bytes": 1189580,
+  "sha256": "2cd39c7fb1806bfcb374ca0f64134ebf786aa566c4a7aae7f7e5af1c652c4bd6",
+  "scope": "One paused first-frame native capture with same synthetic subtitle; both visually inspected; not all-frame/color/quality qualification"
+}

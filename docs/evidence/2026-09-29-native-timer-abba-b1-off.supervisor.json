@@ -1,0 +1,171 @@
+{
+  "mode": "b1-off",
+  "variant": "off",
+  "native_child": true,
+  "exit_code": 0,
+  "failure_type": null,
+  "validation_failure": null,
+  "group_absence_after_reap_confirmed": true,
+  "wake_group_absence_confirmed": true,
+  "elapsed_seconds": 86.97651125001721,
+  "metrics": {
+    "geometry": {
+      "window_px": [
+        2640,
+        1528
+      ],
+      "scale": 2.0,
+      "video_logical": [
+        260.0,
+        76.0,
+        664.0,
+        373.5
+      ],
+      "clip_logical": [
+        260.0,
+        76.0,
+        1032.0,
+        640.0
+      ],
+      "page": 2,
+      "fullscreen": false,
+      "hidden": false,
+      "native_child": true,
+      "geometry_events": 4
+    },
+    "native_geometry": {
+      "5": {
+        "backing_px": [
+          1328,
+          747
+        ],
+        "geometry_changes": 3,
+        "visible": true,
+        "renders": 276,
+        "publications": 276
+      },
+      "10": {
+        "backing_px": [
+          1328,
+          747
+        ],
+        "geometry_changes": 3,
+        "visible": true,
+        "renders": 576,
+        "publications": 576
+      },
+      "25": {
+        "backing_px": [
+          1328,
+          747
+        ],
+        "geometry_changes": 3,
+        "visible": true,
+        "renders": 1476,
+        "publications": 1476
+      },
+      "70": {
+        "backing_px": [
+          1328,
+          747
+        ],
+        "geometry_changes": 3,
+        "visible": true,
+        "renders": 4176,
+        "publications": 4176
+      }
+    },
+    "media_counters": {
+      "dropped_frames": {
+        "cumulative_at_10_seconds": 3,
+        "cumulative_at_70_seconds": 3,
+        "warm_delta": 0
+      },
+      "decoder_dropped_frames": {
+        "cumulative_at_10_seconds": 0,
+        "cumulative_at_70_seconds": 0,
+        "warm_delta": 0
+      },
+      "render_notifications": {
+        "cumulative_at_10_seconds": 578,
+        "cumulative_at_70_seconds": 4178,
+        "warm_delta": 3600
+      }
+    },
+    "ui_draw_delta_10_to_70": 238,
+    "cpu_one_core_percent": {
+      "mean": 36.66462981640719,
+      "p95": 45.000103142174474,
+      "peak": 46.0085135090878
+    },
+    "rss_mib": {
+      "mean": 188.13567708333332,
+      "p95": 188.875,
+      "peak": 188.921875
+    },
+    "macos_footprint": {
+      "enabled": true,
+      "api": "proc_pid_rusage RUSAGE_INFO_V0 ri_phys_footprint",
+      "entry_limit_per_sample": 64,
+      "scope": "Separate OS physical-footprint ledger for existing attributed PIDs; no additional process discovery. Unavailable processes make the aggregate null, never zero. Totals are not unique physical memory and must not be added to RSS or GPU estimates. Sequential ps/rusage observations are not atomic; start-abstime records permit later lifetime comparison but do not validate the preceding ps identity. Temporal VT attribution and excluded baseline-service limits still apply.",
+      "complete_sample_count": 60,
+      "incomplete_sample_count": 0,
+      "all_samples_complete": true,
+      "physical_footprint_mib": {
+        "mean": 317.86537272135416,
+        "p95": 318.5487060546875,
+        "peak": 319.0330810546875
+      }
+    },
+    "host_other_cpu_one_core_percent": {
+      "mean": 56.894573260723355,
+      "p95": 74.02933716816395,
+      "peak": 83.57655088198715
+    },
+    "process_counts": [
+      2
+    ],
+    "baseline_vt": {
+      "enabled": true,
+      "entry_limit_per_sample": 64,
+      "baseline_vt_service_count": 2,
+      "baseline_vt_services": [
+        {
+          "pid": 503,
+          "executable": "VTDecoderXPCService"
+        },
+        {
+          "pid": 80397,
+          "executable": "VTDecoderXPCService"
+        }
+      ],
+      "baseline_vt_services_omitted": 0,
+      "scope": "Same ps scan; root and descendants are distinct from temporally attributed new VT services. Preexisting VT services are excluded even if reused by this app; absent new-service RSS is not evidence of absent or unchanged decoder memory. PIDs are sample identities, not birth-time verified lifetimes. Shared RSS pages may be double-counted; no physical-footprint, private-allocation, or GPU-memory attribution. Short-lived or reparented descendants may be missed. No argv or executable directories."
+    },
+    "pixel_visibility_verified": false,
+    "automatic_performance_qualification": false,
+    "shared_host_services": {
+      "WindowServer": {
+        "observed_sample_count": 60,
+        "omitted_sample_count": 0,
+        "mean_when_present": 32.229386940937964,
+        "peak_when_present": 35.06798074227477,
+        "scope": "Shared host service outside app total; top-eight omission is unknown, not zero. No exclusive app attribution."
+      },
+      "coreaudiod": {
+        "observed_sample_count": 60,
+        "omitted_sample_count": 0,
+        "mean_when_present": 7.219174490745525,
+        "peak_when_present": 8.001480610268894,
+        "scope": "Shared host service outside app total; top-eight omission is unknown, not zero. No exclusive app attribution."
+      }
+    }
+  },
+  "functional_sample_admission_passed": true,
+  "raw_artifact_hashes": {
+    ".json": "e39e7bc8acc2ccf6c67f095b4aa49367c00f0ed8f3bf34461d6dab3d00cd841f",
+    ".json.log": "0e35ec3e9283eef0d681af3bb9963af3bb1e0b9b78af40a14d309039abdc64d6",
+    ".sampler.log": "8ecd2aec4378a0dfdb3f8f6d1a8873924e8a596abc2d370c3e1bd5f22a6072b0",
+    ".command.json": "8ae350007c58310ffcabc13069ac59dfd2a41008eed4a8071c8372763337ab4c"
+  }
+}

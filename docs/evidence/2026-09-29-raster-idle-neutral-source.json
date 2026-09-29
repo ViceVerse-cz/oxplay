@@ -1,0 +1,1362 @@
+{
+  "binary_build_association_verified": false,
+  "file_count": 133,
+  "files": [
+    {
+      "bytes": 163618,
+      "committed_blob_oid": "f0466258a3fccf9ef8b6b57e62d6701aa691fcf2",
+      "committed_mode": "100644",
+      "git_blob_oid": "f0466258a3fccf9ef8b6b57e62d6701aa691fcf2",
+      "mode": "100644",
+      "path": "Cargo.lock",
+      "sha256": "c817be854c65c02a4bb10f250dbc91bac7ffeb7c34d0da53d1af559fc9d303d2",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 745,
+      "committed_blob_oid": "c71d78095982e02e3673a9a38c7ff44e6fcd7e65",
+      "committed_mode": "100644",
+      "git_blob_oid": "c71d78095982e02e3673a9a38c7ff44e6fcd7e65",
+      "mode": "100644",
+      "path": "Cargo.toml",
+      "sha256": "5fde90142fdac3e3a779024cfe1f2fcccbac012209dce55bbf8219733a696a64",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 943,
+      "committed_blob_oid": "13e22c6903baff24c8137779032b0506195b53fb",
+      "committed_mode": "100644",
+      "git_blob_oid": "13e22c6903baff24c8137779032b0506195b53fb",
+      "mode": "100644",
+      "path": "crates/app/Cargo.toml",
+      "sha256": "32a191fa4b78020566383409a2e3d473b3c19f0ac609a897070edf7e9de9e0a6",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 195,
+      "committed_blob_oid": "ff3042e13565346593360e35cccd416b47f8b259",
+      "committed_mode": "100644",
+      "git_blob_oid": "ff3042e13565346593360e35cccd416b47f8b259",
+      "mode": "100644",
+      "path": "crates/app/build.rs",
+      "sha256": "e13e7b5e38db419081816a53abc9b178579239879a5bf6f7f31b1970a0142dd0",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 49297,
+      "committed_blob_oid": "164bf471b937c1cbf87de9cc0d7fbc4141ded48e",
+      "committed_mode": "100644",
+      "git_blob_oid": "164bf471b937c1cbf87de9cc0d7fbc4141ded48e",
+      "mode": "100644",
+      "path": "crates/app/src/account.rs",
+      "sha256": "650042d655d92014418ebe51f57eec249c3d60e01a1b19e51281b3a4522b944c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 16453,
+      "committed_blob_oid": "f7623dfce8ab6f25eec1f5670cc0f59b474a89dc",
+      "committed_mode": "100644",
+      "git_blob_oid": "f7623dfce8ab6f25eec1f5670cc0f59b474a89dc",
+      "mode": "100644",
+      "path": "crates/app/src/account_playback.rs",
+      "sha256": "c6ae0cdff67200b454ae46a0746f09c7d873cf2706279a46350257578266f974",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 26412,
+      "committed_blob_oid": "3b035ab779467a86979eb720b4a985c3318c645a",
+      "committed_mode": "100644",
+      "git_blob_oid": "3b035ab779467a86979eb720b4a985c3318c645a",
+      "mode": "100644",
+      "path": "crates/app/src/account_ui.rs",
+      "sha256": "d374068f6b27026409042d6ada832673847d98380d8ddf20319a4ce7c0255ec2",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 5413,
+      "committed_blob_oid": "b6e8d444742d5580bc613f9ad0b9cc3bc8546319",
+      "committed_mode": "100644",
+      "git_blob_oid": "b6e8d444742d5580bc613f9ad0b9cc3bc8546319",
+      "mode": "100644",
+      "path": "crates/app/src/caption_cache.rs",
+      "sha256": "7a79040e4a9882cb006412715dcab0e2f76e60a6da6ddc07a03cd13e2c94aeca",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18816,
+      "committed_blob_oid": "ad679d8d12a0fe1de1a866131cc26617fdef253f",
+      "committed_mode": "100644",
+      "git_blob_oid": "ad679d8d12a0fe1de1a866131cc26617fdef253f",
+      "mode": "100644",
+      "path": "crates/app/src/caption_files.rs",
+      "sha256": "5ad8a6e1c20c034677974a1ea6e53587806ba92b73ce752965e3d5befe109345",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18204,
+      "committed_blob_oid": "1cf01cdde5c2e23640e93a67b4e7dd4deadc96f8",
+      "committed_mode": "100644",
+      "git_blob_oid": "1cf01cdde5c2e23640e93a67b4e7dd4deadc96f8",
+      "mode": "100644",
+      "path": "crates/app/src/caption_files/private.rs",
+      "sha256": "2a46cf3e3147a1a2e43ab9c54780c4dd2f2cca4df8a27228a2dd6adf38c1c581",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 20363,
+      "committed_blob_oid": "2b392455e56aad2e211c2989660e505ee62efd12",
+      "committed_mode": "100644",
+      "git_blob_oid": "2b392455e56aad2e211c2989660e505ee62efd12",
+      "mode": "100644",
+      "path": "crates/app/src/caption_ui.rs",
+      "sha256": "47710b1c470e1959836d54cd0cede6260ea2f980b297d7eed5e849deff6e390e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15732,
+      "committed_blob_oid": "6831164c5bd7ec680635ca7770cd4563f5f336a9",
+      "committed_mode": "100644",
+      "git_blob_oid": "6831164c5bd7ec680635ca7770cd4563f5f336a9",
+      "mode": "100644",
+      "path": "crates/app/src/catalog.rs",
+      "sha256": "f1f0bff96dc9f76bf69296aac3ad916cef683eae5748508cff25cdf63b4293f3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8792,
+      "committed_blob_oid": "b4dbf8178a9b3bacd4dd69ce185fe8eef29e33f7",
+      "committed_mode": "100644",
+      "git_blob_oid": "b4dbf8178a9b3bacd4dd69ce185fe8eef29e33f7",
+      "mode": "100644",
+      "path": "crates/app/src/clear_smoke.rs",
+      "sha256": "38a2ced336359fe7ac67c87ee46ed27f5e50820fb6a0afd1deed784211dd5a7e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 39170,
+      "committed_blob_oid": "024dca8cd7f17e60723628f6b07eb8d3c886eae9",
+      "committed_mode": "100644",
+      "git_blob_oid": "024dca8cd7f17e60723628f6b07eb8d3c886eae9",
+      "mode": "100644",
+      "path": "crates/app/src/cli.rs",
+      "sha256": "b97409c02a9e88209ae1d86c7457bafd7aeab19f28a8929cb970c11d0cd1130b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6434,
+      "committed_blob_oid": "74332d8753e4afea453561b7e75070be5118534d",
+      "committed_mode": "100644",
+      "git_blob_oid": "74332d8753e4afea453561b7e75070be5118534d",
+      "mode": "100644",
+      "path": "crates/app/src/clock_ui.rs",
+      "sha256": "dad8596afb032d6bcf7ad525f0c25d82a01b0fe6da1e0d7022940f96f6bdf00f",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15336,
+      "committed_blob_oid": "f7e1e7ef79d26a2deabd7f2dd4f0dfade3cfebf4",
+      "committed_mode": "100644",
+      "git_blob_oid": "f7e1e7ef79d26a2deabd7f2dd4f0dfade3cfebf4",
+      "mode": "100644",
+      "path": "crates/app/src/comments_ui.rs",
+      "sha256": "df9f7513c6332a641d9649bf5a7e5edc286bbf362c96fdb787bf4a46d58bd308",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 3524,
+      "committed_blob_oid": "f43de45cbe0bfbf4ace8a8a69c0eb9bfa4c286dc",
+      "committed_mode": "100644",
+      "git_blob_oid": "f43de45cbe0bfbf4ace8a8a69c0eb9bfa4c286dc",
+      "mode": "100644",
+      "path": "crates/app/src/decode_warning.rs",
+      "sha256": "5edf4180961dff69711bd67303ad6e26afb81da796cb4f8718f2adff8f1bf5dc",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 19329,
+      "committed_blob_oid": "115810eca59202ac725509fda4a8c54ccd870a95",
+      "committed_mode": "100644",
+      "git_blob_oid": "115810eca59202ac725509fda4a8c54ccd870a95",
+      "mode": "100644",
+      "path": "crates/app/src/feed_focus.rs",
+      "sha256": "69929ceafab61d46651c6708916d8ca6676df81a52af6750ca89276762eb22cc",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8693,
+      "committed_blob_oid": "5bfbaf200a8e37f6a0cc6e925b330bbcad27cfad",
+      "committed_mode": "100644",
+      "git_blob_oid": "5bfbaf200a8e37f6a0cc6e925b330bbcad27cfad",
+      "mode": "100644",
+      "path": "crates/app/src/fixture_quiescence.rs",
+      "sha256": "43f68fc10d4622865ea5b698576b5f2daabfb5e237a96baf76f7bd49f2f74863",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15556,
+      "committed_blob_oid": "332d789a41566c405a767ba5c22d2a6020547613",
+      "committed_mode": "100644",
+      "git_blob_oid": "332d789a41566c405a767ba5c22d2a6020547613",
+      "mode": "100644",
+      "path": "crates/app/src/focus_intent.rs",
+      "sha256": "2fe207b8030a26ecfb11749071baeea4d4837de1106bddd447e2cc1a0ef894d1",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9274,
+      "committed_blob_oid": "4825385aecf2efeaf3cc6c9c8ed79014284b3f6d",
+      "committed_mode": "100644",
+      "git_blob_oid": "4825385aecf2efeaf3cc6c9c8ed79014284b3f6d",
+      "mode": "100644",
+      "path": "crates/app/src/groups.rs",
+      "sha256": "cbbccd6308f5d64e91c5579ebdbfc504a7a63e297b476278d5ef428d04b01980",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 4412,
+      "committed_blob_oid": "5a76353b154cf62d27b91875c5d444d7c2e92793",
+      "committed_mode": "100644",
+      "git_blob_oid": "5a76353b154cf62d27b91875c5d444d7c2e92793",
+      "mode": "100644",
+      "path": "crates/app/src/guest_playback.rs",
+      "sha256": "6fc11772755947fb4b9697e7e959ae82550d9431fcc3e557747876ffdbd97bf1",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 21094,
+      "committed_blob_oid": "fec4f739762ac29f8aff198245ef1d4aa5ac9a8f",
+      "committed_mode": "100644",
+      "git_blob_oid": "fec4f739762ac29f8aff198245ef1d4aa5ac9a8f",
+      "mode": "100644",
+      "path": "crates/app/src/guest_ui.rs",
+      "sha256": "7a0f6334c94ca3975ea7504f9abf658351ff7230b0dcc79ceb096d5839c7628e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 5243,
+      "committed_blob_oid": "101331d6b0b5eba462efe88b3ecd79774fcc50e5",
+      "committed_mode": "100644",
+      "git_blob_oid": "101331d6b0b5eba462efe88b3ecd79774fcc50e5",
+      "mode": "100644",
+      "path": "crates/app/src/handoff_smoke.rs",
+      "sha256": "37cbcb9f921fc7a4f2301864657ab0e386deb18b78d7b53a8716ab0977bdde76",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 10582,
+      "committed_blob_oid": "1d2c74a94ca5ac5f3994206669555371c42233c6",
+      "committed_mode": "100644",
+      "git_blob_oid": "1d2c74a94ca5ac5f3994206669555371c42233c6",
+      "mode": "100644",
+      "path": "crates/app/src/helper_paths.rs",
+      "sha256": "e1e5386545288c770fefad401934f60b8b7d23d814716f8dc118beaa7f24587d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 22704,
+      "committed_blob_oid": "82af2251926237786ae41f86144014874ac3294e",
+      "committed_mode": "100644",
+      "git_blob_oid": "82af2251926237786ae41f86144014874ac3294e",
+      "mode": "100644",
+      "path": "crates/app/src/library.rs",
+      "sha256": "791dedf8d39efce176535be2109473384ded71b8b9a677240df29547b17db4ef",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11968,
+      "committed_blob_oid": "0cbbfb26471875cfee02408ac93cb2a7fdd3507d",
+      "committed_mode": "100644",
+      "git_blob_oid": "0cbbfb26471875cfee02408ac93cb2a7fdd3507d",
+      "mode": "100644",
+      "path": "crates/app/src/library_fixture.rs",
+      "sha256": "8d43809e73306071d5edc09f986e9b5b3afa1ca476b9ce49a977aaffa7d87c40",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 19144,
+      "committed_blob_oid": "2650e2e994c0ae6600c352b7bf4c853e7ffe6e6a",
+      "committed_mode": "100644",
+      "git_blob_oid": "2650e2e994c0ae6600c352b7bf4c853e7ffe6e6a",
+      "mode": "100644",
+      "path": "crates/app/src/library_resource_smoke.rs",
+      "sha256": "64b656e140fdc64fa0a31bb3a9dbde204ae34d8512ec1b8d2ba0ce3e1b7b1ba7",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11459,
+      "committed_blob_oid": "9243277ba3c6766f6b5db3c4741064840b04e7df",
+      "committed_mode": "100644",
+      "git_blob_oid": "9243277ba3c6766f6b5db3c4741064840b04e7df",
+      "mode": "100644",
+      "path": "crates/app/src/library_smoke.rs",
+      "sha256": "2275700f7117d0c574fb5a7133ae35a04c22e7aa1b4992745f190afed3bdd631",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 36791,
+      "committed_blob_oid": "675dc6ca51d86ad59e0a76f712d1609f277e27d5",
+      "committed_mode": "100644",
+      "git_blob_oid": "675dc6ca51d86ad59e0a76f712d1609f277e27d5",
+      "mode": "100644",
+      "path": "crates/app/src/library_ui.rs",
+      "sha256": "00fe7ac678e603eff63592e5d3acab8413439cdbaf6010da9bbcaeb25e1e729d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 76041,
+      "committed_blob_oid": "c7054a202cea84aab0164cf62e0569d29e771210",
+      "committed_mode": "100644",
+      "git_blob_oid": "c7054a202cea84aab0164cf62e0569d29e771210",
+      "mode": "100644",
+      "path": "crates/app/src/main.rs",
+      "sha256": "6eee18ddc73301aae81738aa1b2a77446afa0a3a6dad3ae18491cd953c87fcd5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 4494,
+      "committed_blob_oid": "6ccfeb8948960f56b4b28de7aa91d6025afd2f45",
+      "committed_mode": "100644",
+      "git_blob_oid": "6ccfeb8948960f56b4b28de7aa91d6025afd2f45",
+      "mode": "100644",
+      "path": "crates/app/src/media_network.rs",
+      "sha256": "72b40b1d84f81ebc95862618d5ebca5aab34d8271512692774bf1e89cfd985d3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 2302,
+      "committed_blob_oid": "1f7ae4e51ce1320741fa5c1adcbbf0f082325cd9",
+      "committed_mode": "100644",
+      "git_blob_oid": "1f7ae4e51ce1320741fa5c1adcbbf0f082325cd9",
+      "mode": "100644",
+      "path": "crates/app/src/model.rs",
+      "sha256": "6fff928ee0f86af30d3525ac16dde3ece5466bb56f25bb4e8e46a95a63e2af8e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 13170,
+      "committed_blob_oid": "740703ce933281ccee01de454fcf089ec40527b2",
+      "committed_mode": "100644",
+      "git_blob_oid": "740703ce933281ccee01de454fcf089ec40527b2",
+      "mode": "100644",
+      "path": "crates/app/src/motion_smoke.rs",
+      "sha256": "f78e47b1070fc3aa5219f55b8ef2daea7a7c4d8fae09e3f15de018afa1d795d4",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 10164,
+      "committed_blob_oid": "90a2fd1b9bd33de4f3a8f25da7c5567dd80189bd",
+      "committed_mode": "100644",
+      "git_blob_oid": "90a2fd1b9bd33de4f3a8f25da7c5567dd80189bd",
+      "mode": "100644",
+      "path": "crates/app/src/native_child.rs",
+      "sha256": "f93db466eeff85c68a09c4c4c061b602ee158044aa57049d9959c564f4cfdfb9",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8269,
+      "committed_blob_oid": "2a3910b46f8f328ade937b9a4b06e13e7981ea9c",
+      "committed_mode": "100644",
+      "git_blob_oid": "2a3910b46f8f328ade937b9a4b06e13e7981ea9c",
+      "mode": "100644",
+      "path": "crates/app/src/native_child_fixture.rs",
+      "sha256": "98def0fa060bf4bd01cd6d5708da286040c5d956ea5c770d2291b2a07385863c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11872,
+      "committed_blob_oid": "f06ff95f90490d92b41ab77c9dff988ac2ed96d3",
+      "committed_mode": "100644",
+      "git_blob_oid": "f06ff95f90490d92b41ab77c9dff988ac2ed96d3",
+      "mode": "100644",
+      "path": "crates/app/src/native_child_smoke.rs",
+      "sha256": "ef888415b9115f7d397217b2fef43836aaa13f383adf0ecef2117f57c7bdf91e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8270,
+      "committed_blob_oid": "c65b16cf3b38bb79a1fdb9fd24945444b465a4e7",
+      "committed_mode": "100644",
+      "git_blob_oid": "c65b16cf3b38bb79a1fdb9fd24945444b465a4e7",
+      "mode": "100644",
+      "path": "crates/app/src/playback_preferences.rs",
+      "sha256": "ff3d946b76df12d150cb2532febc745c3b91dc40d875a339406f3b402749fab2",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 24474,
+      "committed_blob_oid": "7e98eee984d7c997d431e0dd2919b2dd832b3e45",
+      "committed_mode": "100644",
+      "git_blob_oid": "7e98eee984d7c997d431e0dd2919b2dd832b3e45",
+      "mode": "100644",
+      "path": "crates/app/src/playback_ui.rs",
+      "sha256": "d1cab1a859dab9930f01e26a0a807720a9c7f14c93a3e926fc36b0fab2c00453",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11207,
+      "committed_blob_oid": "2f37ff959f96135a7e2646248c0401daff683362",
+      "committed_mode": "100644",
+      "git_blob_oid": "2f37ff959f96135a7e2646248c0401daff683362",
+      "mode": "100644",
+      "path": "crates/app/src/preferences_smoke.rs",
+      "sha256": "423a2594665e6a3d422ff4cade2f45f372b6b48ee520f7b9b1cc8d362c7dad7f",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 2434,
+      "committed_blob_oid": "698a0e73c238442f34750eeba5e3ac545a850c59",
+      "committed_mode": "100644",
+      "git_blob_oid": "698a0e73c238442f34750eeba5e3ac545a850c59",
+      "mode": "100644",
+      "path": "crates/app/src/resolver.rs",
+      "sha256": "4fa26b2a9c8893247761542368287adb71f4aa7164e9232b14e7029700215aa3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18444,
+      "committed_blob_oid": "cc0d6c7ee8e502d89f3922060737bfd048127323",
+      "committed_mode": "100644",
+      "git_blob_oid": "cc0d6c7ee8e502d89f3922060737bfd048127323",
+      "mode": "100644",
+      "path": "crates/app/src/soak_smoke.rs",
+      "sha256": "ad932ab088c34d4acab64f4c69350c9b3b6c9c5c85dd6031e5a0ff4060db98a5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 16460,
+      "committed_blob_oid": "7f0bf919742d03ebd786817b586b88f479ad1c9e",
+      "committed_mode": "100644",
+      "git_blob_oid": "7f0bf919742d03ebd786817b586b88f479ad1c9e",
+      "mode": "100644",
+      "path": "crates/app/src/thumbnails.rs",
+      "sha256": "842273ab6a5e3f6c3eb678f95fae2603395c781d770521aec08b8ee2b3affa55",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 44447,
+      "committed_blob_oid": "6fb7a9622efbf089e8a9bd2c3c86fc7ea4c14234",
+      "committed_mode": "100644",
+      "git_blob_oid": "6fb7a9622efbf089e8a9bd2c3c86fc7ea4c14234",
+      "mode": "100644",
+      "path": "crates/app/ui/app.slint",
+      "sha256": "9b35200a34d156ca1c90300b554942d8961d5372d471b34a8b3dc97589b5685b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1368,
+      "committed_blob_oid": "ac480c6b8947d848c1e61bd618f47b03e81ebbc0",
+      "committed_mode": "100644",
+      "git_blob_oid": "ac480c6b8947d848c1e61bd618f47b03e81ebbc0",
+      "mode": "100644",
+      "path": "crates/app/ui/captions.slint",
+      "sha256": "7311d1679011599051077f381bbf1586b6f1a47af54ffe668826ca43a553e2a0",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 3454,
+      "committed_blob_oid": "af7d7fbdfa00b67a98165296334c45a6a1a5d00e",
+      "committed_mode": "100644",
+      "git_blob_oid": "af7d7fbdfa00b67a98165296334c45a6a1a5d00e",
+      "mode": "100644",
+      "path": "crates/app/ui/comments.slint",
+      "sha256": "f0721d9269015b2e429a2c9189e8e9b5cd3fbf8255db4fe2c6b08122dae91515",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9642,
+      "committed_blob_oid": "66dac1d44f12bda843b3a60a2e0419af9cf2547b",
+      "committed_mode": "100644",
+      "git_blob_oid": "66dac1d44f12bda843b3a60a2e0419af9cf2547b",
+      "mode": "100644",
+      "path": "crates/app/ui/components.slint",
+      "sha256": "d82b7f48515194d49ef8c0cf5e908c670fd3bc63e4b689ed959a7898154a5292",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 3208,
+      "committed_blob_oid": "718bb3f0e44153809972abed31839375804bf652",
+      "committed_mode": "100644",
+      "git_blob_oid": "718bb3f0e44153809972abed31839375804bf652",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/LICENSE-LUCIDE",
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1828,
+      "committed_blob_oid": "a8c5869ee2472f5c1fad3279d0f1c3c0c5956b49",
+      "committed_mode": "100644",
+      "git_blob_oid": "a8c5869ee2472f5c1fad3279d0f1c3c0c5956b49",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/SHA256SUMS",
+      "sha256": "8e0cf62901529e21f8d2db2da0c54a51e5802ab7e8c6a67e9869b1ce246ccbb8",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1616,
+      "committed_blob_oid": "781a9d8e464387b790101ac9128f523467cd56e2",
+      "committed_mode": "100644",
+      "git_blob_oid": "781a9d8e464387b790101ac9128f523467cd56e2",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/SOURCE.md",
+      "sha256": "f22da07cfead100039c98d159a51d1f9fd905ce702cc5d82014b717bfe1b3dd5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 314,
+      "committed_blob_oid": "ae7335a42ec60845be70c22d63b8a4bc3d91d2f8",
+      "committed_mode": "100644",
+      "git_blob_oid": "ae7335a42ec60845be70c22d63b8a4bc3d91d2f8",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/captions.svg",
+      "sha256": "37c4e3ed84224b7d07ee6f5b0f51cc2c5d17e8bf80f86c48059cdcc747607a55",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 238,
+      "committed_blob_oid": "056d5abc06e44940302c8b2a1912a382ea26b36d",
+      "committed_mode": "100644",
+      "git_blob_oid": "056d5abc06e44940302c8b2a1912a382ea26b36d",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/chevron-left.svg",
+      "sha256": "83b0681aa38bf55e9d52a1e4b4cced624abe1fe7678ecafda133a574f1161d93",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 237,
+      "committed_blob_oid": "db62a0c20181edd6173722b2a483e0b85e30f240",
+      "committed_mode": "100644",
+      "git_blob_oid": "db62a0c20181edd6173722b2a483e0b85e30f240",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/chevron-right.svg",
+      "sha256": "2758143d7b2434e4aa7307dfd34405c87909ff4052f21b5f3f40d45224b4f19b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 330,
+      "committed_blob_oid": "88e5a10aadcbbaf88d495b130673a6a68fbdad9b",
+      "committed_mode": "100644",
+      "git_blob_oid": "88e5a10aadcbbaf88d495b130673a6a68fbdad9b",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/circle-user-round.svg",
+      "sha256": "a7061596d155332f46cebc93e7458ff3f0a3a87b84b441d04b07461f0bfcffc2",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 429,
+      "committed_blob_oid": "99c818ee3a8300ed64fcafd895e66af33bdea8cf",
+      "committed_mode": "100644",
+      "git_blob_oid": "99c818ee3a8300ed64fcafd895e66af33bdea8cf",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/clapperboard.svg",
+      "sha256": "e4d78946cda7812f13c431c68b6d4d0077a92217c7f468667a203f237e247d7e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 312,
+      "committed_blob_oid": "68456c39be516d1d14aee329ca3b0056ba84d3c5",
+      "committed_mode": "100644",
+      "git_blob_oid": "68456c39be516d1d14aee329ca3b0056ba84d3c5",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/ellipsis.svg",
+      "sha256": "4f495cc72013ffdfec677f03b33a150f7b4dd741979283fd6853a09024bca112",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 383,
+      "committed_blob_oid": "10e4097e290fdb2f1f919b264bf4e3095348de7c",
+      "committed_mode": "100644",
+      "git_blob_oid": "10e4097e290fdb2f1f919b264bf4e3095348de7c",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/house.svg",
+      "sha256": "28216c479005731ef5e382e7d8627eda2b129b019eb1f3d9de9f5915576d448e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 517,
+      "committed_blob_oid": "a5bef9b0abfbd83311fa979077e64005ffbe2bc5",
+      "committed_mode": "100644",
+      "git_blob_oid": "a5bef9b0abfbd83311fa979077e64005ffbe2bc5",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/image-off.svg",
+      "sha256": "7c83ed5b6ebfbe7aa36457e6c5e6d5cbe25dc5dba54203e2decdbee1654bf80c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 294,
+      "committed_blob_oid": "2a46eac2b55a1ead226035d1efa8721f6f08bd17",
+      "committed_mode": "100644",
+      "git_blob_oid": "2a46eac2b55a1ead226035d1efa8721f6f08bd17",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/info.svg",
+      "sha256": "bc977a64eb96f3e9c1041ffd09a3fceb70e3e65c02b571f76064062ed31f3cb9",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 409,
+      "committed_blob_oid": "5375b947ab375fed3bfaceef892db2b0e566f460",
+      "committed_mode": "100644",
+      "git_blob_oid": "5375b947ab375fed3bfaceef892db2b0e566f460",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/library-big.svg",
+      "sha256": "3ac6431dcc422f7f05134023b4ed03fbd2b8f1cc4f6467d63acc57b47d13d92e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 390,
+      "committed_blob_oid": "4a5fa8e5dd54ae16941dc3f734362354f3dcf69f",
+      "committed_mode": "100644",
+      "git_blob_oid": "4a5fa8e5dd54ae16941dc3f734362354f3dcf69f",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/list-video.svg",
+      "sha256": "f6d062a395d0e39d7639a76815f4f1a92017774c55c76b88e4d0dbd933ef47a3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 366,
+      "committed_blob_oid": "f78ca32408d3bfa431f79f9563736d38942f1316",
+      "committed_mode": "100644",
+      "git_blob_oid": "f78ca32408d3bfa431f79f9563736d38942f1316",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/maximize.svg",
+      "sha256": "1f790856b0de805ab62e871609f1990b89d227d472022e57a11fde015aad4826",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 279,
+      "committed_blob_oid": "0ec97458f92564242574b65de900afbfd7123715",
+      "committed_mode": "100644",
+      "git_blob_oid": "0ec97458f92564242574b65de900afbfd7123715",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/menu.svg",
+      "sha256": "af6491988ac1ba30dc5414f485bc48713e957e1edb0fbef4a0dd8691c3c21598",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 313,
+      "committed_blob_oid": "ea5762fdbcccbf1f73bb2b46178bb1bafd1e373f",
+      "committed_mode": "100644",
+      "git_blob_oid": "ea5762fdbcccbf1f73bb2b46178bb1bafd1e373f",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/pause.svg",
+      "sha256": "f122ec4ea7f5693a0b1baafa9c708b53980dc87b4aacb297c6e6f71c1a4c115c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 306,
+      "committed_blob_oid": "199743ed2e546fdcef48f9ebbe4030e8f75c59c1",
+      "committed_mode": "100644",
+      "git_blob_oid": "199743ed2e546fdcef48f9ebbe4030e8f75c59c1",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/play.svg",
+      "sha256": "d7c34786135922a92b6896f6c2384ceeb0346afbf6041dc79982011411409833",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 256,
+      "committed_blob_oid": "41f92bb93eb6626368d71c9884127bbcf7d3ccdf",
+      "committed_mode": "100644",
+      "git_blob_oid": "41f92bb93eb6626368d71c9884127bbcf7d3ccdf",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/plus.svg",
+      "sha256": "7f6af73bf1ff6c4bca3f18351c8d1bdec6749c0c2530c4de5da85d520c21df17",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 324,
+      "committed_blob_oid": "67152e4fbda9c61602d11985f3f1fa74136f00d7",
+      "committed_mode": "100644",
+      "git_blob_oid": "67152e4fbda9c61602d11985f3f1fa74136f00d7",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/rotate-ccw-clock.svg",
+      "sha256": "a98ff758157910b9fc9d42d5d5dc80c2f4e037afa5f8ea4dee5f5649f03d438d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 275,
+      "committed_blob_oid": "03e442a5440cff92c219fe3a3c1f2b0788d30701",
+      "committed_mode": "100644",
+      "git_blob_oid": "03e442a5440cff92c219fe3a3c1f2b0788d30701",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/search.svg",
+      "sha256": "283d371c2e433817bb9c0c8310caa6c77fa4177c0f4f1168d9c83b97af7389dc",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 586,
+      "committed_blob_oid": "4c6263af909841a3911f41a385021778eacba736",
+      "committed_mode": "100644",
+      "git_blob_oid": "4c6263af909841a3911f41a385021778eacba736",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/settings.svg",
+      "sha256": "0ae27fd0f81999229e3127ac96c5b32edfea448e291d509e76212b917551d66b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 383,
+      "committed_blob_oid": "e31958f8795715f31b86d3c633652c20acb3a325",
+      "committed_mode": "100644",
+      "git_blob_oid": "e31958f8795715f31b86d3c633652c20acb3a325",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/users.svg",
+      "sha256": "eeed488a1ec95ba730dd69996536fb65061d6ea273afb2429ae47e65eebf401c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 476,
+      "committed_blob_oid": "519e6cbd4d2693a38f7db0e396354cc07b9f4e26",
+      "committed_mode": "100644",
+      "git_blob_oid": "519e6cbd4d2693a38f7db0e396354cc07b9f4e26",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/volume-2.svg",
+      "sha256": "fb404f9c128a0579de67b399177631e5edb3502fdc247ceb30e8b15754b46071",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 443,
+      "committed_blob_oid": "3e2600946f38313e8cfb617e35bbc3c95159d172",
+      "committed_mode": "100644",
+      "git_blob_oid": "3e2600946f38313e8cfb617e35bbc3c95159d172",
+      "mode": "100644",
+      "path": "crates/app/ui/icons/volume-x.svg",
+      "sha256": "f382e421b7aae01172989f2b749ee87e44c0c82c16970b13a9ad5a323b613be0",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 10460,
+      "committed_blob_oid": "baf67f54d58ba89fc88f6d590252d54b94b86378",
+      "committed_mode": "100644",
+      "git_blob_oid": "baf67f54d58ba89fc88f6d590252d54b94b86378",
+      "mode": "100644",
+      "path": "crates/app/ui/library.slint",
+      "sha256": "a18aba47942ab4d6a16d2573ac6b03f0a8e43f9ed2f11294c96ec241294bd22d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 123,
+      "committed_blob_oid": "38b0cbd75ef25bc65b35c5864e7898189f619076",
+      "committed_mode": "100644",
+      "git_blob_oid": "38b0cbd75ef25bc65b35c5864e7898189f619076",
+      "mode": "100644",
+      "path": "crates/core/Cargo.toml",
+      "sha256": "c396c7271e51f992620162a63ff7735f304111df0e56f2cfbf9bd98258ec22f7",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 24340,
+      "committed_blob_oid": "da6d3a4997163fc3d640720cd59af7c5c9980726",
+      "committed_mode": "100644",
+      "git_blob_oid": "da6d3a4997163fc3d640720cd59af7c5c9980726",
+      "mode": "100644",
+      "path": "crates/core/src/lib.rs",
+      "sha256": "dc9124a856e5adc1bbb9dd235a3c4332a9fb475369d55c3f5a5dbce501515d4a",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 7067,
+      "committed_blob_oid": "04c9262b1e48741c3a41ba7138de0573ecc7de73",
+      "committed_mode": "100644",
+      "git_blob_oid": "04c9262b1e48741c3a41ba7138de0573ecc7de73",
+      "mode": "100644",
+      "path": "crates/core/src/url_tests.rs",
+      "sha256": "e07707b540839951d65444b69d5b4b1c42ee356ec78c49dcd73c31067a13d753",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 204,
+      "committed_blob_oid": "34704129aade9d8c53bc145f92bb1dad64f2ab39",
+      "committed_mode": "100644",
+      "git_blob_oid": "34704129aade9d8c53bc145f92bb1dad64f2ab39",
+      "mode": "100644",
+      "path": "crates/media/Cargo.toml",
+      "sha256": "78a052ba3aa99004e751ea833a456080cd6135bbc2877c17ba8af4010c161d2b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 707,
+      "committed_blob_oid": "5c4a64a04e2da42ebfa00aefe10a94e7a2830167",
+      "committed_mode": "100644",
+      "git_blob_oid": "5c4a64a04e2da42ebfa00aefe10a94e7a2830167",
+      "mode": "100644",
+      "path": "crates/media/build.rs",
+      "sha256": "8b046b53563cbd0fbdd6f9cb2998d27b5f7b86838404d43333ef6a9c11d3b42a",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8614,
+      "committed_blob_oid": "3ef433f594bb468825f312da355baf8e68d63d6b",
+      "committed_mode": "100644",
+      "git_blob_oid": "3ef433f594bb468825f312da355baf8e68d63d6b",
+      "mode": "100644",
+      "path": "crates/media/src/audio_probe.rs",
+      "sha256": "3659a989bde54ac6ea4d99df20ba93931149d4c6ca75cc463f493a669a8239a4",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11787,
+      "committed_blob_oid": "512ecb019f344298ed5abfc252ad0cd7ee47dfbf",
+      "committed_mode": "100644",
+      "git_blob_oid": "512ecb019f344298ed5abfc252ad0cd7ee47dfbf",
+      "mode": "100644",
+      "path": "crates/media/src/caption_tests.rs",
+      "sha256": "328286d63a57a3f9aeb1c01e30cb80ae464b738a2efa443172ddb76d1d429cb3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 7868,
+      "committed_blob_oid": "60f93fdd909a65d7a0fbd2d815ecff10d6f6e0f7",
+      "committed_mode": "100644",
+      "git_blob_oid": "60f93fdd909a65d7a0fbd2d815ecff10d6f6e0f7",
+      "mode": "100644",
+      "path": "crates/media/src/commands.rs",
+      "sha256": "a6779a07244a9233030c329e24cde4bddd77456f546becac54c9409592b62f91",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 3685,
+      "committed_blob_oid": "59825dd5de4376bd89e59c976af109b6fde3f003",
+      "committed_mode": "100644",
+      "git_blob_oid": "59825dd5de4376bd89e59c976af109b6fde3f003",
+      "mode": "100644",
+      "path": "crates/media/src/ffi.rs",
+      "sha256": "4a2e85fb5608a2f7d893fce1d57d143c781958dac5ba77ec709c0d8078b538a4",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 21728,
+      "committed_blob_oid": "bd3db173ba6214729bd0e02b2736521334af269c",
+      "committed_mode": "100644",
+      "git_blob_oid": "bd3db173ba6214729bd0e02b2736521334af269c",
+      "mode": "100644",
+      "path": "crates/media/src/gpu_timing.rs",
+      "sha256": "fd3a3b542efd78330772b54049df9fd994d82a5c89ccac5728f33843c27233ce",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 112743,
+      "committed_blob_oid": "52635842de015fc38eb9953d3f9c9b1400dd17ce",
+      "committed_mode": "100644",
+      "git_blob_oid": "52635842de015fc38eb9953d3f9c9b1400dd17ce",
+      "mode": "100644",
+      "path": "crates/media/src/lib.rs",
+      "sha256": "6f470e2f8e51dc92dbc528fee218b74bd606c0d8cc9ffbd4e86360ef3c954706",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 13687,
+      "committed_blob_oid": "5a036ff5d22dfbbcb3a45ef6a6d44a5dcd93274b",
+      "committed_mode": "100644",
+      "git_blob_oid": "5a036ff5d22dfbbcb3a45ef6a6d44a5dcd93274b",
+      "mode": "100644",
+      "path": "crates/media/src/macos.rs",
+      "sha256": "6bca2569544dff3b3039478c191f45d9fa2948431477e8f12be0bd2d9c531304",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 7387,
+      "committed_blob_oid": "f08c118bb4755dce38e680bea4e31f6ac71b8247",
+      "committed_mode": "100644",
+      "git_blob_oid": "f08c118bb4755dce38e680bea4e31f6ac71b8247",
+      "mode": "100644",
+      "path": "crates/media/src/native_child.m",
+      "sha256": "28d661bd32df02a46a6401c2a0739c5275f3a866cfe64b30907917b513ce6840",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 20835,
+      "committed_blob_oid": "641c879ca1c6bc2dd474cc587124125d9e4ec23e",
+      "committed_mode": "100644",
+      "git_blob_oid": "641c879ca1c6bc2dd474cc587124125d9e4ec23e",
+      "mode": "100644",
+      "path": "crates/media/src/native_child.rs",
+      "sha256": "698f8d636bbb43aeaad88eff1e6ab47401c7f0ba64bb8602527795e2694fc289",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 45642,
+      "committed_blob_oid": "8b91f380d400ab5acb92992c2d1abeb2b1f95492",
+      "committed_mode": "100644",
+      "git_blob_oid": "8b91f380d400ab5acb92992c2d1abeb2b1f95492",
+      "mode": "100644",
+      "path": "crates/media/src/presenter.rs",
+      "sha256": "f2d89bc9ddb7b5e55653895296fb32a626afd2546b14473b94476b08a3edcd69",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6327,
+      "committed_blob_oid": "92160f70885cd90284f547c158bd8333b437a7d6",
+      "committed_mode": "100644",
+      "git_blob_oid": "92160f70885cd90284f547c158bd8333b437a7d6",
+      "mode": "100644",
+      "path": "crates/media/src/seek_confirmation.rs",
+      "sha256": "a709478fe9419481cecf0a5e002e2cc0c0f98e0062baf2f631cda1b1f61dafe5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18118,
+      "committed_blob_oid": "979a67669f084683c039584ec75ec65b340836f5",
+      "committed_mode": "100644",
+      "git_blob_oid": "979a67669f084683c039584ec75ec65b340836f5",
+      "mode": "100644",
+      "path": "crates/media/src/streams.rs",
+      "sha256": "41df10954826e2336e364ae05d3f0f14f82fb62c1b4495cd1c3ebb6bcfd493ed",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 2928,
+      "committed_blob_oid": "cd46dcc5a84d9e7a2840e50e55b0e4a32011ca58",
+      "committed_mode": "100644",
+      "git_blob_oid": "cd46dcc5a84d9e7a2840e50e55b0e4a32011ca58",
+      "mode": "100644",
+      "path": "crates/media/src/tls_tests.rs",
+      "sha256": "2db8d1faef592c6ab29106074779c8fd35a6626ed22148a44a64685a606b6197",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 631,
+      "committed_blob_oid": "30cd9aa70f3853c8a7e82fded53239454a207204",
+      "committed_mode": "100644",
+      "git_blob_oid": "30cd9aa70f3853c8a7e82fded53239454a207204",
+      "mode": "100644",
+      "path": "crates/network/Cargo.toml",
+      "sha256": "296bac5b4dbfbdbca500155b203c6b9a0617fbecff36e8bb0acc700030917884",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1657,
+      "committed_blob_oid": "4a0734cef01f33aaa197b6277a3dfcad735f1a8e",
+      "committed_mode": "100644",
+      "git_blob_oid": "4a0734cef01f33aaa197b6277a3dfcad735f1a8e",
+      "mode": "100644",
+      "path": "crates/network/examples/public_range.rs",
+      "sha256": "82b4366b395bbe4d73d80f95fac3f724c79db681ae28a74608b5452c102f2d92",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8764,
+      "committed_blob_oid": "af12848bdea1af1306d0706f439f942c84001392",
+      "committed_mode": "100644",
+      "git_blob_oid": "af12848bdea1af1306d0706f439f942c84001392",
+      "mode": "100644",
+      "path": "crates/network/src/access_tests.rs",
+      "sha256": "689466f4b73cf58f8ac59e1d584d60b1cf3c66ad70cdb79a6da3f4e70c3cf098",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 209,
+      "committed_blob_oid": "141caad8e55851d1f2653e3cae21d56a0ba34bf8",
+      "committed_mode": "100644",
+      "git_blob_oid": "141caad8e55851d1f2653e3cae21d56a0ba34bf8",
+      "mode": "100644",
+      "path": "crates/network/src/bin/serein-dns.rs",
+      "sha256": "b9948729707bf340caf25c7ce9881aa4c6aa932d232cf7f08dc8923a591b8068",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 13019,
+      "committed_blob_oid": "1cfb4a358d2403547fad39956aed2b516e3150b7",
+      "committed_mode": "100644",
+      "git_blob_oid": "1cfb4a358d2403547fad39956aed2b516e3150b7",
+      "mode": "100644",
+      "path": "crates/network/src/dns_macos.rs",
+      "sha256": "671a9e528f73995ed8d7c21bd092af12f5d4be49fb77ba640d6e164e15b3fe58",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18536,
+      "committed_blob_oid": "4ba7a275689e82930a1746df011d09e81cac662d",
+      "committed_mode": "100644",
+      "git_blob_oid": "4ba7a275689e82930a1746df011d09e81cac662d",
+      "mode": "100644",
+      "path": "crates/network/src/dns_process.rs",
+      "sha256": "4642ad7940c11d912aca7d8027f0024c826738bc8b7d2011045998dc1830c940",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 35871,
+      "committed_blob_oid": "3349345c9a06330eab1d904540582121d5913e48",
+      "committed_mode": "100644",
+      "git_blob_oid": "3349345c9a06330eab1d904540582121d5913e48",
+      "mode": "100644",
+      "path": "crates/network/src/lib.rs",
+      "sha256": "415e540ae2f0f1a585731e029ec34234f45b0c8e0d5e04ae681f093ef12cedc5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 4948,
+      "committed_blob_oid": "f18feabefb9e09d1887bacbe4085bbdf97c86860",
+      "committed_mode": "100644",
+      "git_blob_oid": "f18feabefb9e09d1887bacbe4085bbdf97c86860",
+      "mode": "100644",
+      "path": "crates/network/src/policy.rs",
+      "sha256": "b36f403772a9378494830034b0e0034d1c1dad7847586f36c33976396bd3f916",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 11267,
+      "committed_blob_oid": "96e906b4c9b425c7dcf1b175db2645b748d76beb",
+      "committed_mode": "100644",
+      "git_blob_oid": "96e906b4c9b425c7dcf1b175db2645b748d76beb",
+      "mode": "100644",
+      "path": "crates/network/src/timing.rs",
+      "sha256": "f54758b61a10b343656aceaf85cf49a63a177e6b1fa711fb176476b270b5ac54",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6254,
+      "committed_blob_oid": "d6c026f855634d52bca1f6bdb14f7ec1246b604b",
+      "committed_mode": "100644",
+      "git_blob_oid": "d6c026f855634d52bca1f6bdb14f7ec1246b604b",
+      "mode": "100644",
+      "path": "crates/network/tests/dns_helper.rs",
+      "sha256": "22104f5bc75c3c67ac3e84ce9fee3c2ae0532c3b8452fe2ffe3a06ce76f57f0e",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 606,
+      "committed_blob_oid": "ef9aab32f6c8d110b19ae0975b77049fe98ed099",
+      "committed_mode": "100644",
+      "git_blob_oid": "ef9aab32f6c8d110b19ae0975b77049fe98ed099",
+      "mode": "100644",
+      "path": "crates/storage/Cargo.toml",
+      "sha256": "480804d59ca32b313db7eb26c381aa7a8e48a607fe46906aa36ce37ef86189b3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 5547,
+      "committed_blob_oid": "0e7df43d8017d21a005f505f695ec8b577a3c322",
+      "committed_mode": "100644",
+      "git_blob_oid": "0e7df43d8017d21a005f505f695ec8b577a3c322",
+      "mode": "100644",
+      "path": "crates/storage/README.md",
+      "sha256": "7f3a130a283d18ef4b98fae3133ea436981ec774f32b5e9d733ba86b51621092",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1783,
+      "committed_blob_oid": "b6ea74c81617f77f784d4fa44e258379920aea21",
+      "committed_mode": "100644",
+      "git_blob_oid": "b6ea74c81617f77f784d4fa44e258379920aea21",
+      "mode": "100644",
+      "path": "crates/storage/examples/fixture_library.rs",
+      "sha256": "2b7b4e15a8fd5f8602dca901ecc12a1012570e48fb325d5bf07f8c502598c81b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9443,
+      "committed_blob_oid": "afab55f9f62bebf05202979d19f62392797086f0",
+      "committed_mode": "100644",
+      "git_blob_oid": "afab55f9f62bebf05202979d19f62392797086f0",
+      "mode": "100644",
+      "path": "crates/storage/src/backup.rs",
+      "sha256": "83529fb87cf81965a6acb5078d3cd821c07f68a73d93f4ff51f77dfa50ea0435",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6851,
+      "committed_blob_oid": "ef6510ef3efc153f31663a621d02ea81af041792",
+      "committed_mode": "100644",
+      "git_blob_oid": "ef6510ef3efc153f31663a621d02ea81af041792",
+      "mode": "100644",
+      "path": "crates/storage/src/history.rs",
+      "sha256": "d0ec95c42b91693f5d38c1069827d6fcf33b1cb72f401c230cb393adda985dff",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15346,
+      "committed_blob_oid": "0b12d523b25e37e9b8c9846162aabc522e2ff74a",
+      "committed_mode": "100644",
+      "git_blob_oid": "0b12d523b25e37e9b8c9846162aabc522e2ff74a",
+      "mode": "100644",
+      "path": "crates/storage/src/lib.rs",
+      "sha256": "7a5be0e9f0280e693cc5c02e2faba5a9a2b2f54f2a118848ea459c0729795d76",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8959,
+      "committed_blob_oid": "5a555a57af4719fe59fc1c7a6251f51cda0515d6",
+      "committed_mode": "100644",
+      "git_blob_oid": "5a555a57af4719fe59fc1c7a6251f51cda0515d6",
+      "mode": "100644",
+      "path": "crates/storage/src/library_transfer.rs",
+      "sha256": "2466230492c5cb6f196d65240a1b6c70a45186f579a800fab8f4170a3adc9818",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1100,
+      "committed_blob_oid": "d5b57a8834021b129e8128cd64b5d7830b57c4f0",
+      "committed_mode": "100644",
+      "git_blob_oid": "d5b57a8834021b129e8128cd64b5d7830b57c4f0",
+      "mode": "100644",
+      "path": "crates/storage/src/schema_v1.sql",
+      "sha256": "e1b1648e7be14fb86077f4ce8827cbf62c64d7afa0ba3679d8f404a1abf0cae3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 727,
+      "committed_blob_oid": "506fd2e1188e811f7a500f004bf2f7c323fa8f6f",
+      "committed_mode": "100644",
+      "git_blob_oid": "506fd2e1188e811f7a500f004bf2f7c323fa8f6f",
+      "mode": "100644",
+      "path": "crates/storage/src/schema_v2.sql",
+      "sha256": "e111e8c56caa763252bda36640ae04c541cb9f869b8ba39eb4d31fe9d7f3605f",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1117,
+      "committed_blob_oid": "56d9fb1b86fda091cc36f52120643060747e18a0",
+      "committed_mode": "100644",
+      "git_blob_oid": "56d9fb1b86fda091cc36f52120643060747e18a0",
+      "mode": "100644",
+      "path": "crates/storage/src/schema_v3.sql",
+      "sha256": "64eff27b61cc77b4ba3dbcd2df5a8148b569ce29f78911161ef60e6c62882f9c",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 313,
+      "committed_blob_oid": "f4d21edbb61b1f8e65f16fdd8eaf8541050b517a",
+      "committed_mode": "100644",
+      "git_blob_oid": "f4d21edbb61b1f8e65f16fdd8eaf8541050b517a",
+      "mode": "100644",
+      "path": "crates/storage/src/schema_v4.sql",
+      "sha256": "3d2588ba0e16ea7b6a275c51b1818276e0c8b4ea802ddd034abc184e278745c9",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18779,
+      "committed_blob_oid": "4db80332c4525ce58f5783301e4df755a26809ea",
+      "committed_mode": "100644",
+      "git_blob_oid": "4db80332c4525ce58f5783301e4df755a26809ea",
+      "mode": "100644",
+      "path": "crates/storage/src/tests.rs",
+      "sha256": "a77a252f56419bf2be83d25e630a753128a05a19f2149fcb85f4913fe5eed5be",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15677,
+      "committed_blob_oid": "a65f32aaba90872ed77f4a01e348f375ebb10115",
+      "committed_mode": "100644",
+      "git_blob_oid": "a65f32aaba90872ed77f4a01e348f375ebb10115",
+      "mode": "100644",
+      "path": "crates/storage/src/vault.rs",
+      "sha256": "0059dffa8ae8c004921edfea57d7b89db6a0d72326b172247594b6a8e743679a",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9803,
+      "committed_blob_oid": "c3d4ee19fba8560684027fccfe91d9856ddfb6a6",
+      "committed_mode": "100644",
+      "git_blob_oid": "c3d4ee19fba8560684027fccfe91d9856ddfb6a6",
+      "mode": "100644",
+      "path": "crates/storage/src/vault/tests.rs",
+      "sha256": "3f1a5533da23bdb1a741500405161169b2fed24c60029a5415ccaf7001be875f",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 449,
+      "committed_blob_oid": "0a4ef8b103e5d46d062e0876ce1379fb229ede6c",
+      "committed_mode": "100644",
+      "git_blob_oid": "0a4ef8b103e5d46d062e0876ce1379fb229ede6c",
+      "mode": "100644",
+      "path": "crates/youtube/Cargo.toml",
+      "sha256": "f0515682ef86c5d21ee338a6bdc5853c3e4d57a30059f860c1cad648ccdecdd3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6326,
+      "committed_blob_oid": "2d68c83caa12d43ae3f23692712f6c877b328a9a",
+      "committed_mode": "100644",
+      "git_blob_oid": "2d68c83caa12d43ae3f23692712f6c877b328a9a",
+      "mode": "100644",
+      "path": "crates/youtube/README.md",
+      "sha256": "fac0a0149e27c9421a1cb707293e21ded8bc1b8e588b003db9b6cd1dc119f7c8",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1298,
+      "committed_blob_oid": "68b1575c66c26a46968dc4b4390f0310672449c6",
+      "committed_mode": "100644",
+      "git_blob_oid": "68b1575c66c26a46968dc4b4390f0310672449c6",
+      "mode": "100644",
+      "path": "crates/youtube/examples/captions_smoke.rs",
+      "sha256": "5d450ee56d9cbc591fb71b5195c554f5a4946b0477a29f47028519684d9eda97",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 2880,
+      "committed_blob_oid": "b67c51a436596d8204ed08b8f9510e9955c2b89b",
+      "committed_mode": "100644",
+      "git_blob_oid": "b67c51a436596d8204ed08b8f9510e9955c2b89b",
+      "mode": "100644",
+      "path": "crates/youtube/examples/catalog_smoke.rs",
+      "sha256": "38e6eb239e34dcec562c138f0fa8764343b4d80a52d262700e17d1d78d665485",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1005,
+      "committed_blob_oid": "c216aed528ed977bd96f4ad6109f7090a0b80dce",
+      "committed_mode": "100644",
+      "git_blob_oid": "c216aed528ed977bd96f4ad6109f7090a0b80dce",
+      "mode": "100644",
+      "path": "crates/youtube/examples/comments_smoke.rs",
+      "sha256": "b1caa8e4b56126197eafc8db05e8b7fb0f95ed930d4fa932048eafc59854b58f",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 1968,
+      "committed_blob_oid": "6c653b9ee059993c0bc3a9b8b6cadf541d5121bd",
+      "committed_mode": "100644",
+      "git_blob_oid": "6c653b9ee059993c0bc3a9b8b6cadf541d5121bd",
+      "mode": "100644",
+      "path": "crates/youtube/examples/guest_smoke.rs",
+      "sha256": "ca819dceb5032416830c24388ab5b4925804e755d43b777d8e03c93cdc3f0e2a",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 8618,
+      "committed_blob_oid": "b200a6c8dc6624cf8b24a5ab6fdedad0446807bf",
+      "committed_mode": "100644",
+      "git_blob_oid": "b200a6c8dc6624cf8b24a5ab6fdedad0446807bf",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/README.md",
+      "sha256": "722b59b5d988f06887750981b55ea629ece6991a957b8e12dbe9c34044ead8cc",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9774,
+      "committed_blob_oid": "b7855fe292cc5d8dc2c03647b4caf669cc975c93",
+      "committed_mode": "100644",
+      "git_blob_oid": "b7855fe292cc5d8dc2c03647b4caf669cc975c93",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/authorization.rs",
+      "sha256": "801717fcee1ea1f73c76943b2ec556726fc15a4c9da028374c61bde4f4d27649",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 14355,
+      "committed_blob_oid": "9d40511ba86d19d43bbc3c7edc3c33a3f9688810",
+      "committed_mode": "100644",
+      "git_blob_oid": "9d40511ba86d19d43bbc3c7edc3c33a3f9688810",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/cookies.rs",
+      "sha256": "15b1e98f202a2eadb5dfd47097a724682a5904059d4ffebf14e14fa55b772d27",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 6552,
+      "committed_blob_oid": "b2d3b0250a3b85f06731dc67f750461a54e12812",
+      "committed_mode": "100644",
+      "git_blob_oid": "b2d3b0250a3b85f06731dc67f750461a54e12812",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/ephemeral.rs",
+      "sha256": "713a1d85eec1611dd28c7273b498cca0d34c3901ea069ca6aa556b5aeb30ab4d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 10470,
+      "committed_blob_oid": "55d0c9addf0eeb0eba03798bbd1af55e4a9a20c6",
+      "committed_mode": "100644",
+      "git_blob_oid": "55d0c9addf0eeb0eba03798bbd1af55e4a9a20c6",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/http.rs",
+      "sha256": "483a372759a97da4f73607f1a08a8d9c85a5726a5d90a0eeae02d89844fe4e63",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 44180,
+      "committed_blob_oid": "ea335d510ed28c3f401aee690f1e9592b187f1f4",
+      "committed_mode": "100644",
+      "git_blob_oid": "ea335d510ed28c3f401aee690f1e9592b187f1f4",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/mod.rs",
+      "sha256": "1734c9665ecc6b73f79b02c4224eea7ab11cf29ee4ccfd7a595141569d32bf3b",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15707,
+      "committed_blob_oid": "25577394769e34a82d634330e8bf0a96c448272a",
+      "committed_mode": "100644",
+      "git_blob_oid": "25577394769e34a82d634330e8bf0a96c448272a",
+      "mode": "100644",
+      "path": "crates/youtube/src/account/parser.rs",
+      "sha256": "4dccd81c74b3497613156c1d35761ada3bf2ed1cf2ddab2a0bbf6d138385e7d8",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 12058,
+      "committed_blob_oid": "7bf789b1dd1e9e3f2ce78481b2ef577eb6dcb230",
+      "committed_mode": "100644",
+      "git_blob_oid": "7bf789b1dd1e9e3f2ce78481b2ef577eb6dcb230",
+      "mode": "100644",
+      "path": "crates/youtube/src/captions.rs",
+      "sha256": "7092922082b953a1f986367015b8d7492e7fbd2b39cac85dd81a557d77cb726d",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 18190,
+      "committed_blob_oid": "026d25041805c1f1fcffcf44021131fc22477057",
+      "committed_mode": "100644",
+      "git_blob_oid": "026d25041805c1f1fcffcf44021131fc22477057",
+      "mode": "100644",
+      "path": "crates/youtube/src/catalog.rs",
+      "sha256": "9f9dd4bd9d788a6806f960f55bc8637be50ae25f1cb26f4ed29de81effb113b3",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 15027,
+      "committed_blob_oid": "7120c7d11fc53e6dbf72f66bf220d797d9025d05",
+      "committed_mode": "100644",
+      "git_blob_oid": "7120c7d11fc53e6dbf72f66bf220d797d9025d05",
+      "mode": "100644",
+      "path": "crates/youtube/src/comments.rs",
+      "sha256": "b171412d8992a407260993b05f1f2107b80ef0cfddb78754cd8f1e001a8c83f6",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 23437,
+      "committed_blob_oid": "f870b45d2d9252ee8c235c6d30149adb57ba21be",
+      "committed_mode": "100644",
+      "git_blob_oid": "f870b45d2d9252ee8c235c6d30149adb57ba21be",
+      "mode": "100644",
+      "path": "crates/youtube/src/lib.rs",
+      "sha256": "fd2df6e74318b4ff73fb76c3df01619e32db96ba450cda727c79cca1e1bfd0e5",
+      "state": "matches_commit"
+    },
+    {
+      "bytes": 9764,
+      "committed_blob_oid": "db5a7a44bb51403543303b575d8aacc10517239f",
+      "committed_mode": "100644",
+      "git_blob_oid": "db5a7a44bb51403543303b575d8aacc10517239f",
+      "mode": "100644",
+      "path": "crates/youtube/src/supervisor.rs",
+      "sha256": "e509008253b6796231b809568d208ea5588f3683abe71f78f35e14bb5925e1cc",
+      "state": "matches_commit"
+    }
+  ],
+  "git_object_format": "sha1",
+  "git_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+  "inputs_match_commit": true,
+  "limits": [
+    "Untracked ignored files are excluded by git ls-files --exclude-standard; tracked ignored files remain included",
+    "HEAD tree comparison uses raw file bytes/modes, not editable index content or Git clean filters",
+    "Only selected build inputs are compared; unrelated repository changes are not a repository-clean claim",
+    "Capture is not atomic across files; keep inputs quiescent throughout capture and the separately recorded build",
+    "Filesystem deadline checks are cooperative between reads; one blocked regular-file operation cannot be preempted",
+    "No Cargo/build command or binary inspection ran; this inventory alone proves no binary association",
+    "Environment overrides, external/generated inputs, dependency source, compiler/SDK/native libraries are outside this inventory",
+    "Bounded Unix Git supervision is required; other hosts are not qualified"
+  ],
+  "purpose": "working_build_input_provenance_only",
+  "repository_clean": null,
+  "schema": 1,
+  "scope": [
+    "crates/** including Rust, native glue, build scripts and assets",
+    "Cargo.lock",
+    "Cargo.toml",
+    "rust-toolchain",
+    "rust-toolchain.toml",
+    ".cargo/config",
+    ".cargo/config.toml"
+  ],
+  "total_file_bytes": 1610235
+}

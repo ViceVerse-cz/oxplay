@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""Prepared matched native-child ON/OFF/OFF/ON resource experiment. Explicit --run only."""
+from pathlib import Path
+import hashlib,importlib.util,json,math,os,stat,subprocess,sys,time
+R=Path('<workspace>');B=R/'artifacts/native-child-timer-pair-v1';P=R/'artifacts/mpv-timers-pair-20260929-v2'
+PROTOCOL=Path('/tmp/youtube-native-child-abba.py')
+spec=importlib.util.spec_from_file_location('preserved_native_abba_protocol',PROTOCOL);H=importlib.util.module_from_spec(spec);spec.loader.exec_module(H)
+ORDER=[('a1-on','on'),('b1-off','off'),('b2-off','off'),('a2-on','on')]
+
+def verify_variant(meta,variant):
+ selected=meta['variants'][variant];app=R/selected['app_relative_path'];lib=R/selected['library_relative_path']
+ H.require(H.sha(app)==selected['app_sha256'] and H.sha(lib)==selected['libmpv_sha256'],'derived app/library changed')
+ for item in meta['current_non_system_dependency_records_verified']:
+  if item['variant']!=variant:continue
+  label=item['label'];path=Path('/opt/homebrew/Cellar')/label.removeprefix('cellar/') if label.startswith('cellar/') else P/label.removeprefix('pair/')
+  H.require(H.sha(path)==item['sha256'],'recorded native dependency changed')
+ return app,lib
+
+def shared_services(resource):
+ output={}
+ for name in ('WindowServer','coreaudiod'):
+  found=[]
+  for sample in resource['samples']:
+   rows=[row for row in sample['host_other_top_cpu'] if row['executable']==name]
+   H.require(len(rows)<=1,'duplicate shared service in bounded host audit')
+   if rows:found.append(rows[0]['cpu_one_core_percent'])
+  output[name]={'observed_sample_count':len(found),'omitted_sample_count':60-len(found),'mean_when_present':sum(found)/len(found) if found else None,'peak_when_present':max(found) if found else None,'scope':'Shared host service outside app total; top-eight omission is unknown, not zero. No exclusive app attribution.'}
+ return output
+
+def main():
+ H.require(sys.argv[1:]==['--run'],'explicit --run required; no automatic launch')
+ H.require(sys.platform=='darwin' and hasattr(os,'WNOWAIT'),'macOS anchored supervisor required')
+ os.umask(0o077)
+ meta_path=B/'preparation.json';meta_bytes=meta_path.read_bytes();meta=json.loads(meta_bytes)
+ functional_path=B/'functional-analysis.json';functional_bytes=functional_path.read_bytes();functional=json.loads(functional_bytes)
+ H.require(functional['paused_video_comparison']['exact_pixel_equality'] and functional['all_other_actual_loaded_image_paths_and_uuids_equal'],'functional/pixel admission incomplete')
+ original=R/'artifacts/native-child-v2/serein-frozen';clip=R/'artifacts/local-1080p60.mp4'
+ H.require(H.sha(original)==meta['unmodified_app_sha256'] and H.sha(clip)==H.FIXTURE_SHA,'original/fixture changed')
+ source=R/'artifacts/native-child-v2/inputs-after-release.json';H.require(H.sha(source)==meta['source_inventory_sha256'],'source record changed')
+ for variant in ('on','off'):
+  verify_variant(meta,variant)
+  result=H.read_json(B/(variant+'-functional')/'summary.json')
+  H.require(result['exit_code']==0 and result['failure'] is None and result['group_absence_after_reap_confirmed'] and result['display_assertion_group_absent'],'functional run not clean')
+  H.require(result['app_sha256']==meta['variants'][variant]['app_sha256'] and result['lifecycle_validation']['actual_selected_library_path_verified'],'functional actual-library association missing')
+  H.require(result['lifecycle_validation']['observed_stages']==list(range(5,45,3)),'historical14-stage admission mismatch')
+  H.require(H.sha(B/(variant+'-functional')/'native.log')==result['native_log_sha256'],'functional log changed')
+ out=B/'abba';out.mkdir(mode=0o700,exist_ok=False);(out/'profiles').mkdir(mode=0o700)
+ for src,name in [(Path(__file__),'harness.py'),(PROTOCOL,'protocol.py'),(R/'artifacts/native-child-v2/abba/sampler.py','sampler.py'),(source,'source-inventory.json'),(meta_path,'preparation.json'),(functional_path,'functional-analysis.json')]:
+  (out/name).write_bytes(src.read_bytes())
+ env={k:v for k,v in os.environ.items() if not k.startswith(('SEREIN_','DYLD_','SLINT_'))};env['NO_COLOR']='1'
+ links={}
+ for variant in ('on','off'):
+  app,lib=verify_variant(meta,variant)
+  text=H.bounded_tool(['/usr/bin/otool','-L',str(app)],out/(variant+'-linkage.log'),env)
+  H.require(sum(line.strip().startswith(str(lib)+' ') for line in text.splitlines())==1,'selected static linkage not unique')
+  links[variant]=H.sha(out/(variant+'-linkage.log'))
+ H.bounded_tool(['/usr/bin/sw_vers'],out/'os.log',env)
+ provenance={'source_revision':meta['source_revision'],'unmodified_app_sha256':meta['unmodified_app_sha256'],'variants':meta['variants'],'run_order':[n for n,v in ORDER],
+ 'source_inventory_sha256':H.sha(source),'preparation_sha256':H.sha(meta_path),'prior_functional_analysis_sha256':H.sha(functional_path),'fixture_sha256':H.FIXTURE_SHA,
+ 'harness_sha256':H.sha(out/'harness.py'),'protocol_sha256':H.sha(out/'protocol.py'),'sampler_sha256':H.sha(out/'sampler.py'),'python_executable_sha256':H.sha(Path(sys.executable).resolve()),
+ 'app_linkage_sha256':links,'warmup_seconds':10,'samples':60,'quit_after_seconds':85,'requested_window_logical':[1320,860],'theme':'dark','macos_footprint_required_complete':True,
+ 'actual_loaded_image_inventory_during_resource':False,'actual_loaded_image_inventory_in_prior_functional_runs':True,'real_account':False,'production_patch_adopted':False,'performance_qualified':False,
+ 'scope':'Matched private libmpv ON/OFF/OFF/ON with same historicala45 native-child application, fixed local1080p60,30empty-thumbnail related fixtures. No screenshots/profilers/loader logging or network/account work in resource windows.',
+ 'limitations':['NewVT attribution temporal, preexisting reused services excluded; never signal shared services.','Process snapshots can miss short-lived/reparented helpers and PID reuse.','Footprint separate non-additive ledger; RSS may double-count shared pages.','Shared WindowServer/coreaudiod observations not exclusively attributable to app.','Finite engine/geometry checkpoints not display cadence or perceptual A/V proof.','Prior actual-loaded-image proof is not enumeration during these resource runs.']}
+ H.write_json(out/'provenance.json',provenance);results=[];reference=None
+ for name,variant in ORDER:
+  start=time.monotonic();process=wake=None;abort=False
+  record={'mode':name,'variant':variant,'native_child':True,'exit_code':None,'failure_type':None,'validation_failure':None,'group_absence_after_reap_confirmed':False,'wake_group_absence_confirmed':False}
+  profile=out/'profiles'/name
+  app,lib=verify_variant(meta,variant)
+  command=[sys.executable,str(out/'sampler.py'),'--include-new-vt-services','--per-process-rss','--macos-footprint','--warmup','10','--seconds','60','--output',str(out/(name+'.json')),'--',str(app),'--local',str(clip),'--data-root',str(profile),'--demo-related','--diagnostics','--quit-after','85','--ui-size','1320x860','--ui-theme','dark','--native-video-child']
+  H.write_json(out/(name+'.command.json'),{'command':command,'profile_precreated':False})
+  print('Starting '+name,flush=True)
+  try:
+   H.require(H.sha(clip)==H.FIXTURE_SHA and meta_path.read_bytes()==meta_bytes and functional_path.read_bytes()==functional_bytes,'input changed before run')
+   wake=subprocess.Popen(['/usr/bin/caffeinate','-d','-u','-t','120'],start_new_session=True,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+   time.sleep(1)
+   with (out/(name+'.sampler.log')).open('xb') as log:
+    process=subprocess.Popen(command,cwd=R,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    record['exit_code']=H.wait_unreaped(process,120)
+  except BaseException as error:
+   record['failure_type']=type(error).__name__;abort=True
+  finally:
+   for child,field in [(process,'group_absence_after_reap_confirmed'),(wake,'wake_group_absence_confirmed')]:
+    if child is not None:
+     try:H.finish_group(child);record[field]=True
+     except BaseException as error:record['cleanup_failure_type']=type(error).__name__;abort=True
+   record['elapsed_seconds']=time.monotonic()-start
+  try:
+   H.require(record['exit_code']==0 and record['failure_type'] is None and record['group_absence_after_reap_confirmed'] and record['wake_group_absence_confirmed'],'unclean supervised resource run')
+   verify_variant(meta,variant)
+   H.require(H.sha(original)==meta['unmodified_app_sha256'] and H.sha(clip)==H.FIXTURE_SHA and meta_path.read_bytes()==meta_bytes and functional_path.read_bytes()==functional_bytes,'identity changed during run')
+   H.require(profile.is_dir() and not profile.is_symlink() and stat.S_IMODE(profile.stat().st_mode)==0o700,'profile admission missing')
+   H.require(not os.path.lexists(profile/'native-child-fixture.mp4'),'owned copied fixture survived normal teardown')
+   resource=H.read_json(out/(name+'.json'));log=out/(name+'.json.log');H.require(log.stat().st_size<=H.MAX_LOG,'native log too large')
+   metrics=H.validate(resource,log.read_text(),True)
+   H.require(resource['macos_footprint']['all_samples_complete'] and resource['macos_footprint']['complete_sample_count']==60 and all(row['macos_footprint']['complete'] for row in resource['samples']),'incomplete footprint ledger')
+   H.require(all(row['process_rss_omitted_count']==0 for row in resource['samples']),'incomplete processRSS ledger')
+   geometry={k:v for k,v in metrics['geometry'].items() if k!='geometry_events'}
+   expected={'window_px':[2640,1528],'scale':2.0,'video_logical':[260.0,76.0,664.0,373.5],'clip_logical':[260.0,76.0,1032.0,640.0],'page':2,'fullscreen':False,'hidden':False,'native_child':True}
+   H.require(geometry==expected,'warm geometry differs from frozen native baseline')
+   if reference is None:reference=geometry
+   H.require(geometry==reference,'ON/OFF geometry mismatch')
+   metrics['shared_host_services']=shared_services(resource);record['metrics']=metrics;record['functional_sample_admission_passed']=True
+  except BaseException as error:
+   record['validation_failure']=str(error) if isinstance(error,ValueError) else type(error).__name__;record['functional_sample_admission_passed']=False;abort=True
+  record['raw_artifact_hashes']={suffix:H.sha(out/(name+suffix)) for suffix in ('.json','.json.log','.sampler.log','.command.json') if (out/(name+suffix)).is_file()}
+  results.append(record);H.write_json(out/(name+'.supervisor.json'),record);H.write_json(out/'summary.json',{'complete':len(results)==4,'runs':results,'all_functional_sample_admission_passed':all(r['functional_sample_admission_passed'] for r in results),'production_patch_adopted':False,'performance_qualified':False})
+  print(json.dumps({'mode':name,'exit_code':record['exit_code'],'validation_failure':record['validation_failure']}),flush=True)
+  if abort:break
+ H.write_json(out/'manifest.json',{'files':[{'name':p.name,'bytes':p.stat().st_size,'sha256':H.sha(p)} for p in sorted(out.iterdir()) if p.is_file()],'private_profile_contents_excluded':True,'failure_evidence_removed':False})
+ H.require(len(results)==4 and all(r['functional_sample_admission_passed'] for r in results),'incomplete or inadmissible resource comparison; raw evidence retained')
+if __name__=='__main__':main()

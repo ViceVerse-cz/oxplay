@@ -1,0 +1,399 @@
+diff --git a/crates/media/src/lib.rs b/crates/media/src/lib.rs
+index a9e7863..bbce976 100644
+--- a/crates/media/src/lib.rs
++++ b/crates/media/src/lib.rs
+@@ -139,6 +139,7 @@ struct Inner {
+     progress_pending: Cell<bool>,
+     progress_refresh_pending: Cell<bool>,
+     renderer_attached: Cell<bool>,
++    presentation_generation: Cell<u64>,
+     pending_commands: Cell<usize>,
+     seek_pending: Cell<bool>,
+     latest_seek: Cell<Option<f64>>,
+@@ -221,6 +222,7 @@ impl Player {
+             progress_pending: Cell::new(false),
+             progress_refresh_pending: Cell::new(false),
+             renderer_attached: Cell::new(false),
++            presentation_generation: Cell::new(0),
+             pending_commands: Cell::new(0),
+             seek_pending: Cell::new(false),
+             latest_seek: Cell::new(None),
+@@ -336,8 +338,21 @@ impl Player {
+         self.inner
+             .pending_commands
+             .set(self.inner.pending_commands.get() + 1);
++        if matches!(args.first(), Some(&"loadfile" | &"stop" | &"seek"))
++            || matches!(args, ["set" | "cycle", "pause" | "speed" | "sid", ..])
++            || args.first() == Some(&"sub-add")
++        {
++            self.invalidate_presentation();
++        }
+         Ok(())
+     }
++    fn invalidate_presentation(&self) {
++        self.inner
++            .presentation_generation
++            .set(self.inner.presentation_generation.get().wrapping_add(1));
++        self.inner.wake.due.store(true, Ordering::Release);
++        self.inner.wake.notify();
++    }
+     /// Requires an absolute, host-prevalidated local path originating from explicit
+     /// user selection, never provider metadata. Perform filesystem validation on a
+     /// worker or before opening the UI; this method performs no filesystem I/O.
+@@ -506,6 +521,7 @@ impl Player {
+                     }
+                 }
+                 6 => {
++                    self.invalidate_presentation();
+                     snapshot.state = PlaybackState::Buffering;
+                     snapshot.error = None;
+                     snapshot.position = 0.;
+@@ -516,6 +532,7 @@ impl Player {
+                     // when the normal progress timer is stopped. If an earlier
+                     // seek-time query is in flight, refresh after its reply.
+                     if event.id == 21 {
++                        self.invalidate_presentation();
+                         if self.inner.progress_pending.get() {
+                             self.inner.progress_refresh_pending.set(true);
+                         } else if let Err(error) = self.request_progress() {
+@@ -542,8 +559,12 @@ impl Player {
+                         PlaybackState::Playing
+                     }
+                 }
+-                20 => snapshot.state = PlaybackState::Seeking,
++                20 => {
++                    self.invalidate_presentation();
++                    snapshot.state = PlaybackState::Seeking;
++                }
+                 7 => {
++                    self.invalidate_presentation();
+                     if !event.data.is_null() {
+                         let end = unsafe { &*event.data.cast::<ffi::EndFile>() };
+                         snapshot.state = if end.reason == 4 {
+@@ -664,8 +685,12 @@ mod tests {
+     fn engine_initializes_and_async_commands_are_observed() {
+         let player =
+             Player::new(|| {}).expect("installed libmpv must initialize with isolated options");
++        let generation = player.inner.presentation_generation.get();
+         player.set_paused(true).unwrap();
++        assert_ne!(player.inner.presentation_generation.get(), generation);
++        let generation = player.inner.presentation_generation.get();
+         player.set_volume(37.).unwrap();
++        assert_eq!(player.inner.presentation_generation.get(), generation);
+         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+         loop {
+             let snapshot = player.drain_events();
+diff --git a/crates/media/src/presenter.rs b/crates/media/src/presenter.rs
+index e1a82ed..eef3c39 100644
+--- a/crates/media/src/presenter.rs
++++ b/crates/media/src/presenter.rs
+@@ -2,6 +2,7 @@
+ use crate::{MediaError, Player, Result, checked, ffi, render_wake};
+ use glow::HasContext;
+ use std::{
++    collections::VecDeque,
+     ffi::{CStr, c_char, c_void},
+     num::NonZeroU32,
+     rc::Rc,
+@@ -28,6 +29,10 @@ pub struct RenderStats {
+     pub max_early_us: u64,
+     pub max_late_us: u64,
+     pub scheduled_wakes: u64,
++    pub publications: u64,
++    pub publication_samples: u64,
++    pub publication_late_us: u64,
++    pub max_publication_late_us: u64,
+ }
+ struct Target {
+     texture: glow::NativeTexture,
+@@ -128,6 +133,12 @@ pub struct GlPresenter {
+     pending_frame: Option<ffi::FrameInfo>,
+     deadline_timer: slint::Timer,
+     scheduled_deadline: Option<i64>,
++    render_ahead_enabled: bool,
++    generation: u64,
++    ring_size: Option<(u32, u32)>,
++    prepared: VecDeque<(Target, i64)>,
++    available: Vec<Target>,
++    recycled: Vec<Target>,
+ }
+ impl GlPresenter {
+     /// # Safety
+@@ -142,6 +153,17 @@ impl GlPresenter {
+         if player.inner.renderer_attached.get() {
+             return Err(MediaError("A presenter is already attached".into()));
+         }
++        let render_ahead_enabled =
++            std::env::var_os("SEREIN_RENDER_AHEAD").is_some_and(|v| v == "1");
++        let snapshot = player.snapshot();
++        if render_ahead_enabled
++            && (!(1..=50).contains(&snapshot.timing_lead_ms) || snapshot.prepare_ms != 0)
++        {
++            return Err(MediaError(
++                "Experimental render-ahead requires VIDEO_LEAD_MS=1..50 and VIDEO_PREPARE_MS=0"
++                    .into(),
++            ));
++        }
+         let gl =
+             Rc::new(unsafe { glow::Context::from_loader_function_cstr(|s| get_proc_address(s)) });
+         let graphics_info = unsafe {
+@@ -210,6 +232,12 @@ impl GlPresenter {
+             pending_frame: None,
+             deadline_timer: slint::Timer::default(),
+             scheduled_deadline: None,
++            render_ahead_enabled,
++            generation: player.inner.presentation_generation.get(),
++            ring_size: None,
++            prepared: VecDeque::with_capacity(4),
++            available: Vec::with_capacity(4),
++            recycled: Vec::with_capacity(1),
+         })
+     }
+     pub fn graphics_info(&self) -> &str {
+@@ -233,6 +261,9 @@ impl GlPresenter {
+                 "Video target exceeds validated 4096-pixel limit".into(),
+             ));
+         }
++        if self.render_ahead_enabled {
++            return unsafe { self.render_ahead(width, height) };
++        }
+         let resized = self
+             .displayed
+             .as_ref()
+@@ -384,6 +415,203 @@ impl GlPresenter {
+             .sum();
+         Ok(Some(image))
+     }
++    fn target_bytes(&self) -> u64 {
++        self.displayed
++            .iter()
++            .chain(self.next.iter())
++            .chain(self.retired.iter())
++            .chain(self.available.iter())
++            .chain(self.recycled.iter())
++            .chain(self.prepared.iter().map(|frame| &frame.0))
++            .map(Target::bytes)
++            .sum()
++    }
++    fn clear_prepared(&mut self) {
++        self.available
++            .extend(self.prepared.drain(..).map(|frame| frame.0));
++        self.deadline_timer.stop();
++        self.scheduled_deadline = None;
++    }
++    fn schedule_publication(&mut self, target: i64, delay: std::time::Duration) {
++        if self.scheduled_deadline == Some(target) && self.deadline_timer.running() {
++            return;
++        }
++        let wake = self.player.inner.wake.clone();
++        self.deadline_timer
++            .start(slint::TimerMode::SingleShot, delay, move || {
++                wake.due.store(true, Ordering::Release);
++                wake.notify();
++            });
++        self.scheduled_deadline = Some(target);
++        self.stats.scheduled_wakes += 1;
++    }
++    // Experimental render-ahead path: GPU preparation consumes mpv's pending
++    // frame immediately. Only publication waits for its presentation deadline.
++    unsafe fn render_ahead(&mut self, width: u32, height: u32) -> Result<Option<slint::Image>> {
++        let update = self.player.inner.wake.frame.swap(false, Ordering::AcqRel);
++        let due = self.player.inner.wake.due.swap(false, Ordering::AcqRel);
++        let generation = self.player.inner.presentation_generation.get();
++        let resized = self.ring_size != Some((width, height));
++        if generation != self.generation || resized {
++            self.clear_prepared();
++            self.generation = generation;
++        }
++        if resized {
++            self.retired.append(&mut self.available);
++            self.retired.append(&mut self.recycled);
++            self.ring_size = Some((width, height));
++        }
++        if !update && !due && !resized {
++            return Ok(None);
++        }
++        let stage = self.measure_timing.then(std::time::Instant::now);
++        let state = unsafe { GlState::save_and_reset(self.gl.clone()) };
++        if let Some(start) = stage {
++            self.stats.gl_save_us += start.elapsed().as_micros() as u64;
++        }
++        let stage = self.measure_timing.then(std::time::Instant::now);
++        let mut frame = None;
++        if update {
++            self.stats.updates += 1;
++            if unsafe { ffi::mpv_render_context_update(self.context) } & 1 != 0 {
++                let mut info = ffi::FrameInfo::default();
++                unsafe {
++                    checked(
++                        ffi::mpv_render_context_get_info(
++                            self.context,
++                            ffi::RenderParam::new(11, &mut info),
++                        ),
++                        "Read frame deadline",
++                    )?;
++                }
++                frame = (info.flags & 1 != 0).then_some(info);
++            }
++        }
++        if let Some(start) = stage {
++            self.stats.mpv_update_us += start.elapsed().as_micros() as u64;
++        }
++        if let Some(info) = frame {
++            let immediate = info.flags & (2 | 4) != 0 || info.target_time == 0;
++            let now = unsafe { ffi::mpv_get_time_ns(self.player.inner.raw) };
++            if immediate {
++                self.clear_prepared();
++            } else {
++                deadline_delay(info.target_time, now, self.timing_lead_ms, 0)?;
++            }
++            if self.prepared.len() >= 4 {
++                return Err(MediaError("Render-ahead publication queue exhausted (four frames); this pacing configuration is unsupported".into()));
++            }
++            if self.measure_timing && !immediate {
++                let offset_us = info.target_time.saturating_sub(now) / 1000;
++                self.stats.target_time_samples += 1;
++                if offset_us > 0 {
++                    self.stats.early_us += offset_us as u64;
++                    self.stats.max_early_us = self.stats.max_early_us.max(offset_us as u64);
++                } else {
++                    self.stats.late_us += offset_us.unsigned_abs();
++                    self.stats.max_late_us = self.stats.max_late_us.max(offset_us.unsigned_abs());
++                }
++            }
++            let target = if let Some(target) = self.available.pop() {
++                target
++            } else {
++                let count = usize::from(self.displayed.is_some())
++                    + self.prepared.len()
++                    + self.recycled.len();
++                if count >= 5
++                    || self.target_bytes() + u64::from(width) * u64::from(height) * 4
++                        > 128 * 1024 * 1024
++                {
++                    return Err(MediaError("Render-ahead GPU target budget exhausted (five targets / 128 MiB); this pacing configuration is unsupported".into()));
++                }
++                self.stats.target_allocations += 1;
++                unsafe { Target::create(&self.gl, width, height)? }
++            };
++            let mut fbo = ffi::Fbo {
++                fbo: target.fbo.0.get() as i32,
++                width: width as i32,
++                height: height as i32,
++                internal_format: glow::RGBA8 as i32,
++            };
++            let mut flip = 0;
++            let mut block = 0;
++            let mut params = [
++                ffi::RenderParam::new(3, &mut fbo),
++                ffi::RenderParam::new(4, &mut flip),
++                ffi::RenderParam::new(12, &mut block),
++                ffi::RenderParam::end(),
++            ];
++            let stage = self.measure_timing.then(std::time::Instant::now);
++            let result = unsafe {
++                checked(
++                    ffi::mpv_render_context_render(self.context, params.as_mut_ptr()),
++                    "Render video",
++                )
++            };
++            if let Err(error) = result {
++                self.available.push(target);
++                return Err(error);
++            }
++            if let Some(start) = stage {
++                let elapsed = start.elapsed().as_micros() as u64;
++                self.stats.mpv_render_us += elapsed;
++                self.stats.max_mpv_render_us = self.stats.max_mpv_render_us.max(elapsed);
++                self.stats.timing_samples += 1;
++            }
++            self.stats.video_draws += 1;
++            self.prepared
++                .push_back((target, if immediate { 0 } else { info.target_time }));
++        }
++        let stage = self.measure_timing.then(std::time::Instant::now);
++        drop(state);
++        if let Some(start) = stage {
++            self.stats.gl_restore_us += start.elapsed().as_micros() as u64;
++        }
++        let now = unsafe { ffi::mpv_get_time_ns(self.player.inner.raw) };
++        let mut image = None;
++        // Publish at most one frame per UI draw. Never discard late completed
++        // frames to hide pacing failure; a backlog exhausts the explicit bound.
++        if let Some((_, target_time)) = self.prepared.front() {
++            let target_time = *target_time;
++            if target_time == 0 || target_time <= now {
++                let (target, _) = self.prepared.pop_front().expect("front exists");
++                if self.measure_timing && target_time != 0 {
++                    let late = now.saturating_sub(target_time).unsigned_abs() / 1000;
++                    self.stats.publication_samples += 1;
++                    self.stats.publication_late_us += late;
++                    self.stats.max_publication_late_us =
++                        self.stats.max_publication_late_us.max(late);
++                }
++                image = Some(unsafe {
++                    slint::BorrowedOpenGLTextureBuilder::new_gl_2d_rgba_texture(
++                        target.texture.0,
++                        (target.width, target.height).into(),
++                    )
++                    .build()
++                });
++                if let Some(previous) = self.displayed.replace(target) {
++                    // The replaced borrowed image can survive in Slint's cache
++                    // until AfterRendering; it cannot be overwritten before then.
++                    self.recycled.push(previous);
++                }
++                self.stats.publications += 1;
++            }
++        }
++        self.deadline_timer.stop();
++        self.scheduled_deadline = None;
++        if let Some((_, target)) = self.prepared.front() {
++            let target = *target;
++            let delay = if target == 0 {
++                None
++            } else {
++                deadline_delay(target, now, self.timing_lead_ms, 0)?
++            }
++            .unwrap_or(std::time::Duration::from_millis(1));
++            self.schedule_publication(target, delay);
++        }
++        self.stats.target_bytes = self.target_bytes();
++        Ok(image)
++    }
+     /// # Safety
+     /// Call only in AfterRendering of the original window. Slint's draw commands
+     /// and cache drain have completed; old borrowed images were replaced above.
+@@ -393,12 +621,16 @@ impl GlPresenter {
+                 target.delete(&self.gl);
+             }
+         }
+-        self.stats.target_bytes = self
+-            .displayed
+-            .iter()
+-            .chain(self.next.iter())
+-            .map(Target::bytes)
+-            .sum();
++        for target in self.recycled.drain(..) {
++            if self.ring_size == Some((target.width, target.height)) {
++                self.available.push(target);
++            } else {
++                unsafe {
++                    target.delete(&self.gl);
++                }
++            }
++        }
++        self.stats.target_bytes = self.target_bytes();
+         // Do not report_swap: Slint's AfterRendering is *before* actual swap.
+     }
+ }
+@@ -426,6 +658,9 @@ impl Drop for GlPresenter {
+                 .into_iter()
+                 .chain(self.next.take())
+                 .chain(self.retired.drain(..))
++                .chain(self.available.drain(..))
++                .chain(self.recycled.drain(..))
++                .chain(self.prepared.drain(..).map(|frame| frame.0))
+             {
+                 target.delete(&self.gl);
+             }

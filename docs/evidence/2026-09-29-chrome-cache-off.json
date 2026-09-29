@@ -1,0 +1,324 @@
+{
+  "media_start": null,
+  "media_end": null,
+  "warmup_seconds": 10,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "rss_mib": {
+    "mean": 186.97213541666667,
+    "p95": 187.6875,
+    "peak": 187.765625
+  },
+  "cpu_one_core_percent": {
+    "mean": 47.725134767275776,
+    "p95": 61.99952471120024,
+    "peak": 64.17586045928617
+  },
+  "process_count_peak": 2,
+  "samples": [
+    {
+      "rss_mib": 185.453125,
+      "cpu_one_core_percent": 64.17586045928617,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.4375,
+      "cpu_one_core_percent": 25.925734384155074,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.640625,
+      "cpu_one_core_percent": 59.57891209249974,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.5,
+      "cpu_one_core_percent": 40.999308137373156,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.671875,
+      "cpu_one_core_percent": 61.000017749791155,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.78125,
+      "cpu_one_core_percent": 45.99861815671721,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.875,
+      "cpu_one_core_percent": 47.62130927004787,
+      "processes": 2
+    },
+    {
+      "rss_mib": 185.90625,
+      "cpu_one_core_percent": 38.49826333633422,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.015625,
+      "cpu_one_core_percent": 57.2330251706645,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.203125,
+      "cpu_one_core_percent": 41.60282125344453,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.234375,
+      "cpu_one_core_percent": 49.729972463412444,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.25,
+      "cpu_one_core_percent": 48.253455327403174,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.359375,
+      "cpu_one_core_percent": 58.6914590010573,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.296875,
+      "cpu_one_core_percent": 37.446774870830446,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.609375,
+      "cpu_one_core_percent": 57.76915499932265,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.53125,
+      "cpu_one_core_percent": 51.271076591241886,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.796875,
+      "cpu_one_core_percent": 56.091855069220806,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.734375,
+      "cpu_one_core_percent": 61.57385504645287,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.859375,
+      "cpu_one_core_percent": 54.9980544434156,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.90625,
+      "cpu_one_core_percent": 61.99952471120024,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.84375,
+      "cpu_one_core_percent": 42.83719296496767,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.921875,
+      "cpu_one_core_percent": 61.27052202141494,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.03125,
+      "cpu_one_core_percent": 44.761343704457694,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.953125,
+      "cpu_one_core_percent": 52.76706112781684,
+      "processes": 2
+    },
+    {
+      "rss_mib": 186.96875,
+      "cpu_one_core_percent": 37.735331824489954,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.046875,
+      "cpu_one_core_percent": 58.00292427446875,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.375,
+      "cpu_one_core_percent": 38.427556842569956,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.125,
+      "cpu_one_core_percent": 49.851634574524766,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.140625,
+      "cpu_one_core_percent": 37.35920746494577,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.125,
+      "cpu_one_core_percent": 63.956742667210506,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.234375,
+      "cpu_one_core_percent": 47.257801182353745,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.21875,
+      "cpu_one_core_percent": 59.67621672127852,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.203125,
+      "cpu_one_core_percent": 50.67002663496956,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.328125,
+      "cpu_one_core_percent": 52.306857869637476,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.203125,
+      "cpu_one_core_percent": 50.543187902980144,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.25,
+      "cpu_one_core_percent": 45.941138329713226,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.390625,
+      "cpu_one_core_percent": 58.67949745717881,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.3125,
+      "cpu_one_core_percent": 51.99527711316837,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.328125,
+      "cpu_one_core_percent": 60.00371770917213,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.4375,
+      "cpu_one_core_percent": 51.00040586301394,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.421875,
+      "cpu_one_core_percent": 62.00071821413802,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.390625,
+      "cpu_one_core_percent": 44.00027865347881,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.4375,
+      "cpu_one_core_percent": 58.99881512787024,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.46875,
+      "cpu_one_core_percent": 29.999633734511647,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.46875,
+      "cpu_one_core_percent": 47.999700002384465,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.484375,
+      "cpu_one_core_percent": 45.00038065687505,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.59375,
+      "cpu_one_core_percent": 61.00142841009823,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.53125,
+      "cpu_one_core_percent": 42.45697828599748,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.546875,
+      "cpu_one_core_percent": 59.55414032648908,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.671875,
+      "cpu_one_core_percent": 46.44774661755688,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.625,
+      "cpu_one_core_percent": 23.469047992654886,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.6875,
+      "cpu_one_core_percent": 24.412644993227033,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.71875,
+      "cpu_one_core_percent": 29.733105810430274,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.625,
+      "cpu_one_core_percent": 36.90665384604697,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.71875,
+      "cpu_one_core_percent": 39.37770103634311,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.65625,
+      "cpu_one_core_percent": 32.7441765924675,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.65625,
+      "cpu_one_core_percent": 34.0004958291668,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.765625,
+      "cpu_one_core_percent": 35.58034426275935,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.671875,
+      "cpu_one_core_percent": 31.80833990921508,
+      "processes": 2
+    },
+    {
+      "rss_mib": 187.6875,
+      "cpu_one_core_percent": 42.51305895063174,
+      "processes": 2
+    }
+  ],
+  "include_new_vt_services": true,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed.",
+  "exit_code": 0,
+  "forced_termination": false
+}

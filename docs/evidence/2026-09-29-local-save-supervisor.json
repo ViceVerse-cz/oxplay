@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "failure_type": null,
+  "validation_failure": null,
+  "forced_termination": false,
+  "group_absence_after_reap_confirmed": true,
+  "wake_group_absence_confirmed": true,
+  "native_stages_passed": false,
+  "database_assertions_passed": false,
+  "elapsed_seconds": 77.17744241701439,
+  "native_log_sha256": "ced504a305096335955d00b8d92e30138f25691b6165a069c9dcd7a0df8c8aaa"
+}

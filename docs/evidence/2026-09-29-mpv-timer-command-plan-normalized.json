@@ -1,0 +1,132 @@
+[
+  {
+    "commands": [
+      [
+        "<private-tools>/venv/bin/meson",
+        "setup",
+        "<pair>/build-on",
+        "<pair>/source",
+        "--sysconfdir=<pair>/prefix-on/etc",
+        "-Dbuild-date=false",
+        "-Dhtml-build=enabled",
+        "-Djavascript=enabled",
+        "-Dlibmpv=true",
+        "-Dlua=luajit",
+        "-Dlibarchive=enabled",
+        "-Duchardet=enabled",
+        "-Dvulkan=enabled",
+        "--prefix=<pair>/prefix-on",
+        "--libdir=lib",
+        "--buildtype=release",
+        "--wrap-mode=nofallback",
+        "-Dgpu-pass-timers=true"
+      ],
+      [
+        "<private-tools>/venv/bin/meson",
+        "compile",
+        "-C",
+        "<pair>/build-on",
+        "--jobs=2",
+        "--verbose"
+      ],
+      [
+        "<private-tools>/venv/bin/meson",
+        "install",
+        "-C",
+        "<pair>/build-on",
+        "--no-rebuild"
+      ]
+    ],
+    "cwd": "<pair>",
+    "environment": {
+      "CC": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+      "CXX": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
+      "DENO_NO_UPDATE_CHECK": "1",
+      "GIT_CEILING_DIRECTORIES": "<pair>",
+      "GIT_CONFIG_GLOBAL": "/dev/null",
+      "GIT_CONFIG_NOSYSTEM": "1",
+      "HOME": "<pair>/home",
+      "LC_ALL": "C",
+      "PATH": "<private-tools>/venv/bin:/opt/homebrew/bin:/usr/bin:/bin",
+      "PKG_CONFIG": "/opt/homebrew/bin/pkgconf --define-variable=homebrew_sdkroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "PKG_CONFIG_LIBDIR": "/opt/homebrew/Cellar/cairo/1.18.6/lib/pkgconfig:/opt/homebrew/Cellar/dav1d/1.5.4/lib/pkgconfig:/opt/homebrew/Cellar/ffmpeg/9.0.2/lib/pkgconfig:/opt/homebrew/Cellar/flac/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/fontconfig/2.18.3/lib/pkgconfig:/opt/homebrew/Cellar/freetype/2.14.3/lib/pkgconfig:/opt/homebrew/Cellar/fribidi/1.0.17/lib/pkgconfig:/opt/homebrew/Cellar/glib/2.90.0/lib/pkgconfig:/opt/homebrew/Cellar/graphite2/1.3.15/lib/pkgconfig:/opt/homebrew/Cellar/harfbuzz/14.5.0/lib/pkgconfig:/opt/homebrew/Cellar/icu4c@78/78.3/lib/pkgconfig:/opt/homebrew/Cellar/jpeg-turbo/3.2.0/lib/pkgconfig:/opt/homebrew/Cellar/json-c/0.19/lib/pkgconfig:/opt/homebrew/Cellar/lame/4.0/lib/pkgconfig:/opt/homebrew/Cellar/libarchive/3.8.9/lib/pkgconfig:/opt/homebrew/Cellar/libass/0.17.5_1/lib/pkgconfig:/opt/homebrew/Cellar/libb2/0.98.1/lib/pkgconfig:/opt/homebrew/Cellar/libbluray/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/libogg/1.3.6/lib/pkgconfig:/opt/homebrew/Cellar/libplacebo/7.360.1/lib/pkgconfig:/opt/homebrew/Cellar/libpng/1.6.58/lib/pkgconfig:/opt/homebrew/Cellar/libsamplerate/0.2.2/lib/pkgconfig:/opt/homebrew/Cellar/libsndfile/1.2.2_1/lib/pkgconfig:/opt/homebrew/Cellar/libtiff/4.7.2/lib/pkgconfig:/opt/homebrew/Cellar/libudfread/1.2.0/lib/pkgconfig:/opt/homebrew/Cellar/libunibreak/8.0/lib/pkgconfig:/opt/homebrew/Cellar/libvmaf/3.2.1/lib/pkgconfig:/opt/homebrew/Cellar/libvorbis/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libvpx/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libx11/1.8.13/lib/pkgconfig:/opt/homebrew/Cellar/libxau/1.0.12/lib/pkgconfig:/opt/homebrew/Cellar/libxcb/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libxdmcp/1.1.5/lib/pkgconfig:/opt/homebrew/Cellar/libxext/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libxrender/0.9.12/lib/pkgconfig:/opt/homebrew/Cellar/little-cms2/2.19.1/lib/pkgconfig:/opt/homebrew/Cellar/luajit/2.1.1788856981/lib/pkgconfig:/opt/homebrew/Cellar/lz4/1.10.0/lib/pkgconfig:/opt/homebrew/Cellar/lzo/2.10/lib/pkgconfig:/opt/homebrew/Cellar/mpdecimal/4.0.1/lib/pkgconfig:/opt/homebrew/Cellar/mpg123/1.33.7/lib/pkgconfig:/opt/homebrew/Cellar/mpv/0.41.0_10/lib/pkgconfig:/opt/homebrew/Cellar/mujs/1.3.10/lib/pkgconfig:/opt/homebrew/Cellar/openssl@3/3.6.4/lib/pkgconfig:/opt/homebrew/Cellar/opus/1.6.1/lib/pkgconfig:/opt/homebrew/Cellar/pcre2/10.48/lib/pkgconfig:/opt/homebrew/Cellar/pixman/0.46.4/lib/pkgconfig:/opt/homebrew/Cellar/python@3.14/3.14.7/lib/pkgconfig:/opt/homebrew/Cellar/readline/8.3.6/lib/pkgconfig:/opt/homebrew/Cellar/rubberband/4.0.0/lib/pkgconfig:/opt/homebrew/Cellar/sdl2-compat/2.32.72/lib/pkgconfig:/opt/homebrew/Cellar/sdl3/3.4.16/lib/pkgconfig:/opt/homebrew/Cellar/shaderc/2026.4/lib/pkgconfig:/opt/homebrew/Cellar/sqlite/3.53.4/lib/pkgconfig:/opt/homebrew/Cellar/svt-av1/4.2.0/lib/pkgconfig:/opt/homebrew/Cellar/uchardet/0.0.8/lib/pkgconfig:/opt/homebrew/Cellar/vapoursynth/80/lib/pkgconfig:/opt/homebrew/Cellar/vulkan-loader/1.4.357.0/lib/pkgconfig:/opt/homebrew/Cellar/webp/1.6.0/lib/pkgconfig:/opt/homebrew/Cellar/x264/r3222/lib/pkgconfig:/opt/homebrew/Cellar/x265/4.3/lib/pkgconfig:/opt/homebrew/Cellar/xorgproto/2025.1/share/pkgconfig:/opt/homebrew/Cellar/xz/5.8.4/lib/pkgconfig:/opt/homebrew/Cellar/zimg/3.0.6/lib/pkgconfig:/opt/homebrew/Cellar/zstd/1.5.7_1/lib/pkgconfig:/opt/homebrew/Library/Homebrew/os/mac/pkgconfig/27",
+      "PKG_CONFIG_PATH": "/opt/homebrew/Cellar/cairo/1.18.6/lib/pkgconfig:/opt/homebrew/Cellar/dav1d/1.5.4/lib/pkgconfig:/opt/homebrew/Cellar/ffmpeg/9.0.2/lib/pkgconfig:/opt/homebrew/Cellar/flac/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/fontconfig/2.18.3/lib/pkgconfig:/opt/homebrew/Cellar/freetype/2.14.3/lib/pkgconfig:/opt/homebrew/Cellar/fribidi/1.0.17/lib/pkgconfig:/opt/homebrew/Cellar/glib/2.90.0/lib/pkgconfig:/opt/homebrew/Cellar/graphite2/1.3.15/lib/pkgconfig:/opt/homebrew/Cellar/harfbuzz/14.5.0/lib/pkgconfig:/opt/homebrew/Cellar/icu4c@78/78.3/lib/pkgconfig:/opt/homebrew/Cellar/jpeg-turbo/3.2.0/lib/pkgconfig:/opt/homebrew/Cellar/json-c/0.19/lib/pkgconfig:/opt/homebrew/Cellar/lame/4.0/lib/pkgconfig:/opt/homebrew/Cellar/libarchive/3.8.9/lib/pkgconfig:/opt/homebrew/Cellar/libass/0.17.5_1/lib/pkgconfig:/opt/homebrew/Cellar/libb2/0.98.1/lib/pkgconfig:/opt/homebrew/Cellar/libbluray/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/libogg/1.3.6/lib/pkgconfig:/opt/homebrew/Cellar/libplacebo/7.360.1/lib/pkgconfig:/opt/homebrew/Cellar/libpng/1.6.58/lib/pkgconfig:/opt/homebrew/Cellar/libsamplerate/0.2.2/lib/pkgconfig:/opt/homebrew/Cellar/libsndfile/1.2.2_1/lib/pkgconfig:/opt/homebrew/Cellar/libtiff/4.7.2/lib/pkgconfig:/opt/homebrew/Cellar/libudfread/1.2.0/lib/pkgconfig:/opt/homebrew/Cellar/libunibreak/8.0/lib/pkgconfig:/opt/homebrew/Cellar/libvmaf/3.2.1/lib/pkgconfig:/opt/homebrew/Cellar/libvorbis/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libvpx/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libx11/1.8.13/lib/pkgconfig:/opt/homebrew/Cellar/libxau/1.0.12/lib/pkgconfig:/opt/homebrew/Cellar/libxcb/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libxdmcp/1.1.5/lib/pkgconfig:/opt/homebrew/Cellar/libxext/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libxrender/0.9.12/lib/pkgconfig:/opt/homebrew/Cellar/little-cms2/2.19.1/lib/pkgconfig:/opt/homebrew/Cellar/luajit/2.1.1788856981/lib/pkgconfig:/opt/homebrew/Cellar/lz4/1.10.0/lib/pkgconfig:/opt/homebrew/Cellar/lzo/2.10/lib/pkgconfig:/opt/homebrew/Cellar/mpdecimal/4.0.1/lib/pkgconfig:/opt/homebrew/Cellar/mpg123/1.33.7/lib/pkgconfig:/opt/homebrew/Cellar/mpv/0.41.0_10/lib/pkgconfig:/opt/homebrew/Cellar/mujs/1.3.10/lib/pkgconfig:/opt/homebrew/Cellar/openssl@3/3.6.4/lib/pkgconfig:/opt/homebrew/Cellar/opus/1.6.1/lib/pkgconfig:/opt/homebrew/Cellar/pcre2/10.48/lib/pkgconfig:/opt/homebrew/Cellar/pixman/0.46.4/lib/pkgconfig:/opt/homebrew/Cellar/python@3.14/3.14.7/lib/pkgconfig:/opt/homebrew/Cellar/readline/8.3.6/lib/pkgconfig:/opt/homebrew/Cellar/rubberband/4.0.0/lib/pkgconfig:/opt/homebrew/Cellar/sdl2-compat/2.32.72/lib/pkgconfig:/opt/homebrew/Cellar/sdl3/3.4.16/lib/pkgconfig:/opt/homebrew/Cellar/shaderc/2026.4/lib/pkgconfig:/opt/homebrew/Cellar/sqlite/3.53.4/lib/pkgconfig:/opt/homebrew/Cellar/svt-av1/4.2.0/lib/pkgconfig:/opt/homebrew/Cellar/uchardet/0.0.8/lib/pkgconfig:/opt/homebrew/Cellar/vapoursynth/80/lib/pkgconfig:/opt/homebrew/Cellar/vulkan-loader/1.4.357.0/lib/pkgconfig:/opt/homebrew/Cellar/webp/1.6.0/lib/pkgconfig:/opt/homebrew/Cellar/x264/r3222/lib/pkgconfig:/opt/homebrew/Cellar/x265/4.3/lib/pkgconfig:/opt/homebrew/Cellar/xorgproto/2025.1/share/pkgconfig:/opt/homebrew/Cellar/xz/5.8.4/lib/pkgconfig:/opt/homebrew/Cellar/zimg/3.0.6/lib/pkgconfig:/opt/homebrew/Cellar/zstd/1.5.7_1/lib/pkgconfig:/opt/homebrew/Library/Homebrew/os/mac/pkgconfig/27",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "SDKROOT": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "SWIFTC": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "TMPDIR": "<pair>/tmp"
+    },
+    "required_timeout_seconds": [
+      300,
+      1800,
+      120
+    ],
+    "variant": "on"
+  },
+  {
+    "commands": [
+      [
+        "<private-tools>/venv/bin/meson",
+        "setup",
+        "<pair>/build-off",
+        "<pair>/source",
+        "--sysconfdir=<pair>/prefix-off/etc",
+        "-Dbuild-date=false",
+        "-Dhtml-build=enabled",
+        "-Djavascript=enabled",
+        "-Dlibmpv=true",
+        "-Dlua=luajit",
+        "-Dlibarchive=enabled",
+        "-Duchardet=enabled",
+        "-Dvulkan=enabled",
+        "--prefix=<pair>/prefix-off",
+        "--libdir=lib",
+        "--buildtype=release",
+        "--wrap-mode=nofallback",
+        "-Dgpu-pass-timers=false"
+      ],
+      [
+        "<private-tools>/venv/bin/meson",
+        "compile",
+        "-C",
+        "<pair>/build-off",
+        "--jobs=2",
+        "--verbose"
+      ],
+      [
+        "<private-tools>/venv/bin/meson",
+        "install",
+        "-C",
+        "<pair>/build-off",
+        "--no-rebuild"
+      ]
+    ],
+    "cwd": "<pair>",
+    "environment": {
+      "CC": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+      "CXX": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
+      "DENO_NO_UPDATE_CHECK": "1",
+      "GIT_CEILING_DIRECTORIES": "<pair>",
+      "GIT_CONFIG_GLOBAL": "/dev/null",
+      "GIT_CONFIG_NOSYSTEM": "1",
+      "HOME": "<pair>/home",
+      "LC_ALL": "C",
+      "PATH": "<private-tools>/venv/bin:/opt/homebrew/bin:/usr/bin:/bin",
+      "PKG_CONFIG": "/opt/homebrew/bin/pkgconf --define-variable=homebrew_sdkroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "PKG_CONFIG_LIBDIR": "/opt/homebrew/Cellar/cairo/1.18.6/lib/pkgconfig:/opt/homebrew/Cellar/dav1d/1.5.4/lib/pkgconfig:/opt/homebrew/Cellar/ffmpeg/9.0.2/lib/pkgconfig:/opt/homebrew/Cellar/flac/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/fontconfig/2.18.3/lib/pkgconfig:/opt/homebrew/Cellar/freetype/2.14.3/lib/pkgconfig:/opt/homebrew/Cellar/fribidi/1.0.17/lib/pkgconfig:/opt/homebrew/Cellar/glib/2.90.0/lib/pkgconfig:/opt/homebrew/Cellar/graphite2/1.3.15/lib/pkgconfig:/opt/homebrew/Cellar/harfbuzz/14.5.0/lib/pkgconfig:/opt/homebrew/Cellar/icu4c@78/78.3/lib/pkgconfig:/opt/homebrew/Cellar/jpeg-turbo/3.2.0/lib/pkgconfig:/opt/homebrew/Cellar/json-c/0.19/lib/pkgconfig:/opt/homebrew/Cellar/lame/4.0/lib/pkgconfig:/opt/homebrew/Cellar/libarchive/3.8.9/lib/pkgconfig:/opt/homebrew/Cellar/libass/0.17.5_1/lib/pkgconfig:/opt/homebrew/Cellar/libb2/0.98.1/lib/pkgconfig:/opt/homebrew/Cellar/libbluray/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/libogg/1.3.6/lib/pkgconfig:/opt/homebrew/Cellar/libplacebo/7.360.1/lib/pkgconfig:/opt/homebrew/Cellar/libpng/1.6.58/lib/pkgconfig:/opt/homebrew/Cellar/libsamplerate/0.2.2/lib/pkgconfig:/opt/homebrew/Cellar/libsndfile/1.2.2_1/lib/pkgconfig:/opt/homebrew/Cellar/libtiff/4.7.2/lib/pkgconfig:/opt/homebrew/Cellar/libudfread/1.2.0/lib/pkgconfig:/opt/homebrew/Cellar/libunibreak/8.0/lib/pkgconfig:/opt/homebrew/Cellar/libvmaf/3.2.1/lib/pkgconfig:/opt/homebrew/Cellar/libvorbis/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libvpx/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libx11/1.8.13/lib/pkgconfig:/opt/homebrew/Cellar/libxau/1.0.12/lib/pkgconfig:/opt/homebrew/Cellar/libxcb/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libxdmcp/1.1.5/lib/pkgconfig:/opt/homebrew/Cellar/libxext/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libxrender/0.9.12/lib/pkgconfig:/opt/homebrew/Cellar/little-cms2/2.19.1/lib/pkgconfig:/opt/homebrew/Cellar/luajit/2.1.1788856981/lib/pkgconfig:/opt/homebrew/Cellar/lz4/1.10.0/lib/pkgconfig:/opt/homebrew/Cellar/lzo/2.10/lib/pkgconfig:/opt/homebrew/Cellar/mpdecimal/4.0.1/lib/pkgconfig:/opt/homebrew/Cellar/mpg123/1.33.7/lib/pkgconfig:/opt/homebrew/Cellar/mpv/0.41.0_10/lib/pkgconfig:/opt/homebrew/Cellar/mujs/1.3.10/lib/pkgconfig:/opt/homebrew/Cellar/openssl@3/3.6.4/lib/pkgconfig:/opt/homebrew/Cellar/opus/1.6.1/lib/pkgconfig:/opt/homebrew/Cellar/pcre2/10.48/lib/pkgconfig:/opt/homebrew/Cellar/pixman/0.46.4/lib/pkgconfig:/opt/homebrew/Cellar/python@3.14/3.14.7/lib/pkgconfig:/opt/homebrew/Cellar/readline/8.3.6/lib/pkgconfig:/opt/homebrew/Cellar/rubberband/4.0.0/lib/pkgconfig:/opt/homebrew/Cellar/sdl2-compat/2.32.72/lib/pkgconfig:/opt/homebrew/Cellar/sdl3/3.4.16/lib/pkgconfig:/opt/homebrew/Cellar/shaderc/2026.4/lib/pkgconfig:/opt/homebrew/Cellar/sqlite/3.53.4/lib/pkgconfig:/opt/homebrew/Cellar/svt-av1/4.2.0/lib/pkgconfig:/opt/homebrew/Cellar/uchardet/0.0.8/lib/pkgconfig:/opt/homebrew/Cellar/vapoursynth/80/lib/pkgconfig:/opt/homebrew/Cellar/vulkan-loader/1.4.357.0/lib/pkgconfig:/opt/homebrew/Cellar/webp/1.6.0/lib/pkgconfig:/opt/homebrew/Cellar/x264/r3222/lib/pkgconfig:/opt/homebrew/Cellar/x265/4.3/lib/pkgconfig:/opt/homebrew/Cellar/xorgproto/2025.1/share/pkgconfig:/opt/homebrew/Cellar/xz/5.8.4/lib/pkgconfig:/opt/homebrew/Cellar/zimg/3.0.6/lib/pkgconfig:/opt/homebrew/Cellar/zstd/1.5.7_1/lib/pkgconfig:/opt/homebrew/Library/Homebrew/os/mac/pkgconfig/27",
+      "PKG_CONFIG_PATH": "/opt/homebrew/Cellar/cairo/1.18.6/lib/pkgconfig:/opt/homebrew/Cellar/dav1d/1.5.4/lib/pkgconfig:/opt/homebrew/Cellar/ffmpeg/9.0.2/lib/pkgconfig:/opt/homebrew/Cellar/flac/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/fontconfig/2.18.3/lib/pkgconfig:/opt/homebrew/Cellar/freetype/2.14.3/lib/pkgconfig:/opt/homebrew/Cellar/fribidi/1.0.17/lib/pkgconfig:/opt/homebrew/Cellar/glib/2.90.0/lib/pkgconfig:/opt/homebrew/Cellar/graphite2/1.3.15/lib/pkgconfig:/opt/homebrew/Cellar/harfbuzz/14.5.0/lib/pkgconfig:/opt/homebrew/Cellar/icu4c@78/78.3/lib/pkgconfig:/opt/homebrew/Cellar/jpeg-turbo/3.2.0/lib/pkgconfig:/opt/homebrew/Cellar/json-c/0.19/lib/pkgconfig:/opt/homebrew/Cellar/lame/4.0/lib/pkgconfig:/opt/homebrew/Cellar/libarchive/3.8.9/lib/pkgconfig:/opt/homebrew/Cellar/libass/0.17.5_1/lib/pkgconfig:/opt/homebrew/Cellar/libb2/0.98.1/lib/pkgconfig:/opt/homebrew/Cellar/libbluray/1.5.0/lib/pkgconfig:/opt/homebrew/Cellar/libogg/1.3.6/lib/pkgconfig:/opt/homebrew/Cellar/libplacebo/7.360.1/lib/pkgconfig:/opt/homebrew/Cellar/libpng/1.6.58/lib/pkgconfig:/opt/homebrew/Cellar/libsamplerate/0.2.2/lib/pkgconfig:/opt/homebrew/Cellar/libsndfile/1.2.2_1/lib/pkgconfig:/opt/homebrew/Cellar/libtiff/4.7.2/lib/pkgconfig:/opt/homebrew/Cellar/libudfread/1.2.0/lib/pkgconfig:/opt/homebrew/Cellar/libunibreak/8.0/lib/pkgconfig:/opt/homebrew/Cellar/libvmaf/3.2.1/lib/pkgconfig:/opt/homebrew/Cellar/libvorbis/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libvpx/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libx11/1.8.13/lib/pkgconfig:/opt/homebrew/Cellar/libxau/1.0.12/lib/pkgconfig:/opt/homebrew/Cellar/libxcb/1.17.0/lib/pkgconfig:/opt/homebrew/Cellar/libxdmcp/1.1.5/lib/pkgconfig:/opt/homebrew/Cellar/libxext/1.3.7/lib/pkgconfig:/opt/homebrew/Cellar/libxrender/0.9.12/lib/pkgconfig:/opt/homebrew/Cellar/little-cms2/2.19.1/lib/pkgconfig:/opt/homebrew/Cellar/luajit/2.1.1788856981/lib/pkgconfig:/opt/homebrew/Cellar/lz4/1.10.0/lib/pkgconfig:/opt/homebrew/Cellar/lzo/2.10/lib/pkgconfig:/opt/homebrew/Cellar/mpdecimal/4.0.1/lib/pkgconfig:/opt/homebrew/Cellar/mpg123/1.33.7/lib/pkgconfig:/opt/homebrew/Cellar/mpv/0.41.0_10/lib/pkgconfig:/opt/homebrew/Cellar/mujs/1.3.10/lib/pkgconfig:/opt/homebrew/Cellar/openssl@3/3.6.4/lib/pkgconfig:/opt/homebrew/Cellar/opus/1.6.1/lib/pkgconfig:/opt/homebrew/Cellar/pcre2/10.48/lib/pkgconfig:/opt/homebrew/Cellar/pixman/0.46.4/lib/pkgconfig:/opt/homebrew/Cellar/python@3.14/3.14.7/lib/pkgconfig:/opt/homebrew/Cellar/readline/8.3.6/lib/pkgconfig:/opt/homebrew/Cellar/rubberband/4.0.0/lib/pkgconfig:/opt/homebrew/Cellar/sdl2-compat/2.32.72/lib/pkgconfig:/opt/homebrew/Cellar/sdl3/3.4.16/lib/pkgconfig:/opt/homebrew/Cellar/shaderc/2026.4/lib/pkgconfig:/opt/homebrew/Cellar/sqlite/3.53.4/lib/pkgconfig:/opt/homebrew/Cellar/svt-av1/4.2.0/lib/pkgconfig:/opt/homebrew/Cellar/uchardet/0.0.8/lib/pkgconfig:/opt/homebrew/Cellar/vapoursynth/80/lib/pkgconfig:/opt/homebrew/Cellar/vulkan-loader/1.4.357.0/lib/pkgconfig:/opt/homebrew/Cellar/webp/1.6.0/lib/pkgconfig:/opt/homebrew/Cellar/x264/r3222/lib/pkgconfig:/opt/homebrew/Cellar/x265/4.3/lib/pkgconfig:/opt/homebrew/Cellar/xorgproto/2025.1/share/pkgconfig:/opt/homebrew/Cellar/xz/5.8.4/lib/pkgconfig:/opt/homebrew/Cellar/zimg/3.0.6/lib/pkgconfig:/opt/homebrew/Cellar/zstd/1.5.7_1/lib/pkgconfig:/opt/homebrew/Library/Homebrew/os/mac/pkgconfig/27",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "SDKROOT": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "SWIFTC": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "TMPDIR": "<pair>/tmp"
+    },
+    "required_timeout_seconds": [
+      300,
+      1800,
+      120
+    ],
+    "variant": "off"
+  }
+]

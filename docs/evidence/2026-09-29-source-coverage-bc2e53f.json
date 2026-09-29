@@ -1,0 +1,4291 @@
+{
+  "application_source_archive_sha256": "25170c02d344794d7ed88bed3965105a60e5649349bb597138f1b343ab025b96",
+  "cargo": [
+    {
+      "bytes": 36947,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "accesskit",
+      "sha256": "d3b7f7f85a7e5f68090000ed7622545829afd484d210358702ae4cb97dd0c320",
+      "status": "verified_archive_bytes",
+      "version": "0.24.1"
+    },
+    {
+      "bytes": 48440,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "accesskit_consumer",
+      "sha256": "5d10a236f96f87d70732e44520046785431ef01d5bcd6b041317bfadd2f88245",
+      "status": "verified_archive_bytes",
+      "version": "0.38.0"
+    },
+    {
+      "bytes": 27650,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "accesskit_macos",
+      "sha256": "ce02dc63b43f0c9296af9ac946312a2dc8814427d7a64d2d600971dac55b6076",
+      "status": "verified_archive_bytes",
+      "version": "0.26.3"
+    },
+    {
+      "bytes": 37801,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "accesskit_winit",
+      "sha256": "d5b41e63a69f36d9f1f41e70464c7e5f72eee485ef26aab19f0b4f86e6c0a84c",
+      "status": "verified_archive_bytes",
+      "version": "0.33.2"
+    },
+    {
+      "bytes": 13366,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "adler2",
+      "sha256": "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa",
+      "status": "verified_archive_bytes",
+      "version": "2.0.1"
+    },
+    {
+      "bytes": 15509,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "aead",
+      "sha256": "d122413f284cf2d62fb1b7db97e02edb8cda96d769b16e443a4f6195e35662b0",
+      "status": "verified_archive_bytes",
+      "version": "0.5.2"
+    },
+    {
+      "bytes": 63622,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "allocator-api2",
+      "sha256": "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923",
+      "status": "verified_archive_bytes",
+      "version": "0.2.21"
+    },
+    {
+      "bytes": 56108,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "annotate-snippets",
+      "sha256": "f211a51805bc641f3ad5b7664c77d2547af685cc33b4cd8d31964027a46f13f1",
+      "status": "verified_archive_bytes",
+      "version": "0.12.16"
+    },
+    {
+      "bytes": 17787,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "anstyle",
+      "sha256": "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000",
+      "status": "verified_archive_bytes",
+      "version": "1.0.14"
+    },
+    {
+      "bytes": 54018,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "arboard",
+      "sha256": "0348a1c054491f4bfe6ab86a7b6ab1e44e45d899005de92f58b3df180b36ddaf",
+      "status": "verified_archive_bytes",
+      "version": "3.6.1"
+    },
+    {
+      "bytes": 9186,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "arrayref",
+      "sha256": "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb",
+      "status": "verified_archive_bytes",
+      "version": "0.3.9"
+    },
+    {
+      "bytes": 33260,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "arrayvec",
+      "sha256": "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56",
+      "status": "verified_archive_bytes",
+      "version": "0.7.8"
+    },
+    {
+      "bytes": 12422,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "atomic-waker",
+      "sha256": "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0",
+      "status": "verified_archive_bytes",
+      "version": "1.1.2"
+    },
+    {
+      "bytes": 18911,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "autocfg",
+      "sha256": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+      "status": "verified_archive_bytes",
+      "version": "1.5.1"
+    },
+    {
+      "bytes": 81597,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "base64",
+      "sha256": "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6",
+      "status": "verified_archive_bytes",
+      "version": "0.22.1"
+    },
+    {
+      "bytes": 93605,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "base64",
+      "sha256": "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5",
+      "status": "verified_archive_bytes",
+      "version": "0.23.1"
+    },
+    {
+      "bytes": 23021,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "bitflags",
+      "sha256": "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a",
+      "status": "verified_archive_bytes",
+      "version": "1.3.2"
+    },
+    {
+      "bytes": 51678,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "bitflags",
+      "sha256": "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06",
+      "status": "verified_archive_bytes",
+      "version": "2.13.2"
+    },
+    {
+      "bytes": 10538,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "block-buffer",
+      "sha256": "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71",
+      "status": "verified_archive_bytes",
+      "version": "0.10.4"
+    },
+    {
+      "bytes": 24191,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "block2",
+      "sha256": "2c132eebf10f5cad5289222520a4a058514204aed6d791f1cf4fe8088b82d15f",
+      "status": "verified_archive_bytes",
+      "version": "0.5.1"
+    },
+    {
+      "bytes": 34505,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "block2",
+      "sha256": "cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5",
+      "status": "verified_archive_bytes",
+      "version": "0.6.2"
+    },
+    {
+      "bytes": 8437,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "by_address",
+      "sha256": "64fa3c856b712db6612c019f14756e64e4bcea13337a6b33b696333a9eaa2d06",
+      "status": "verified_archive_bytes",
+      "version": "1.2.1"
+    },
+    {
+      "bytes": 54075,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "bytemuck",
+      "sha256": "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797",
+      "status": "verified_archive_bytes",
+      "version": "1.25.2"
+    },
+    {
+      "bytes": 26509,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "bytemuck_derive",
+      "sha256": "6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c",
+      "status": "verified_archive_bytes",
+      "version": "1.12.1"
+    },
+    {
+      "bytes": 15909,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "byteorder-lite",
+      "sha256": "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495",
+      "status": "verified_archive_bytes",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 75667,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "bytes",
+      "sha256": "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04",
+      "status": "verified_archive_bytes",
+      "version": "1.12.1"
+    },
+    {
+      "bytes": 108103,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cc",
+      "sha256": "f360145194ee8e21db5ee7f3fcd4fe52210864c75c985dae33218202c8bbe040",
+      "status": "verified_archive_bytes",
+      "version": "1.5.1"
+    },
+    {
+      "bytes": 9578,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cfg-if",
+      "sha256": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+      "status": "verified_archive_bytes",
+      "version": "1.0.5"
+    },
+    {
+      "bytes": 6527,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cfg_aliases",
+      "sha256": "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 7557,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cgl",
+      "sha256": "0ced0551234e87afee12411d535648dd89d2e7f34c78b753395567aff3d447ff",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 23424,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "chacha20",
+      "sha256": "c3613f74bd2eac03dad61bd53dbe620703d4371614fe0bc3b9f04dd36fe4e818",
+      "status": "verified_archive_bytes",
+      "version": "0.9.1"
+    },
+    {
+      "bytes": 68485,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "chacha20poly1305",
+      "sha256": "10cd79432192d1c0f4e1a0fef9527696cc039165d729fb41b3f4f4f354c2dc35",
+      "status": "verified_archive_bytes",
+      "version": "0.10.1"
+    },
+    {
+      "bytes": 240866,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "chrono",
+      "sha256": "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327",
+      "status": "verified_archive_bytes",
+      "version": "0.4.45"
+    },
+    {
+      "bytes": 19073,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cipher",
+      "sha256": "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad",
+      "status": "verified_archive_bytes",
+      "version": "0.4.4"
+    },
+    {
+      "bytes": 19012,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "clru",
+      "sha256": "197fd99cb113a8d5d9b6376f3aa817f32c1078f2343b714fff7d2ca44fdf67d5",
+      "status": "verified_archive_bytes",
+      "version": "0.6.3"
+    },
+    {
+      "bytes": 6649,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "color_quant",
+      "sha256": "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "const-field-offset",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "0.2.1"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "const-field-offset-macro",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "0.2.1"
+    },
+    {
+      "bytes": 24083,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "convert_case",
+      "sha256": "633458d4ef8c78b72454de2d54fd6ab2e60f9e02be22f3c6104cdc8a4e0fceb9",
+      "status": "verified_archive_bytes",
+      "version": "0.10.0"
+    },
+    {
+      "bytes": 28886,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "core-foundation",
+      "sha256": "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6",
+      "status": "verified_archive_bytes",
+      "version": "0.10.1"
+    },
+    {
+      "bytes": 27743,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "core-foundation",
+      "sha256": "91e195e091a93c46f7102ec7818a2aa394e1e1771c3ab4825963fa03e45afb8f",
+      "status": "verified_archive_bytes",
+      "version": "0.9.4"
+    },
+    {
+      "bytes": 37712,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "core-foundation-sys",
+      "sha256": "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b",
+      "status": "verified_archive_bytes",
+      "version": "0.8.7"
+    },
+    {
+      "bytes": 30763,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "core-graphics",
+      "sha256": "c07782be35f9e1140080c6b96f0d44b739e2278479f64e02fdab4e32dfd8b081",
+      "status": "verified_archive_bytes",
+      "version": "0.23.2"
+    },
+    {
+      "bytes": 7063,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "core-graphics-types",
+      "sha256": "45390e6114f68f718cc7a830514a96f903cccd70d02a8f6d9f643ac4ba45afaf",
+      "status": "verified_archive_bytes",
+      "version": "0.1.3"
+    },
+    {
+      "bytes": 10784,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "countme",
+      "sha256": "7704b5fdd17b18ae31c4c1da5a2e0305a2bf17b5249300a9ee9ed7b72114c636",
+      "status": "verified_archive_bytes",
+      "version": "3.0.1"
+    },
+    {
+      "bytes": 13466,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cpufeatures",
+      "sha256": "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280",
+      "status": "verified_archive_bytes",
+      "version": "0.2.17"
+    },
+    {
+      "bytes": 48100,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "crc32fast",
+      "sha256": "01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78",
+      "status": "verified_archive_bytes",
+      "version": "1.5.2"
+    },
+    {
+      "bytes": 19133,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "critical-section",
+      "sha256": "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b",
+      "status": "verified_archive_bytes",
+      "version": "1.2.0"
+    },
+    {
+      "bytes": 94171,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "crossbeam-channel",
+      "sha256": "98b0cc327b5bc766e7fda9c9260cc0fa81b43a8e240440422dff70788e3f9ef1",
+      "status": "verified_archive_bytes",
+      "version": "0.5.17"
+    },
+    {
+      "bytes": 47174,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "crossbeam-utils",
+      "sha256": "a31eee39dddec8330830986fcd7625edb5a24ec90ea038215273bbc3adb08ac6",
+      "status": "verified_archive_bytes",
+      "version": "0.8.23"
+    },
+    {
+      "bytes": 9619,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "crypto-common",
+      "sha256": "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a",
+      "status": "verified_archive_bytes",
+      "version": "0.1.7"
+    },
+    {
+      "bytes": 14267,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "cursor-icon",
+      "sha256": "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f",
+      "status": "verified_archive_bytes",
+      "version": "1.2.0"
+    },
+    {
+      "bytes": 23862,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "data-url",
+      "sha256": "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 88632,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "derive_more",
+      "sha256": "d751e9e49156b02b44f9c1815bcb94b984cdcc4396ecc32521c739452808b134",
+      "status": "verified_archive_bytes",
+      "version": "2.1.1"
+    },
+    {
+      "bytes": 99094,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "derive_more-impl",
+      "sha256": "799a97264921d8623a957f6c3b9011f3b5492f557bbb7a5a19b7fa6d06ba8dcb",
+      "status": "verified_archive_bytes",
+      "version": "2.1.1"
+    },
+    {
+      "bytes": 19557,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "digest",
+      "sha256": "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292",
+      "status": "verified_archive_bytes",
+      "version": "0.10.7"
+    },
+    {
+      "bytes": 10229,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "dispatch",
+      "sha256": "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+      "status": "verified_archive_bytes",
+      "version": "0.2.0"
+    },
+    {
+      "bytes": 55299,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "dispatch2",
+      "sha256": "1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38",
+      "status": "verified_archive_bytes",
+      "version": "0.3.1"
+    },
+    {
+      "bytes": 21343,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "displaydoc",
+      "sha256": "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8",
+      "status": "verified_archive_bytes",
+      "version": "0.2.7"
+    },
+    {
+      "bytes": 14812,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "dpi",
+      "sha256": "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76",
+      "status": "verified_archive_bytes",
+      "version": "0.1.2"
+    },
+    {
+      "bytes": 22357,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "either",
+      "sha256": "252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34",
+      "status": "verified_archive_bytes",
+      "version": "1.18.0"
+    },
+    {
+      "bytes": 7419,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "equivalent",
+      "sha256": "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f",
+      "status": "verified_archive_bytes",
+      "version": "1.0.2"
+    },
+    {
+      "bytes": 12002,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "errno",
+      "sha256": "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb",
+      "status": "verified_archive_bytes",
+      "version": "0.3.14"
+    },
+    {
+      "bytes": 88222,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "euclid",
+      "sha256": "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06",
+      "status": "verified_archive_bytes",
+      "version": "0.22.14"
+    },
+    {
+      "bytes": 19639,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fallible-iterator",
+      "sha256": "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649",
+      "status": "verified_archive_bytes",
+      "version": "0.3.0"
+    },
+    {
+      "bytes": 9249,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fallible-streaming-iterator",
+      "sha256": "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a",
+      "status": "verified_archive_bytes",
+      "version": "0.1.9"
+    },
+    {
+      "bytes": 20782,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fastrand",
+      "sha256": "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223",
+      "status": "verified_archive_bytes",
+      "version": "2.5.0"
+    },
+    {
+      "bytes": 27188,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fdeflate",
+      "sha256": "1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c",
+      "status": "verified_archive_bytes",
+      "version": "0.3.7"
+    },
+    {
+      "bytes": 384016,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "femtovg",
+      "sha256": "31eebf3ab1b76359ccd5f850c07a7c6b2722c64d9127c40e02358e83f3ff9b1a",
+      "status": "verified_archive_bytes",
+      "version": "0.27.0"
+    },
+    {
+      "bytes": 10032,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "field-offset",
+      "sha256": "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f",
+      "status": "verified_archive_bytes",
+      "version": "0.3.6"
+    },
+    {
+      "bytes": 31390,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "find-msvc-tools",
+      "sha256": "aedcfb3409746eddb02b9e19ebda1c3394f759a152e48ee875a0844d1b955484",
+      "status": "verified_archive_bytes",
+      "version": "0.1.14"
+    },
+    {
+      "bytes": 49222,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fixed_decimal",
+      "sha256": "79c3c892f121fff406e5dd6b28c1b30096b95111c30701a899d4f2b18da6d1bd",
+      "status": "verified_archive_bytes",
+      "version": "0.7.2"
+    },
+    {
+      "bytes": 80244,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "flate2",
+      "sha256": "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb",
+      "status": "verified_archive_bytes",
+      "version": "1.1.10"
+    },
+    {
+      "bytes": 10102,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "float-cmp",
+      "sha256": "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4",
+      "status": "verified_archive_bytes",
+      "version": "0.9.0"
+    },
+    {
+      "bytes": 11266,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fnv",
+      "sha256": "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1",
+      "status": "verified_archive_bytes",
+      "version": "1.0.7"
+    },
+    {
+      "bytes": 23329,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "foldhash",
+      "sha256": "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb",
+      "status": "verified_archive_bytes",
+      "version": "0.2.0"
+    },
+    {
+      "bytes": 30084,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "font-types",
+      "sha256": "b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6",
+      "status": "verified_archive_bytes",
+      "version": "0.12.5"
+    },
+    {
+      "bytes": 119122,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fontdb",
+      "sha256": "2660c5e9157bf76d2db1294e4a9feba604ef610819a3b591088d0d8392a3290f",
+      "status": "verified_archive_bytes",
+      "version": "0.24.0"
+    },
+    {
+      "bytes": 59110,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "fontique",
+      "sha256": "6688bc1294fe7117d788937b6c53480169b29c566954af490830d4c09da9516a",
+      "status": "verified_archive_bytes",
+      "version": "0.11.1"
+    },
+    {
+      "bytes": 7824,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "foreign-types",
+      "sha256": "d737d9aa519fb7b749cbc3b962edcf310a8dd1f4b67c91c4f83975dbdd17d965",
+      "status": "verified_archive_bytes",
+      "version": "0.5.0"
+    },
+    {
+      "bytes": 8161,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "foreign-types-macros",
+      "sha256": "ea5190182e6915eb873ddbc16e23b711b6eb1f9c00a0d0a3a91b5f6228475225",
+      "status": "verified_archive_bytes",
+      "version": "0.2.4"
+    },
+    {
+      "bytes": 6006,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "foreign-types-shared",
+      "sha256": "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b",
+      "status": "verified_archive_bytes",
+      "version": "0.3.1"
+    },
+    {
+      "bytes": 9347,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "form_urlencoded",
+      "sha256": "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf",
+      "status": "verified_archive_bytes",
+      "version": "1.2.2"
+    },
+    {
+      "bytes": 33165,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "futures-channel",
+      "sha256": "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 14692,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "futures-core",
+      "sha256": "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 8107,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "futures-sink",
+      "sha256": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 11376,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "futures-task",
+      "sha256": "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 169782,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "futures-util",
+      "sha256": "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 15950,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "generic-array",
+      "sha256": "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a",
+      "status": "verified_archive_bytes",
+      "version": "0.14.7"
+    },
+    {
+      "bytes": 40780,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "getrandom",
+      "sha256": "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0",
+      "status": "verified_archive_bytes",
+      "version": "0.2.17"
+    },
+    {
+      "bytes": 52437,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "getrandom",
+      "sha256": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
+      "status": "verified_archive_bytes",
+      "version": "0.4.3"
+    },
+    {
+      "bytes": 38710,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "gif",
+      "sha256": "ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159",
+      "status": "verified_archive_bytes",
+      "version": "0.14.2"
+    },
+    {
+      "bytes": 165010,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "glow",
+      "sha256": "263218b0ba2b0715c3370fb04674f5f8aa331594b521c94ff0a8e4a8472d1386",
+      "status": "verified_archive_bytes",
+      "version": "0.18.0"
+    },
+    {
+      "bytes": 73773,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "glutin",
+      "sha256": "12124de845cacfebedff80e877bb37b5b75c34c5a4c89e47e1cdd67fb6041325",
+      "status": "verified_archive_bytes",
+      "version": "0.32.3"
+    },
+    {
+      "bytes": 6076,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "glutin-winit",
+      "sha256": "85edca7075f8fc728f28cb8fbb111a96c3b89e930574369e3e9c27eb75d3788f",
+      "status": "verified_archive_bytes",
+      "version": "0.5.0"
+    },
+    {
+      "bytes": 291579,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "harfrust",
+      "sha256": "c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9",
+      "status": "verified_archive_bytes",
+      "version": "0.12.0"
+    },
+    {
+      "bytes": 141498,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hashbrown",
+      "sha256": "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1",
+      "status": "verified_archive_bytes",
+      "version": "0.14.5"
+    },
+    {
+      "bytes": 147785,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hashbrown",
+      "sha256": "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100",
+      "status": "verified_archive_bytes",
+      "version": "0.16.1"
+    },
+    {
+      "bytes": 155512,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hashbrown",
+      "sha256": "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a",
+      "status": "verified_archive_bytes",
+      "version": "0.17.1"
+    },
+    {
+      "bytes": 11517,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "heck",
+      "sha256": "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea",
+      "status": "verified_archive_bytes",
+      "version": "0.5.0"
+    },
+    {
+      "bytes": 28421,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "htmlparser",
+      "sha256": "48ce8546b993eaf241d69ded33b1be6d205dd9857ec879d9d18bd05d3676e144",
+      "status": "verified_archive_bytes",
+      "version": "0.2.1"
+    },
+    {
+      "bytes": 111161,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "http",
+      "sha256": "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0",
+      "status": "verified_archive_bytes",
+      "version": "1.5.0"
+    },
+    {
+      "bytes": 7887,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "http-body",
+      "sha256": "ca2a8f2913ee65f60facd6a5905613afaa448497a0230cc41ce022d93290bc2c",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "bytes": 18574,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "http-body-util",
+      "sha256": "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c",
+      "status": "verified_archive_bytes",
+      "version": "0.1.5"
+    },
+    {
+      "bytes": 45190,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "httparse",
+      "sha256": "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87",
+      "status": "verified_archive_bytes",
+      "version": "1.10.1"
+    },
+    {
+      "bytes": 10639,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "httpdate",
+      "sha256": "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9",
+      "status": "verified_archive_bytes",
+      "version": "1.0.3"
+    },
+    {
+      "bytes": 170053,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hyper",
+      "sha256": "27b501faa50e7a26c3d3560ca625132f4078a17771f4810baf70475ae48cbe43",
+      "status": "verified_archive_bytes",
+      "version": "1.11.1"
+    },
+    {
+      "bytes": 23240,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hyper-rustls",
+      "sha256": "dfa8e654703247911e29c23fbeaa261834bd9bb74efba2f9acddc37bfb127f53",
+      "status": "verified_archive_bytes",
+      "version": "0.27.10"
+    },
+    {
+      "bytes": 126820,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "hyper-util",
+      "sha256": "ddc03d96684f9226b8a787cdb71488417b53ab5ea8fdb1dac946cb9431cc8bff",
+      "status": "verified_archive_bytes",
+      "version": "0.1.21"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-backend-selector",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-backend-winit",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-common",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-compiler",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-core",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-core-macros",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "i-slint-renderer-femtovg",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "bytes": 34079,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "iana-time-zone",
+      "sha256": "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470",
+      "status": "verified_archive_bytes",
+      "version": "0.1.65"
+    },
+    {
+      "bytes": 87970,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_collections",
+      "sha256": "fa68d21081c4a05d5a901a1c62add574c77048b6a1c67be3b50ce0b60d4ca513",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 29577,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_decimal",
+      "sha256": "9eb8f655bba2d0c0459e43a5b0e6cd3cd388109898fb3d85d048165e8b0abd08",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 22865,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_decimal_data",
+      "sha256": "e4c887fc7d4c297cf3f9436864af9e3dba7f8be9415a6c2a7f392f3b1636298c",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 80250,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_locale_core",
+      "sha256": "d56e28588da92eee5c3201a6eff33fabdd49b62269c8938d4ff050ce4d900deb",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 16436,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_locale_fallback",
+      "sha256": "251af8e57c9400e3eb58242fe5b8b1152b2a64fdf4cf632f923c38ccee6f2fa9",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 6784,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_locale_fallback_data",
+      "sha256": "decf2a22ec8fa68f1a0c1129a3f8583f8f8bc24e8b9ccbe98ead99f62a4dc3a8",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 530595,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_normalizer",
+      "sha256": "12f9cf5f235641ed274641dd81c3f28d870e276763d0797aeeab72317b1c646f",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 67215,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_normalizer_data",
+      "sha256": "1563da1ed3e0b3bf3d74c9b85917ac9c56464d2f57242270c09c9e752f8021a0",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 102637,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_properties",
+      "sha256": "7e7ca276ad3145661a65914e6daf131ca5120cd3dcee8f8f3214b8875184a148",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 169152,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_properties_data",
+      "sha256": "e590f038c1464a96894fd6d10127e90a8be4509f56ff7ecef851b15cee0b7caa",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 52447,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_provider",
+      "sha256": "d27bbb9d3abbefac45d55f647c9de1d44aafcd1186eb91879afef17c396c3e73",
+      "status": "verified_archive_bytes",
+      "version": "2.3.1"
+    },
+    {
+      "bytes": 4216403,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_segmenter",
+      "sha256": "82d07aafccd67af15d02512a6adf5896fbc5ed00f2e99b471d2efa14016db3db",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 3433531,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "icu_segmenter_data",
+      "sha256": "ae293c039020f9ec10710af98d29ce6aa2051486638b49c9a6409f3b4a9e98ad",
+      "status": "verified_archive_bytes",
+      "version": "2.3.0"
+    },
+    {
+      "bytes": 148747,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "idna",
+      "sha256": "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "bytes": 10444,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "idna_adapter",
+      "sha256": "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714",
+      "status": "verified_archive_bytes",
+      "version": "1.2.2"
+    },
+    {
+      "bytes": 303647,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "image",
+      "sha256": "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104",
+      "status": "verified_archive_bytes",
+      "version": "0.25.10"
+    },
+    {
+      "bytes": 68478,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "image-webp",
+      "sha256": "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3",
+      "status": "verified_archive_bytes",
+      "version": "0.2.4"
+    },
+    {
+      "bytes": 29653,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "imagesize",
+      "sha256": "65b27460c2c92b037f3f94c538ed9a3342f3fdf923606781629ccb35f82d042a",
+      "status": "verified_archive_bytes",
+      "version": "0.15.0"
+    },
+    {
+      "bytes": 20288,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "imgref",
+      "sha256": "6e44b0a4eaa4c82f441d50a963f2d5f05a787240aeee097597033e72accfd22f",
+      "status": "verified_archive_bytes",
+      "version": "1.12.3"
+    },
+    {
+      "bytes": 103014,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "indexmap",
+      "sha256": "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855",
+      "status": "verified_archive_bytes",
+      "version": "2.14.2"
+    },
+    {
+      "bytes": 11280,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "inout",
+      "sha256": "879f10e63c20629ecabbb64a8010319738c66a5cd0c29b02d63d272b03751d01",
+      "status": "verified_archive_bytes",
+      "version": "0.1.4"
+    },
+    {
+      "bytes": 30804,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "ipnet",
+      "sha256": "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0",
+      "status": "verified_archive_bytes",
+      "version": "2.12.2"
+    },
+    {
+      "bytes": 164131,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "itertools",
+      "sha256": "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc",
+      "status": "verified_archive_bytes",
+      "version": "0.15.0"
+    },
+    {
+      "bytes": 15935,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "itoa",
+      "sha256": "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
+      "status": "verified_archive_bytes",
+      "version": "1.0.18"
+    },
+    {
+      "bytes": 37068,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "keyboard-types",
+      "sha256": "b750dcadc39a09dbadd74e118f6dd6598df77fa01df0cfcdc52c28dece74528a",
+      "status": "verified_archive_bytes",
+      "version": "0.7.0"
+    },
+    {
+      "bytes": 169000,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "kurbo",
+      "sha256": "4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2",
+      "status": "verified_archive_bytes",
+      "version": "0.13.1"
+    },
+    {
+      "bytes": 14025,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "lazy_static",
+      "sha256": "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe",
+      "status": "verified_archive_bytes",
+      "version": "1.5.0"
+    },
+    {
+      "bytes": 851502,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "libc",
+      "sha256": "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2",
+      "status": "verified_archive_bytes",
+      "version": "0.2.189"
+    },
+    {
+      "bytes": 30222,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "libloading",
+      "sha256": "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55",
+      "status": "verified_archive_bytes",
+      "version": "0.8.9"
+    },
+    {
+      "bytes": 164243,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "libm",
+      "sha256": "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981",
+      "status": "verified_archive_bytes",
+      "version": "0.2.16"
+    },
+    {
+      "bytes": 5361739,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "libsqlite3-sys",
+      "sha256": "f1d20bef17f513b9b3004532233187769cd072d790971f4e4da0e346eb6401e8",
+      "status": "verified_archive_bytes",
+      "version": "0.38.2"
+    },
+    {
+      "bytes": 10920,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "linebender_resource_handle",
+      "sha256": "d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4",
+      "status": "verified_archive_bytes",
+      "version": "0.1.1"
+    },
+    {
+      "bytes": 35045,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "litemap",
+      "sha256": "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae",
+      "status": "verified_archive_bytes",
+      "version": "0.8.3"
+    },
+    {
+      "bytes": 53395,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "log",
+      "sha256": "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6",
+      "status": "verified_archive_bytes",
+      "version": "0.4.34"
+    },
+    {
+      "bytes": 34125,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "lyon_algorithms",
+      "sha256": "cdfa8785f95e57914ddb35e3b59994aeba6f5e79e9cfd03da1c269f010f36009",
+      "status": "verified_archive_bytes",
+      "version": "1.0.21"
+    },
+    {
+      "bytes": 11629,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "lyon_extra",
+      "sha256": "7755f08423275157ad1680aaecc9ccb7e0cc633da3240fea2d1522935cc15c72",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "bytes": 55577,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "lyon_geom",
+      "sha256": "4336502e29e32af93cf2dad2214ed6003c17ceb5bd499df77b1de663b9042b92",
+      "status": "verified_archive_bytes",
+      "version": "1.0.19"
+    },
+    {
+      "bytes": 37028,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "lyon_path",
+      "sha256": "5c463f9c428b7fc5ec885dcd39ce4aa61e29111d0e33483f6f98c74e89d8621e",
+      "status": "verified_archive_bytes",
+      "version": "1.0.19"
+    },
+    {
+      "bytes": 99165,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "memchr",
+      "sha256": "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98",
+      "status": "verified_archive_bytes",
+      "version": "2.8.3"
+    },
+    {
+      "bytes": 35116,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "memmap2",
+      "sha256": "d1219ed1b7f229ee7104d281dd01d6802fe28bb6e95d292942c4daacdeb798c0",
+      "status": "verified_archive_bytes",
+      "version": "0.9.11"
+    },
+    {
+      "bytes": 9032,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "memoffset",
+      "sha256": "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a",
+      "status": "verified_archive_bytes",
+      "version": "0.9.1"
+    },
+    {
+      "bytes": 67132,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "miniz_oxide",
+      "sha256": "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316",
+      "status": "verified_archive_bytes",
+      "version": "0.8.9"
+    },
+    {
+      "bytes": 70519,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "miniz_oxide",
+      "sha256": "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c",
+      "status": "verified_archive_bytes",
+      "version": "0.9.1"
+    },
+    {
+      "bytes": 110455,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "mio",
+      "sha256": "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8",
+      "status": "verified_archive_bytes",
+      "version": "1.2.3"
+    },
+    {
+      "bytes": 188252,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "moxcms",
+      "sha256": "bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b",
+      "status": "verified_archive_bytes",
+      "version": "0.8.1"
+    },
+    {
+      "bytes": 90395,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "muda",
+      "sha256": "1dd04e60bc0b07438a6771710ee1698f98f6ebbc7f89b61264af1563b8aeb878",
+      "status": "verified_archive_bytes",
+      "version": "0.19.3"
+    },
+    {
+      "bytes": 3866,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "natord",
+      "sha256": "308d96db8debc727c3fd9744aac51751243420e46edf401010908da7f8d5e57c",
+      "status": "verified_archive_bytes",
+      "version": "1.0.9"
+    },
+    {
+      "bytes": 51631,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "num-traits",
+      "sha256": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+      "status": "verified_archive_bytes",
+      "version": "0.2.19"
+    },
+    {
+      "bytes": 21741,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "num_enum",
+      "sha256": "5d0bca838442ec211fa11de3a8b0e0e8f3a4522575b5c4c06ed722e005036f26",
+      "status": "verified_archive_bytes",
+      "version": "0.7.6"
+    },
+    {
+      "bytes": 18789,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "num_enum_derive",
+      "sha256": "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8",
+      "status": "verified_archive_bytes",
+      "version": "0.7.6"
+    },
+    {
+      "bytes": 20560,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc-sys",
+      "sha256": "cdb91bdd390c7ce1a8607f35f3ca7151b65afc0ff5ff3b34fa350f7d7c7e4310",
+      "status": "verified_archive_bytes",
+      "version": "0.3.5"
+    },
+    {
+      "bytes": 199204,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2",
+      "sha256": "46a785d4eeff09c14c487497c162e92766fbb3e4059a71840cecc03d9a50b804",
+      "status": "verified_archive_bytes",
+      "version": "0.5.2"
+    },
+    {
+      "bytes": 275200,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2",
+      "sha256": "3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f",
+      "status": "verified_archive_bytes",
+      "version": "0.6.4"
+    },
+    {
+      "bytes": 337435,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-app-kit",
+      "sha256": "e4e89ad9e3d7d297152b17d39ed92cd50ca8063a89a9fa569046d41568891eff",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 531744,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-app-kit",
+      "sha256": "d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 180804,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-core-foundation",
+      "sha256": "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 84981,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-core-graphics",
+      "sha256": "e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 96485,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-core-text",
+      "sha256": "0cde0dfb48d25d2b4862161a4d5fcc0e3c24367869ad306b0c9ec0073bfed92d",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 21004,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-encode",
+      "sha256": "ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33",
+      "status": "verified_archive_bytes",
+      "version": "4.1.0"
+    },
+    {
+      "bytes": 249330,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-foundation",
+      "sha256": "0ee638a5da3799329310ad4cfa62fbf045d5f56e3ef5ba4149e7452dcf89d5a8",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 345384,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-foundation",
+      "sha256": "e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 30036,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "objc2-quartz-core",
+      "sha256": "96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 35010,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "once_cell",
+      "sha256": "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50",
+      "status": "verified_archive_bytes",
+      "version": "1.21.4"
+    },
+    {
+      "bytes": 7066,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "opaque-debug",
+      "sha256": "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381",
+      "status": "verified_archive_bytes",
+      "version": "0.3.1"
+    },
+    {
+      "bytes": 24400,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "parlance",
+      "sha256": "4b6937eda350acc1a5d05872c3cbf99fe78619c269096e2be3d4a350058639d5",
+      "status": "verified_archive_bytes",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 116224,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "parley",
+      "sha256": "22d2ff88bd3f7d68d1d9b09c7e6209f9a8e8c05088295140a2bcf2e9b17038c5",
+      "status": "verified_archive_bytes",
+      "version": "0.11.1"
+    },
+    {
+      "bytes": 30342,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "parley_data",
+      "sha256": "1567535334d6ba2d3cde19221ba9a7bd0fabb3cbd99046ddfb10ae061cfcc889",
+      "status": "verified_archive_bytes",
+      "version": "0.11.1"
+    },
+    {
+      "bytes": 11583,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "percent-encoding",
+      "sha256": "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220",
+      "status": "verified_archive_bytes",
+      "version": "2.3.2"
+    },
+    {
+      "bytes": 11545,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pico-args",
+      "sha256": "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315",
+      "status": "verified_archive_bytes",
+      "version": "0.5.0"
+    },
+    {
+      "bytes": 56345,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pin-project",
+      "sha256": "2466b2336ed02bcdca6b294417127b90ec92038d1d5c4fbeac971a922e0e0924",
+      "status": "verified_archive_bytes",
+      "version": "1.1.13"
+    },
+    {
+      "bytes": 29331,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pin-project-internal",
+      "sha256": "c96395f0a926bc13b1c17622aaddda1ecb55d49c8f1bf9777e4d877800a43f8b",
+      "status": "verified_archive_bytes",
+      "version": "1.1.13"
+    },
+    {
+      "bytes": 31034,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pin-project-lite",
+      "sha256": "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd",
+      "status": "verified_archive_bytes",
+      "version": "0.2.17"
+    },
+    {
+      "bytes": 7580,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pin-utils",
+      "sha256": "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184",
+      "status": "verified_archive_bytes",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 4099,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pin-weak",
+      "sha256": "b330c9d1b92dfe68442ca20b009c717d5f0b1e3cf4965e62f704c3c6e95a1305",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "bytes": 21370,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pkg-config",
+      "sha256": "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548",
+      "status": "verified_archive_bytes",
+      "version": "0.3.34"
+    },
+    {
+      "bytes": 125800,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "png",
+      "sha256": "60769b8b31b2a9f263dae2776c37b1b28ae246943cf719eb6946a1db05128a61",
+      "status": "verified_archive_bytes",
+      "version": "0.18.1"
+    },
+    {
+      "bytes": 32633,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "poly1305",
+      "sha256": "8159bd90725d2df49889a078b54f4f79e87f1f8a8444194cdca81d38f5393abf",
+      "status": "verified_archive_bytes",
+      "version": "0.8.0"
+    },
+    {
+      "bytes": 22738,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "polycool",
+      "sha256": "50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6",
+      "status": "verified_archive_bytes",
+      "version": "0.4.0"
+    },
+    {
+      "bytes": 202705,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "portable-atomic",
+      "sha256": "05c8b63e8d9609db387f0324918f81d68fe27748f084ef092fb35954d0539a85",
+      "status": "verified_archive_bytes",
+      "version": "1.15.0"
+    },
+    {
+      "bytes": 10420,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "potential_utf",
+      "sha256": "d83eb9bc6d8e5cf568e7a1101d60ee05e81ed50ea106026f3d18deeb046d7661",
+      "status": "verified_archive_bytes",
+      "version": "0.1.6"
+    },
+    {
+      "bytes": 12709,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "proc-macro-crate",
+      "sha256": "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f",
+      "status": "verified_archive_bytes",
+      "version": "3.5.0"
+    },
+    {
+      "bytes": 59588,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "proc-macro2",
+      "sha256": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+      "status": "verified_archive_bytes",
+      "version": "1.0.107"
+    },
+    {
+      "bytes": 155043,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pulldown-cmark",
+      "sha256": "e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e",
+      "status": "verified_archive_bytes",
+      "version": "0.13.4"
+    },
+    {
+      "bytes": 879463,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "pxfm",
+      "sha256": "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea",
+      "status": "verified_archive_bytes",
+      "version": "0.1.30"
+    },
+    {
+      "bytes": 14265,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "quick-error",
+      "sha256": "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3",
+      "status": "verified_archive_bytes",
+      "version": "2.0.1"
+    },
+    {
+      "bytes": 31622,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "quote",
+      "sha256": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
+      "status": "verified_archive_bytes",
+      "version": "1.0.47"
+    },
+    {
+      "bytes": 20234,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "raw-window-handle",
+      "sha256": "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539",
+      "status": "verified_archive_bytes",
+      "version": "0.6.2"
+    },
+    {
+      "bytes": 567271,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "read-fonts",
+      "sha256": "046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709",
+      "status": "verified_archive_bytes",
+      "version": "0.41.0"
+    },
+    {
+      "bytes": 157031,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "reqwest",
+      "sha256": "eddd3ca559203180a307f12d114c268abf583f59b03cb906fd0b3ff8646c1147",
+      "status": "verified_archive_bytes",
+      "version": "0.12.28"
+    },
+    {
+      "bytes": 78696,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "resvg",
+      "sha256": "67e3803f97b999e80cbf7c6ecdd07a8102204d92e1633cf48783720c521196bd",
+      "status": "verified_archive_bytes",
+      "version": "0.48.1"
+    },
+    {
+      "bytes": 57492,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rfd",
+      "sha256": "20dafead71c16a34e1ff357ddefc8afc11e7d51d6d2b9fbd07eaa48e3e540220",
+      "status": "verified_archive_bytes",
+      "version": "0.17.2"
+    },
+    {
+      "bytes": 18607,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rgb",
+      "sha256": "47b34b781b31e5d73e9fbc8689c70551fd1ade9a19e3e28cfec8580a79290cc4",
+      "status": "verified_archive_bytes",
+      "version": "0.8.53"
+    },
+    {
+      "bytes": 1502610,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "ring",
+      "sha256": "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7",
+      "status": "verified_archive_bytes",
+      "version": "0.17.14"
+    },
+    {
+      "bytes": 36120,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rowan",
+      "sha256": "14b574c58582fa59fa43a2feb6608b8744184659f08a2e0117e4b8224d95ed61",
+      "status": "verified_archive_bytes",
+      "version": "0.17.0"
+    },
+    {
+      "bytes": 56837,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "roxmltree",
+      "sha256": "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb",
+      "status": "verified_archive_bytes",
+      "version": "0.21.1"
+    },
+    {
+      "bytes": 54704,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rspolib",
+      "sha256": "4fda9a7796aff63a7b1b39ccc93fffaaf65e20042984b4843041a49ca4677535",
+      "status": "verified_archive_bytes",
+      "version": "0.1.2"
+    },
+    {
+      "bytes": 177215,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rusqlite",
+      "sha256": "23f2a97da3e3873c73cb2a2e71b35c40ff95e0b1eefa8d72d8499a6928c3b5b3",
+      "status": "verified_archive_bytes",
+      "version": "0.40.2"
+    },
+    {
+      "bytes": 9331,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustc-hash",
+      "sha256": "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2",
+      "status": "verified_archive_bytes",
+      "version": "1.1.0"
+    },
+    {
+      "bytes": 12245,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustc_version",
+      "sha256": "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92",
+      "status": "verified_archive_bytes",
+      "version": "0.4.1"
+    },
+    {
+      "bytes": 425681,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustix",
+      "sha256": "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d",
+      "status": "verified_archive_bytes",
+      "version": "1.1.5"
+    },
+    {
+      "bytes": 378933,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustls",
+      "sha256": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634",
+      "status": "verified_archive_bytes",
+      "version": "0.23.45"
+    },
+    {
+      "bytes": 39322,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustls-pki-types",
+      "sha256": "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96",
+      "status": "verified_archive_bytes",
+      "version": "1.15.1"
+    },
+    {
+      "bytes": 87465,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustls-webpki",
+      "sha256": "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2",
+      "status": "verified_archive_bytes",
+      "version": "0.103.15"
+    },
+    {
+      "bytes": 21013,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "rustversion",
+      "sha256": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f",
+      "status": "verified_archive_bytes",
+      "version": "1.0.23"
+    },
+    {
+      "bytes": 52823,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "ryu",
+      "sha256": "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f",
+      "status": "verified_archive_bytes",
+      "version": "1.0.23"
+    },
+    {
+      "bytes": 11763,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "scoped-tls-hkt",
+      "sha256": "e9603871ffe5df3ac39cb624790c296dbd47a400d202f56bf3e414045099524d",
+      "status": "verified_archive_bytes",
+      "version": "0.1.5"
+    },
+    {
+      "bytes": 11619,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "scopeguard",
+      "sha256": "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49",
+      "status": "verified_archive_bytes",
+      "version": "1.2.0"
+    },
+    {
+      "bytes": 89115,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "security-framework",
+      "sha256": "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d",
+      "status": "verified_archive_bytes",
+      "version": "3.7.0"
+    },
+    {
+      "bytes": 21078,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "security-framework-sys",
+      "sha256": "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3",
+      "status": "verified_archive_bytes",
+      "version": "2.17.0"
+    },
+    {
+      "bytes": 33064,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "semver",
+      "sha256": "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd",
+      "status": "verified_archive_bytes",
+      "version": "1.0.28"
+    },
+    {
+      "bytes": 83669,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "serde",
+      "sha256": "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba",
+      "status": "verified_archive_bytes",
+      "version": "1.0.229"
+    },
+    {
+      "bytes": 63100,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "serde_core",
+      "sha256": "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48",
+      "status": "verified_archive_bytes",
+      "version": "1.0.229"
+    },
+    {
+      "bytes": 59864,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "serde_derive",
+      "sha256": "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348",
+      "status": "verified_archive_bytes",
+      "version": "1.0.229"
+    },
+    {
+      "bytes": 156556,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "serde_json",
+      "sha256": "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14",
+      "status": "verified_archive_bytes",
+      "version": "1.0.151"
+    },
+    {
+      "bytes": 12822,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "serde_urlencoded",
+      "sha256": "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd",
+      "status": "verified_archive_bytes",
+      "version": "0.7.1"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein-core",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein-media",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein-network",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein-storage",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "kind": "workspace",
+      "name": "serein-youtube",
+      "status": "application_source_archive_present",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 14582,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "sha1",
+      "sha256": "a978451301f4db1d02937a4ab3ccce137717b81826e79b7d49ffe3244a13c3b8",
+      "status": "verified_archive_bytes",
+      "version": "0.10.7"
+    },
+    {
+      "bytes": 19332,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "shlex",
+      "sha256": "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba",
+      "status": "verified_archive_bytes",
+      "version": "2.0.1"
+    },
+    {
+      "bytes": 18760,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "simd-adler32",
+      "sha256": "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea",
+      "status": "verified_archive_bytes",
+      "version": "0.3.10"
+    },
+    {
+      "bytes": 22136,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "simplecss",
+      "sha256": "7a9c6883ca9c3c7c90e888de77b7a5c849c779d25d74a1269b0218b14e8b136c",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 16131,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "siphasher",
+      "sha256": "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256",
+      "status": "verified_archive_bytes",
+      "version": "1.0.4"
+    },
+    {
+      "bytes": 299025,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "skrifa",
+      "sha256": "819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68",
+      "status": "verified_archive_bytes",
+      "version": "0.44.0"
+    },
+    {
+      "bytes": 19080,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "slab",
+      "sha256": "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5",
+      "status": "verified_archive_bytes",
+      "version": "0.4.12"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "slint",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "slint-build",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "slint-macros",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "1.19.0"
+    },
+    {
+      "bytes": 61862,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "slotmap",
+      "sha256": "bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038",
+      "status": "verified_archive_bytes",
+      "version": "1.1.1"
+    },
+    {
+      "bytes": 34874,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "smallvec",
+      "sha256": "f9395f0f0eee849a9b707b2f06bb92a6a422090e2123bb2ef8e87a0e61892a8e",
+      "status": "verified_archive_bytes",
+      "version": "1.16.2"
+    },
+    {
+      "bytes": 15840,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "smol_str",
+      "sha256": "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 26335,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "smol_str",
+      "sha256": "4aaa7368fcf4852a4c2dd92df0cace6a71f2091ca0a23391ce7f3a31833f1523",
+      "status": "verified_archive_bytes",
+      "version": "0.3.6"
+    },
+    {
+      "bytes": 74002,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "snafu",
+      "sha256": "6e84b3f4eacbf3a1ce05eac6763b4d629d60cbc94d632e4092c54ade71f1e1a2",
+      "status": "verified_archive_bytes",
+      "version": "0.8.9"
+    },
+    {
+      "bytes": 29478,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "snafu-derive",
+      "sha256": "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451",
+      "status": "verified_archive_bytes",
+      "version": "0.8.9"
+    },
+    {
+      "bytes": 60031,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "socket2",
+      "sha256": "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4",
+      "status": "verified_archive_bytes",
+      "version": "0.6.5"
+    },
+    {
+      "bytes": 7495,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "spin_on",
+      "sha256": "076e103ed41b9864aa838287efe5f4e3a7a0362dd00671ae62a212e5e4612da2",
+      "status": "verified_archive_bytes",
+      "version": "0.1.1"
+    },
+    {
+      "bytes": 8186,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "stable_deref_trait",
+      "sha256": "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596",
+      "status": "verified_archive_bytes",
+      "version": "1.2.1"
+    },
+    {
+      "bytes": 5104,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "strict-num",
+      "sha256": "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731",
+      "status": "verified_archive_bytes",
+      "version": "0.1.1"
+    },
+    {
+      "bytes": 8550,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "strum",
+      "sha256": "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd",
+      "status": "verified_archive_bytes",
+      "version": "0.28.0"
+    },
+    {
+      "bytes": 30964,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "strum_macros",
+      "sha256": "ab85eea0270ee17587ed4156089e10b9e6880ee688791d45a905f5b1ca36f664",
+      "status": "verified_archive_bytes",
+      "version": "0.28.0"
+    },
+    {
+      "bytes": 14562,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "subtle",
+      "sha256": "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292",
+      "status": "verified_archive_bytes",
+      "version": "2.6.1"
+    },
+    {
+      "bytes": 45181,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "svgtypes",
+      "sha256": "695b5790b3131dafa99b3bbfd25a216edb3d216dad9ca208d4657bfb8f2abc3d",
+      "status": "verified_archive_bytes",
+      "version": "0.16.1"
+    },
+    {
+      "bytes": 238263,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "swash",
+      "sha256": "6c2499c2d826531388872b2268718aed907a39bd785ab0dcfe57fab26283f92e",
+      "status": "verified_archive_bytes",
+      "version": "0.2.10"
+    },
+    {
+      "bytes": 307407,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "syn",
+      "sha256": "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297",
+      "status": "verified_archive_bytes",
+      "version": "2.0.119"
+    },
+    {
+      "bytes": 313821,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "syn",
+      "sha256": "8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
+      "status": "verified_archive_bytes",
+      "version": "3.0.6"
+    },
+    {
+      "bytes": 6958,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "sync_wrapper",
+      "sha256": "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263",
+      "status": "verified_archive_bytes",
+      "version": "1.0.2"
+    },
+    {
+      "bytes": 19010,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "synstructure",
+      "sha256": "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02",
+      "status": "verified_archive_bytes",
+      "version": "0.14.0"
+    },
+    {
+      "bytes": 15072,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "sys-locale",
+      "sha256": "8eab9a99a024a169fe8a903cf9d4a3b3601109bcc13bd9e3c6fff259138626c4",
+      "status": "verified_archive_bytes",
+      "version": "0.3.2"
+    },
+    {
+      "bytes": 177067,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "taffy",
+      "sha256": "aea22054047c16c3f34d3ac473a2170be1424b1115b2a3adcf28cfb067c88859",
+      "status": "verified_archive_bytes",
+      "version": "0.10.1"
+    },
+    {
+      "bytes": 44780,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tempfile",
+      "sha256": "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd",
+      "status": "verified_archive_bytes",
+      "version": "3.27.0"
+    },
+    {
+      "bytes": 12553,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "text-size",
+      "sha256": "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233",
+      "status": "verified_archive_bytes",
+      "version": "1.1.1"
+    },
+    {
+      "bytes": 29021,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "thiserror",
+      "sha256": "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e",
+      "status": "verified_archive_bytes",
+      "version": "2.0.21"
+    },
+    {
+      "bytes": 21637,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "thiserror-impl",
+      "sha256": "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524",
+      "status": "verified_archive_bytes",
+      "version": "2.0.21"
+    },
+    {
+      "bytes": 268071,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tiny-skia",
+      "sha256": "47ffee5eaaf5527f630fb0e356b90ebdec84d5d18d937c5e440350f88c5a91ea",
+      "status": "verified_archive_bytes",
+      "version": "0.12.0"
+    },
+    {
+      "bytes": 49022,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tiny-skia-path",
+      "sha256": "edca365c3faccca67d06593c5980fa6c57687de727a03131735bb85f01fdeeb9",
+      "status": "verified_archive_bytes",
+      "version": "0.12.0"
+    },
+    {
+      "bytes": 25003,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tinystr",
+      "sha256": "b1e27c91459209c2986af3dcf603a5a74a4368754ce37414f59acc971167f643",
+      "status": "verified_archive_bytes",
+      "version": "0.8.4"
+    },
+    {
+      "bytes": 60306,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tinyvec",
+      "sha256": "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee",
+      "status": "verified_archive_bytes",
+      "version": "1.13.3"
+    },
+    {
+      "bytes": 920101,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tokio",
+      "sha256": "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed",
+      "status": "verified_archive_bytes",
+      "version": "1.53.1"
+    },
+    {
+      "bytes": 16081,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tokio-macros",
+      "sha256": "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e",
+      "status": "verified_archive_bytes",
+      "version": "2.7.2"
+    },
+    {
+      "bytes": 29259,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tokio-rustls",
+      "sha256": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db",
+      "status": "verified_archive_bytes",
+      "version": "0.26.6"
+    },
+    {
+      "bytes": 147245,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tokio-util",
+      "sha256": "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52",
+      "status": "verified_archive_bytes",
+      "version": "0.7.19"
+    },
+    {
+      "bytes": 17982,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "toml_datetime",
+      "sha256": "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7",
+      "status": "verified_archive_bytes",
+      "version": "1.1.1+spec-1.1.0"
+    },
+    {
+      "bytes": 68207,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "toml_edit",
+      "sha256": "1340ea94a5856333492c9064b02c778b191dd2c853778d9609debdcdfea3a614",
+      "status": "verified_archive_bytes",
+      "version": "0.25.15+spec-1.1.0"
+    },
+    {
+      "bytes": 35888,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "toml_parser",
+      "sha256": "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56",
+      "status": "verified_archive_bytes",
+      "version": "1.1.3+spec-1.1.0"
+    },
+    {
+      "bytes": 18968,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "toml_writer",
+      "sha256": "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2",
+      "status": "verified_archive_bytes",
+      "version": "1.1.2+spec-1.1.0"
+    },
+    {
+      "bytes": 110488,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tower",
+      "sha256": "ebe5ef63511595f1344e2d5cfa636d973292adc0eec1f0ad45fae9f0851ab1d4",
+      "status": "verified_archive_bytes",
+      "version": "0.5.3"
+    },
+    {
+      "bytes": 156773,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tower-http",
+      "sha256": "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840",
+      "status": "verified_archive_bytes",
+      "version": "0.6.11"
+    },
+    {
+      "bytes": 6180,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tower-layer",
+      "sha256": "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e",
+      "status": "verified_archive_bytes",
+      "version": "0.3.3"
+    },
+    {
+      "bytes": 6950,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tower-service",
+      "sha256": "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3",
+      "status": "verified_archive_bytes",
+      "version": "0.3.3"
+    },
+    {
+      "bytes": 463135,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tracing",
+      "sha256": "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100",
+      "status": "verified_archive_bytes",
+      "version": "0.1.44"
+    },
+    {
+      "bytes": 63967,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "tracing-core",
+      "sha256": "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a",
+      "status": "verified_archive_bytes",
+      "version": "0.1.36"
+    },
+    {
+      "bytes": 4314,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "try-lock",
+      "sha256": "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b",
+      "status": "verified_archive_bytes",
+      "version": "0.2.5"
+    },
+    {
+      "bytes": 53115,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "typed-index-collections",
+      "sha256": "898160f1dfd383b4e92e17f0512a7d62f3c51c44937b23b6ffc3a1614a8eaccd",
+      "status": "verified_archive_bytes",
+      "version": "3.5.0"
+    },
+    {
+      "bytes": 105479,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "typenum",
+      "sha256": "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20",
+      "status": "verified_archive_bytes",
+      "version": "1.20.1"
+    },
+    {
+      "bytes": 24368,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicase",
+      "sha256": "dbc4bc3a9f746d862c45cb89d705aa10f187bb96c76001afab07a0d35ce60142",
+      "status": "verified_archive_bytes",
+      "version": "2.9.0"
+    },
+    {
+      "bytes": 58300,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-bidi",
+      "sha256": "5c1cb5db39152898a79168971543b1cb5020dff7fe43c8dc468b0885f5e29df5",
+      "status": "verified_archive_bytes",
+      "version": "0.3.18"
+    },
+    {
+      "bytes": 48425,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-ident",
+      "sha256": "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
+      "status": "verified_archive_bytes",
+      "version": "1.0.26"
+    },
+    {
+      "bytes": 15324,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-linebreak",
+      "sha256": "3b09c83c3c29d37506a3e260c08c03743a6bb66a9cd432c6934ab501a190571f",
+      "status": "verified_archive_bytes",
+      "version": "0.1.5"
+    },
+    {
+      "bytes": 48253,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-script",
+      "sha256": "383ad40bb927465ec0ce7720e033cb4ca06912855fc35db31b5755d0de75b1ee",
+      "status": "verified_archive_bytes",
+      "version": "0.5.8"
+    },
+    {
+      "bytes": 112325,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-segmentation",
+      "sha256": "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8",
+      "status": "verified_archive_bytes",
+      "version": "1.13.3"
+    },
+    {
+      "bytes": 8084,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-vo",
+      "sha256": "b1d386ff53b415b7fe27b50bb44679e2cc4660272694b7b6f3326d8480823a94",
+      "status": "verified_archive_bytes",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 282768,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-width",
+      "sha256": "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254",
+      "status": "verified_archive_bytes",
+      "version": "0.2.2"
+    },
+    {
+      "bytes": 15744,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "unicode-xid",
+      "sha256": "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853",
+      "status": "verified_archive_bytes",
+      "version": "0.2.6"
+    },
+    {
+      "bytes": 9146,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "universal-hash",
+      "sha256": "fc1de2c688dc15305988b563c3854064043356019f97a4b46276fe734c4f07ea",
+      "status": "verified_archive_bytes",
+      "version": "0.5.1"
+    },
+    {
+      "bytes": 14447,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "untrusted",
+      "sha256": "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1",
+      "status": "verified_archive_bytes",
+      "version": "0.9.0"
+    },
+    {
+      "bytes": 86512,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "url",
+      "sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+      "status": "verified_archive_bytes",
+      "version": "2.5.8"
+    },
+    {
+      "bytes": 146652,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "usvg",
+      "sha256": "977d0a4abdef933f424a99fe09f95576e089b90aebc6f016a3bc813762493e91",
+      "status": "verified_archive_bytes",
+      "version": "0.48.1"
+    },
+    {
+      "bytes": 10437,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "utf8_iter",
+      "sha256": "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be",
+      "status": "verified_archive_bytes",
+      "version": "1.0.4"
+    },
+    {
+      "bytes": 65928,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "uuid",
+      "sha256": "2ef6dac1e96601b4fb3acccccff2139741fcb757cb9a36089bf5be91cfb285ce",
+      "status": "verified_archive_bytes",
+      "version": "1.26.1"
+    },
+    {
+      "bytes": 228735,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "vcpkg",
+      "sha256": "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426",
+      "status": "verified_archive_bytes",
+      "version": "0.2.15"
+    },
+    {
+      "bytes": 15554,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "version_check",
+      "sha256": "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a",
+      "status": "verified_archive_bytes",
+      "version": "0.9.5"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "vtable",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "0.5.0"
+    },
+    {
+      "kind": "git",
+      "limitation": "HEAD identity alone does not verify objects, tracked/untracked files, submodules or source completeness",
+      "name": "vtable-macro",
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "status": "checkout_head_matches_unverified_worktree",
+      "version": "0.5.0"
+    },
+    {
+      "bytes": 6398,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "want",
+      "sha256": "bfa7760aed19e106de2c7c0b581b509f2f25d3dacaf737cb82ac61bc6d760b0e",
+      "status": "verified_archive_bytes",
+      "version": "0.3.1"
+    },
+    {
+      "bytes": 60809,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "webbrowser",
+      "sha256": "62c35be770821a214dbc362fc26908c853e776c0004294d0b10b8a6bad582f94",
+      "status": "verified_archive_bytes",
+      "version": "1.2.4"
+    },
+    {
+      "bytes": 217462,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "webpki-roots",
+      "sha256": "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a",
+      "status": "verified_archive_bytes",
+      "version": "1.0.9"
+    },
+    {
+      "bytes": 46045,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "weezl",
+      "sha256": "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88",
+      "status": "verified_archive_bytes",
+      "version": "0.1.12"
+    },
+    {
+      "bytes": 605180,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "winit",
+      "sha256": "a6755fa58a9f8350bd1e472d4c3fcc25f824ec358933bba33306d0b63df5978d",
+      "status": "verified_archive_bytes",
+      "version": "0.30.13"
+    },
+    {
+      "bytes": 188513,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "winnow",
+      "sha256": "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81",
+      "status": "verified_archive_bytes",
+      "version": "1.0.4"
+    },
+    {
+      "bytes": 31222,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "writeable",
+      "sha256": "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc",
+      "status": "verified_archive_bytes",
+      "version": "0.6.4"
+    },
+    {
+      "bytes": 6261,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "xmlwriter",
+      "sha256": "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9",
+      "status": "verified_archive_bytes",
+      "version": "0.1.0"
+    },
+    {
+      "bytes": 30267,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "yazi",
+      "sha256": "e01738255b5a16e78bbb83e7fbba0a1e7dd506905cfc53f4622d89015a03fbb5",
+      "status": "verified_archive_bytes",
+      "version": "0.2.1"
+    },
+    {
+      "bytes": 33132,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "yoke",
+      "sha256": "709fe23a0424b6a435d82152b1bd3fdfb0833487d5fa90d05d42762a9891fef5",
+      "status": "verified_archive_bytes",
+      "version": "0.8.3"
+    },
+    {
+      "bytes": 15106,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "yoke-derive",
+      "sha256": "33811428bee40dbceb6d545e95754741d17a6aef9a4849f0fd62e2ba4f412a78",
+      "status": "verified_archive_bytes",
+      "version": "0.8.3"
+    },
+    {
+      "bytes": 46042,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zeno",
+      "sha256": "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524",
+      "status": "verified_archive_bytes",
+      "version": "0.3.3"
+    },
+    {
+      "bytes": 6156,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zerofrom",
+      "sha256": "0ec05a11813ea801ff6d75110ad09cd0824ddba17dfe17128ea0d5f68e6c5272",
+      "status": "verified_archive_bytes",
+      "version": "0.1.8"
+    },
+    {
+      "bytes": 8834,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zerofrom-derive",
+      "sha256": "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a",
+      "status": "verified_archive_bytes",
+      "version": "0.1.8"
+    },
+    {
+      "bytes": 24480,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zeroize",
+      "sha256": "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e",
+      "status": "verified_archive_bytes",
+      "version": "1.9.0"
+    },
+    {
+      "bytes": 84204,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zerotrie",
+      "sha256": "4ea269c3bd32f0a32c321907a2ae912ba6f4649bb0fc764a15627e99a7095a3f",
+      "status": "verified_archive_bytes",
+      "version": "0.2.5"
+    },
+    {
+      "bytes": 130820,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zerovec",
+      "sha256": "bb0464e17806c1d976d5cba29399c7f08e516e279e2ba493f63123b5fca67dd8",
+      "status": "verified_archive_bytes",
+      "version": "0.11.8"
+    },
+    {
+      "bytes": 23102,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zerovec-derive",
+      "sha256": "34df6fc39dbd26ddc9c10e6a2984476e13acce22e64e4487636ef494369225da",
+      "status": "verified_archive_bytes",
+      "version": "0.11.6"
+    },
+    {
+      "bytes": 28612,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zmij",
+      "sha256": "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b",
+      "status": "verified_archive_bytes",
+      "version": "1.0.23"
+    },
+    {
+      "bytes": 30419,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zune-core",
+      "sha256": "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b",
+      "status": "verified_archive_bytes",
+      "version": "0.5.3"
+    },
+    {
+      "bytes": 88879,
+      "candidate_label": "matching-local-cache-input",
+      "extracted_tree_present_unverified": true,
+      "kind": "registry",
+      "name": "zune-jpeg",
+      "sha256": "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296",
+      "status": "verified_archive_bytes",
+      "version": "0.5.15"
+    }
+  ],
+  "cargo_graph_sha256": "4aca1ebf806e2b4d4215bd50dab40305e70a58aa0e9273be11aa5c7d43d4b5be",
+  "cargo_lock_sha256": "2f56ff726e1e5ed5da1c497d079d0e2e1abf1a41edfe2f211563fe85dfaf7f9a",
+  "complete_corresponding_source": false,
+  "hashed_input_bytes": 43995665,
+  "limits": [
+    "No download, build, extraction, native tool execution or cache mutation performed",
+    "Package evidence and lockfile must come from an independently trusted artifact; matching hashes do not authenticate a publisher",
+    "Verified archive bytes prove local availability, not patch application, source completeness or reproducible compilation",
+    "Git checkout HEAD and extracted registry tree presence are explicitly unverified source trees",
+    "Literal recipe parsing is partial; binary bottles are never source coverage",
+    "Deno embedded Rust/V8/JavaScript dependency source and notices are not fully inventoried",
+    "Slint, native resources, toolchain, generated code, license/SDK review and installation information remain separate obligations",
+    "Inputs must remain quiescent; this is not an adversarial concurrent-installation verifier"
+  ],
+  "max_hashed_input_bytes": 268435456,
+  "native_recipe_inputs": [
+    {
+      "formula": "ca-certificates",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505",
+          "status": "absent",
+          "url_sha256": "41c354c450f8d4385318899f05e0caf724ea763a9b9b40a5d52930e9f2a312d2"
+        }
+      ],
+      "installed_version": "2026-09-25",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "certifi",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55",
+          "status": "absent",
+          "url_sha256": "a693c9010117c0be08552ae566c826b02a0dd5e2357c76aaa403e2438c4e69aa"
+        }
+      ],
+      "installed_version": "2026.7.22",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "cffi",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be",
+          "status": "absent",
+          "url_sha256": "a99065fbe79ec119636740486671af8adf671d3068b93cdee83c3881167a2e96"
+        }
+      ],
+      "installed_version": "2.1.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "dav1d",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "2abfb0c89212e6e4733a54e0ae509ec00a5b845a6360946f918806e14aedb011",
+          "status": "absent",
+          "url_sha256": "9b1bb2973b550da5fe543a2420ef8ae7342f8e73c61f50f5f87c020aa7e30998"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 24,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "52b4351f9bc8a876c8f3c9afc403d9e90f319c1882bfe44667d41c8c6f5486f3",
+          "status": "absent",
+          "url_sha256": "d8e37d914f3b2dfd44aa4de8fa2f1303001d11e25a9bd442af03bebf82421d28"
+        }
+      ],
+      "installed_version": "1.5.4",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "deno",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "21069d2f4dd65b6832e3f5c373c24a43a8d35cb3d68d3841e15d0582bed39ea8",
+          "status": "absent",
+          "url_sha256": "873122457769d3fa97dfdc37bad58e35face94c62bf3badc0662ee93b93cd365"
+        }
+      ],
+      "installed_version": "2.9.7",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "ffmpeg",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+          "status": "absent",
+          "url_sha256": "28d4f78e569ae5ccbf2f14b44a5eb0c6154ece92486aef64eb404ee13b7d18d2"
+        }
+      ],
+      "installed_version": "9.0.2",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "fontconfig",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "9ae01e1d53acdef56010c5451cd34aa41d325b2faccd8606448d8fa01b2496b3",
+          "status": "absent",
+          "url_sha256": "2495609b7f19fd4ed3904e1ee5f50337646ab800f7ae0a47a8401117489225fb"
+        }
+      ],
+      "installed_version": "2.18.3",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "freetype",
+      "inputs": [],
+      "installed_version": "2.14.3",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "fribidi",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "6949dcde27d41cebad1fd741fcafc36d55a1020d2d872d4a6eb3914caabbada2",
+          "status": "absent",
+          "url_sha256": "cf04ebba3a72b74b4a0e257a101af0e1b8213afda36b15e7281012ca35242685"
+        }
+      ],
+      "installed_version": "1.0.17",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "gettext",
+      "inputs": [],
+      "installed_version": "1.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "glib",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 6,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "17d15cac2af80a33271127408e0abc2748eb297c595c2a26409e81e14e7d1b8f",
+          "status": "absent",
+          "url_sha256": "c89c4b6083ba00ef6453db477e0554f6eb5d6dd3fffdb7776cfb8e7ceb97ff90"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 51,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "920d1a3fcedeadc32acff95c2e203b319039dd4b4a08dd1a2dfd283d19c0b9ae",
+          "status": "absent",
+          "url_sha256": "b257605bafc9c7f775c4c5191e7356b7b8ecf8b08300f1b45c7c9e4b9b97a854"
+        }
+      ],
+      "installed_version": "2.90.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "graphite2",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "c6bc8b4252724665297f7cad0c55897285c673f9b8e6db3522ace833593fe0b1",
+          "status": "absent",
+          "url_sha256": "a84262c2f4c74b6305d3e1a1712232d9bd5b84bc5717cce93f22d5cb018ceb12"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 28,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "7e573896bbb40088b3a8490f83d6828fb0fd0920ac4ccdfdd7edb804e852186a",
+          "status": "absent",
+          "url_sha256": "f3defb70b069df7b82cf2d5e02caf9bf171a4c8d92a077d38ac3a16637c09ff0"
+        }
+      ],
+      "installed_version": "1.3.15",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "harfbuzz",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "b7132e148358a45185c9feafd049dbaf243649d3c44414b3534d9c95d18592b9",
+          "status": "absent",
+          "url_sha256": "3edd6c65fbde0cea72e55213f5fc6ad5df74f47fd45d5bdd29c4d6853ebd49e0"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 51,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "9535d35dab9e002963eef56757c46881f6b3d3b27db24eefcc80929781856c77",
+          "status": "absent",
+          "url_sha256": "b0f20064588dc70dd5c74e36b842326d9dbbeacab35c63c3d900a8b34aaba98f"
+        }
+      ],
+      "installed_version": "14.5.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "jpeg-turbo",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
+          "status": "absent",
+          "url_sha256": "c340ef98eab6b12bd84e2edc9081c1455b31bf5a64242be7c7740807a42af37a"
+        }
+      ],
+      "installed_version": "3.2.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "lame",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "3df5124d5ad3a98312ffd7ba6a9b36230e4f8a3e66d3ce0f425e336c32d216eb",
+          "status": "absent",
+          "url_sha256": "a27ff3f8efe191c81ce361097b83da2554cae1a222859b54fa97bc260a1d6d49"
+        }
+      ],
+      "installed_version": "4.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libarchive",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "888c934f9d95648ecb9163dc8e23ab80a476ecb81a8f1154704a227b5b676dde",
+          "status": "absent",
+          "url_sha256": "04ceabcaccd3b8eb3cd02e8c3faa0dfb421613689c839f6a0ddbf1e02cfa518a"
+        }
+      ],
+      "installed_version": "3.8.9",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libass",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "2dca25c0e0c837ddf00b52011b3f82cac1e4ddd3ad018227806b0c2288864acc",
+          "status": "absent",
+          "url_sha256": "109672c8255db68b49961a9528bfcf8cdea6d8e122888237201e9513699e6d0f"
+        }
+      ],
+      "installed_version": "0.17.5_1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libb2",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "53626fddce753c454a3fea581cbbc7fe9bbcf0bc70416d48fdbbf5d87ef6c72e",
+          "status": "absent",
+          "url_sha256": "731f97624f3806cc5e4d78f87748f0be611201c5a992e3a9dc4f12f80c6a74be"
+        }
+      ],
+      "installed_version": "0.98.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libbluray",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "f676408e91a5d321abf8b8d4dfdae36205c297dab5c54c3ec519639025f474a2",
+          "status": "absent",
+          "url_sha256": "5b201f78a330fb48dd7dbb69278e79de5d6536b66f67b46d5db0daf0ce4bb20d"
+        }
+      ],
+      "installed_version": "1.5.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libplacebo",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 6,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "937aa5eeea596798b3274d362de2e3bd32bc537a66d149dd85043349c74dffb6",
+          "status": "absent",
+          "url_sha256": "41b0275700a5a7233ac063b82c550db23e06886bd22725edc7a5e5a91bd2df76"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 24,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "b84079b9fa404f37171b961bdd1d8da21370e6c818defb8481c5b3fe3d6436da",
+          "status": "absent",
+          "url_sha256": "7cc43135200cfe45eed4563260500f4362981a3426ff670eefd78295d84c8d67"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 29,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
+          "status": "absent",
+          "url_sha256": "c9fe6d8d9da62f85cc2529669660c364e05b31651f38f302da10513c2e9f20e5"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 34,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698",
+          "status": "absent",
+          "url_sha256": "7347942bcc21272ae96134e72b6bad6912c5ca8fba561450cff51f25c1152601"
+        }
+      ],
+      "installed_version": "7.360.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libpng",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "28eb403f51f0f7405249132cecfe82ea5c0ef97f1b32c5a65828814ae0d34775",
+          "status": "absent",
+          "url_sha256": "d9cca51bb5e3e0bf4914eb5d2bfd93e6bbac45e3a0c60c355e48dd42efb99ca1"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 27,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "f925a657a5343cfb724414c01e87afd4d60b1f82a46edc0e11f016a126f84064",
+          "status": "absent",
+          "url_sha256": "f4ab9df9b1c31b3858a0fe89db7cfa9bc63da82a28621bc81e405ae344c16457"
+        }
+      ],
+      "installed_version": "1.6.58",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libsamplerate",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "3258da280511d24b49d6b08615bbe824d0cacc9842b0e4caf11c52cf2b043893",
+          "status": "absent",
+          "url_sha256": "10a2882c837d4e1c96f60fb0714817286aced434d40ef14edc9cbe0b998902a8"
+        },
+        {
+          "kind": "patch",
+          "line": 14,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "0826fb59d733188645f3dc207c938580970700381b9bc87058b137723cb30bba",
+          "status": "absent",
+          "url_sha256": "2d1791c2b60ecb2aa95ba447c8470a2d9f4cd201fdb2f2626801f4029807789b"
+        },
+        {
+          "kind": "patch",
+          "line": 21,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "b6fb61c763a0f072ef2ebb3a311037d2429a5e294141f6d5e552ccd25efabdc0",
+          "status": "absent",
+          "url_sha256": "6bce9856859374d7273feadba4f4c8899c5178df7ea070f6514e286bafd2cb2a"
+        }
+      ],
+      "installed_version": "0.2.2",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libudfread",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "bb477cbd4cfbfc7787d9d05b71ee5e70430f5cfebf1297497f7e83547958050f",
+          "status": "absent",
+          "url_sha256": "1565f12c00e3978ce2099b0dd0704284ed3aac56de5c1caec2798e8bf26e72ac"
+        }
+      ],
+      "installed_version": "1.2.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libunibreak",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "9c4fad6e517338a098373acc9f35579ae2c325e6446666fb9ac2666ba15ceba4",
+          "status": "absent",
+          "url_sha256": "93ae2e993fe605aae2586990f75ff52ff530d47e3b03ec47eb7ce80369839b24"
+        }
+      ],
+      "installed_version": "8.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libvmaf",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "5df7386911bc15fd1ca783132528748d219768ae4fc5f8e0b61184f041648092",
+          "status": "absent",
+          "url_sha256": "c50de3ed34057bf4b694aaff5548b8be2cf9d5161c1b71f7b54bf223c66076fd"
+        }
+      ],
+      "installed_version": "3.2.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "libvpx",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "1020f184046187baa2985dbde38e0691f49c44088bca7a1842b0236c6081dc0a",
+          "status": "absent",
+          "url_sha256": "e281459804d109f646e0801e54e68271f3f55fdcee13444e92369853eed5f584"
+        }
+      ],
+      "installed_version": "1.17.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "little-cms2",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 6,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "bfc54f7bab59fbc921012014a8032e4cba4abd46db47d46b76416a8c0b2815c8",
+          "status": "absent",
+          "url_sha256": "db9467430a40c3d2ea363431825295235f41d89645270c9d5c6f4b59f3ae6f7a"
+        }
+      ],
+      "installed_version": "2.19.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "luajit",
+      "inputs": [],
+      "installed_version": "2.1.1788856981",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "lz4",
+      "inputs": [],
+      "installed_version": "1.10.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "mpdecimal",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+          "status": "absent",
+          "url_sha256": "de81d45d656755dc758aa95bb88e99cc95bd3c0bbc7c3fc6c852576f4e5b01cc"
+        }
+      ],
+      "installed_version": "4.0.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "mpg123",
+      "inputs": [],
+      "installed_version": "1.33.7",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "expected_patches_missing_from_recipe": [],
+      "formula": "mpv",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 10,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209",
+          "status": "absent",
+          "url_sha256": "d372f89ee5c706089c556d3d4c0bc6fcb5fc0c4962b2e9fcd5e6c761990c3f76"
+        },
+        {
+          "kind": "patch",
+          "line": 15,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": "75b2ccfeb1ce4ed5a40ac9860fa74f3d1265e13f",
+          "sha256": "3906b98b02071a0d5747a400406494ca69cef7afd8d3eee4a99fdbe40dc90c1f",
+          "status": "absent",
+          "url_sha256": "bd963ac5a6b9533a0c3dd90371331b2024cee99c910628f568faa1ce4bc217f0"
+        },
+        {
+          "kind": "patch",
+          "line": 23,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": "c5d391adba7bd024954d0df1e0405f5749f4d4ca",
+          "sha256": "769b218df220738cc1cf9f81cf696c16518c5dfe56a5ef028e33b22536e0e924",
+          "status": "absent",
+          "url_sha256": "6ad11c1d99a96d2db7547be0bef236c65bb631c4e120916c99517a76332cf206"
+        }
+      ],
+      "installed_version": "0.41.0_10",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "mujs",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "6e36c15dbb84ff859320297c900852f241b131a7b6ddaea669ac9a65bd75571c",
+          "status": "absent",
+          "url_sha256": "9c35fd59b29802f9ef34d4ed21ee76e8fdc5924f9c431833ec85b9639bcfceea"
+        },
+        {
+          "kind": "patch",
+          "line": 23,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "e10de8b9c3a62ffe121b61fe60b67ba8faa68eaace9a3b17a13f46a2cc795a11",
+          "status": "absent",
+          "url_sha256": "0c8918f9e900a9d947a7859daeeb528a7dc9ba659420efbe19f1767e5c8c2910"
+        }
+      ],
+      "installed_version": "1.3.10",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "openssl@3",
+      "inputs": [],
+      "installed_version": "3.6.4",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "opus",
+      "inputs": [],
+      "installed_version": "1.6.1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "pcre2",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed",
+          "status": "absent",
+          "url_sha256": "7140f0d94cfc29d3316d5eebaabfe20387bd6a73f6ce663bc7c2bf278789c1a2"
+        }
+      ],
+      "installed_version": "10.48",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "pycparser",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29",
+          "status": "absent",
+          "url_sha256": "b51ffe5c090687976e2bf66e01f0848b9b009372bde90d3a258bb5214efd069d"
+        }
+      ],
+      "installed_version": "3.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "python@3.14",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "62859805f6fdf25e2bcbf3fa3217801e1996887ca33e6a2af80674bdfa2dbe07",
+          "status": "absent",
+          "url_sha256": "cfd7cb11f00ab9999b5c6190823fd9ce78cb9a4fb6bbfc787608db7dcb8a3cd7"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 56,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "b6929defd93884b584d7c87829e0e7b5c26ed6be17b0b873979019314aa841c8",
+          "status": "absent",
+          "url_sha256": "177b33053c22991cff82027924bdeb7195b8b3cc95866bdc5a4d4649b79c982e"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 61,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79",
+          "status": "absent",
+          "url_sha256": "d112c7b5e93f547318fac9e4830ed83b46b44b345a36750c5e28e96cf2a4923a"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 66,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "f6ad667e89a1fe78046c8f13232b247200f5258d7828f3f7883d660878e0813f",
+          "status": "absent",
+          "url_sha256": "1a44441d4b44af31cb98ba9096b56665cdcf4780990464185f901073ba960009"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 71,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "cc72bd1009ba0cf63922e28f94d9d83b920aa2bb28f798a31d0691b02fa3c9b3",
+          "status": "absent",
+          "url_sha256": "d05e514711686993752ea55250009c447d84d35a97dc929947f3abb3e1cf2ca5"
+        }
+      ],
+      "installed_version": "3.14.7",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "rubberband",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "af050313ee63bc18b35b2e064e5dce05b276aaf6d1aa2b8a82ced1fe2f8028e9",
+          "status": "absent",
+          "url_sha256": "e95652a9cf4c0de4ad6281000cb322d08ea1f7f975ee7b7b5c44edd035ed5d21"
+        }
+      ],
+      "installed_version": "4.0.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "shaderc",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 7,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "f06ce5bcca94e5df7f34e115743597d0ad2e13c5fe9213c67dc8c76031241947",
+          "status": "absent",
+          "url_sha256": "660e055db6b5edf6c43b6276ab2077b8efbf86146273b8c550afd4d7911d1410"
+        }
+      ],
+      "installed_version": "2026.4",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "sqlite",
+      "inputs": [],
+      "installed_version": "3.53.4",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "svt-av1",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "512f2ea5649e3e76c2dddcc25c2556fb67a9582baaab207c9c96161c94659dad",
+          "status": "absent",
+          "url_sha256": "6e8d9571b808272baf4a6c899fddfb5ecd3d04d57cb1a163c94047a059d9029b"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 34,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "0c5cc90b079d0d9c1ded1376357d23a9782a704a83e01731f50ccd162e246492",
+          "status": "absent",
+          "url_sha256": "f252d7df955078b246bcd912ae8a7eec644a8d02e4ec5736737992eab8a83d88"
+        }
+      ],
+      "installed_version": "4.2.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "uchardet",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "e97a60cfc00a1c147a674b097bb1422abd9fa78a2d9ce3f3fdcc2e78a34ac5f0",
+          "status": "absent",
+          "url_sha256": "a0d97748156a13ebf6cf9f7be859fc2bdef13813df75b00eb4b82811aa62aa90"
+        }
+      ],
+      "installed_version": "0.0.8",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "vapoursynth",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 6,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "4d03e3ef64df65a855490e6fd77ccc74d5debf89799aea93a6bd08f6a90afeb0",
+          "status": "absent",
+          "url_sha256": "6e3d9191753216e0e662731908acf4499cb26812a6a8c14ad66bcbf8f6f5dc5c"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 32,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "81038794e20494556edbcc0fc70fa984d71d1b440f9c49adf2cbaaa60a519757",
+          "status": "absent",
+          "url_sha256": "facae42148d4b0dc917ec5b2441e6cff884f4f4929667def683c14f47bf20b42"
+        }
+      ],
+      "installed_version": "80",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "vulkan-loader",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "54f2537df22313768da0317dda2abdaaab7711b4081c48c869a79db343d0ae70",
+          "status": "absent",
+          "url_sha256": "5faa4aa094b00a366c8122df869e9e13a96b9aae460239b1072d45b8a3c2ad9f"
+        }
+      ],
+      "installed_version": "1.4.357.0",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "x264",
+      "inputs": [],
+      "installed_version": "r3222",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "x265",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "83c53e4c8bbb8f1e33ed59e10a7d621d1d7801ca853910c3eb41f038b8ffb121",
+          "status": "absent",
+          "url_sha256": "5dadc44f3bb42a20d49f4abb7a870e15c0bf9e0cf62ff8da25b3b59c90a1e38e"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 72,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "ecd2ef466dd2975f4facc889e0ca128a6bea6645df61493a96d8e7763b6f3ae9",
+          "status": "absent",
+          "url_sha256": "ff13ede2fb1df25d25b7868cf93182243575888dc955745bce2e65c65bea8d89"
+        }
+      ],
+      "installed_version": "4.3",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "xz",
+      "inputs": [],
+      "installed_version": "5.8.4",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "yt-dlp",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 6,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "9e213e48cea35c66b378e4447903f118f6392a5fa380a2b6d7070ec86f4e0af1",
+          "status": "absent",
+          "url_sha256": "6bf4316ded75b4e8f89e2241c3922ef7f975dbb7bf8155a832d72c5352b6e810"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 28,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "e310f77e41941c13340a95976fe66a8a95b01e783d430eeaf7a2f87e0a57dd0a",
+          "status": "absent",
+          "url_sha256": "6711dd3929832b351c6a270128e26153c5f52ff48cdba03027c68ff37eb9fa81"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 33,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "6117b84ea48435e5356dc737f5121485c30920ba43375fa7b434fd753df0eac3",
+          "status": "absent",
+          "url_sha256": "b82348c865124b361f933b4ad1433e78ed4cc59fa6ab5918c51aa2c82bf9c723"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 38,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "2986a86cdcf514ab73632c2de62a01db3cc97f7ecf17798a1be16180f4474198",
+          "status": "absent",
+          "url_sha256": "690aff366247589c7e2cd9a170a68cbee9b99fae160836635724c6a6cfd10e7b"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 43,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15",
+          "status": "absent",
+          "url_sha256": "6fd5beb34b792e0e56fcb7fa76b27af758d7bce9aed058cb972ba6a6f0a3b6a8"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 48,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "8f95637ab9f6f305cec6bd1294e197debe207998e3e068596563c74f86b0a173",
+          "status": "absent",
+          "url_sha256": "398a1ab380a59fdab0fcccc51478201e149ae4eee0082552649a6ba6091270b2"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 53,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "71909758f010c82bc99b0abf4ea12012c98962fbf0583c2164f8b84533c2e4da",
+          "status": "absent",
+          "url_sha256": "929bb49b38304230f0e44c04e5d3bb5bbe57ee5dad74be65e76671473e52ed7c"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 58,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed",
+          "status": "absent",
+          "url_sha256": "642854f44dc6d12a85418178f281e9ae56770cfa974a2db686ef8a061912c32f"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 63,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c",
+          "status": "absent",
+          "url_sha256": "e6772ea08d9d465aeb3cae11d92bed47d4dbd933f80916f03cf6d2b21c5e6ec5"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 68,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "acfea4c20bf54384883ea33b1240fc1db4f52e190823a4e2b334bc3e8bfca96a",
+          "status": "absent",
+          "url_sha256": "887efac3670cc915ca990146d14cf2831ba1b9bda5c240bba5c858f9bbd94f3b"
+        },
+        {
+          "kind": "source_or_resource",
+          "line": 73,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "d5fa1639f63b5c4af8d932495f60689d5370f1a095782c944f7f62a303eb104e",
+          "status": "absent",
+          "url_sha256": "f667fce3e4af25a44d284abdfe610faa8a545c4726b66036b2e2fe525b40a2c3"
+        }
+      ],
+      "installed_version": "2026.8.19_1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "zimg",
+      "inputs": [
+        {
+          "kind": "source_or_resource",
+          "line": 4,
+          "mismatching_candidates": 0,
+          "mpv_patch_revision": null,
+          "sha256": "be89390f13a5c9b2388ce0f44a5e89364a20c1c57ce46d382b1fcc3967057577",
+          "status": "absent",
+          "url_sha256": "22a2dfddcd890eb1c87ed00f44e2a421ddf78f9b67854b6c7d6b5251ab9d0cc9"
+        }
+      ],
+      "installed_version": "3.0.6",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    },
+    {
+      "formula": "zstd",
+      "inputs": [],
+      "installed_version": "1.5.7_1",
+      "recipe_coverage": "partial_literal_url_sha_pairs_only; computed URLs, git resources, build tools and transitive embedded sources may be missing"
+    }
+  ],
+  "packaged_manifest_sha256": "2ac9679dffe3acb59e3f53a270c47199523cf771ec35df4e6e247120475fc500",
+  "publisher_authenticated": false,
+  "purpose": "offline_source_availability_only",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=261
+handoff smoke stage=5 loads=1 paused=false frame_ready=false texture_width=0
+checkpoint seconds=5: Snapshot { stop_pending: false, state: Playing, paused: false, position: 0.0, duration: 0.0, volume: 100.0, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "aac", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 2, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 3, error: None, events_received: 55, file_loads: 1, file_starts: 1, load_request_id: 4611686018427387905, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, wakeups: 300, render_notifications: 276, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 277, display_clock_starts: 1, display_clock_stops: 0, display_clock_active: true, prevents_display_sleep: true }; ui_draws=309 catalog_changes=0 catalog_resets=0
+handoff smoke stage=8 loads=2 paused=true frame_ready=false texture_width=0
+window occluded=true at_ms=8993
+handoff smoke stage=10 loads=2 paused=true frame_ready=false texture_width=0
+checkpoint seconds=10: Snapshot { stop_pending: false, state: Paused, paused: true, position: 0.0, duration: 0.0, volume: 100.0, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "pcm_s16le", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 4, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 3, error: None, events_received: 89, file_loads: 2, file_starts: 2, load_request_id: 4611686018427387906, active_load_request_id: 4611686018427387905, failed_load_request_id: None, resume_position_reply: None, wakeups: 315, render_notifications: 279, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 284, display_clock_starts: 1, display_clock_stops: 1, display_clock_active: false, prevents_display_sleep: false }; ui_draws=322 catalog_changes=0 catalog_resets=0
+
+thread 'main' (2908406) panicked at crates/app/src/handoff_smoke.rs:54:25:
+assertion failed: app.get_video_texture().size().width > 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

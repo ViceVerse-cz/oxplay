@@ -1,0 +1,152 @@
+{
+  "provenance": {
+    "source_revision": "e1725dfe8c844ac32258beda5cc4d9a3fd3df8c4",
+    "binary_sha256": "ac87f2c3ad53ff066fcb5596ec9ffc614c5f0e81c737700ed25f1a7f8628ea80",
+    "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+    "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+    "run_order": [
+      "a1-off",
+      "b1-search",
+      "b2-search",
+      "a2-off"
+    ],
+    "geometry": "1320x860 logical requested; actual native target recorded in app diagnostics",
+    "fixture": "30 explicitly labeled related rows; empty thumbnails",
+    "scope": "Search LineEdit only, whole-chrome caching off in both modes, no GPU queries/screenshots/profiling during samples"
+  },
+  "runs": [
+    {
+      "mode": "a1-off",
+      "measurement_start_utc": "2026-09-29T04:08:04Z",
+      "cpu_one_core_percent": {
+        "mean": 51.45796380921156,
+        "p95": 60.921377474842544,
+        "peak": 61.99956085715888
+      },
+      "rss_mib": {
+        "mean": 184.90859375,
+        "p95": 185.515625,
+        "peak": 185.578125
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 47.27106011379106,
+        "p95": 63.82202739388474,
+        "peak": 83.84559630881444
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "occlusion_events": [],
+      "target_allocations": 2,
+      "target_bytes": 8614016
+    },
+    {
+      "mode": "b1-search",
+      "measurement_start_utc": "2026-09-29T04:09:35Z",
+      "cpu_one_core_percent": {
+        "mean": 52.065017347169054,
+        "p95": 62.012433493740694,
+        "peak": 64.00070669909837
+      },
+      "rss_mib": {
+        "mean": 185.33463541666666,
+        "p95": 185.921875,
+        "peak": 186.0
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 46.85723557327908,
+        "p95": 64.6668662592158,
+        "peak": 84.74769197108998
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "occlusion_events": [],
+      "target_allocations": 2,
+      "target_bytes": 8614016
+    },
+    {
+      "mode": "b2-search",
+      "measurement_start_utc": "2026-09-29T04:11:07Z",
+      "cpu_one_core_percent": {
+        "mean": 51.77325659084442,
+        "p95": 61.99564220363418,
+        "peak": 63.987834311618364
+      },
+      "rss_mib": {
+        "mean": 185.98697916666666,
+        "p95": 186.671875,
+        "peak": 186.734375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 46.97540527283017,
+        "p95": 66.51642984568319,
+        "peak": 87.07850457227393
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "occlusion_events": [],
+      "target_allocations": 2,
+      "target_bytes": 8614016
+    },
+    {
+      "mode": "a2-off",
+      "measurement_start_utc": "2026-09-29T04:12:38Z",
+      "cpu_one_core_percent": {
+        "mean": 51.53003331969408,
+        "p95": 60.99997968663904,
+        "peak": 61.35788300834362
+      },
+      "rss_mib": {
+        "mean": 184.44765625,
+        "p95": 185.125,
+        "peak": 185.171875
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 46.471788000792245,
+        "p95": 63.17806917849216,
+        "peak": 76.92334035932636
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_vo_drops": 0,
+      "checkpoint_vo_drops": {
+        "5": 2,
+        "10": 2,
+        "25": 2,
+        "70": 2
+      },
+      "occlusion_events": [],
+      "target_allocations": 2,
+      "target_bytes": 8614016
+    }
+  ],
+  "interpretation": "All warm VO deltas0, no observed occlusion, decoder drops0. No repeatable CPU benefit from search-only caching. Every mean exceeds50% release CPU ceiling; default remains uncached. One same-source ABBA series, no performance-supported release or efficiency superiority claim."
+}

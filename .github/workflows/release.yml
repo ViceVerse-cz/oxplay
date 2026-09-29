@@ -1,0 +1,80 @@
+name: Source release (manual)
+run-name: Source preview ${{ inputs.tag }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Prerelease tag matching Cargo.toml (for example v0.1.0-dev.1)
+        type: string
+        required: true
+        default: v0.1.0-dev.1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-release
+  cancel-in-progress: false
+
+jobs:
+  source:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      commit: ${{ steps.archive.outputs.revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.12'
+      - name: Archive the exact source revision
+        id: archive
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python3 scripts/release_source.py --tag "$RELEASE_TAG" --output release-assets \
+            --github-output "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-preview
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
+
+  checks:
+    needs: source
+    uses: ./.github/workflows/ci.yml
+
+  draft:
+    needs: [source, checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: source-preview
+          path: release-assets
+      - name: Verify source assets
+        working-directory: release-assets
+        run: sha256sum --check SHA256SUMS
+      - name: Create immutable tag and draft prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_COMMIT: ${{ needs.source.outputs.commit }}
+        run: |
+          # Fail on an existing tag instead of moving or overwriting it.
+          gh api --method POST "repos/$GH_REPO/git/refs" \
+            -f "ref=refs/tags/$RELEASE_TAG" -f "sha=$RELEASE_COMMIT"
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag --target "$RELEASE_COMMIT" \
+            --title "Serein $RELEASE_TAG — source preview" \
+            --notes-file release-assets/RELEASE_NOTES.md \
+            --draft --prerelease --latest=false

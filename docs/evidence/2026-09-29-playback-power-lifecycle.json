@@ -1,0 +1,93 @@
+{
+  "binary_sha256": "e5eb5ccee0659fa8b5b96488bb08c652cb05f57b9ce05d6adba6cd068b88872f",
+  "test": "20-second fixture lifecycle after bounded diagnostic display wake; process exit0",
+  "snapshots": [
+    {
+      "stage": 0,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 2.466666666666667,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 1,
+      "state": "Paused",
+      "paused": true,
+      "position_seconds": 2.65,
+      "clock_active": false,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 2,
+      "state": "Paused",
+      "paused": true,
+      "position_seconds": 20.0,
+      "clock_active": false,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 3,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 21.766666666666666,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 4,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 23.383333333333333,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 5,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 24.78333333333333,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 6,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 24.78333333333333,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 7,
+      "state": "Paused",
+      "paused": true,
+      "position_seconds": 24.78333333333333,
+      "clock_active": false,
+      "prevents_display_sleep": false
+    },
+    {
+      "stage": 8,
+      "state": "Playing",
+      "paused": false,
+      "position_seconds": 24.78333333333333,
+      "clock_active": true,
+      "prevents_display_sleep": false
+    }
+  ],
+  "external_pmset": {
+    "playing": {
+      "display_sleep_assertion_count": 1,
+      "contains_serein_named_assertion": true
+    },
+    "hidden": {
+      "display_sleep_assertion_count": 0,
+      "contains_serein_named_assertion": false
+    },
+    "ended": {
+      "display_sleep_assertion_count": 0,
+      "contains_serein_named_assertion": false
+    }
+  },
+  "notes": "ended filename is after process teardown, not EOF. No A/V-perception or resource qualification inferred. Fullscreen/resize and explicit minimize introduce expected transient VO drops."
+}

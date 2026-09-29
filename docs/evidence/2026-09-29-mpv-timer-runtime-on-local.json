@@ -1,0 +1,17 @@
+{
+  "variant": "on",
+  "mode": "local",
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "app_sha256": "e7ecb8a71ade690b996d4109fcd8b4069b03fcb68d48e523de8a2818afc23f8b",
+  "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+  "loaded_library_exact_path_verified": true,
+  "loaded_mpv_library_count": 1,
+  "private_loader_log_sha256": "a3bc4c0113e411053242ab7b982fc5e329af450d5e9349eb9a18a04b6868a04e",
+  "native_log_sha256": "48f4e643126bf8db1ab2826cd4e1069b414b16ec30aee875dd488c650a41b06f",
+  "exit_code": 0,
+  "forced_termination": false,
+  "elapsed_seconds": 22.348683584015816,
+  "real_account": false,
+  "display_awake_fixture": true,
+  "performance_measurement": false
+}

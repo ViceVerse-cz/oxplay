@@ -1,0 +1,141 @@
+{
+  "fixture": "explicit offline synthetic metadata and decoded local raster samples",
+  "items": 10000,
+  "images": {
+    "thumb-00.png": {
+      "sha256": "2ffcc4b449cf14fdd121f7854866e346a33320625cf8851056b9563814f7a956",
+      "compressed_bytes": 49252
+    },
+    "thumb-01.png": {
+      "sha256": "f04b87fa58790a08f207528d34263194e0309a23f19c2f0d24fc841d280ce0e2",
+      "compressed_bytes": 51583
+    },
+    "thumb-02.png": {
+      "sha256": "a8689d1dbf6ef4a7a710f2de6461b8c93e37725d74ecd4ea9e8f9ec7c90fb5be",
+      "compressed_bytes": 52167
+    },
+    "thumb-03.png": {
+      "sha256": "fa1b9ff68fff0bb65f6d3d4fb6c6e05b5660f1af3fa9a7873a4d16f39c10a021",
+      "compressed_bytes": 51081
+    },
+    "thumb-04.png": {
+      "sha256": "47303d83da5013b83713235da4a8a986abacfc016fbad61cff362bf7c5d4c140",
+      "compressed_bytes": 49154
+    },
+    "thumb-05.png": {
+      "sha256": "3463a31f2990beef779849f2859686a01b159dbdfc816096b01ba1ec42fda92d",
+      "compressed_bytes": 51742
+    },
+    "thumb-06.png": {
+      "sha256": "818eb7d1c852815beb4fb132b4bed591419c6b4d598bca8411269f04bf94d64b",
+      "compressed_bytes": 51710
+    },
+    "thumb-07.png": {
+      "sha256": "d9063e65a660e21b23a3eeea5364a99df27bb69088340185791307fad63fcfb0",
+      "compressed_bytes": 50903
+    },
+    "thumb-08.png": {
+      "sha256": "9ac148c9f9a409e4a6ddfa2d6f573952e1b531212ffef90af5adb517b8df0fce",
+      "compressed_bytes": 48706
+    },
+    "thumb-09.png": {
+      "sha256": "6aef08961d5bc9c3a907374a88d4a2b69007b8b3956b6986ac22a35def42398d",
+      "compressed_bytes": 51638
+    },
+    "thumb-10.png": {
+      "sha256": "221504d10d0ae107d27c2497f23f0e11b12c5a5aae27195eac5f5ec5ad58a929",
+      "compressed_bytes": 52183
+    },
+    "thumb-11.png": {
+      "sha256": "f118ecb40973b95e8a9892a9e96f21cd7ddf2c45fc4e776e255a335b7dc70ead",
+      "compressed_bytes": 51648
+    },
+    "thumb-12.png": {
+      "sha256": "7ab3f8944b345c3b61764f15f3e573d9b16906af7798dc3aba94856f1be3a1a7",
+      "compressed_bytes": 48768
+    },
+    "thumb-13.png": {
+      "sha256": "be67fc9fcd10de7131514a35d9b026ee7f4bf024435c6291b0a6bdad677beac2",
+      "compressed_bytes": 51599
+    },
+    "thumb-14.png": {
+      "sha256": "e78c180b8329449ff76c62f86c4100e859d2c2265dfa20dfddacdeb8757b6a0a",
+      "compressed_bytes": 52388
+    },
+    "thumb-15.png": {
+      "sha256": "3b807462250844f775455d31eedf45f75d40fb178187dfbec22d62c97c65ad60",
+      "compressed_bytes": 51119
+    },
+    "thumb-16.png": {
+      "sha256": "0f82c5d257a0b51267077999bace45f44b933d607b4c2e1b5dd02e3233dfc7fd",
+      "compressed_bytes": 49198
+    },
+    "thumb-17.png": {
+      "sha256": "dc88d9387ba1f609b25c19fbe94d3b476f77e7a406affdfd3105f3f63f8f1393",
+      "compressed_bytes": 51509
+    },
+    "thumb-18.png": {
+      "sha256": "8fe26a21b032a7a7d77a84fc402659716db3518d32ef79b1f6e9db391302d533",
+      "compressed_bytes": 51027
+    },
+    "thumb-19.png": {
+      "sha256": "073fc1eb18b0faad0d741d316bcfaf0849f3a12705e741d42c66cddaca362b84",
+      "compressed_bytes": 51051
+    },
+    "thumb-20.png": {
+      "sha256": "6bf961059bca711770c1cc5b9e865d92fceed20183bf15aa05f50a0446f31454",
+      "compressed_bytes": 49010
+    },
+    "thumb-21.png": {
+      "sha256": "c125beb35f6631659982b7e395f12b9f8849f24b005cd73267c03e53cf9f1d84",
+      "compressed_bytes": 51287
+    },
+    "thumb-22.png": {
+      "sha256": "c4adc26ac8db4a74073077b4a67ac34deca4325e87d42f36c3781fc8f6c6778b",
+      "compressed_bytes": 51923
+    },
+    "thumb-23.png": {
+      "sha256": "095186d5f3a9d0daca76d2017ad3daa788b64c4f2ca29effa09262b89dd0d2ca",
+      "compressed_bytes": 50948
+    },
+    "thumb-24.png": {
+      "sha256": "803e29f6685c59f1d77fd7cdc378c51b45eb3de302d7a487b38554aedabca9d2",
+      "compressed_bytes": 49346
+    },
+    "thumb-25.png": {
+      "sha256": "a7ade644308ec088ebd1f191edbcb9e7ea0d754405104d3267ee9cd512a620ef",
+      "compressed_bytes": 51969
+    },
+    "thumb-26.png": {
+      "sha256": "0982e1e23e6c0b987ec2072dd002faa7e99797becdddc47d4b4ba580ebcafdd0",
+      "compressed_bytes": 52440
+    },
+    "thumb-27.png": {
+      "sha256": "27477dd2cc3c0fdc80cbc99655df0f33633db6baf4e6f4ab3cb4ea908aae5060",
+      "compressed_bytes": 51370
+    },
+    "thumb-28.png": {
+      "sha256": "22a3122df7ee82222ec4062bff32ba4226db66b7147f75d534eb1db06f4955cc",
+      "compressed_bytes": 47821
+    },
+    "thumb-29.png": {
+      "sha256": "0da63fc97e79d414dc6a7ed0befb12e451d6189921e29ad4f875cf71975176af",
+      "compressed_bytes": 51440
+    }
+  },
+  "raster_dimensions": [
+    640,
+    360
+  ],
+  "local_source_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "ffmpeg_sha256": "c8173e9755795978bce8e104f8d7044fabe7d6d84044aba37d3648c6f4e4e1a8",
+  "initial_database_sha256": "8c5b0f8f81d2acb5e4cef616136a947e9be2b4ce1f46fa91b6515cb9ea81e1bf",
+  "schema_version": 4,
+  "schema_sha256": {
+    "v1": "e1b1648e7be14fb86077f4ce8827cbf62c64d7afa0ba3679d8f404a1abf0cae3",
+    "v2": "e111e8c56caa763252bda36640ae04c541cb9f869b8ba39eb4d31fe9d7f3605f",
+    "v3": "64eff27b61cc77b4ba3dbcd2df5a8148b569ce29f78911161ef60e6c62882f9c",
+    "v4": "3d2588ba0e16ea7b6a275c51b1818276e0c8b4ea802ddd034abc184e278745c9"
+  },
+  "visible_thumbnail_requirement": "Not asserted: native viewport geometry must be measured separately"
+}

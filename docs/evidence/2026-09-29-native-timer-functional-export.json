@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "unmodified_app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "full_spec_pass": false,
+  "production_patch_adopted": false,
+  "performance_qualified": false,
+  "files": [
+    {
+      "original_relative_path": "preparation.json",
+      "original_sha256": "514d3add6b322feff797460f8f59633d2dd5465f1137d595a7fd9eadb0e3c50b",
+      "export": "2026-09-29-native-timer-functional-preparation.json",
+      "export_sha256": "514d3add6b322feff797460f8f59633d2dd5465f1137d595a7fd9eadb0e3c50b",
+      "bytes": 19928,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "functional-analysis.json",
+      "original_sha256": "ba9a2f5e7f0cf2f293abac768415d2360c10dfe9cc703ffd5b3d0d8a05bb37ee",
+      "export": "2026-09-29-native-timer-functional-analysis.json",
+      "export_sha256": "ba9a2f5e7f0cf2f293abac768415d2360c10dfe9cc703ffd5b3d0d8a05bb37ee",
+      "bytes": 26209,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "original-binary.json",
+      "original_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "export": "2026-09-29-native-timer-functional-original-binary.json",
+      "export_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "bytes": 514,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "on-functional/source-inventory.json",
+      "original_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "export": "2026-09-29-native-timer-functional-source.json",
+      "export_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "bytes": 54712,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "preparer.py",
+      "original_sha256": "ed68ce6c79c7dbe528dc03064f6b4fba66f072230717f1cc9448f14ab6ffbd17",
+      "export": "2026-09-29-native-timer-functional-preparer.py",
+      "export_sha256": "11b3f5381905f18278842ce2b58679c8b5c6c4897b260039857c8f16e47bb89f",
+      "bytes": 4601,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "analyzer.py",
+      "original_sha256": "c3da6f224f77d41682cd9cb2fd7def40ee026e0032d207af37ce67a24542b76b",
+      "export": "2026-09-29-native-timer-functional-analyzer.py",
+      "export_sha256": "7e832d5a356b46d3caf8475bed5b5d470ae4bf5432b5a336772696a216951c7d",
+      "bytes": 5544,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "on-functional/harness.py",
+      "original_sha256": "417066dc3e933525d6fd041acc055b19fc3598fd952b413137ea4987fd7d6ecd",
+      "export": "2026-09-29-native-timer-functional-harness.py",
+      "export_sha256": "fb212e1ac8c7ed47329e0c7f58cf90222d3f655b8b94819da7b95c86934be8c5",
+      "bytes": 12662,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "on-functional/summary.json",
+      "original_sha256": "88283ca3bd77d80dc5eab7f7fecb6915defb6f9c065dff6338783dc93a381e85",
+      "export": "2026-09-29-native-timer-functional-on-summary.json",
+      "export_sha256": "88283ca3bd77d80dc5eab7f7fecb6915defb6f9c065dff6338783dc93a381e85",
+      "bytes": 3996,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "on-functional/native.log",
+      "original_sha256": "f3ec36fae396eb8a068ec973d920814f63c9eb26f02156e07c1237a55bb49868",
+      "export": "2026-09-29-native-timer-functional-on-native.log",
+      "export_sha256": "f3ec36fae396eb8a068ec973d920814f63c9eb26f02156e07c1237a55bb49868",
+      "bytes": 9686,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "on-signature.log",
+      "original_sha256": "de887ef5ef0d2f7ac5fd84cf200e3afaf6e8780cb311cec980582c97f152dfc7",
+      "export": "2026-09-29-native-timer-functional-on-signature.log",
+      "export_sha256": "d432252ee2096814f85a2964f0e4d8e2c6842ac2b829a4f6e48a9f5a820cb758",
+      "bytes": 399,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "on-verify.log",
+      "original_sha256": "08a7058d71680fce1158f6f86f91caed5acb95ea9954e1c7cf7bce3edc15ce41",
+      "export": "2026-09-29-native-timer-functional-on-verify.log",
+      "export_sha256": "70071b470977f196cf8c06f99bee7d9bd6204544f16d96b632cab2f50537ff12",
+      "bytes": 171,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "on-linkage.log",
+      "original_sha256": "65204fae7f3b320da1581a1d6afeb841369f65431cf279dfac3a7d6dec57581d",
+      "export": "2026-09-29-native-timer-functional-on-linkage.log",
+      "export_sha256": "6980cad74551e52ead023af3db469dcad2e3ee24b9ad380734b886f0625a391c",
+      "bytes": 2208,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "off-functional/summary.json",
+      "original_sha256": "f1dbf68e3bf14ebd5d1629c66f082fb21add1e35af7a9ef882e49b4fff1bbe11",
+      "export": "2026-09-29-native-timer-functional-off-summary.json",
+      "export_sha256": "f1dbf68e3bf14ebd5d1629c66f082fb21add1e35af7a9ef882e49b4fff1bbe11",
+      "bytes": 3992,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "off-functional/native.log",
+      "original_sha256": "8baa571bbf62fa4594feae07a3ce997f1f0c77b06c7ab9ffbfdbc721dead3071",
+      "export": "2026-09-29-native-timer-functional-off-native.log",
+      "export_sha256": "8baa571bbf62fa4594feae07a3ce997f1f0c77b06c7ab9ffbfdbc721dead3071",
+      "bytes": 9700,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "off-signature.log",
+      "original_sha256": "df667aed745d81116da274dc52a585840a205cc7c57b9fdd345c2df88bca6814",
+      "export": "2026-09-29-native-timer-functional-off-signature.log",
+      "export_sha256": "be8ef79dfd44acf26daa2e39254463712e14c0b92f10ae38a14491ee058613f8",
+      "bytes": 401,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "off-verify.log",
+      "original_sha256": "1c4ba056e1385c2d2fb56ebd277a62a9b13f804fd3e38e64b692071d2bf790d4",
+      "export": "2026-09-29-native-timer-functional-off-verify.log",
+      "export_sha256": "944be0b79f494481af8d0db274dc69a3ee307a553e51c0c0c1233ee0a28ab39a",
+      "bytes": 173,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    },
+    {
+      "original_relative_path": "off-linkage.log",
+      "original_sha256": "8c4e2682fba18f23e3ec398d604247459e803bd6f29bd326deaecf1c33220639",
+      "export": "2026-09-29-native-timer-functional-off-linkage.log",
+      "export_sha256": "b1300955be89c38b38861f1d07659d1c0bfcbb94971c823cfc710ed00e00213e",
+      "bytes": 2210,
+      "transformation": "workspace literal replaced with <workspace>; diagnostic documentary output"
+    }
+  ],
+  "scope": "Two14-stage native-child functional runs of private ad-hoc signed copies from historical a45 source; selected matched source-built libmpv timerON/OFF only. No comparison against Homebrew and no resource measurement.",
+  "sanitization": "Fixed file and native-log prefix allowlists, workspace literal replacement only for documentary scripts/tool output, then private-path/URI/header rejection. Actual loader logs remain private with exact hashes in summaries. PNG/RGB retained privately; hashes and explicitROI equality exported.",
+  "observations": "Both runs exited0, all14 ordered checkpoints and4captures each passed, all owned groups absent, copied fixtures removed. Both actual48-image non-system mpv closures verified; other loaded image paths and UUIDs match. Paused20second captures byte-identical; video ROI992016pixels all equal. Viewed paused/fullscreen/resized/stopped instants show upright video/shared controls and stoppedblack.",
+  "analysis_correction": "Initial strict offline parser rejected54 valid dyld delayed/loaded transition-status lines per run. Parser now accepts only those two explicit status forms in addition to UUID image records. Application runs and raw logs were unchanged; no failed native attempt is omitted.",
+  "limits": [
+    "No continuous visual/cadence or perceptual A/V qualification.",
+    "Functional capture runs permit other builds and cannot provide CPU/RAM/energy comparisons.",
+    "System shared-cache image identity uses UUID only, not byte hashes.",
+    "Original app, installed Homebrew library and paired source-built libraries unchanged."
+  ]
+}

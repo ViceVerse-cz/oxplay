@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { LineEdit, ListView, ComboBox, CheckBox, ScrollView } from "std-widgets.slint";
+import { Colors, Action, ActionVariant } from "components.slint";
+export struct LibraryRow { title: string, detail: string, action: string }
+export global SaveUi {
+    in property <[string]> collections;
+    in property <string> video-title;
+    in property <string> status;
+    in property <bool> busy;
+    in property <bool> saved;
+    in property <bool> destinations-paged;
+    callback begin() -> bool;
+    callback create-and-save(string);
+}
+export global LibraryUi {
+    in property <[LibraryRow]> rows;
+    in property <[string]> collections;
+    in property <int> selected: -1;
+    in property <int> tab;
+    in property <bool> busy;
+    in property <bool> previous;
+    in property <bool> next;
+    in property <bool> collections-previous;
+    in property <bool> collections-next;
+    in property <bool> history-enabled;
+    in-out property <string> name-draft;
+    in property <bool> renaming;
+    in property <string> name-status;
+    in-out property <int> confirmation: 0;
+    in property <int> retention: 30;
+    in property <string> status: "Collections, follows and optional history stay on this device.";
+    callback change-tab(int);
+    callback choose(int);
+    callback page(bool);
+    callback collection-page(bool);
+    callback create(string);
+    callback rename(string);
+    callback begin-rename() -> bool;
+    callback cancel-name();
+    callback name-context-opened();
+    callback delete-collection();
+    callback open(int);
+    callback remove(int);
+    callback history(bool);
+    callback set-retention(int);
+    callback clear-history();
+    callback transfer(int);
+    callback clear-local();
+    callback follow-current();
+}
+export component LibraryPage inherits Rectangle {
+    private property <bool> narrow: root.width < 720px;
+    // Re-entering this conditional page must not revive a rename target from
+    // another navigation context. The separate create draft is preserved.
+    init => { LibraryUi.name-context-opened(); }
+    function submit-name() {
+        if LibraryUi.renaming { LibraryUi.rename(LibraryUi.name-draft); }
+        else { LibraryUi.create(LibraryUi.name-draft); }
+    }
+    ScrollView {
+      width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
+      VerticalLayout {
+        width: parent.visible-width; spacing: 12px;
+        Text { text: LibraryUi.tab == 1 ? "Local subscriptions" : LibraryUi.tab == 2 ? "Watch history" : "Local playlists"; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
+        Text { text: "Saved on this device. Separate from your YouTube account."; color: Colors.muted; wrap: word-wrap; min-height: 24px; }
+        HorizontalLayout { height: 40px; spacing: 10px;
+            Action { label: "Playlists"; selectable: true; selected: LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.change-tab(0); } }
+            Action { label: "Subscriptions"; selectable: true; selected: LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.change-tab(1); } }
+            if LibraryUi.history-enabled: Action { label: "Watch history"; selectable: true; selected: LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.change-tab(2); } }
+            Rectangle { horizontal-stretch: 1; }
+        }
+        if LibraryUi.tab == 0 && LibraryUi.collections.length > 0: HorizontalLayout { height: 38px; spacing: 8px;
+            ComboBox { horizontal-stretch: 1; accessible-label: "Local playlist"; model: LibraryUi.collections; current-index: LibraryUi.selected; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; selected(value) => { LibraryUi.choose(self.current-index); } }
+            if LibraryUi.collections-previous || LibraryUi.collections-next: Action { width: 40px; horizontal-stretch: 0; compact: true; accessible-label: "Previous playlist page"; label: "Previous playlists"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.collections-previous; clicked => { LibraryUi.collection-page(false); } }
+            if LibraryUi.collections-previous || LibraryUi.collections-next: Action { width: 40px; horizontal-stretch: 0; compact: true; accessible-label: "Next playlist page"; label: "Next playlists"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.collections-next; clicked => { LibraryUi.collection-page(true); } }
+        }
+        // Resize these same controls instead of rebuilding an alternate toolbar.
+        if LibraryUi.tab == 0: Rectangle { height: root.narrow ? 82px : 38px;
+            name := LineEdit { x: 0; y: 0; width: root.narrow ? parent.width : parent.width - 304px; height: 38px; accessible-label: LibraryUi.renaming ? "New name for selected playlist" : "New playlist name"; placeholder-text: LibraryUi.renaming ? "New playlist name" : "Playlist name"; text <=> LibraryUi.name-draft; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; accepted => { root.submit-name(); } }
+            Action { x: root.narrow ? 0px : parent.width - 296px; y: root.narrow ? 44px : 0px; width: 88px; height: 38px; label: LibraryUi.renaming ? "Save" : "Create"; accessible-label: LibraryUi.renaming ? "Save playlist name" : "Create playlist"; variant: ActionVariant.primary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.submit-name(); } }
+            Action { x: root.narrow ? 96px : parent.width - 200px; y: root.narrow ? 44px : 0px; width: 96px; height: 38px; label: LibraryUi.renaming ? "Cancel" : "Rename"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.selected >= 0; clicked => { if LibraryUi.renaming { LibraryUi.cancel-name(); } else if LibraryUi.begin-rename() { name.focus(); } } }
+            Action { x: root.narrow ? 200px : parent.width - 96px; y: root.narrow ? 44px : 0px; width: 96px; height: 38px; label: "Delete"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy && !LibraryUi.renaming && LibraryUi.confirmation == 0 && LibraryUi.selected >= 0; clicked => { LibraryUi.confirmation = 1; } }
+        }
+        if LibraryUi.tab == 0 && LibraryUi.name-status != "": Text { text: LibraryUi.name-status; color: Colors.muted; wrap: word-wrap; min-height: 26px; }
+        if LibraryUi.tab == 1: Rectangle { height: root.narrow ? 82px : 40px;
+            Text { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 244px; text: "Local follows do not subscribe on YouTube."; color: Colors.muted; wrap: word-wrap; vertical-alignment: center; }
+            Action { x: root.narrow ? 0px : parent.width - 236px; y: root.narrow ? 44px : 0px; height: 38px; width: 236px; label: "Follow playing channel locally"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.follow-current(); } }
+        }
+        if LibraryUi.tab == 2: Rectangle { height: root.narrow ? 82px : 38px;
+            CheckBox { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 280px; text: "Keep local watch history"; checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; toggled => { LibraryUi.history(self.checked); self.checked = LibraryUi.history-enabled; } }
+            ComboBox { x: root.narrow ? 0px : parent.width - 272px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; accessible-label: "Local history retention"; model: ["7 days", "30 days", "90 days"]; current-index: LibraryUi.retention == 7 ? 0 : LibraryUi.retention == 90 ? 2 : 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; selected(value) => { LibraryUi.set-retention(self.current-index == 0 ? 7 : self.current-index == 2 ? 90 : 30); } }
+            Action { x: root.narrow ? 140px : parent.width - 132px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; label: "Clear history"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.confirmation = 2; } }
+        }
+        list := ListView { visible: LibraryUi.rows.length > 0; height: LibraryUi.rows.length == 0 ? 0px : max(180px, root.height - (root.narrow ? 430px : 386px)); horizontal-scrollbar-policy: always-off;
+            for item[index] in LibraryUi.rows: Rectangle { height: 78px;
+                Action { x: 0; y: 0; height: 44px; width: parent.width - 130px; label: item.title; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.open(index); } }
+                Text { x: 12px; y: 46px; height: 22px; width: parent.width - 142px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+                Action { x: parent.width - 120px; y: 16px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.remove(index); } }
+            }
+        }
+        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.collections.length == 0 ? "Create a playlist to keep videos on this device." : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
+        if LibraryUi.previous || LibraryUi.next: HorizontalLayout { height: 38px; spacing: 8px;
+            Action { width: 126px; horizontal-stretch: 0; label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.previous; clicked => { LibraryUi.page(false); } }
+            Action { width: 106px; horizontal-stretch: 0; label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.next; clicked => { LibraryUi.page(true); } }
+            Rectangle { horizontal-stretch: 1; }
+        }
+        if LibraryUi.confirmation != 0: VerticalLayout { spacing: 8px;
+            Text { text: LibraryUi.confirmation == 1 ? "Delete “" + LibraryUi.collections[LibraryUi.selected] + "” and its saved entries?" : LibraryUi.confirmation == 2 ? "Delete all local watch history?" : "Stop playback and delete the local library, history, preferences and cached captions? Your YouTube account stays connected."; color: Colors.text; wrap: word-wrap; min-height: 44px; }
+            HorizontalLayout { height: 38px; spacing: 8px;
+                Action { width: 96px; horizontal-stretch: 0; label: "Cancel"; variant: ActionVariant.secondary; clicked => { LibraryUi.confirmation = 0; } }
+                Action { width: 158px; horizontal-stretch: 0; label: "Confirm deletion"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy; clicked => { if LibraryUi.confirmation == 1 { LibraryUi.delete-collection(); } else if LibraryUi.confirmation == 2 { LibraryUi.clear-history(); } else { LibraryUi.clear-local(); } LibraryUi.confirmation = 0; } }
+                Rectangle { horizontal-stretch: 1; }
+            }
+        }
+        HorizontalLayout { height: 38px; spacing: 8px;
+            Action { label: "Import…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.transfer(0); } }
+            Action { label: "Export…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.transfer(1); } }
+            Action { label: "Backup…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.transfer(2); } }
+            Action { label: "Clear local data…"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { LibraryUi.confirmation = 3; } }
+        }
+        Text { text: LibraryUi.status; color: Colors.muted; wrap: word-wrap; min-height: 38px; }
+    }
+    }
+}

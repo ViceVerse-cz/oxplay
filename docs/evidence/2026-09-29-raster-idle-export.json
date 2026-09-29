@@ -1,0 +1,410 @@
+{
+  "runs": [
+    {
+      "period": "old",
+      "mode": "settled",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 1.2482018039433818,
+        "p95": 2.0000831714958425,
+        "peak": 2.9998113869070595
+      },
+      "rss_mib": {
+        "mean": 130.65625,
+        "p95": 130.65625,
+        "peak": 130.65625
+      },
+      "exit_code": 0,
+      "physical_footprint_mib": null,
+      "catalog_changes": 9,
+      "catalog_resets": 1,
+      "ui_draws": 162,
+      "video_draws": 0,
+      "model_rows": 100,
+      "near_viewport_rows": 9,
+      "viewport_intersection_count": 6,
+      "thumbnail_started": 9,
+      "thumbnail_published": 9,
+      "remote_thumbnail_started": 0,
+      "media_file_loads": 0,
+      "assessment": "FAIL idle CPU release ceiling even at six-thumbnail workload; no explicit readiness marker in this build",
+      "resource_file": "2026-09-29-raster-idle-old-settled.json",
+      "native_log": "2026-09-29-raster-idle-old-settled.log"
+    },
+    {
+      "period": "old",
+      "mode": "minimized",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 1.8169199624327594,
+        "p95": 5.000357940745944,
+        "peak": 29.86448091755804
+      },
+      "rss_mib": {
+        "mean": 130.85286458333334,
+        "p95": 135.25,
+        "peak": 137.65625
+      },
+      "exit_code": 1,
+      "physical_footprint_mib": null,
+      "catalog_changes": 81,
+      "catalog_resets": 3,
+      "ui_draws": 207,
+      "video_draws": 0,
+      "model_rows": 100,
+      "near_viewport_rows": 9,
+      "viewport_intersection_count": 6,
+      "thumbnail_started": 45,
+      "thumbnail_published": 45,
+      "remote_thumbnail_started": 0,
+      "media_file_loads": 0,
+      "assessment": "INVALID minimized workload: restored at60345ms, later page/image work, final minimized=false, application exit1; cause undetermined",
+      "resource_file": "2026-09-29-raster-idle-old-minimized.json",
+      "native_log": "2026-09-29-raster-idle-old-minimized.log"
+    },
+    {
+      "period": "neutral",
+      "mode": "settled",
+      "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+      "app_sha256": "6d982bb8c297d80637327e22f7aed4354a7981a0d559982106157df607ebef52",
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 0.016667148613841578,
+        "p95": 0.0,
+        "peak": 1.0000289168304948
+      },
+      "rss_mib": {
+        "mean": 129.9328125,
+        "p95": 129.921875,
+        "peak": 130.25
+      },
+      "exit_code": 0,
+      "physical_footprint_mib": {
+        "mean": 147.60574035644532,
+        "p95": 147.5948028564453,
+        "peak": 147.9229278564453
+      },
+      "catalog_changes": 9,
+      "catalog_resets": 1,
+      "ui_draws": 6,
+      "video_draws": 0,
+      "model_rows": 100,
+      "near_viewport_rows": 9,
+      "viewport_intersection_count": 6,
+      "thumbnail_started": 9,
+      "thumbnail_published": 9,
+      "remote_thumbnail_started": 0,
+      "media_file_loads": 0,
+      "assessment": "within numeric budgets for this six-thumbnail workload; thirty-visible gate open",
+      "workload_stable_after_readiness": true,
+      "readiness": {
+        "elapsed_ms": 314,
+        "generation": 3,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 9,
+        "near_viewport_ready": 9,
+        "viewport_intersecting_ready_thumbnails": 6,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 9,
+        "decoded": 9,
+        "failed": 0,
+        "published": 9,
+        "published_bytes": 2073600,
+        "catalog_changes": 9,
+        "catalog_resets": 1,
+        "group_child_changes": 9,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 0.6372820000397041
+      },
+      "resource_file": "2026-09-29-raster-idle-neutral-settled.json",
+      "native_log": "2026-09-29-raster-idle-neutral-settled.log"
+    },
+    {
+      "period": "neutral",
+      "mode": "minimized",
+      "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+      "app_sha256": "6d982bb8c297d80637327e22f7aed4354a7981a0d559982106157df607ebef52",
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 0.0,
+        "p95": 0.0,
+        "peak": 0.0
+      },
+      "rss_mib": {
+        "mean": 130.0734375,
+        "p95": 130.0625,
+        "peak": 130.390625
+      },
+      "exit_code": 0,
+      "physical_footprint_mib": {
+        "mean": 147.73076324462892,
+        "p95": 147.7198257446289,
+        "peak": 148.0479507446289
+      },
+      "catalog_changes": 9,
+      "catalog_resets": 1,
+      "ui_draws": 6,
+      "video_draws": 0,
+      "model_rows": 100,
+      "near_viewport_rows": 9,
+      "viewport_intersection_count": 6,
+      "thumbnail_started": 9,
+      "thumbnail_published": 9,
+      "remote_thumbnail_started": 0,
+      "media_file_loads": 0,
+      "minimized_observation": {
+        "occluded_at_ms": 1657,
+        "confirmed_minimized_before_quit_ms": 85075,
+        "restore_seen": false
+      },
+      "assessment": "within numeric budgets for this six-thumbnail workload; thirty-visible gate open",
+      "workload_stable_after_readiness": true,
+      "readiness": {
+        "elapsed_ms": 324,
+        "generation": 3,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 9,
+        "near_viewport_ready": 9,
+        "viewport_intersecting_ready_thumbnails": 6,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 9,
+        "decoded": 9,
+        "failed": 0,
+        "published": 9,
+        "published_bytes": 2073600,
+        "catalog_changes": 9,
+        "catalog_resets": 1,
+        "group_child_changes": 9,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 0.6438469999702647
+      },
+      "resource_file": "2026-09-29-raster-idle-neutral-minimized.json",
+      "native_log": "2026-09-29-raster-idle-neutral-minimized.log"
+    }
+  ],
+  "full_resource_samples": 240,
+  "files": [
+    {
+      "file": "2026-09-29-raster-idle-old-provenance.json",
+      "original": "artifacts/raster-native-v2/resources/provenance.json",
+      "input_sha256": "4febf6bb904ca8243eec991a9ed87ad15c1a2897abb321ad8243560a446cca63",
+      "export_sha256": "4febf6bb904ca8243eec991a9ed87ad15c1a2897abb321ad8243560a446cca63",
+      "bytes": 725,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-sampler.py",
+      "original": "artifacts/raster-native-v2/resources/sampler.py",
+      "input_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+      "export_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+      "bytes": 13182,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-harness-normalized.txt",
+      "original": "temporary diagnostic harness",
+      "input_sha256": "7346b7a045de322288cbf9788418a50fae66ebc6ce17d2ab07ce5eafcd08d97d",
+      "export_sha256": "151b5e849c808068138f9a97f0d0831324399d57565edb68d62d5414b9d35918",
+      "bytes": 2461,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-settled.json",
+      "original": "artifacts/raster-native-v2/resources/settled.json",
+      "input_sha256": "c1d3139d27e180dbc54bcf1817ab0739c09f50cbbe0a6b0e84a6189ca1cfae27",
+      "export_sha256": "c1d3139d27e180dbc54bcf1817ab0739c09f50cbbe0a6b0e84a6189ca1cfae27",
+      "bytes": 80816,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-settled.log",
+      "original": "artifacts/raster-native-v2/resources/settled.json.log",
+      "input_sha256": "266045131666c570384775f7ce31291412f8badcfe5d90006b4eb3305d58f1f7",
+      "export_sha256": "266045131666c570384775f7ce31291412f8badcfe5d90006b4eb3305d58f1f7",
+      "bytes": 2596,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-settled-sampler.log",
+      "original": "artifacts/raster-native-v2/resources/settled.sampler.log",
+      "input_sha256": "4e72e7d38f72996cc17fea51f30077eb338f3df43c982276b7cf3a29277f256e",
+      "export_sha256": "4e72e7d38f72996cc17fea51f30077eb338f3df43c982276b7cf3a29277f256e",
+      "bytes": 2138,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-minimized.json",
+      "original": "artifacts/raster-native-v2/resources/minimized.json",
+      "input_sha256": "c6fe2e53e3ee080bc6f58dd03b675fc43f98abd01e4681dc3d70180b57b5e028",
+      "export_sha256": "c6fe2e53e3ee080bc6f58dd03b675fc43f98abd01e4681dc3d70180b57b5e028",
+      "bytes": 84890,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-minimized.log",
+      "original": "artifacts/raster-native-v2/resources/minimized.json.log",
+      "input_sha256": "b210259937fd2c882c428113c87870d475f06a8b72e9d4cc54d6186c155d6bb9",
+      "export_sha256": "b210259937fd2c882c428113c87870d475f06a8b72e9d4cc54d6186c155d6bb9",
+      "bytes": 2845,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-minimized-sampler.log",
+      "original": "artifacts/raster-native-v2/resources/minimized.sampler.log",
+      "input_sha256": "88e2edda59ad2415f06d8231dcd2d9da50be0cb8f91fd8a6497f94e29f888cc7",
+      "export_sha256": "80ebf1b4711606dfad8611338dae5eb99c628c86221cbc9c36e79f9b571d1449",
+      "bytes": 2510,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-provenance.json",
+      "original": "artifacts/native-child-v1/idle-resources/provenance.json",
+      "input_sha256": "b271a7629dee0388252faccf81f28c2a32517a9f1eb3cf4d14b56b6239907530",
+      "export_sha256": "b271a7629dee0388252faccf81f28c2a32517a9f1eb3cf4d14b56b6239907530",
+      "bytes": 1094,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-sampler.py",
+      "original": "artifacts/native-child-v1/idle-resources/sampler.py",
+      "input_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+      "export_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+      "bytes": 22373,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-harness-normalized.txt",
+      "original": "temporary diagnostic harness",
+      "input_sha256": "51438e262f11fdd8295cde17324adca2e2944b83ce302bcde2164fade42886fd",
+      "export_sha256": "706724612ef0733038d314e070f065d01861241a6a208647408d3344ecf545fc",
+      "bytes": 3407,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-settled-supervisor.json",
+      "original": "artifacts/native-child-v1/idle-resources/settled.supervisor.json",
+      "input_sha256": "1ed7f8c2b44d8c9d71e187c4125c8336feaf1819a20dcfb5702afd206e343cc6",
+      "export_sha256": "1ed7f8c2b44d8c9d71e187c4125c8336feaf1819a20dcfb5702afd206e343cc6",
+      "bytes": 263,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-settled.json",
+      "original": "artifacts/native-child-v1/idle-resources/settled.json",
+      "input_sha256": "6b111600518e4f342709369f0bc56d196ebc7ecf6dc08f7f5c0d85800228f975",
+      "export_sha256": "6b111600518e4f342709369f0bc56d196ebc7ecf6dc08f7f5c0d85800228f975",
+      "bytes": 125421,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-settled.log",
+      "original": "artifacts/native-child-v1/idle-resources/settled.json.log",
+      "input_sha256": "fb9ed238d16ba3dfdb4db02302335689645a4c18e2994a93c3b64ad94b2d3dce",
+      "export_sha256": "fb9ed238d16ba3dfdb4db02302335689645a4c18e2994a93c3b64ad94b2d3dce",
+      "bytes": 4759,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-settled-sampler.log",
+      "original": "artifacts/native-child-v1/idle-resources/settled.sampler.log",
+      "input_sha256": "f2a583cad5dda44434c4f1e7701b76887398b4307a0348456741741acfa7bea2",
+      "export_sha256": "f2a583cad5dda44434c4f1e7701b76887398b4307a0348456741741acfa7bea2",
+      "bytes": 3681,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-minimized-supervisor.json",
+      "original": "artifacts/native-child-v1/idle-resources/minimized.supervisor.json",
+      "input_sha256": "2dba21b3a53e11f168490f1f73a9c1e7dfddb820e427a73ae0ea909c5e52f9a3",
+      "export_sha256": "2dba21b3a53e11f168490f1f73a9c1e7dfddb820e427a73ae0ea909c5e52f9a3",
+      "bytes": 265,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-minimized.json",
+      "original": "artifacts/native-child-v1/idle-resources/minimized.json",
+      "input_sha256": "e42b547f3fb7a69ef67d054d59d07daabb284b909980f19e5261abd59aacb712",
+      "export_sha256": "e42b547f3fb7a69ef67d054d59d07daabb284b909980f19e5261abd59aacb712",
+      "bytes": 125266,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-minimized.log",
+      "original": "artifacts/native-child-v1/idle-resources/minimized.json.log",
+      "input_sha256": "21b78fa9f589aed80213878c224595597e6026118b7e947d87ca15af87573892",
+      "export_sha256": "21b78fa9f589aed80213878c224595597e6026118b7e947d87ca15af87573892",
+      "bytes": 5177,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-minimized-sampler.log",
+      "original": "artifacts/native-child-v1/idle-resources/minimized.sampler.log",
+      "input_sha256": "55055d25bacfc4c9b19d46ab4c1c71fb0165f87690ccceb3a69ec5d08ec1baae",
+      "export_sha256": "55055d25bacfc4c9b19d46ab4c1c71fb0165f87690ccceb3a69ec5d08ec1baae",
+      "bytes": 3647,
+      "policy": "workspace-root-only normalization"
+    },
+    {
+      "file": "2026-09-29-raster-idle-old-source.json",
+      "original": "docs/evidence/2026-09-29-raster-corrected-release-source.json",
+      "input_sha256": "b0cc22af9ad2e6de791a14c185492b79ed454d9c1ce72b35d93eb36112d24b7a",
+      "export_sha256": "b0cc22af9ad2e6de791a14c185492b79ed454d9c1ce72b35d93eb36112d24b7a",
+      "bytes": 13448,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-source.json",
+      "original": "artifacts/native-child-v1/inputs-before-release.json",
+      "input_sha256": "c4b6fcdf7ae19f98ff48bd3051fbb276d5ed168ff190d1b5cb086fd2d827f93d",
+      "export_sha256": "c4b6fcdf7ae19f98ff48bd3051fbb276d5ed168ff190d1b5cb086fd2d827f93d",
+      "bytes": 53908,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-neutral-binary.json",
+      "original": "artifacts/native-child-v1/binary.json",
+      "input_sha256": "fc2ab93fa2b76378069ac50c7add59dd14bb0744bcb22d6666733154b2f05c60",
+      "export_sha256": "fc2ab93fa2b76378069ac50c7add59dd14bb0744bcb22d6666733154b2f05c60",
+      "bytes": 479,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-raster-idle-fixture-provenance.json",
+      "original": "artifacts/library-resource-fixture-v1/fixture-provenance.json",
+      "input_sha256": "5f15ee754b1f3b4f6bf07359738ae975a7a1c745866b173aa2bdfd7333d9c99f",
+      "export_sha256": "5f15ee754b1f3b4f6bf07359738ae975a7a1c745866b173aa2bdfd7333d9c99f",
+      "bytes": 5263,
+      "policy": "byte-identical"
+    }
+  ],
+  "supervisor_dependency": {
+    "path": "scripts/git_source_export.py",
+    "sha256": "08751c7a782417bc07f752e74aa7816e4d970cac232811c876da9fb79e6df9a1",
+    "verification": "Matches d7 committed source at export; original harness did not separately record a pre-run helper hash"
+  },
+  "neutral_build_inventory": "133 selected inputs identical before/after locked release build and matched d7 commit; inventory alone does not prove binary association, which is separately recorded in binary.json",
+  "privacy": "Resource samples and native scalar logs retained without truncation; only private workspace roots in harness/traceback records normalized. No credentials, provider URLs, selected private paths or raw input text exported.",
+  "qualification": {
+    "thirty_visible_library_gate": false,
+    "repeatability": false,
+    "energy": false,
+    "gpu_texture_inventory": false,
+    "cross_platform": false,
+    "native_video_child_test": false
+  },
+  "scope": "Ordinary shared Slint raster browsing; native-child presenter flag was not used. Each run60samples after10s warmup; new pair waits for quiescence first. One observed process per sample. Footprint is a separate OS ledger, not additive to RSS/GPU; zero sampled CPU is not zero actual work. Minimized geometric intersections are not physically visible images."
+}

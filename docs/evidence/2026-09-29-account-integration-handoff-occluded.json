@@ -1,0 +1,9 @@
+{
+  "mode": "handoff",
+  "app_sha256": "aedd865c006c234798402d1de7569d034591e61db40915dc08384153f7f63322",
+  "exit_code": 101,
+  "timeout": false,
+  "elapsed_seconds": 16.019,
+  "real_account_used": false,
+  "performance_measurement": false
+}

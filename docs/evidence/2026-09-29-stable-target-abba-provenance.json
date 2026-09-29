@@ -1,0 +1,16 @@
+{
+  "source_revision": "83a07b4b493a7d411fc21fdbc55daf529596be7e",
+  "app_sha256": "c2ff7d1c0f93145713e2de039e9aa6b574051afcba5d07ed331650c025568398",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+  "run_order": [
+    "a1-off",
+    "b1-stable",
+    "b2-stable",
+    "a2-off"
+  ],
+  "fixture": "30 explicitly labeled related rows, empty thumbnails",
+  "geometry": "1320x860 logical, dark theme",
+  "display_awake_fixture": "bounded caffeinate -d -u during each run; not power or sleep-prevention evidence",
+  "scope": "Stable admitted texture identity only; clock staging and all cache flags off, no smoke snapshots, screenshot, profiler or GPU query enabled"
+}

@@ -1,0 +1,8 @@
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=2077
+motion smoke sample_ms=1400 roi=Region { x: 786, y: 416, width: 796, height: 296 } grid=128x72 hash=7e73c90000c62729
+motion smoke PASS sample_ms=2400 roi=Region { x: 786, y: 416, width: 796, height: 296 } grid=128x72 hash=d21ec2cf796b86e7 changed_pixels=558/9216; finite snapshot readback, excluded from performance
+
+thread 'main' (3139524) panicked at crates/app/src/main.rs:1158:33:
+explicit local startup did not focus the player before smoke input
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

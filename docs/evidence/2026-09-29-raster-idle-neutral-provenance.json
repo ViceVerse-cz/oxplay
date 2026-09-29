@@ -1,0 +1,17 @@
+{
+  "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+  "app_sha256": "6d982bb8c297d80637327e22f7aed4354a7981a0d559982106157df607ebef52",
+  "source_inventory_sha256": "c4b6fcdf7ae19f98ff48bd3051fbb276d5ed168ff190d1b5cb086fd2d827f93d",
+  "build_input_count": 133,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "exit0, optimized, 1m47s",
+  "native_qualified": false,
+  "performance_qualified": false,
+  "sampler_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+  "harness_sha256": "51438e262f11fdd8295cde17324adca2e2944b83ce302bcde2164fade42886fd",
+  "fixture_provenance_sha256": "5f15ee754b1f3b4f6bf07359738ae975a7a1c745866b173aa2bdfd7333d9c99f",
+  "scope": "Frozen d7,actual10000row SQLite and30distinct rasters; native viewport determines actual intersections. No interaction smoke. Separate physical-footprint ledger,not additive to RSS/GPU. Readiness then10s warmup60samples. Idle30visible gate remains open.",
+  "requested_window": "1320x860 logical,dark",
+  "real_account": false
+}

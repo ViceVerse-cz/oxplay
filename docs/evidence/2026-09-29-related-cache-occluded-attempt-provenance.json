@@ -1,0 +1,15 @@
+{
+  "source_revision": "5094c3902645976def9de5b827b9f42fc9aaaa59",
+  "app_sha256": "662c0b7789cf013409da7df82cca2b9694b45f538fe1b24fe598797a7a4b3342",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+  "run_order": [
+    "a1-off",
+    "b1-related",
+    "b2-related",
+    "a2-off"
+  ],
+  "fixture": "30 explicitly labeled related rows, empty thumbnails",
+  "geometry": "1320x860 logical, dark theme",
+  "scope": "Related cards cache only; no other cache, screenshot, profiler, or GPU query enabled"
+}

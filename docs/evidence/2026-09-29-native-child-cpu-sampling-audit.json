@@ -1,0 +1,61 @@
+{
+  "runs": [
+    {
+      "mode": "native",
+      "sample_rows": 1809,
+      "first_last_sample_ns": [
+        280907750,
+        5785909250
+      ],
+      "one_second_buckets": {
+        "0": 106,
+        "1": 527,
+        "2": 345,
+        "3": 344,
+        "4": 325,
+        "5": 162
+      },
+      "weight_ns_row_counts": {
+        "1000000": 1809
+      },
+      "state_row_counts": {
+        "Running": 1809
+      },
+      "monotonic_timestamps": true,
+      "duplicate_time_thread_pairs": 0,
+      "duplicate_XML_definition_ids": 0,
+      "warning_error_lost_dropped_matching_log_lines": 0,
+      "loss_status_table_exposed_in_TOC": false,
+      "no_sample_loss_proven": false
+    },
+    {
+      "mode": "default",
+      "sample_rows": 676,
+      "first_last_sample_ns": [
+        298384875,
+        5748383583
+      ],
+      "one_second_buckets": {
+        "0": 104,
+        "1": 119,
+        "2": 122,
+        "3": 123,
+        "4": 108,
+        "5": 100
+      },
+      "weight_ns_row_counts": {
+        "1000000": 676
+      },
+      "state_row_counts": {
+        "Running": 676
+      },
+      "monotonic_timestamps": true,
+      "duplicate_time_thread_pairs": 0,
+      "duplicate_XML_definition_ids": 0,
+      "warning_error_lost_dropped_matching_log_lines": 0,
+      "loss_status_table_exposed_in_TOC": false,
+      "no_sample_loss_proven": false
+    }
+  ],
+  "conclusion": "Substantially different row totals persist throughout both similar-duration recordings. Truncation, mixed target PID, duplicate rows, variable row weight and explicit tool warnings were not observed. Missing loss-status telemetry prevents proving no loss; no cause is assigned to the discrepancy. No quantitative performance comparison or CPU percentage conclusion follows."
+}

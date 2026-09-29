@@ -1,0 +1,17 @@
+{
+  "variant": "off",
+  "mode": "still",
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "app_sha256": "9a3adccf774fb628d68b624b431b7f3056954caf44e5873eb3b65d511e6c76c5",
+  "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+  "loaded_library_exact_path_verified": true,
+  "loaded_mpv_library_count": 1,
+  "private_loader_log_sha256": "bd7fbf9611ed7c49b0212c353ee5496c727aed1dc11451bd4e65fb38d61b84c1",
+  "native_log_sha256": "d750f8f61b5170d8720d13e0aa33cf19f5d22e27624ff67a8f7299867039be87",
+  "exit_code": 0,
+  "forced_termination": false,
+  "elapsed_seconds": 21.35676312498981,
+  "real_account": false,
+  "display_awake_fixture": true,
+  "performance_measurement": false
+}

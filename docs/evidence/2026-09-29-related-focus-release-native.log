@@ -1,0 +1,30 @@
+graphics: Apple | Apple M1 | 4.1 Metal - 91.7
+window occluded=false at_ms=256
+related focus stage=4 focused=-1 parking=false target=-1 serial=0 visible=false offset=0 fullscreen=false result=Ok(())
+related focus stage=6 focused=-1 parking=true target=0 serial=1 visible=false offset=0 fullscreen=false result=Ok(())
+related focus stage=8 focused=-1 parking=true target=29 serial=4 visible=false offset=0 fullscreen=false result=Ok(())
+related focus stage=10 focused=29 parking=false target=29 serial=0 visible=true offset=0 fullscreen=false result=Ok(())
+related focus stage=12 focused=-1 parking=true target=0 serial=5 visible=false offset=-439.5 fullscreen=false result=Ok(())
+related focus stage=14 focused=0 parking=false target=0 serial=0 visible=true offset=-227.5 fullscreen=false result=Ok(())
+related focus stage=16 focused=0 parking=false target=0 serial=0 visible=false offset=-439.5 fullscreen=true result=Ok(())
+window occluded=true at_ms=16157
+window occluded=false at_ms=16727
+related focus stage=19 focused=-1 parking=false target=-1 serial=0 visible=false offset=-0 fullscreen=false result=Ok(())
+window occluded=true at_ms=19075
+window occluded=false at_ms=19601
+related focus stage=22 focused=-1 parking=true target=0 serial=6 visible=false offset=-439.5 fullscreen=false result=Ok(())
+related focus stage=24 focused=-1 parking=false target=29 serial=0 visible=false offset=-439.5 fullscreen=false result=Ok(())
+related focus stage=26 focused=-1 parking=false target=29 serial=0 visible=false offset=-439.5 fullscreen=false result=Ok(())
+related focus stage=28 focused=-1 parking=true target=0 serial=8 visible=false offset=0 fullscreen=false result=Ok(())
+related focus stage=30 focused=-1 parking=true target=29 serial=9 visible=false offset=0 fullscreen=true result=Ok(())
+window occluded=true at_ms=30113
+window occluded=false at_ms=30687
+related fullscreen retirement: player=true parking=false serial=0
+related focus stage=33 focused=-1 parking=false target=-1 serial=0 visible=false offset=0 fullscreen=false result=Ok(())
+window occluded=true at_ms=33101
+window occluded=false at_ms=33690
+related focus stage=36 focused=-1 parking=false target=-1 serial=0 visible=false offset=0 fullscreen=false result=Ok(())
+related focus check complete: wide_compact=true ordinary_tab=true fullscreen_offset=true search_cancel=true fullscreen_cancel=true catalog_delta=0 loads=1 screen_reader=not_tested compositor_visibility=not_measured
+related focus stage=39 focused=-1 parking=false target=-1 serial=0 visible=false offset=0 fullscreen=false result=Ok(())
+session counters: ui=175 catalog_changes=0 catalog_resets=1 redraw_requests=2360 draw_callbacks=2507 media=Snapshot { stop_pending: true, state: Playing, paused: false, paused_for_cache: false, playback_restarted: false, position: 0.0, duration: 0.0, volume: 100.0, muted: false, mute_observed: true, speed: 1.0, speed_observed: true, speed_updates: 1, hwdec_current: "videotoolbox", codec: "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10", audio_codec: "aac", audio_output: "avfoundation", subtitle_id: None, subtitle_selection_observed: true, subtitle_updates: 3, diagnostic_silent_audio: false, autosync_factor: 0, audio_sample_rate: 48000, width: 1920, height: 1080, fps: 60.0, dropped_frames: 55, error: None, events_received: 206, file_loads: 1, file_starts: 1, load_request_id: 0, active_load_request_id: 4611686018427387904, failed_load_request_id: None, resume_position_reply: None, audio_probe_reply: None, wakeups: 2469, render_notifications: 2336, decoder_dropped_frames: 0, timing_lead_ms: 50, prepare_ms: 0, display_clock_ticks: 2375, display_clock_starts: 5, display_clock_stops: 4, display_clock_active: true, prevents_display_sleep: true }
+render stats: RenderStats { updates: 2333, video_draws: 2331, ui_draws: 2507, target_allocations: 14, target_bytes: 7936128, stable_video_target: false, stable_target_draws: 0, private_target_draws: 1, target_publications: 2330, timing_samples: 0, gl_save_us: 0, mpv_update_us: 0, mpv_render_us: 0, gl_restore_us: 0, max_mpv_render_us: 0, target_time_samples: 0, early_us: 0, late_us: 0, max_early_us: 0, max_late_us: 0, scheduled_wakes: 0, callback_latency_samples: 0, callback_latency_us: 0, max_callback_latency_us: 0, gpu: GpuTimingStats { requested: false, supported: false, query_api_available: false, counter_bits: 0, elapsed_counter_bits: 0, ui_elapsed_requested: false, ui_elapsed_samples: 0, ui_elapsed_ns: 0, max_ui_elapsed_ns: 0, elapsed_conflicts: 0, allocation_failed: false, disjoint_supported: false, frame_samples: 0, media_samples: 0, frame_ns: 0, media_ns: 0, ui_after_media_ns: 0, max_frame_ns: 0, max_media_ns: 0, max_ui_after_media_ns: 0, dropped_samples: 0, invalid_samples: 0, disjoint_events: 0, pending_samples: 0 } }

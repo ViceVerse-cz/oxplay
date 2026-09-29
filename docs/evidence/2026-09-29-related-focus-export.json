@@ -1,0 +1,82 @@
+{
+  "scope": "Finite working-tree macOS debug functional related keyboard check; no performance, screen-reader, compositor or other-platform qualification",
+  "observed_pass_stages": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    19,
+    22,
+    24,
+    26,
+    28,
+    30,
+    33,
+    36,
+    39
+  ],
+  "source_inputs_before_after_identical": true,
+  "source_input_count": 138,
+  "binary_sha256": "9ab3773a031e5f1ab3affd4320bb942112755235bf0a8648a0066968473f8ca6",
+  "retained_failures": [
+    "attempt1 same-stack changed-handler assertion",
+    "attempt2 parking has-focus remains after disabled transition",
+    "attempt3 source transfer still left disabled has-focus stale"
+  ],
+  "source_finding": "Pinned Slint FocusScope::focus_event ignores FocusOut while disabled. Keep non-Tab/non-click parking enabled; active-surface Rust checks and explicit player transfer remain.",
+  "payloads": [
+    {
+      "source": "artifacts/related-focus/attempt-1/native.log",
+      "export": "2026-09-29-related-focus-same-stack-assertion-failure.log",
+      "sha256": "27a15c9e552a4b00e0e530373cccbec1cbc33eee4d9434fbc8cdcbce8688b5e7"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-1/summary.json",
+      "export": "2026-09-29-related-focus-same-stack-assertion-failure.json",
+      "sha256": "33a0c60a5398fc4246a3ac022f65514bfbe03210170f0e804609533b1796dd52"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-2/native.log",
+      "export": "2026-09-29-related-focus-hidden-parking-focus-failure.log",
+      "sha256": "5997b2a751329af0d853e69523fb5690c4ee7ac70bf6e9c5cbce5eeafd775093"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-2/summary.json",
+      "export": "2026-09-29-related-focus-hidden-parking-focus-failure.json",
+      "sha256": "d75f93c8cff5136b526d4fb6c5cda3bbf743f8e2095120585e69d6ed8ffa80cd"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-3/native.log",
+      "export": "2026-09-29-related-focus-stale-disabled-flag-failure.log",
+      "sha256": "41abd45b8cf6a4b812a0e4f6374111b3ff851e7f6b0c8b44095e52fd5aecd5b9"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-3/summary.json",
+      "export": "2026-09-29-related-focus-stale-disabled-flag-failure.json",
+      "sha256": "1eb465b76a98a2727bc58eb1cd87c41f75a38cd368d844a3f34db89057bd40b5"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-4/native.log",
+      "export": "2026-09-29-related-focus-native.log",
+      "sha256": "1ed6feac3579907ecc76033604b6a07751229244e0baa90890d7526822d50785"
+    },
+    {
+      "source": "artifacts/related-focus/attempt-4/summary.json",
+      "export": "2026-09-29-related-focus-summary.json",
+      "sha256": "d25b068e8723049742da51bdee6dc718ec6967e9e7e35351e3356f6b2d4cd0d9"
+    },
+    {
+      "source": "artifacts/related-focus/source-debug-6.json",
+      "export": "2026-09-29-related-focus-source-before.json",
+      "sha256": "41d1350766ad16340490f152b445d3e4cb512a37f1a13b04e8cbfac313d0ead6"
+    },
+    {
+      "source": "artifacts/related-focus/source-debug-6-after.json",
+      "export": "2026-09-29-related-focus-source-after.json",
+      "sha256": "41d1350766ad16340490f152b445d3e4cb512a37f1a13b04e8cbfac313d0ead6"
+    }
+  ]
+}

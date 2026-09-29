@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "packages": [
+    {
+      "name": "meson",
+      "version": "1.12.1",
+      "metadata_url": "https://pypi.org/pypi/meson/json",
+      "metadata_sha256": "34801ae0bdba0e23dd7261e35a3868fdbac647d7006739dc086a8310a654c612",
+      "project_urls": {
+        "Homepage": "https://mesonbuild.com",
+        "Source": "https://github.com/mesonbuild/meson"
+      },
+      "files": [
+        {
+          "filename": "meson-1.12.1-py3-none-any.whl",
+          "sha256": "930bc7542cbd9f57009e182fd014eba48cf1a0180a7b9006d2d32d8f168d8b02",
+          "bytes": 1108668,
+          "url": "https://files.pythonhosted.org/packages/57/99/36cd25f9598eef70db97577440a70a360af505f6f01c2338a18d1556079c/meson-1.12.1-py3-none-any.whl",
+          "kind": "bdist_wheel"
+        },
+        {
+          "filename": "meson-1.12.1.tar.gz",
+          "sha256": "ab0a6ca09f8ef70c564c8241fb5a23957886a0b53fb58412b5e07eaf07dba743",
+          "bytes": 2524665,
+          "url": "https://files.pythonhosted.org/packages/f9/c9/8c9983f4f3d9c4e22fd76bcf8cd053e4472aefae45fd044669b6daa34b53/meson-1.12.1.tar.gz",
+          "kind": "sdist"
+        }
+      ]
+    },
+    {
+      "name": "ninja",
+      "version": "1.13.2",
+      "metadata_url": "https://pypi.org/pypi/ninja/json",
+      "metadata_sha256": "26598570bad73a8041639468aa383df7900ddf25d3e16b9ebb7e269d387083ba",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/scikit-build/ninja-python-distributions/issues",
+        "Documentation": "https://github.com/scikit-build/ninja-python-distributions#readme",
+        "Download": "https://github.com/ninja-build/ninja/releases",
+        "Homepage": "http://ninja-build.org/",
+        "Mailing list": "https://groups.google.com/forum/#!forum/scikit-build",
+        "Source Code": "https://github.com/scikit-build/ninja-python-distributions"
+      },
+      "files": [
+        {
+          "filename": "ninja-1.13.2-py3-none-macosx_10_9_universal2.whl",
+          "sha256": "fd82e26c0706ad4ab88e5fdd26f3fab0a987a90f810160f6c322e752c6af298b",
+          "bytes": 306611,
+          "url": "https://files.pythonhosted.org/packages/b5/b8/90a9518f2264637084d6199bc20c2f3fb97fefc4c474d277720150c3bd6d/ninja-1.13.2-py3-none-macosx_10_9_universal2.whl",
+          "kind": "bdist_wheel"
+        },
+        {
+          "filename": "ninja-1.13.2.tar.gz",
+          "sha256": "525bfa3fc88aa30a4467df270fd5be6f9fcae8061d54d4df74ea1dc5abd5a975",
+          "bytes": 243739,
+          "url": "https://files.pythonhosted.org/packages/ac/92/410b7917d16ab54c04b05cc32b9284803671d91cf79d33be6009c28d4ea8/ninja-1.13.2.tar.gz",
+          "kind": "sdist"
+        }
+      ]
+    },
+    {
+      "name": "docutils",
+      "version": "0.23",
+      "metadata_url": "https://pypi.org/pypi/docutils/json",
+      "metadata_sha256": "69787bfbeb54559a083ee5fcbaac7ddbf9a83fd12681fcbdc5d661d4a665adf7",
+      "project_urls": {
+        "Changelog": "https://docutils.sourceforge.io/HISTORY.html",
+        "Code": "https://sourceforge.net/p/docutils/code/",
+        "Documentation": "https://docutils.sourceforge.io/docs/",
+        "Download": "https://pypi.org/project/docutils/",
+        "Homepage": "https://docutils.sourceforge.io",
+        "Issue tracker": "https://sourceforge.net/p/docutils/bugs/"
+      },
+      "files": [
+        {
+          "filename": "docutils-0.23-py3-none-any.whl",
+          "sha256": "25d013af9bf23bc1c7b2b093dff4208166c53a94786c9e447808335ef1185fea",
+          "bytes": 634701,
+          "url": "https://files.pythonhosted.org/packages/32/91/30151a39f7570f448ed84529390628a651d7f27c87d73c9b887f8189695e/docutils-0.23-py3-none-any.whl",
+          "kind": "bdist_wheel"
+        },
+        {
+          "filename": "docutils-0.23.tar.gz",
+          "sha256": "746f5060322511280a1e50eb76846ed6bf2342984b2ac04dc42caa1a8d78799e",
+          "bytes": 2303823,
+          "url": "https://files.pythonhosted.org/packages/39/a4/5180d9afc57e8fca05601dd652bdff19604c218814037fe90ffc7625a50a/docutils-0.23.tar.gz",
+          "kind": "sdist"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "PyPI HTTPS metadata and file hashes verified; not a reproducible build or independent publisher signature proof.",
+    "Wheel tools remain private build prerequisites; source distributions retained without executing them."
+  ]
+}

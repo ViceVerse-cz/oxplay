@@ -1,0 +1,12 @@
+{
+  "display_awake_fixture": true,
+  "mode": "local",
+  "app_sha256": "b6d39791e3535466abaeb9b7cce2a737577af6c2b11d6efc126c75129f8435e3",
+  "exit_code": 101,
+  "timeout": false,
+  "elapsed_seconds": 3.21,
+  "real_account_used": false,
+  "performance_measurement": false,
+  "stage_progress": false,
+  "stable_video_target": false
+}

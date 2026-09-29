@@ -1,0 +1,31 @@
+{
+  "command": [
+    "<python-executable>",
+    "<retained-sampler>",
+    "--include-new-vt-services",
+    "--per-process-rss",
+    "--warmup",
+    "10",
+    "--seconds",
+    "60",
+    "--output",
+    "<run-resource-output>",
+    "--macos-footprint",
+    "--",
+    "<frozen-application>",
+    "--local",
+    "<fixed-local-clip>",
+    "--data-root",
+    "<new-private-profile>",
+    "--demo-related",
+    "--diagnostics",
+    "--quit-after",
+    "85",
+    "--ui-size",
+    "1320x860",
+    "--ui-theme",
+    "dark",
+    "--native-video-child"
+  ],
+  "profile_precreated": false
+}

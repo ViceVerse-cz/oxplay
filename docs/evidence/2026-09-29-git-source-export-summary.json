@@ -1,0 +1,58 @@
+{
+  "application_source_archive_sha256": "25170c02d344794d7ed88bed3965105a60e5649349bb597138f1b343ab025b96",
+  "archive": {
+    "bytes": 41410560,
+    "entries": 6428,
+    "local_path": "artifacts/git-source-bc2e53f-20260929/git-cf3b07d4917e6759a63b0c03913a2594ec653414.tar",
+    "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+    "sha256": "b3b310b8704bfde1580a8727670ee6bed5063afee6375cdcb13dd706187f6bbd",
+    "tree": "77c0790f0a3878682eac1b86707428a1499b2663"
+  },
+  "archived_tree_payload_bytes": 36749882,
+  "collector_files_sha256": {
+    "scripts/git_source_export.py": "08751c7a782417bc07f752e74aa7816e4d970cac232811c876da9fb79e6df9a1",
+    "scripts/source_coverage.py": "2c0d1ab001598ed7cb9542828892cc98d48b90ff58487f76ef999d4604231785",
+    "scripts/test_git_source_export.py": "d0be2200e134547ba9401f6aca1c7d7d3ac873a7c8d2d6e4a97ff65d90ff72c0",
+    "scripts/test_source_coverage.py": "5e40adc04dd6af77f7deaba6304718bce4a6413fac5294598b5a704569401a12"
+  },
+  "complete_corresponding_source": false,
+  "current_workspace_lock_sha256": "2f56ff726e1e5ed5da1c497d079d0e2e1abf1a41edfe2f211563fe85dfaf7f9a",
+  "date": "2026-09-29",
+  "evidence_files": [
+    {
+      "bytes": 3185,
+      "path": "2026-09-29-git-source-export-manifest.json",
+      "sha256": "c78a0a7afa2a7bf64a4d386868ef49e2df98477ecbb05eb7d74213612aebfcb2"
+    },
+    {
+      "bytes": 156458,
+      "path": "2026-09-29-source-coverage-git-export.json",
+      "sha256": "dd0776dcb3a82926b93080d879b303b80841b9d4f1bd15750fc97b8c8d084e76"
+    }
+  ],
+  "gitlink_count": 0,
+  "input_artifact": "artifacts/Serein-bc2e53f.app/Contents/Resources/BuildInfo",
+  "lfs_pointer_count": 0,
+  "license_clearance": false,
+  "limits": [
+    "Actual package association remains the historical bc2e53f developer artifact; matching current Git selections do not requalify its binary or all newer dependencies.",
+    "All ordinary committed tree entries were independently object-hashed and checked in the emitted tar; no editable checkout used.",
+    "No submodule gitlinks or LFS pointer blobs appeared in this selected tree; this does not prove external/generated/build/toolchain closure.",
+    "Archive bytes remain local ignored artifacts; no archive upload or actual extraction was performed.",
+    "Deno/native dependency source coverage, reproducible builds and licensing review remain incomplete."
+  ],
+  "packaged_cargo_graph_sha256": "4aca1ebf806e2b4d4215bd50dab40305e70a58aa0e9273be11aa5c7d43d4b5be",
+  "packaged_cargo_lock_sha256": "2f56ff726e1e5ed5da1c497d079d0e2e1abf1a41edfe2f211563fe85dfaf7f9a",
+  "packaged_manifest_sha256": "2ac9679dffe3acb59e3f53a270c47199523cf771ec35df4e6e247120475fc500",
+  "publisher_authenticated": false,
+  "purpose": "bounded_local_locked_git_tree_export_evidence",
+  "repeat_archive_and_manifest_byte_identical": true,
+  "schema": 1,
+  "selected_git_packages_matching_current_lock": 14,
+  "source_association": "tool files hashed before a new commit; no source revision invented",
+  "synthetic_tests": {
+    "git_source_export": 19,
+    "result": "passed"
+  },
+  "verified_object_payload_bytes": 36867941
+}

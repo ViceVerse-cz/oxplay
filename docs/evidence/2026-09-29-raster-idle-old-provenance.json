@@ -1,0 +1,10 @@
+{
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+  "sampler_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+  "harness_sha256": "7346b7a045de322288cbf9788418a50fae66ebc6ce17d2ab07ce5eafcd08d97d",
+  "fixture_provenance_sha256": "5f15ee754b1f3b4f6bf07359738ae975a7a1c745866b173aa2bdfd7333d9c99f",
+  "scope": "Actual10000row SQLite fixture with30distinct rasters; no interaction smoke; about30visible-thumbnail SPEC gate remains open. Whole owned process RSS/CPU; no extra GPU attribution.",
+  "requested_window": "1320x860 logical, dark, nativeOS may constrain height",
+  "real_account": false
+}

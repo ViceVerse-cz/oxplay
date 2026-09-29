@@ -1,0 +1,66 @@
+from pathlib import Path
+import json, hashlib, math, statistics, re
+R=Path('artifacts/native-child-timer-pair-v1/abba'); ORDER=['a1-on','b1-off','b2-off','a2-on']
+def sha(b): return hashlib.sha256(b).hexdigest()
+def stats(xs):
+ ys=sorted(xs);return {'mean':statistics.fmean(xs),'p95':ys[math.ceil(.95*len(ys))-1],'peak':ys[-1]}
+def eq(a,b): assert abs(a-b)<1e-8,(a,b)
+def number(line,key):
+ m=re.search(r'(?<![A-Za-z_])'+re.escape(key)+r': ([0-9.e+-]+)(?:,| })',line); assert m,key;return float(m[1])
+manifest=json.loads((R/'manifest.json').read_text())
+for f in manifest['files']:
+ b=(R/f['name']).read_bytes(); assert len(b)==f['bytes'] and sha(b)==f['sha256'],f['name']
+p=json.loads((R/'provenance.json').read_text())
+for f,key in [('sampler.py','sampler_sha256'),('harness.py','harness_sha256'),('source-inventory.json','source_inventory_sha256'),('protocol.py','protocol_sha256'),('preparation.json','preparation_sha256'),('functional-analysis.json','prior_functional_analysis_sha256')]:assert sha((R/f).read_bytes())==p[key]
+result=[]
+for name in ORDER:
+ x=json.loads((R/(name+'.json')).read_text());sup=json.loads((R/(name+'.supervisor.json')).read_text());log=(R/(name+'.json.log')).read_text();rows=x['samples'];assert len(rows)==x['sample_count']==60
+ assert x['exit_code']==0 and not x['forced_termination'] and x['warmup_seconds']==10
+ assert sup['functional_sample_admission_passed'] and sup['group_absence_after_reap_confirmed'] and sup['wake_group_absence_confirmed'] and not sup['failure_type'] and not sup['validation_failure']
+ for suff,h in sup['raw_artifact_hashes'].items():assert sha((R/(name+suff)).read_bytes())==h
+ previous=0;identities=set();starts=set()
+ for row in rows:
+  t=row['elapsed_after_warmup_seconds'];assert math.isfinite(t) and t>previous;previous=t
+  for k in ['rss_mib','cpu_one_core_percent','host_other_cpu_one_core_percent']:assert math.isfinite(row[k]) and row[k]>=0
+  assert row['processes']==2 and row['process_rss_omitted_count']==0 and row['process_rss_omitted_mib']==0
+  assert {v['attribution'] for v in row['process_rss']}=={'root','temporal_vt_service'}
+  eq(sum(v['rss_mib'] for v in row['process_rss']),row['rss_mib']);eq(sum(row['process_rss_totals_mib'].values()),row['rss_mib'])
+  identities.add(tuple((v['pid'],v['executable'],v['attribution']) for v in row['process_rss']))
+  f=row['macos_footprint'];assert f['complete'] and f['omitted_count']==0 and all(v['available'] for v in f['processes'])
+  eq(sum(v['physical_footprint_mib'] for v in f['processes']),f['aggregate_physical_footprint_mib']);eq(sum(f['observed_totals_mib'].values()),f['aggregate_physical_footprint_mib'])
+  starts.add(tuple((v['pid'],v['process_start_abstime']) for v in f['processes']))
+ assert len(identities)==len(starts)==1
+ scalar={k:stats([r[k] for r in rows]) for k in ['rss_mib','cpu_one_core_percent','host_other_cpu_one_core_percent']}
+ for k,v in scalar.items():
+  for sk,sv in v.items():eq(sv,x[k][sk]);eq(sv,sup['metrics'][k][sk])
+ footprint=stats([r['macos_footprint']['aggregate_physical_footprint_mib'] for r in rows])
+ for k,v in footprint.items():eq(v,x['macos_footprint']['physical_footprint_mib'][k])
+ cp={int(m[1]):m[2] for m in re.finditer(r'^checkpoint seconds=(\d+): (.*)$',log,re.M)}; assert set(cp)=={5,10,25,70}
+ assert 'occluded=true' not in log and 'error: Some' not in log
+ for t in [10,25,70]:
+  l=cp[t]
+  for token in ['state: Playing','paused: false','hwdec_current: "videotoolbox"','audio_codec: "aac"','audio_output: "avfoundation"','audio_sample_rate: 48000','error: None','catalog_changes=0 catalog_resets=1']:assert token in l
+  for k,v in [('width',1920),('height',1080),('fps',60),('file_loads',1),('speed',1),('volume',100)]:assert number(l,k)==v
+ deltas={k:int(number(cp[70],k)-number(cp[10],k)) for k in ['dropped_frames','decoder_dropped_frames','render_notifications']}
+ for k,v in deltas.items():assert v==sup['metrics']['media_counters'][k]['warm_delta']
+ draws=int(re.search(r'ui_draws=(\d+)',cp[70])[1])-int(re.search(r'ui_draws=(\d+)',cp[10])[1]);assert draws==sup['metrics']['ui_draw_delta_10_to_70']
+ g=[l for l in log.splitlines() if l.startswith('presentation geometry seconds=') and any('seconds='+str(t)+':' in l for t in [10,25,70])];assert len(g)==3
+ for line in g:
+  assert 'window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false' in line
+  assert line.endswith('geometry_events=4')
+ host={}
+ for n in ['WindowServer','coreaudiod','cargo','rustc','mediaanalysisd']:
+  vals=[next((h['cpu_one_core_percent'] for h in r['host_other_top_cpu'] if h['executable']==n),None) for r in rows]
+  host[n]={'present_in_top_eight_samples':sum(v is not None for v in vals),'mean_observed_contribution_lower_bound':sum(v or 0 for v in vals)/60}
+ catrss={k:statistics.fmean(r['process_rss_totals_mib'][k] for r in rows) for k in ['root','descendant','temporal_vt_service']}
+ catfoot={k:statistics.fmean(r['macos_footprint']['observed_totals_mib'][k] for r in rows) for k in catrss}
+ native=True
+ if native:
+  ng=[l for l in log.splitlines() if l.startswith('native geometry seconds=')]
+  assert len(ng)==4 and all('backing_px=1328x747' in l and 'visible=true' in l for l in ng)
+  geometry_counts={int(re.search(r'geometry_changes=(\d+)',l)[1]) for l in ng};assert len(geometry_counts)==1
+ result.append({'mode':name,'sample_count':60,'geometry_matches':True,'native_geometry_changes_since_startup':next(iter(geometry_counts)),'cpu_one_core_percent':scalar['cpu_one_core_percent'],'rss_mib':scalar['rss_mib'],'footprint_mib':footprint,'rss_attributed_means_mib':catrss,'footprint_attributed_means_mib':catfoot,'host_other_cpu_one_core_percent':scalar['host_other_cpu_one_core_percent'],'host_top_eight_observations':host,'media_delta_10_to_70':deltas,'ui_draw_delta_10_to_70':draws,'sample_elapsed_first_last':[rows[0]['elapsed_after_warmup_seconds'],rows[-1]['elapsed_after_warmup_seconds']],'position_advance_10_to_70':number(cp[70],'position')-number(cp[10],'position'),'single_root_and_temporal_service_identity':True,'single_rusage_start_identity_per_process':True,'footprint_complete_samples':60})
+a=statistics.fmean(r['cpu_one_core_percent']['mean'] for r in result if r['mode'].startswith('a'));b=statistics.fmean(r['cpu_one_core_percent']['mean'] for r in result if r['mode'].startswith('b'))
+analysis={'schema':1,'source_revision':p['source_revision'],'unmodified_app_sha256':p['unmodified_app_sha256'],'variants':p['variants'],'sample_count':240,'all_original_manifest_hashes_match':True,'raw_and_supervisor_statistics_independently_match':True,'runs':result,'comparison':{'timer_on_cpu_mean':a,'timer_off_cpu_mean':b,'timer_off_reduction_percentage_points':a-b,'timer_off_relative_reduction_percent':100*(a-b)/a,'timer_on_ui_draws_mean':statistics.fmean(r['ui_draw_delta_10_to_70'] for r in result if r['mode'].startswith('a')),'timer_off_ui_draws_mean':statistics.fmean(r['ui_draw_delta_10_to_70'] for r in result if r['mode'].startswith('b'))},'full_spec_pass':False,'native_production_qualified':False,'cpu_25_target_pass':False,'limitations':['Two trials per mode do not establish long-term repeatability or isolate stage CPU costs.','Host top-eight observations are censored; absence is not zero work. WindowServer/coreaudiod are shared and excluded from app CPU, not assigned exclusively.','Snapshots are non-atomic, temporal VT ownership unproven, baseline services excluded, short-lived helpers may be missed.','Footprint and RSS are separate OS views, not additive/unique-memory totals; GPU shared allocations remain incomplete.','Finite media checkpoints bracket nominal10–70s, not atomically aligned to sampler observations; no screenshots or profiler in measured intervals.']}
+Path('/tmp/native-timer-abba-independent-analysis.json').write_text(json.dumps(analysis,indent=2)+'\n')
+print(json.dumps({'comparison':analysis['comparison'],'all_manifest_hashes_match':True,'samples':240,'host':[{'mode':r['mode'],'host':r['host_top_eight_observations'],'rss_attribution':r['rss_attributed_means_mib'],'footprint_attribution':r['footprint_attributed_means_mib']} for r in result]},indent=2))

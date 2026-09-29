@@ -1,0 +1,453 @@
+{
+  "qualification": "No repeatable playback CPU ceiling pass; related-card caching remains off. No power or sleep-prevention qualification.",
+  "provenance": {
+    "source_revision": "5094c3902645976def9de5b827b9f42fc9aaaa59",
+    "app_sha256": "662c0b7789cf013409da7df82cca2b9694b45f538fe1b24fe598797a7a4b3342",
+    "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+    "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+    "run_order": [
+      "a1-off",
+      "b1-related",
+      "b2-related",
+      "a2-off"
+    ],
+    "fixture": "30 explicitly labeled related rows, empty thumbnails",
+    "geometry": "1320x860 logical, dark theme",
+    "display_awake_fixture": "bounded caffeinate -d -u during each run; not power or sleep-prevention evidence",
+    "scope": "Related cards cache only; no other cache, screenshot, profiler, or GPU query enabled"
+  },
+  "exports": [
+    {
+      "file": "2026-09-29-related-cache-provenance.json",
+      "sha256": "55cbf912ff9b7d131990922c79e0beb7f7a65d4ebe36381a7e8c2880eb08ddae"
+    },
+    {
+      "file": "2026-09-29-related-cache-a1-off.json",
+      "sha256": "39fdf8956e97e2f62e2cc3b6b6d743eeb0ec0491ec5e754356085d3da720b083"
+    },
+    {
+      "file": "2026-09-29-related-cache-a1-off.json.log",
+      "sha256": "e2df5a88d352149ffc83ca24eb3327ef2b299e5bb7d94e80f56cf11850be2653"
+    },
+    {
+      "file": "2026-09-29-related-cache-a1-off.sampler.log",
+      "sha256": "d1d3f641539d9f3c9d0b575001f271c3da9c2ad8c84bfaf6bb7dbc67f58ede8a"
+    },
+    {
+      "file": "2026-09-29-related-cache-b1-related.json",
+      "sha256": "0d84230d0f8bad1b5304f1a8f37533822f03cb898f9ec8f1a6b01749417040b4"
+    },
+    {
+      "file": "2026-09-29-related-cache-b1-related.json.log",
+      "sha256": "59d0fb66efa27726dd9e1dc975a6c948f705399ef35edf3488c701ee4f3b2655"
+    },
+    {
+      "file": "2026-09-29-related-cache-b1-related.sampler.log",
+      "sha256": "d2f569efa06de11266bd68ddd21da3645ed98b01d12fa3028529e0a9612a940f"
+    },
+    {
+      "file": "2026-09-29-related-cache-b2-related.json",
+      "sha256": "eed2deebb1786227c8814675f77013acef769cab838361828c60d17cd42df442"
+    },
+    {
+      "file": "2026-09-29-related-cache-b2-related.json.log",
+      "sha256": "a0f00286baf0cb921c85c21b5fb43c126d1b9e5f0fda044d4e099709a693f1ab"
+    },
+    {
+      "file": "2026-09-29-related-cache-b2-related.sampler.log",
+      "sha256": "8358d508bc7c70278e040ff4c1b18401d59a8bb9178c467b558aab727adddc60"
+    },
+    {
+      "file": "2026-09-29-related-cache-a2-off.json",
+      "sha256": "5b01d3034a5fb3b1bbd38efb8bbffb2d170446d39a06fb415cca55a48ed06948"
+    },
+    {
+      "file": "2026-09-29-related-cache-a2-off.json.log",
+      "sha256": "cb246547e6346ea1d0c0ebca6e0f71bf0d61c59e1c78ff048a6f51c1b05a6e9d"
+    },
+    {
+      "file": "2026-09-29-related-cache-a2-off.sampler.log",
+      "sha256": "50fda9781a75e512eaebf7a15a943247bccbdce208b13aff845b0f3cd19b6815"
+    },
+    {
+      "file": "2026-09-29-related-cache-occluded-attempt.json",
+      "sha256": "e6a6c4fd55c1ff6ec943e081fa687bde14d0710f91344331c07a3ebcd8c50ab6"
+    },
+    {
+      "file": "2026-09-29-related-cache-occluded-attempt.json.log",
+      "sha256": "876e80cb7636717111c2e22fac3e9156e16e61d1b9d99d464a414f5c603c4a26"
+    },
+    {
+      "file": "2026-09-29-related-cache-occluded-attempt.sampler.log",
+      "sha256": "46095f076b03c99a03a476e808b701b0bf9c6b0a58364a874c40a7ed8a044d63"
+    },
+    {
+      "file": "2026-09-29-related-cache-occluded-attempt-provenance.json",
+      "sha256": "8275be5b2b4e696a54f39111eaf4107f5533fa881119c504824bc1075a515676"
+    }
+  ],
+  "runs": [
+    {
+      "name": "a1-off",
+      "valid_playback_interval": true,
+      "exclusion_reason": null,
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 53.98733841318656,
+        "p95": 62.99853528390251,
+        "peak": 64.00142940718575
+      },
+      "rss_mib": {
+        "mean": 188.93880208333334,
+        "p95": 189.671875,
+        "peak": 189.78125
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.31217063867716,
+        "p95": 69.00228860001408,
+        "peak": 77.00054539478752
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 4.516666666666667
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 9.566666666666666
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 24.4
+        },
+        {
+          "seconds": 70,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 69.56666666666666
+        }
+      ],
+      "warm_10_to_70s_vo_drop_delta": 0,
+      "warm_10_to_70s_decoder_drop_delta": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "render_stats": {
+        "updates": 5077,
+        "video_draws": 5076,
+        "ui_draws": 5543,
+        "target_allocations": 2,
+        "target_bytes": 8614016
+      },
+      "occlusion_events": [
+        "window occluded=false at_ms=274"
+      ]
+    },
+    {
+      "name": "b1-related",
+      "valid_playback_interval": true,
+      "exclusion_reason": null,
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 48.01037126985772,
+        "p95": 63.99959462765314,
+        "peak": 65.31206040571026
+      },
+      "rss_mib": {
+        "mean": 193.28489583333334,
+        "p95": 193.96875,
+        "peak": 194.078125
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 71.28654570623871,
+        "p95": 158.6683596416814,
+        "peak": 162.1180121197459
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 4.516666666666667
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 9.55
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 24.633333333333333
+        },
+        {
+          "seconds": 70,
+          "dropped_frames": 3,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 69.46666666666667
+        }
+      ],
+      "warm_10_to_70s_vo_drop_delta": 0,
+      "warm_10_to_70s_decoder_drop_delta": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "render_stats": {
+        "updates": 5077,
+        "video_draws": 5076,
+        "ui_draws": 5568,
+        "target_allocations": 2,
+        "target_bytes": 8614016
+      },
+      "occlusion_events": [
+        "window occluded=false at_ms=278"
+      ]
+    },
+    {
+      "name": "b2-related",
+      "valid_playback_interval": true,
+      "exclusion_reason": null,
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 53.280530159091676,
+        "p95": 63.00042790011089,
+        "peak": 64.18184979537614
+      },
+      "rss_mib": {
+        "mean": 193.07994791666667,
+        "p95": 193.875,
+        "peak": 194.0625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 61.622930749144324,
+        "p95": 79.8690053248665,
+        "peak": 193.63728053951976
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 4.5
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 9.516666666666666
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 24.583333333333332
+        },
+        {
+          "seconds": 70,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 69.43333333333334
+        }
+      ],
+      "warm_10_to_70s_vo_drop_delta": 0,
+      "warm_10_to_70s_decoder_drop_delta": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "render_stats": {
+        "updates": 5078,
+        "video_draws": 5077,
+        "ui_draws": 5588,
+        "target_allocations": 2,
+        "target_bytes": 8614016
+      },
+      "occlusion_events": [
+        "window occluded=false at_ms=287"
+      ]
+    },
+    {
+      "name": "a2-off",
+      "valid_playback_interval": true,
+      "exclusion_reason": null,
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 51.20208292920966,
+        "p95": 62.99972437594069,
+        "peak": 64.00111201847554
+      },
+      "rss_mib": {
+        "mean": 189.059375,
+        "p95": 189.84375,
+        "peak": 189.90625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 58.09155795979721,
+        "p95": 82.01329296182142,
+        "peak": 104.74313962204725
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 4.5
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 9.533333333333333
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 24.4
+        },
+        {
+          "seconds": 70,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 69.48333333333333
+        }
+      ],
+      "warm_10_to_70s_vo_drop_delta": 0,
+      "warm_10_to_70s_decoder_drop_delta": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "render_stats": {
+        "updates": 5078,
+        "video_draws": 5077,
+        "ui_draws": 5574,
+        "target_allocations": 2,
+        "target_bytes": 8614016
+      },
+      "occlusion_events": [
+        "window occluded=false at_ms=281"
+      ]
+    },
+    {
+      "name": "occluded-attempt",
+      "valid_playback_interval": false,
+      "exclusion_reason": "Occluded at 8928ms, then paused throughout measurement.",
+      "sample_count": 60,
+      "cpu_one_core_percent": {
+        "mean": 0.04843389001183996,
+        "p95": 0.0,
+        "peak": 0.999992625085523
+      },
+      "rss_mib": {
+        "mean": 186.91927083333334,
+        "p95": 187.453125,
+        "peak": 187.609375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 18.456800707467576,
+        "p95": 73.05092627899202,
+        "peak": 154.19591972038077
+      },
+      "exit_code": 0,
+      "forced_termination": false,
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Playing",
+          "position": 4.516666666666667
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 7,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Paused",
+          "position": 8.533333333333333
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 7,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Paused",
+          "position": 8.533333333333333
+        },
+        {
+          "seconds": 70,
+          "dropped_frames": 7,
+          "decoder_dropped_frames": 0,
+          "file_loads": 1,
+          "state": "Paused",
+          "position": 8.533333333333333
+        }
+      ],
+      "warm_10_to_70s_vo_drop_delta": 0,
+      "warm_10_to_70s_decoder_drop_delta": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "render_stats": {
+        "updates": 511,
+        "video_draws": 510,
+        "ui_draws": 567,
+        "target_allocations": 2,
+        "target_bytes": 8614016
+      },
+      "occlusion_events": [
+        "window occluded=false at_ms=280",
+        "window occluded=true at_ms=8928"
+      ]
+    }
+  ],
+  "sanitization": "Bounded scan found no absolute home/temp paths, URLs, cookie/auth headers or named session markers; exported bytes unchanged. Host process basenames remain. This is not a comprehensive secret-detection guarantee.",
+  "sampler_source_verified": {
+    "path": "scripts/measure.py",
+    "revision": "5094c3902645976def9de5b827b9f42fc9aaaa59",
+    "sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de"
+  }
+}

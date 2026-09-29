@@ -1,0 +1,1714 @@
+{
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "fixture_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+  "harness_sha256": "65a6dc2fd8129a450e129ac2d0cc56fbd471a7b25b41f4bec50dd7585834ebc3",
+  "bounded_external_display_assertion": true,
+  "real_account": false,
+  "cache_experiments": false,
+  "clock_staging": false,
+  "stable_target": false,
+  "full_spec_soak_gate": false,
+  "exit_code": 0,
+  "resource_status": "completed_not_automatically_qualified",
+  "sample_count": 3600,
+  "forced_termination": false,
+  "elapsed_seconds": 3604.7150506670005,
+  "observed_owned_processes_remaining": [],
+  "helper_audit_scope": "15-second descendant observations including sampler; tracked birth time/executable and process group after exit; very short-lived or unobserved reparented processes can escape",
+  "helper_audit": [
+    {
+      "elapsed_seconds": 1.125,
+      "owned_executables": [
+        "Python"
+      ]
+    },
+    {
+      "elapsed_seconds": 16.169,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 31.309,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 46.382,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 61.496,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 76.559,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 91.688,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 106.777,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 121.872,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 136.961,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 152.045,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 167.156,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 182.294,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 197.388,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 212.449,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 227.576,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 242.673,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 257.809,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 272.893,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 288.015,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 303.108,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 318.185,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 333.266,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 348.336,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 363.399,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 378.458,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 393.529,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 408.73,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 423.807,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 438.968,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 454.045,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 469.181,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 484.329,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 499.456,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 514.592,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 529.756,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 544.845,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 560.047,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 575.176,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 590.258,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 605.388,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 620.446,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 635.55,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 650.672,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 665.822,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 680.929,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 696.144,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 711.27,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 726.396,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 741.493,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 756.537,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 771.67,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 786.766,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 801.899,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 816.978,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 832.091,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 847.192,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 862.309,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 877.488,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 892.597,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 907.681,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 922.774,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 937.958,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 953.073,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 968.156,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 983.264,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 998.438,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1013.489,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1028.602,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1043.702,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1058.81,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1073.893,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1089.021,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1104.14,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1119.332,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1134.438,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1149.525,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1164.626,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1179.745,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1194.923,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1210.039,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1225.102,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1240.243,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1255.348,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1270.424,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1285.495,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1300.636,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1315.843,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1330.915,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1346.091,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1361.272,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1376.393,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1391.601,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1406.708,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1421.791,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1436.878,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1452.012,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1467.074,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1482.148,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1497.241,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1512.313,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1527.438,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1542.504,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1557.67,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1572.779,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1587.923,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1603.062,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1618.193,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1633.283,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1648.436,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1663.498,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1678.539,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1693.617,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1708.654,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1723.845,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1738.984,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1754.114,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1769.222,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1784.403,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1799.485,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1814.559,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1829.685,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1844.783,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1859.848,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1875.039,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1890.223,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1905.322,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1920.422,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1935.465,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1950.548,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1965.699,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1980.785,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 1995.902,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2011.135,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2026.241,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2041.435,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2056.488,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2071.65,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2086.832,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2102.007,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2117.203,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2132.284,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2147.438,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2162.649,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2177.726,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2192.864,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2207.992,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2223.094,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2238.206,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2253.309,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2268.439,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2283.617,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2298.695,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2313.914,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2329.018,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2344.208,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2359.259,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2374.449,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2389.657,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2404.701,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2419.89,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2434.974,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2450.06,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2465.194,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2480.373,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2495.542,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2510.636,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2525.743,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2540.841,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2555.985,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2571.215,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2586.297,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2601.427,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2616.531,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2631.616,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2646.805,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2661.947,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2677.045,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2692.174,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2707.279,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2722.404,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2737.511,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2752.734,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2767.833,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2782.973,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2798.087,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2813.208,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2828.332,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2843.495,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2858.654,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2873.713,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2888.853,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2903.992,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2919.143,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2934.206,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2949.399,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2964.551,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2979.608,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 2994.729,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3009.868,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3025.077,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3040.117,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3055.342,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3070.423,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3085.615,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3100.811,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3115.902,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3131.027,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3146.162,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3161.337,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3176.452,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3191.569,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3206.677,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3221.753,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3236.869,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3252.095,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3267.261,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3282.423,
+      "owned_executables": [
+        "Python",
+        "ps",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3297.498,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3312.581,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3327.66,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3342.715,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3357.889,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3372.977,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3388.177,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3403.337,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3418.491,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3433.559,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3448.767,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3463.867,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3479.0,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3494.111,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3509.194,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3524.305,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3539.425,
+      "owned_executables": [
+        "(ps)",
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3554.504,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3569.559,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3584.672,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    },
+    {
+      "elapsed_seconds": 3599.748,
+      "owned_executables": [
+        "Python",
+        "serein"
+      ]
+    }
+  ]
+}

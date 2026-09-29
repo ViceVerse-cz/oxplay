@@ -1,0 +1,10 @@
+{
+  "display_awake_fixture": true,
+  "mode": "refresh",
+  "app_sha256": "785ed516f5d703031b1756161ea7a9676197ca963665fc2a6ffe2db3a090222d",
+  "exit_code": 0,
+  "timeout": false,
+  "elapsed_seconds": 70.443,
+  "real_account_used": false,
+  "performance_measurement": false
+}

@@ -1,0 +1,80 @@
+{
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "independently_verified_input_hashes": 119,
+  "exports": [
+    {
+      "artifact": "artifacts/startup-focus-release/source.json",
+      "export": "2026-09-29-startup-focus-source.json",
+      "sha256": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939"
+    },
+    {
+      "artifact": "artifacts/startup-focus-release/functional/local.json",
+      "export": "2026-09-29-startup-focus-release.json",
+      "sha256": "b8d0569168e63501855bfa0ddde116c16d8409c40bd39b9a5138b2e535b2c47d"
+    },
+    {
+      "artifact": "artifacts/startup-focus-release/functional/local.log",
+      "export": "2026-09-29-startup-focus-release.log",
+      "sha256": "c96ce1cd8dde9f9067e208949124b6868805fae85edc1c752c58ba9c685d7630"
+    },
+    {
+      "artifact": "artifacts/startup-focus-debug/functional/local.json",
+      "export": "2026-09-29-startup-focus-debug-failure.json",
+      "sha256": "9b307ee7eb6d5e9f087ecc0305b9787df77b02b6af18835609df6b2b0614f7b4"
+    },
+    {
+      "artifact": "artifacts/startup-focus-debug/functional/local.log",
+      "export": "2026-09-29-startup-focus-debug-failure.log",
+      "sha256": "d9b0111d923dff9289c90ce73956dd0771959151254c02550df4f1528982cecb"
+    },
+    {
+      "artifact": "artifacts/startup-focus-debug3/functional/local.json",
+      "export": "2026-09-29-startup-focus-debug-instrumented.json",
+      "sha256": "31ab3fda8fe399518eac6ade4a9566c177e159a814cfe37d2591b72a0a9f5841"
+    },
+    {
+      "artifact": "artifacts/startup-focus-debug3/functional/local.log",
+      "export": "2026-09-29-startup-focus-debug-instrumented.log",
+      "sha256": "46ff25e979a3b07e47b084c68cbf0a837fb56f5b23ccfbfa8394e55e4c26252c"
+    }
+  ],
+  "central_validation_reported": {
+    "rust_passed": 261,
+    "rust_ignored": 3,
+    "formatting": "passed",
+    "strict_workspace_all_target_clippy": "passed",
+    "locked_release_build": "passed"
+  },
+  "release_result": {
+    "exit_code": 0,
+    "elapsed_seconds": 21.071,
+    "motion_changed_pixels": 838,
+    "motion_grid_pixels": 9216,
+    "file_loads": 1,
+    "catalog_changes": 0,
+    "catalog_resets": 1,
+    "final_vo_drops": 65,
+    "decoder_drops": 0,
+    "stage_progress": false,
+    "stable_video_target": false
+  },
+  "diagnostic_continuity": [
+    {
+      "phase": "preceding debug failure",
+      "exit_code": 101,
+      "elapsed_seconds": 4.598,
+      "app_sha256": "3404abb5f688ce30eed2e8936870bd41b3412435858a52ab132073c45b71546e",
+      "source_association": "No frozen source-input capture supplied; do not associate with final release commit."
+    },
+    {
+      "phase": "instrumented debug success",
+      "exit_code": 0,
+      "elapsed_seconds": 21.715,
+      "app_sha256": "195f72ec8346411ed9de7b42a6b576d4b9606155073d7b3855d6f723d4fc4be1",
+      "source_association": "Diagnostic intermediate source; no frozen input capture supplied."
+    }
+  ],
+  "earlier_frozen_failure": "2026-09-29-preferences-native-local-failure.json",
+  "scope": "Finite local-fixture macOS lifecycle and focus validation. Diagnostic snapshots are not performance evidence. No account/energy/compositor/perceptual A-V/other-platform/soak qualification. Separate hour soak was started, not completed at documentation time."
+}

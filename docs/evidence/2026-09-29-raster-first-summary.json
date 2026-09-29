@@ -1,0 +1,49 @@
+{
+  "source_revision": "0f311dde095ca2ddd1199c734fb22096343e024a",
+  "app_sha256": "1e2d82b1c603e64ddcc849dbc3a4629687d9458d98b2efefe7268256971d1cf4",
+  "source_inputs_independently_verified": 125,
+  "rust_tests_passed": 284,
+  "rust_tests_ignored": 3,
+  "python_tests_passed": 112,
+  "fmt": "pass",
+  "clippy_workspace_all_targets": "pass",
+  "release_locked": "pass",
+  "native_library": "failed_at_End_handoff_after_five_page_hover_checks_passed",
+  "native_local": "failed_scroll_assertion_after_mute_checks_passed",
+  "capture": "exit_0_inspected_native_fixture_only",
+  "performance_qualification": false,
+  "files": {
+    "2026-09-29-raster-first-source.json": {
+      "bytes": 13424,
+      "sha256": "f52525b56a76faef3fd5ce6cbbebb0afd0be8b6f4d4ae7adfe0a294738bf9802"
+    },
+    "2026-09-29-raster-first-library.log": {
+      "bytes": 3736,
+      "sha256": "0918973a88ef88b0908ca6bdff86c31fd83d6e30a5c39d49da11283bac56244f"
+    },
+    "2026-09-29-raster-first-library.json": {
+      "bytes": 356,
+      "sha256": "a36b14e6ecc9ed3c10a816dacc7e1304f5aae861ffeb752134935d94ca0cfc26"
+    },
+    "2026-09-29-raster-first-local.log": {
+      "bytes": 9933,
+      "sha256": "478abea5d90be7061e1a4038d077edea67b30fe48922167981395f50328c969e"
+    },
+    "2026-09-29-raster-first-local.json": {
+      "bytes": 357,
+      "sha256": "34d414b27b3304080cd89f2c276a3146fb8c17bc4c817f7463e19eb796ce2bbb"
+    },
+    "2026-09-29-raster-first-capture.log": {
+      "bytes": 2594,
+      "sha256": "871fe98f8932d6f061332bc9d0a3c7efa72eea6631421f9c4d0979d8ef6c6ae9"
+    },
+    "2026-09-29-raster-first-capture.json": {
+      "bytes": 357,
+      "sha256": "e063e4041a43426456f849168637fe07c72f4a3146d8586c071a388704cfdd21"
+    },
+    "2026-09-29-raster-first-library.png": {
+      "bytes": 639788,
+      "sha256": "fadc2daf027f50dff5fecc966a6b5c5adc09e893839191faa3ffd821079fcbfa"
+    }
+  }
+}

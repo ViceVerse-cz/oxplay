@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "local_functional_evidence_complete": true,
+  "full_spec_soak_gate": false,
+  "files": [
+    {
+      "file": "2026-09-29-soak-local-resource.json.gz",
+      "sha256": "c0c6160a5e3faf6ffcd2e3bddec6c9725e7ca8e77955ed3315a334ac4a5c5713",
+      "bytes": 397297,
+      "original_artifact": "resource.json",
+      "original_sha256": "8a0643180b8fca1c14b33fcb3b883107270cb801cb55e757942be38658ecb16c",
+      "original_bytes": 3838824,
+      "transformation": "deterministic gzip level9 mtime0; original bytes preserved"
+    },
+    {
+      "file": "2026-09-29-soak-local-summary.json",
+      "sha256": "dfa0135d3539b745546f8a11508b19ab70aaaa05bdfd174b31be412160489a6b",
+      "bytes": 29922,
+      "original_artifact": "summary.json",
+      "original_sha256": "dfa0135d3539b745546f8a11508b19ab70aaaa05bdfd174b31be412160489a6b",
+      "original_bytes": 29922,
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-local-source.json",
+      "sha256": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+      "bytes": 12935,
+      "original_artifact": "source.json",
+      "original_sha256": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+      "original_bytes": 12935,
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-local-native.log",
+      "sha256": "28e8fad4222bd2ee59c4e372c16a1e06e390a86c6e164d16f77833cb73b1012a",
+      "bytes": 59098,
+      "original_artifact": "resource.json.log",
+      "original_sha256": "28e8fad4222bd2ee59c4e372c16a1e06e390a86c6e164d16f77833cb73b1012a",
+      "original_bytes": 59098,
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-local-analysis.json",
+      "sha256": "53f4e309a0b9c0f77df60a3c0e0a56d01f8213084d400d48b6af43c50a62fb9d",
+      "bytes": 10596,
+      "original_artifact": "analysis.json",
+      "original_sha256": "53f4e309a0b9c0f77df60a3c0e0a56d01f8213084d400d48b6af43c50a62fb9d",
+      "original_bytes": 10596,
+      "transformation": "byte-for-byte copy after privacy audit"
+    }
+  ],
+  "privacy_audit": {
+    "exported_fields": "Full resource samples including bounded foreign executable basenames; full scalar native log; relative tracked source names and hashes; helper basenames and timing. No argv or executable directories.",
+    "checks": "All selected UTF-8 evidence scanned for local absolute path prefixes, URI, Cookie, Authorization and Bearer markers; none present. Resource host names validated as printable bounded basenames. JSON parsed; 3600 samples confirmed.",
+    "excluded": "Private data-root locator, executable, sampler console duplicate, and redundant helper audit/start files remain only under ignored artifacts.",
+    "redactions_applied": false
+  },
+  "verification_scope": "Export hashes and gzip roundtrip were checked. Earlier root verification compared119 captured source input hashes and executable identity before freezing; no new persisted Git verification report is asserted here."
+}

@@ -1,0 +1,85 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "source_inventory_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+  "build_input_count": 135,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "Finished `release` profile [optimized] target(s) in 1m 47s",
+  "native_qualified": false,
+  "performance_qualified": false,
+  "mode": "native-lifecycle-capture",
+  "harness_sha256": "b39151a655ee13187b5966a327faea6e1cc3d7074155f9586f36ad7aea7723e3",
+  "exit_code": 0,
+  "forced_termination": false,
+  "failure_type": null,
+  "group_absence_after_reap_confirmed": true,
+  "elapsed_seconds": 47.45247129199561,
+  "real_account": false,
+  "performance_measurement": false,
+  "bounded_external_display_assertion": true,
+  "captures": [
+    {
+      "file": "window-1.png",
+      "sha256": "5fcf5e413c50c2136fa7ba140d46afd9da74d7645a871e937884b14edd8e0c92",
+      "elapsed_after_launch": 4.322923582978547
+    },
+    {
+      "file": "window-2.png",
+      "sha256": "705f93b987d1340cde38d3064cbc5398861026e8209392193c796acf56638d7c",
+      "elapsed_after_launch": 9.775146749976557
+    },
+    {
+      "file": "window-3.png",
+      "sha256": "ecb92b4696267cb7aefc279a5de2d76e85950226ef17b248be782cee7f4cddfa",
+      "elapsed_after_launch": 12.71635179198347
+    },
+    {
+      "file": "window-4.png",
+      "sha256": "705f93b987d1340cde38d3064cbc5398861026e8209392193c796acf56638d7c",
+      "elapsed_after_launch": 15.760495124966837
+    },
+    {
+      "file": "window-5.png",
+      "sha256": "ec4a32b558617bf15e39a921cd886452d930c325911c1ce92713e6f11821bb8d",
+      "elapsed_after_launch": 18.883300749992486
+    },
+    {
+      "file": "window-6.png",
+      "sha256": "fcf8453eec84fe5405ab5d6467e87b2094d4aa6a0dd50f65346f91478686e095",
+      "elapsed_after_launch": 21.733871082949918
+    },
+    {
+      "file": "window-7.png",
+      "sha256": "7031d3c98efaa11717d65852e58c0f3175736fe620503bc142cd59823e0864f5",
+      "elapsed_after_launch": 24.826186874997802
+    },
+    {
+      "file": "window-8.png",
+      "sha256": "fcf8453eec84fe5405ab5d6467e87b2094d4aa6a0dd50f65346f91478686e095",
+      "elapsed_after_launch": 27.823233957984485
+    },
+    {
+      "file": "window-9.png",
+      "sha256": "bc72cba1a00a2d3532ff074f935d32a0bacd6d4ed312bdeddbee19c35ce00b7e",
+      "elapsed_after_launch": 30.78138174995547
+    },
+    {
+      "file": "window-10.png",
+      "sha256": "b9f83bf9e1ed32473f5841f3339067e94048739031857292525d078292e4b676",
+      "elapsed_after_launch": 33.85415645799367
+    },
+    {
+      "file": "window-11.png",
+      "sha256": "3448be0a2b53bd59ab2f3f8b10b666feac69b24901d9e186f06e27aaffb24116",
+      "elapsed_after_launch": 39.727705832978245
+    },
+    {
+      "file": "window-12.png",
+      "sha256": "e287c2c3b17b8bb1ef469e7fcd524630a41e58c3bc29bb3fc162784a40d98668",
+      "elapsed_after_launch": 42.78644195798552
+    }
+  ],
+  "native_log_sha256": "91351744cbb78393f7bf1c1978f639aa781fafa650f08d55bd5c994cf1d92e75",
+  "capture_scope": "External owning-window captures; numerical motion/orientation/clipping require separate inspection. No display cadence or A/V claim."
+}

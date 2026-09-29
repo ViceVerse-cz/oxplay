@@ -1,0 +1,392 @@
+{
+  "source_revision": "9c70e8e3cd077a56c1b08fc3cd738cebdebcce3c",
+  "source_input_hashes_verified_against_commit": 114,
+  "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+  "conclusion": "Corrected clock staging remains default off: fewer warm UI draws, but CPU ceiling pass not repeatable. Stable-video-target evidence here is functional only and was a separate flag selection.",
+  "source_association_limit": "Captured input hashes match commit; not an independent compilation/reproducible native-dependency build.",
+  "privacy": "No real account; only selected logs/metadata/source hashes exported, private-profile-path files excluded. Limited path/header/URL scan passed, bytes unchanged; not a comprehensive secret-detection guarantee.",
+  "exports": [
+    {
+      "file": "2026-09-29-clock-staging-corrected-source.json",
+      "sha256": "4c257381d0146cbaf1094222ab9d3a79d3197cca160b56356276ca49eed56e28"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-provenance.json",
+      "sha256": "bc47c5af7efd32e69146b727533ca7f2403c2b5b5b735d4247d97ae68214e257"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a1-off.json",
+      "sha256": "d4690b45ae894368180f2c4fdb34030601a9c2c58d7fbab48ccbe9bbb485fff1"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a1-off.json.log",
+      "sha256": "4e44be40e15c7ed38b8a6decf9a9cc4e6f5e24975346cd152db65a22cb7626df"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a1-off.sampler.log",
+      "sha256": "e54dfc4784ea092109ff00c9c5866ba8ec141403b97377d6932c2c7c0179e567"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b1-staged.json",
+      "sha256": "13936263f28e1a3a5dbb81fb7b9891fd90344b6f5a65956e9777cabd53d6ce83"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b1-staged.json.log",
+      "sha256": "a138a69065f481eb7d1c58ffa8e90ef7b989305984101c689341ce363d0a5312"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b1-staged.sampler.log",
+      "sha256": "e1dfcf20e3cc7ebdce1fa84f0c4fababd6017305a680d2f35048fa3155f8ccd3"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b2-staged.json",
+      "sha256": "70a73e0a7dd7bfd4ef2ef010426e2d5dbeb271b6565c58676427f19830502f34"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b2-staged.json.log",
+      "sha256": "c30421d5189ce37c31832031f179bf0f846c7f419bb3ed60014569994bba5a7e"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-b2-staged.sampler.log",
+      "sha256": "b3ebf3acb628cd3cdcfe9a0560a0ba1077e4f33d08ba8e426cde32830c7eadf6"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a2-off.json",
+      "sha256": "8dbeebbe347ce24e11ad51e76f76928146878f0166f4a79f796542e654026724"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a2-off.json.log",
+      "sha256": "de6a853e36311057969df4293d55fb6e30dec53949183988cdbaefc1bcadd2d5"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-a2-off.sampler.log",
+      "sha256": "438df07e4030c1d8e9c3237b3f701ce12cad38dd334952d1fc893ed7a7ec70cf"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-local.json",
+      "sha256": "5d7da765b9ff867ae8b1a627dac7269fa2d1415a685abf120cd05716fed549a3"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-local.log",
+      "sha256": "89bb29d9f2c9e735bc2309317d59aaeb1477880bee868831ae5c59beb5152b69"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-handoff.json",
+      "sha256": "d64562779bb3cfe6ce9bd50c4f610eecd14ae16ccc3549e96bc6b649ef5b67b0"
+    },
+    {
+      "file": "2026-09-29-clock-staging-corrected-handoff.log",
+      "sha256": "7f568855dc374fa4819a275b7c7eb2ca133fdfb4d0731d3207e9a9b64456669b"
+    },
+    {
+      "file": "2026-09-29-stable-target-functional-local.json",
+      "sha256": "569454633f9184d1c3352340e48142078610e7f00b00114b3936921f2ca5d06f"
+    },
+    {
+      "file": "2026-09-29-stable-target-functional-local.log",
+      "sha256": "89b2b79b07cbc4fa928f82b7d6a0a8c799867d01bd02dde95ec6ade6064ed755"
+    },
+    {
+      "file": "2026-09-29-stable-target-functional-handoff.json",
+      "sha256": "110a68549586cc802c97c88d1da7d9808c0de3572ff2ca729794e961f8d4013d"
+    },
+    {
+      "file": "2026-09-29-stable-target-functional-handoff.log",
+      "sha256": "c04834bf12b75ae5ee19b50a27e5f1ef01b0c7425b41d2b3c3475225f2b56af3"
+    }
+  ],
+  "runs": [
+    {
+      "name": "a1-off",
+      "cpu_one_core_percent": {
+        "mean": 53.106286033666045,
+        "p95": 62.40841265647461,
+        "peak": 64.21124067502028
+      },
+      "rss_mib": {
+        "mean": 189.39140625,
+        "p95": 190.125,
+        "peak": 190.140625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 58.60609878389557,
+        "p95": 75.89798726432815,
+        "peak": 81.37757630213704
+      },
+      "sample_count": 60,
+      "warm_10_to_70s": {
+        "ui_draws": 3949,
+        "media_notifications": 3600,
+        "vo_drops": 0,
+        "decoder_drops": 0
+      },
+      "vo_drop_counter_at_10s_and_70s": 3,
+      "catalog_changes": 0,
+      "fixture_catalog_resets": 1,
+      "render_stats": {
+        "updates": 5078,
+        "video_draws": 5077,
+        "ui_draws": 5570,
+        "target_allocations": 2,
+        "target_bytes": 7936128,
+        "stable_target_draws": 0,
+        "private_target_draws": 1,
+        "target_publications": 5076
+      },
+      "stage_counters": [],
+      "exit_code": 0,
+      "forced_termination": false,
+      "observed_occlusion": false
+    },
+    {
+      "name": "b1-staged",
+      "cpu_one_core_percent": {
+        "mean": 45.250400801206226,
+        "p95": 62.00000260199893,
+        "peak": 62.99966924921808
+      },
+      "rss_mib": {
+        "mean": 189.30104166666666,
+        "p95": 190.0,
+        "peak": 190.078125
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 77.07801068366477,
+        "p95": 160.64968478819327,
+        "peak": 164.4241564720423
+      },
+      "sample_count": 60,
+      "warm_10_to_70s": {
+        "ui_draws": 3720,
+        "media_notifications": 3600,
+        "vo_drops": 0,
+        "decoder_drops": 0
+      },
+      "vo_drop_counter_at_10s_and_70s": 3,
+      "catalog_changes": 0,
+      "fixture_catalog_resets": 1,
+      "render_stats": {
+        "updates": 5077,
+        "video_draws": 5076,
+        "ui_draws": 5251,
+        "target_allocations": 2,
+        "target_bytes": 7936128,
+        "stable_target_draws": 0,
+        "private_target_draws": 1,
+        "target_publications": 5075
+      },
+      "stage_counters": [
+        "Stats { staged: 5392, overwritten: 313, applied_in_render: 5079, invalidated: 0 }"
+      ],
+      "exit_code": 0,
+      "forced_termination": false,
+      "observed_occlusion": false
+    },
+    {
+      "name": "b2-staged",
+      "cpu_one_core_percent": {
+        "mean": 51.547908621460486,
+        "p95": 61.68904365957763,
+        "peak": 64.0013200279636
+      },
+      "rss_mib": {
+        "mean": 189.21510416666666,
+        "p95": 189.859375,
+        "peak": 190.0
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 57.52270113109796,
+        "p95": 65.68229240812445,
+        "peak": 76.10078757950922
+      },
+      "sample_count": 60,
+      "warm_10_to_70s": {
+        "ui_draws": 3720,
+        "media_notifications": 3600,
+        "vo_drops": 0,
+        "decoder_drops": 0
+      },
+      "vo_drop_counter_at_10s_and_70s": 2,
+      "catalog_changes": 0,
+      "fixture_catalog_resets": 1,
+      "render_stats": {
+        "updates": 5079,
+        "video_draws": 5078,
+        "ui_draws": 5253,
+        "target_allocations": 2,
+        "target_bytes": 7936128,
+        "stable_target_draws": 0,
+        "private_target_draws": 1,
+        "target_publications": 5077
+      },
+      "stage_counters": [
+        "Stats { staged: 5389, overwritten: 308, applied_in_render: 5081, invalidated: 0 }"
+      ],
+      "exit_code": 0,
+      "forced_termination": false,
+      "observed_occlusion": false
+    },
+    {
+      "name": "a2-off",
+      "cpu_one_core_percent": {
+        "mean": 53.13192267688797,
+        "p95": 62.997590342155746,
+        "peak": 63.99988000117382
+      },
+      "rss_mib": {
+        "mean": 189.159375,
+        "p95": 189.828125,
+        "peak": 189.9375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 57.192395249613014,
+        "p95": 74.00079240032927,
+        "peak": 86.99728133958114
+      },
+      "sample_count": 60,
+      "warm_10_to_70s": {
+        "ui_draws": 3946,
+        "media_notifications": 3600,
+        "vo_drops": 0,
+        "decoder_drops": 0
+      },
+      "vo_drop_counter_at_10s_and_70s": 2,
+      "catalog_changes": 0,
+      "fixture_catalog_resets": 1,
+      "render_stats": {
+        "updates": 5079,
+        "video_draws": 5078,
+        "ui_draws": 5577,
+        "target_allocations": 2,
+        "target_bytes": 7936128,
+        "stable_target_draws": 0,
+        "private_target_draws": 1,
+        "target_publications": 5077
+      },
+      "stage_counters": [],
+      "exit_code": 0,
+      "forced_termination": false,
+      "observed_occlusion": false
+    }
+  ],
+  "functional": [
+    {
+      "experiment": "corrected-clock-staging",
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "local",
+        "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 21.122,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "stage_progress": true,
+        "stable_video_target": false
+      },
+      "render_stats": {
+        "video_draws": 683,
+        "ui_draws": 1177,
+        "target_allocations": 8,
+        "target_bytes": 7189632,
+        "stable_target_draws": 0,
+        "private_target_draws": 1,
+        "target_publications": 682
+      },
+      "handoff_assertion_lines": []
+    },
+    {
+      "experiment": "corrected-clock-staging",
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "handoff",
+        "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 30.301,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "stage_progress": true,
+        "stable_video_target": false
+      },
+      "render_stats": {
+        "video_draws": 301,
+        "ui_draws": 361,
+        "target_allocations": 5,
+        "target_bytes": 11861696,
+        "stable_target_draws": 0,
+        "private_target_draws": 24,
+        "target_publications": 277
+      },
+      "handoff_assertion_lines": [
+        "handoff smoke stage=5 loads=1 paused=false frame_ready=false texture_width=0",
+        "handoff smoke stage=8 loads=2 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=10 loads=2 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=15 loads=3 paused=true frame_ready=true texture_width=1624",
+        "handoff smoke stage=18 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=21 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=23 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=28 loads=4 paused=true frame_ready=true texture_width=1624"
+      ]
+    },
+    {
+      "experiment": "stable-video-target",
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "local",
+        "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 20.501,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "stage_progress": false,
+        "stable_video_target": true
+      },
+      "render_stats": {
+        "video_draws": 679,
+        "ui_draws": 1181,
+        "target_allocations": 8,
+        "target_bytes": 7189632,
+        "stable_target_draws": 674,
+        "private_target_draws": 1,
+        "target_publications": 4
+      },
+      "handoff_assertion_lines": []
+    },
+    {
+      "experiment": "stable-video-target",
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "handoff",
+        "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 30.309,
+        "real_account_used": false,
+        "performance_measurement": false,
+        "stage_progress": false,
+        "stable_video_target": true
+      },
+      "render_stats": {
+        "video_draws": 303,
+        "ui_draws": 382,
+        "target_allocations": 5,
+        "target_bytes": 11861696,
+        "stable_target_draws": 276,
+        "private_target_draws": 24,
+        "target_publications": 3
+      },
+      "handoff_assertion_lines": [
+        "handoff smoke stage=5 loads=1 paused=false frame_ready=false texture_width=0",
+        "handoff smoke stage=8 loads=2 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=10 loads=2 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=15 loads=3 paused=true frame_ready=true texture_width=1624",
+        "handoff smoke stage=18 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=21 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=23 loads=3 paused=true frame_ready=false texture_width=0",
+        "handoff smoke stage=28 loads=4 paused=true frame_ready=true texture_width=1624"
+      ]
+    }
+  ]
+}

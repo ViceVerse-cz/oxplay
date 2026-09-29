@@ -1,0 +1,192 @@
+{
+  "provenance": {
+    "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+    "utc_started": "2026-09-29T10:25:48Z",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Homebrew)",
+    "python": "3.14.7",
+    "real_credentials": false,
+    "source_sha256": {
+      "Cargo.lock": "c817be854c65c02a4bb10f250dbc91bac7ffeb7c34d0da53d1af559fc9d303d2",
+      "scripts/test_media_tls.py": "a662b5878ebc39cf37444f31f0105d0ff65e2cf7324c327ccc6288c82f041ce8",
+      "crates/media/build.rs": "8b046b53563cbd0fbdd6f9cb2998d27b5f7b86838404d43333ef6a9c11d3b42a",
+      "crates/media/src/audio_probe.rs": "3659a989bde54ac6ea4d99df20ba93931149d4c6ca75cc463f493a669a8239a4",
+      "crates/media/src/caption_tests.rs": "328286d63a57a3f9aeb1c01e30cb80ae464b738a2efa443172ddb76d1d429cb3",
+      "crates/media/src/commands.rs": "a6779a07244a9233030c329e24cde4bddd77456f546becac54c9409592b62f91",
+      "crates/media/src/ffi.rs": "4a2e85fb5608a2f7d893fce1d57d143c781958dac5ba77ec709c0d8078b538a4",
+      "crates/media/src/gpu_timing.rs": "fd3a3b542efd78330772b54049df9fd994d82a5c89ccac5728f33843c27233ce",
+      "crates/media/src/lib.rs": "6f470e2f8e51dc92dbc528fee218b74bd606c0d8cc9ffbd4e86360ef3c954706",
+      "crates/media/src/macos.rs": "6bca2569544dff3b3039478c191f45d9fa2948431477e8f12be0bd2d9c531304",
+      "crates/media/src/native_child.rs": "698f8d636bbb43aeaad88eff1e6ab47401c7f0ba64bb8602527795e2694fc289",
+      "crates/media/src/presenter.rs": "f2d89bc9ddb7b5e55653895296fb32a626afd2546b14473b94476b08a3edcd69",
+      "crates/media/src/seek_confirmation.rs": "a709478fe9419481cecf0a5e002e2cc0c0f98e0062baf2f631cda1b1f61dafe5",
+      "crates/media/src/streams.rs": "41df10954826e2336e364ae05d3f0f14f82fb62c1b4495cd1c3ebb6bcfd493ed",
+      "crates/media/src/tls_tests.rs": "2db8d1faef592c6ab29106074779c8fd35a6626ed22148a44a64685a606b6197",
+      "crates/media/Cargo.toml": "78a052ba3aa99004e751ea833a456080cd6135bbc2877c17ba8af4010c161d2b",
+      "crates/storage/examples/fixture_library.rs": "2b7b4e15a8fd5f8602dca901ecc12a1012570e48fb325d5bf07f8c502598c81b",
+      "crates/storage/src/backup.rs": "83529fb87cf81965a6acb5078d3cd821c07f68a73d93f4ff51f77dfa50ea0435",
+      "crates/storage/src/history.rs": "d0ec95c42b91693f5d38c1069827d6fcf33b1cb72f401c230cb393adda985dff",
+      "crates/storage/src/lib.rs": "7a5be0e9f0280e693cc5c02e2faba5a9a2b2f54f2a118848ea459c0729795d76",
+      "crates/storage/src/library_transfer.rs": "2466230492c5cb6f196d65240a1b6c70a45186f579a800fab8f4170a3adc9818",
+      "crates/storage/src/tests.rs": "a77a252f56419bf2be83d25e630a753128a05a19f2149fcb85f4913fe5eed5be",
+      "crates/storage/src/vault/tests.rs": "3f1a5533da23bdb1a741500405161169b2fed24c60029a5415ccaf7001be875f",
+      "crates/storage/src/vault.rs": "0059dffa8ae8c004921edfea57d7b89db6a0d72326b172247594b6a8e743679a",
+      "crates/storage/Cargo.toml": "480804d59ca32b313db7eb26c381aa7a8e48a607fe46906aa36ce37ef86189b3",
+      "crates/network/examples/public_range.rs": "82b4366b395bbe4d73d80f95fac3f724c79db681ae28a74608b5452c102f2d92",
+      "crates/network/src/access_tests.rs": "689466f4b73cf58f8ac59e1d584d60b1cf3c66ad70cdb79a6da3f4e70c3cf098",
+      "crates/network/src/bin/serein-dns.rs": "b9948729707bf340caf25c7ce9881aa4c6aa932d232cf7f08dc8923a591b8068",
+      "crates/network/src/dns_macos.rs": "671a9e528f73995ed8d7c21bd092af12f5d4be49fb77ba640d6e164e15b3fe58",
+      "crates/network/src/dns_process.rs": "4642ad7940c11d912aca7d8027f0024c826738bc8b7d2011045998dc1830c940",
+      "crates/network/src/lib.rs": "415e540ae2f0f1a585731e029ec34234f45b0c8e0d5e04ae681f093ef12cedc5",
+      "crates/network/src/policy.rs": "b36f403772a9378494830034b0e0034d1c1dad7847586f36c33976396bd3f916",
+      "crates/network/src/timing.rs": "f54758b61a10b343656aceaf85cf49a63a177e6b1fa711fb176476b270b5ac54",
+      "crates/network/tests/dns_helper.rs": "22104f5bc75c3c67ac3e84ce9fee3c2ae0532c3b8452fe2ffe3a06ce76f57f0e",
+      "crates/network/Cargo.toml": "296bac5b4dbfbdbca500155b203c6b9a0617fbecff36e8bb0acc700030917884",
+      "crates/core/src/lib.rs": "dc9124a856e5adc1bbb9dd235a3c4332a9fb475369d55c3f5a5dbce501515d4a",
+      "crates/core/src/url_tests.rs": "e07707b540839951d65444b69d5b4b1c42ee356ec78c49dcd73c31067a13d753",
+      "crates/core/Cargo.toml": "c396c7271e51f992620162a63ff7735f304111df0e56f2cfbf9bd98258ec22f7"
+    },
+    "test_executable_sha256": {
+      "target/debug/deps/serein_media-0bf2f6686a94df25": "42d112392a899b6731e925d5d637786d253f0492268b37a6165d3d9f0324e0a3",
+      "target/debug/deps/serein_storage-71edd14a5a9f97d7": "e0ae0820b3ed188580dbec19087b1262b541b901748b3b5521b477676e2d7278",
+      "target/debug/deps/serein_network-371bb80dd3b931f0": "1d54ba5bf62f69b61b40e9311530ff7e4b2aa26ad3d07453e8bc490262d60b09",
+      "target/debug/deps/serein_dns-21bf8214b82fdac0": "2d018f2dff79f006d8edfd3f2daf91235848e029ea07151ec14a6dc1b52a8051",
+      "target/debug/deps/dns_helper-af4ebe2aa8c9adba": "0d8bcec862aa109946c45f0564baca0bcc5dd1653ec0225244f7c144733d9a54",
+      "target/debug/serein-dns": "3234880ae17c0dc95c8320b9895f21007d04b5c0a33fcb4ace8ee9f41d3a1a1e"
+    },
+    "supervisor_sha256": "6053893b4299aabf5fe1778cf53d8b6b16f93e1fb288d131df6673e92b83973d",
+    "finished_utc": "2026-09-29T10:26:37Z",
+    "native_link_target": {
+      "installed_cellar_relative": "mpv/0.41.0_10/lib/libmpv.2.dylib",
+      "sha256": "12c400d4ec2740ebf225c3965f4e9963c55de9212094f1337d055b0573812e08",
+      "scope": "otool-recorded libmpv install-name resolved to installed file; runtime loaded-image inventory not recorded"
+    }
+  },
+  "checks": [
+    {
+      "name": "tls",
+      "command": [
+        "python3",
+        "scripts/test_media_tls.py"
+      ],
+      "deadline_seconds": 360,
+      "elapsed_seconds": 2.296,
+      "exit_code": 0,
+      "error_type": null,
+      "owned_process_group_absent": true,
+      "log_sha256": "71949f2d20fbdd2780052ce2ffc5cb06d92849fe8946ed12eeeca9de723fd40b"
+    },
+    {
+      "name": "keychain",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "serein-storage",
+        "vault::tests::macos_keychain_synthetic_roundtrip",
+        "--",
+        "--ignored",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "deadline_seconds": 90,
+      "elapsed_seconds": 1.007,
+      "exit_code": 0,
+      "error_type": null,
+      "owned_process_group_absent": true,
+      "log_sha256": "a4c3056a63d12e200f6946f31ba024ad727e73e7befc5586443984db30c3a071"
+    },
+    {
+      "name": "dns-primitive",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "serein-network",
+        "dns_macos::tests::native_resolution_and_query_drop_close_the_owned_socket",
+        "--",
+        "--ignored",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "deadline_seconds": 90,
+      "elapsed_seconds": 5.524,
+      "exit_code": 0,
+      "error_type": null,
+      "owned_process_group_absent": true,
+      "log_sha256": "b12bd672fe0317705850b04e830ff7471791e1393eb7dc7b4e290f1faad45c69"
+    },
+    {
+      "name": "dns-helper",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "serein-network",
+        "--test",
+        "dns_helper",
+        "live_system_dns_helper_returns_bounded_public_protocol",
+        "--",
+        "--ignored",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "deadline_seconds": 90,
+      "elapsed_seconds": 0.475,
+      "exit_code": 0,
+      "error_type": null,
+      "owned_process_group_absent": true,
+      "log_sha256": "a6946a76d28addd5d5a99d037676e20566c64e9618439aee4d10cbc041ccbf85"
+    }
+  ],
+  "first_attempt": {
+    "check": "tls",
+    "test_passed": true,
+    "wrapper_completed": false,
+    "wrapper_failure": "PermissionError while signaling the already exited, unreaped leader process group",
+    "cleanup_qualification": "TLS internal supervisor completed; outer wrapper cleanup was not confirmed. Retained separately; not a passing full harness run.",
+    "log_sha256": "03ad193ac89028be890358a6e05a79c41348858369edb47cef31aa8ee181d642"
+  },
+  "assertion_scope": {
+    "tls": "trusted request1; untrusted-chain and wrong-host requests0; production direct libmpv API with synthetic CA/null audio/video",
+    "keychain": "production vault synthetic reopen/rewrite/delete; envelope absent, reopened store empty, exact synthetic Keychain item absent asserted before successful return",
+    "dns_primitive": "system DNS example.com; production public-address policy; query Drop descriptor closure",
+    "dns_helper": "actual Cargo-built serein-dns; system DNS example.com; cleared child environment and bounded SDN1 protocol; no addresses exported"
+  },
+  "qualification": {
+    "real_account": false,
+    "hardware_decode": false,
+    "performance": false,
+    "proxy_protection": false,
+    "cross_platform": false,
+    "packaged_release": false
+  },
+  "public_logs": {
+    "tls": {
+      "file": "2026-09-29-external-tls.log",
+      "sha256": "71949f2d20fbdd2780052ce2ffc5cb06d92849fe8946ed12eeeca9de723fd40b"
+    },
+    "tls-attempt1": {
+      "file": "2026-09-29-external-tls-attempt1.log",
+      "sha256": "fbfa1dbb4c1117ec3effc6594954d699881f08d6bed85ba3bd1a4b479d83fbec"
+    },
+    "keychain": {
+      "file": "2026-09-29-external-keychain.log",
+      "sha256": "a4c3056a63d12e200f6946f31ba024ad727e73e7befc5586443984db30c3a071"
+    },
+    "dns-primitive": {
+      "file": "2026-09-29-external-dns-primitive.log",
+      "sha256": "3969a388f57a6831e99ef8ee417875cbe355fd62cd5cdac5663c0428a3709148"
+    },
+    "dns-helper": {
+      "file": "2026-09-29-external-dns-helper.log",
+      "sha256": "a6946a76d28addd5d5a99d037676e20566c64e9618439aee4d10cbc041ccbf85"
+    }
+  }
+}

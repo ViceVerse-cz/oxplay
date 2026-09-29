@@ -1,0 +1,322 @@
+{
+  "media_start": null,
+  "media_end": null,
+  "warmup_seconds": 10,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "rss_mib": {
+    "mean": 106.41848958333334,
+    "p95": 106.5625,
+    "peak": 106.5625
+  },
+  "cpu_one_core_percent": {
+    "mean": 0.03383233489771645,
+    "p95": 0.0,
+    "peak": 2.029940093862987
+  },
+  "process_count_peak": 1,
+  "samples": [
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.5625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.234375,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.453125,
+      "cpu_one_core_percent": 2.029940093862987,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.453125,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.453125,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.453125,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.453125,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    },
+    {
+      "rss_mib": 106.40625,
+      "cpu_one_core_percent": 0.0,
+      "processes": 1
+    }
+  ],
+  "include_new_vt_services": true,
+  "notes": "Optional new VideoToolbox service attribution is temporal, not a proven exclusive process owner; unrelated new services may overcount. Aggregate RSS can double-count shared pages. Unified GPU memory overlaps RSS; not added. Transient descendants between samples may be missed."
+}

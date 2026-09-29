@@ -1,0 +1,44 @@
+{
+  "bundle_unchanged_after_native_runs": true,
+  "bundled_executable_sha256": "2f5ad3cd7ddae04755ee5577c207299b091b580627afa6a96f64ae79892e9386",
+  "caption_content_files_after_exit": 0,
+  "caption_instance_directories_after_exit": 0,
+  "caption_lifecycle_passed": true,
+  "caption_native_exit": 0,
+  "caption_run_process_survivors": [],
+  "caption_stages": [
+    12,
+    25,
+    30,
+    35,
+    65
+  ],
+  "checkpoint": "b1f4074defcb36371c7bc8cd25966474d8e6d0d5",
+  "failures_retained": [
+    "Initial harness expected loader trace through a system caffeinate launcher that scrubbed DYLD variables and incorrectly counted persistent registry lock as caption content. Application itself passed.",
+    "First direct loader probe started with sleeping display and could not create display clock(-6661); repeat used bounded wake and passed."
+  ],
+  "known_sensitive_log_marker_check": "passed; narrow marker scan, not proof against all disclosures",
+  "loader_repeat": {
+    "app_launched_directly": true,
+    "audio_output_observed": true,
+    "awake_assertion_attached_to_pid": true,
+    "bounded_wake_performed": true,
+    "bundle_processes_after_exit": 0,
+    "bundled_native_load_count": 49,
+    "exit": 0,
+    "external_non_system_loads": [],
+    "hardware_h264_observed": true,
+    "native_load_count": 1234,
+    "qualifies_performance": false
+  },
+  "persistent_registry_lock": {
+    "bytes": 0,
+    "mode": "0600"
+  },
+  "qualification": "Functional development-host bundle checks only. Native TLS setting/source and bundled CA path are validated separately from whole-process egress. No clean-machine, performance, visual subtitle timing, human account or public distribution qualification.",
+  "release_sha256": "62e90c91af4d382b1d6e3cf942660977e627f1f9a52d6274b0a0a595b71a6c8a",
+  "schema": 1,
+  "screenshot_sha256": "58a61a2716aede466c28226bfa7773036f7802535adee4ade2f9153957fe7df9",
+  "source_build_association_verified": true
+}

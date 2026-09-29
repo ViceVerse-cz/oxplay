@@ -1,0 +1,93 @@
+{
+  "source_revision": "f6dea1361cdd59d2f7a26315a6002e5c2a25fc85",
+  "app_sha256": "b6d39791e3535466abaeb9b7cce2a737577af6c2b11d6efc126c75129f8435e3",
+  "independently_verified_input_hashes": 119,
+  "exports": [
+    {
+      "artifact": "artifacts/preferences-native/source.json",
+      "export": "2026-09-29-preferences-native-source.json",
+      "sha256": "2569a13d6403b10d4022f7c74c9d7278f6f9651d0dd8efe473092f048c425518"
+    },
+    {
+      "artifact": "artifacts/preferences-native/write.json",
+      "export": "2026-09-29-preferences-native-write.json",
+      "sha256": "13971c83cd529ee88e5e1809104a45a317d9fa57a0a621d2d641f4d06fd07942"
+    },
+    {
+      "artifact": "artifacts/preferences-native/write.log",
+      "export": "2026-09-29-preferences-native-write.log",
+      "sha256": "5deab04613af3eae09c206816da8819ba013106dfcc4c98eecc89a76832641b0"
+    },
+    {
+      "artifact": "artifacts/preferences-native/verify.json",
+      "export": "2026-09-29-preferences-native-verify.json",
+      "sha256": "391db0a8b48c92d6dfa8c97ddd967e8886458fe25fbcb501e3da35acea825226"
+    },
+    {
+      "artifact": "artifacts/preferences-native/verify.log",
+      "export": "2026-09-29-preferences-native-verify.log",
+      "sha256": "f943320f53947a1fdcd1e394c857390a8c7376c21c29b36a489177ef2eb9a9b9"
+    },
+    {
+      "artifact": "artifacts/preferences-native/summary.json",
+      "export": "2026-09-29-preferences-native-summary.json",
+      "sha256": "c7b0a140867ea9c022656a623ced46ff03ff4d9f207818dd3415dbcbb3661550"
+    },
+    {
+      "artifact": "artifacts/preferences-default/source.json",
+      "export": "2026-09-29-preferences-native-local-failure-source.json",
+      "sha256": "2569a13d6403b10d4022f7c74c9d7278f6f9651d0dd8efe473092f048c425518"
+    },
+    {
+      "artifact": "artifacts/preferences-default/functional/local.json",
+      "export": "2026-09-29-preferences-native-local-failure.json",
+      "sha256": "4167f5566883d073288c2bf5f0cf5c5fa3eaf68dc718fe45ccbd7c94833c2485"
+    },
+    {
+      "artifact": "artifacts/preferences-default/functional/local.log",
+      "export": "2026-09-29-preferences-native-local-failure.log",
+      "sha256": "d9f03e97a75adf33da834d8aca146dc305ec31e8b4b3b55c777cec2a3927036c"
+    }
+  ],
+  "central_validation_reported": {
+    "rust_passed": 261,
+    "rust_ignored": 3,
+    "python_passed": 63,
+    "formatting": "passed",
+    "strict_workspace_all_target_clippy": "passed",
+    "locked_release_build": "passed"
+  },
+  "post_verify_read_only_storage": {
+    "schema_version": 4,
+    "preferences": {
+      "id": 1,
+      "local_history": 0,
+      "autoplay": 0,
+      "thumbnail_previews": 0,
+      "background_refresh": 0,
+      "telemetry": 0,
+      "volume_percent": 100,
+      "theme": "system",
+      "history_retention_days": 30,
+      "quality_height": 1080,
+      "speed_millis": 1000
+    },
+    "row_counts": {
+      "local_playlists": 0,
+      "local_playlist_items": 0,
+      "local_subscriptions": 0,
+      "local_history": 0
+    },
+    "remaining_vtt_files": 0
+  },
+  "scope": "Two offline native preference phases, same isolated diagnostic profile; no media loads, extractor requests, account use, performance sample or other-platform qualification. Post-write values come from contemporaneous harness capture; independently inspected live profile only after verify phase. Private profile paths and raw database are excluded.",
+  "local_lifecycle_failure": {
+    "exit_code": 101,
+    "elapsed_seconds": 3.21,
+    "timeout": false,
+    "motion_changed_pixels": 838,
+    "motion_total_grid_pixels": 9216,
+    "assertion": "explicit local startup did not focus the player before smoke input",
+    "scope": "Motion passed before startup-focus assertion failed; full lifecycle and soak readiness not passed. Independent preference write/restart/clear phases remain successful within their offline scope."
+  }
+}

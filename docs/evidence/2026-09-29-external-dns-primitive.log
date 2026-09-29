@@ -1,0 +1,23 @@
+   Compiling serein-core v0.1.0 ([workspace]/crates/core)
+   Compiling serein-network v0.1.0 ([workspace]/crates/network)
+   Compiling serein-youtube v0.1.0 ([workspace]/crates/youtube)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.56s
+     Running unittests src/lib.rs (target/debug/deps/serein_network-371bb80dd3b931f0)
+
+running 1 test
+test dns_macos::tests::native_resolution_and_query_drop_close_the_owned_socket ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.02s
+
+     Running unittests src/bin/serein-dns.rs (target/debug/deps/serein_dns-21bf8214b82fdac0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dns_helper.rs (target/debug/deps/dns_helper-af4ebe2aa8c9adba)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

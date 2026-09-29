@@ -1,0 +1,62 @@
+{
+  "status": "completed_not_automatically_qualified",
+  "warmup_seconds": 10,
+  "requested_sample_count": 60,
+  "include_new_vt_services": true,
+  "macos_footprint": {
+    "enabled": true,
+    "api": "proc_pid_rusage RUSAGE_INFO_V0 ri_phys_footprint",
+    "entry_limit_per_sample": 64,
+    "scope": "Separate OS physical-footprint ledger for existing attributed PIDs; no additional process discovery. Unavailable processes make the aggregate null, never zero. Totals are not unique physical memory and must not be added to RSS or GPU estimates. Sequential ps/rusage observations are not atomic; start-abstime records permit later lifetime comparison but do not validate the preceding ps identity. Temporal VT attribution and excluded baseline-service limits still apply.",
+    "complete_sample_count": 60,
+    "incomplete_sample_count": 0,
+    "all_samples_complete": true,
+    "physical_footprint_mib": {
+      "mean": 319.57444152832034,
+      "p95": 320.3299102783203,
+      "peak": 320.5330352783203
+    }
+  },
+  "per_process_rss": {
+    "enabled": true,
+    "entry_limit_per_sample": 64,
+    "baseline_vt_service_count": 2,
+    "baseline_vt_services": [
+      {
+        "pid": 503,
+        "executable": "VTDecoderXPCService"
+      },
+      {
+        "pid": 80397,
+        "executable": "VTDecoderXPCService"
+      }
+    ],
+    "baseline_vt_services_omitted": 0,
+    "scope": "Same ps scan; root and descendants are distinct from temporally attributed new VT services. Preexisting VT services are excluded even if reused by this app; absent new-service RSS is not evidence of absent or unchanged decoder memory. PIDs are sample identities, not birth-time verified lifetimes. Shared RSS pages may be double-counted; no physical-footprint, private-allocation, or GPU-memory attribution. Short-lived or reparented descendants may be missed. No argv or executable directories."
+  },
+  "media_start": null,
+  "media_end": null,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "measurement_start_utc": "2026-09-29T12:02:04Z",
+  "host_other_cpu_one_core_percent": {
+    "mean": 55.94135070948786,
+    "p95": 73.44282192730468,
+    "peak": 81.92777395328369
+  },
+  "host_audit_top_limit": 8,
+  "rss_mib": {
+    "mean": 189.74739583333334,
+    "p95": 190.5,
+    "peak": 190.546875
+  },
+  "cpu_one_core_percent": {
+    "mean": 44.75850729642438,
+    "p95": 55.00142547300178,
+    "peak": 57.00110200425945
+  },
+  "process_count_peak": 2,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "exit_code": 0,
+  "forced_termination": false
+}

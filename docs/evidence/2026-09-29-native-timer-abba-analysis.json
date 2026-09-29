@@ -1,0 +1,346 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "unmodified_app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "variants": {
+    "on": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-on",
+      "app_sha256": "e32aea7ebe8b0c4b29f10859819f5585bb7ad5db3a026f462eb5caaf3b225e80",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    },
+    "off": {
+      "app_relative_path": "artifacts/native-child-timer-pair-v1/serein-off",
+      "app_sha256": "bc6010464fb9312f10cc666def369303212bab3cb15905e07def77e463adad7f",
+      "library_relative_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+      "signature_verified": true,
+      "signature_route": "Ad-hoc diagnostic copy only; no Developer ID/notarization claim",
+      "static_linkage_only_mpv_changed": true,
+      "runtime_loaded_library_verified": false
+    }
+  },
+  "sample_count": 240,
+  "all_original_manifest_hashes_match": true,
+  "raw_and_supervisor_statistics_independently_match": true,
+  "runs": [
+    {
+      "mode": "a1-on",
+      "sample_count": 60,
+      "geometry_matches": true,
+      "native_geometry_changes_since_startup": 3,
+      "cpu_one_core_percent": {
+        "mean": 44.75850729642438,
+        "p95": 55.00142547300178,
+        "peak": 57.00110200425945
+      },
+      "rss_mib": {
+        "mean": 189.74739583333334,
+        "p95": 190.5,
+        "peak": 190.546875
+      },
+      "footprint_mib": {
+        "mean": 319.57444152832034,
+        "p95": 320.3299102783203,
+        "peak": 320.5330352783203
+      },
+      "rss_attributed_means_mib": {
+        "root": 170.98645833333333,
+        "descendant": 0.0,
+        "temporal_vt_service": 18.7609375
+      },
+      "footprint_attributed_means_mib": {
+        "root": 277.87036946614586,
+        "descendant": 0.0,
+        "temporal_vt_service": 41.70407206217448
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.94135070948786,
+        "p95": 73.44282192730468,
+        "peak": 81.92777395328369
+      },
+      "host_top_eight_observations": {
+        "WindowServer": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 30.755345755066667
+        },
+        "coreaudiod": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 7.150697497622719
+        },
+        "cargo": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "rustc": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "mediaanalysisd": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        }
+      },
+      "media_delta_10_to_70": {
+        "dropped_frames": 0,
+        "decoder_dropped_frames": 0,
+        "render_notifications": 3600
+      },
+      "ui_draw_delta_10_to_70": 239,
+      "sample_elapsed_first_last": [
+        1.0727300409926102,
+        60.07503641600488
+      ],
+      "position_advance_10_to_70": 60.016666666666666,
+      "single_root_and_temporal_service_identity": true,
+      "single_rusage_start_identity_per_process": true,
+      "footprint_complete_samples": 60
+    },
+    {
+      "mode": "b1-off",
+      "sample_count": 60,
+      "geometry_matches": true,
+      "native_geometry_changes_since_startup": 3,
+      "cpu_one_core_percent": {
+        "mean": 36.66462981640719,
+        "p95": 45.000103142174474,
+        "peak": 46.0085135090878
+      },
+      "rss_mib": {
+        "mean": 188.13567708333332,
+        "p95": 188.875,
+        "peak": 188.921875
+      },
+      "footprint_mib": {
+        "mean": 317.86537272135416,
+        "p95": 318.5487060546875,
+        "peak": 319.0330810546875
+      },
+      "rss_attributed_means_mib": {
+        "root": 169.37213541666668,
+        "descendant": 0.0,
+        "temporal_vt_service": 18.763541666666665
+      },
+      "footprint_attributed_means_mib": {
+        "root": 276.15320485432943,
+        "descendant": 0.0,
+        "temporal_vt_service": 41.71216786702474
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 56.894573260723355,
+        "p95": 74.02933716816395,
+        "peak": 83.57655088198715
+      },
+      "host_top_eight_observations": {
+        "WindowServer": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 32.229386940937964
+        },
+        "coreaudiod": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 7.219174490745525
+        },
+        "cargo": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "rustc": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "mediaanalysisd": {
+          "present_in_top_eight_samples": 1,
+          "mean_observed_contribution_lower_bound": 0.01700239814572892
+        }
+      },
+      "media_delta_10_to_70": {
+        "dropped_frames": 0,
+        "decoder_dropped_frames": 0,
+        "render_notifications": 3600
+      },
+      "ui_draw_delta_10_to_70": 238,
+      "sample_elapsed_first_last": [
+        1.075155791011639,
+        60.06388199998764
+      ],
+      "position_advance_10_to_70": 59.88333333333334,
+      "single_root_and_temporal_service_identity": true,
+      "single_rusage_start_identity_per_process": true,
+      "footprint_complete_samples": 60
+    },
+    {
+      "mode": "b2-off",
+      "sample_count": 60,
+      "geometry_matches": true,
+      "native_geometry_changes_since_startup": 3,
+      "cpu_one_core_percent": {
+        "mean": 36.02588992632037,
+        "p95": 44.9997993905193,
+        "peak": 46.99942030779995
+      },
+      "rss_mib": {
+        "mean": 187.70625,
+        "p95": 188.453125,
+        "peak": 188.5
+      },
+      "footprint_mib": {
+        "mean": 310.10547688802086,
+        "p95": 310.7830810546875,
+        "peak": 313.1112060546875
+      },
+      "rss_attributed_means_mib": {
+        "root": 168.92291666666668,
+        "descendant": 0.0,
+        "temporal_vt_service": 18.783333333333335
+      },
+      "footprint_attributed_means_mib": {
+        "root": 268.3513819376628,
+        "descendant": 0.0,
+        "temporal_vt_service": 41.75409495035807
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.58321407685255,
+        "p95": 74.98935466492665,
+        "peak": 88.64168112580231
+      },
+      "host_top_eight_observations": {
+        "WindowServer": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 32.06638446106346
+        },
+        "coreaudiod": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 7.220053639515625
+        },
+        "cargo": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "rustc": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "mediaanalysisd": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        }
+      },
+      "media_delta_10_to_70": {
+        "dropped_frames": 0,
+        "decoder_dropped_frames": 0,
+        "render_notifications": 3600
+      },
+      "ui_draw_delta_10_to_70": 239,
+      "sample_elapsed_first_last": [
+        1.0750710000284016,
+        60.07510916702449
+      ],
+      "position_advance_10_to_70": 60.03333333333333,
+      "single_root_and_temporal_service_identity": true,
+      "single_rusage_start_identity_per_process": true,
+      "footprint_complete_samples": 60
+    },
+    {
+      "mode": "a2-on",
+      "sample_count": 60,
+      "geometry_matches": true,
+      "native_geometry_changes_since_startup": 4,
+      "cpu_one_core_percent": {
+        "mean": 44.54093910472658,
+        "p95": 54.99885189822776,
+        "peak": 55.81082548604571
+      },
+      "rss_mib": {
+        "mean": 189.525,
+        "p95": 190.34375,
+        "peak": 190.609375
+      },
+      "footprint_mib": {
+        "mean": 327.8549331665039,
+        "p95": 328.7518081665039,
+        "peak": 331.7205581665039
+      },
+      "rss_attributed_means_mib": {
+        "root": 170.77395833333333,
+        "descendant": 0.0,
+        "temporal_vt_service": 18.751041666666666
+      },
+      "footprint_attributed_means_mib": {
+        "root": 286.1370361328125,
+        "descendant": 0.0,
+        "temporal_vt_service": 41.71789703369141
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.26687599957588,
+        "p95": 71.63606770613086,
+        "peak": 81.15073299095717
+      },
+      "host_top_eight_observations": {
+        "WindowServer": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 30.704472466032577
+        },
+        "coreaudiod": {
+          "present_in_top_eight_samples": 60,
+          "mean_observed_contribution_lower_bound": 7.151187733023392
+        },
+        "cargo": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "rustc": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        },
+        "mediaanalysisd": {
+          "present_in_top_eight_samples": 0,
+          "mean_observed_contribution_lower_bound": 0.0
+        }
+      },
+      "media_delta_10_to_70": {
+        "dropped_frames": 0,
+        "decoder_dropped_frames": 0,
+        "render_notifications": 3600
+      },
+      "ui_draw_delta_10_to_70": 239,
+      "sample_elapsed_first_last": [
+        1.0750602500047535,
+        60.07505633402616
+      ],
+      "position_advance_10_to_70": 59.96666666666667,
+      "single_root_and_temporal_service_identity": true,
+      "single_rusage_start_identity_per_process": true,
+      "footprint_complete_samples": 60
+    }
+  ],
+  "comparison": {
+    "timer_on_cpu_mean": 44.64972320057548,
+    "timer_off_cpu_mean": 36.34525987136378,
+    "timer_off_reduction_percentage_points": 8.3044633292117,
+    "timer_off_relative_reduction_percent": 18.599137315827,
+    "timer_on_ui_draws_mean": 239.0,
+    "timer_off_ui_draws_mean": 238.5
+  },
+  "full_spec_pass": false,
+  "native_production_qualified": false,
+  "cpu_25_target_pass": false,
+  "limitations": [
+    "Two trials per mode do not establish long-term repeatability or isolate stage CPU costs.",
+    "Host top-eight observations are censored; absence is not zero work. WindowServer/coreaudiod are shared and excluded from app CPU, not assigned exclusively.",
+    "Snapshots are non-atomic, temporal VT ownership unproven, baseline services excluded, short-lived helpers may be missed.",
+    "Footprint and RSS are separate OS views, not additive/unique-memory totals; GPU shared allocations remain incomplete.",
+    "Finite media checkpoints bracket nominal10\u201370s, not atomically aligned to sampler observations; no screenshots or profiler in measured intervals."
+  ],
+  "budget_comparison": {
+    "cpu_target_25_percent": "Missed by all four mean values.",
+    "cpu_ceiling_50_percent": "All four means below50; ON p95/peaks above50. Both OFF p95 and peaks below50. This is a scoped fixed-fixture observation, not full performance-supported release qualification.",
+    "resident_target_400_mib": "All observed aggregate RSS means/p95/peaks below400 and650 ceiling. OS footprint remains a separate ledger.",
+    "dropped_frames": "Observed warm VO/decoder counter deltas zero in all four nominal10-to70second intervals; no continuous display cadence claim.",
+    "repeats": "OFF lower in both repetitions, but only two samples of each mode; no long-term/platform/general-content repeatability or system-energy claim."
+  },
+  "analysis_correction": "Historical analysis template assumed three startup geometry changes. Last ON run recorded four before5s; each run stayed unchanged through10/25/70s with identical backing dimensions. Validator now checks actual constant per-run count, never rewrites logs."
+}

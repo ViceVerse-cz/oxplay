@@ -1,0 +1,175 @@
+{
+  "source_revision": "83a07b4b493a7d411fc21fdbc55daf529596be7e",
+  "app_sha256": "c2ff7d1c0f93145713e2de039e9aa6b574051afcba5d07ed331650c025568398",
+  "source_association": {
+    "independently_verified_input_hashes": 115,
+    "matching_source_manifests": 3,
+    "independent_native_dependency_rebuild": false
+  },
+  "central_validation_reported": {
+    "rust_passed": 243,
+    "rust_ignored": 3,
+    "python_passed": 63,
+    "strict_workspace_clippy": "passed",
+    "locked_release_build": "passed"
+  },
+  "exports": [
+    {
+      "artifact": "artifacts/motion-default/source.json",
+      "export": "2026-09-29-motion-default-source.json",
+      "sha256": "1494727d3288691369de66e6a4dce5b77627c75c9d1ef0bc09764913f2a177fe"
+    },
+    {
+      "artifact": "artifacts/motion-default/functional/local.json",
+      "export": "2026-09-29-motion-default-local.json",
+      "sha256": "2e07852fc7abbf4cdc35a4b2ebb0f40224fe98726bb21be764dced135af012c4"
+    },
+    {
+      "artifact": "artifacts/motion-default/functional/local.log",
+      "export": "2026-09-29-motion-default-local.log",
+      "sha256": "a9fa44577fdcf314443525524be2da19d4923ee03e6a83fd36a4e90cdc0e996e"
+    },
+    {
+      "artifact": "artifacts/motion-default/functional/library.json",
+      "export": "2026-09-29-motion-default-library.json",
+      "sha256": "71c0a14ee68e65b143f6af71c489019919056bc0767f621d77114f3d54270889"
+    },
+    {
+      "artifact": "artifacts/motion-default/functional/library.log",
+      "export": "2026-09-29-motion-default-library.log",
+      "sha256": "c3f25ca7a28fe7a68360963c73c5d02754bcfeaefc8b839503d6ead8dc90a3ce"
+    },
+    {
+      "artifact": "artifacts/motion-stable/source.json",
+      "export": "2026-09-29-motion-stable-source.json",
+      "sha256": "1494727d3288691369de66e6a4dce5b77627c75c9d1ef0bc09764913f2a177fe"
+    },
+    {
+      "artifact": "artifacts/motion-stable/functional/local.json",
+      "export": "2026-09-29-motion-stable-local.json",
+      "sha256": "1bfd3b81ed4edf984477e07a6033d0973d5147ea8e97daf3cddc16267cda7781"
+    },
+    {
+      "artifact": "artifacts/motion-stable/functional/local.log",
+      "export": "2026-09-29-motion-stable-local.log",
+      "sha256": "42ffb5688cb0afef86ad068c76857bc193031fbf5e81d766f73b31f2ee6624ba"
+    },
+    {
+      "artifact": "artifacts/motion-stable/functional/refresh.json",
+      "export": "2026-09-29-motion-stable-refresh.json",
+      "sha256": "02156d4de64b6657fec6d67b676d8acc55d0c6092460fc82669b9ff94754e9f0"
+    },
+    {
+      "artifact": "artifacts/motion-stable/functional/refresh.log",
+      "export": "2026-09-29-motion-stable-refresh.log",
+      "sha256": "5018c1d8c7afaea938aecde4fdf00bbde4b4389210dbfe432f5d54e56674d934"
+    },
+    {
+      "artifact": "artifacts/ui-library/source.json",
+      "export": "2026-09-29-ui-library-source.json",
+      "sha256": "1494727d3288691369de66e6a4dce5b77627c75c9d1ef0bc09764913f2a177fe"
+    },
+    {
+      "artifact": "artifacts/ui-library/library-dark-small.json",
+      "export": "2026-09-29-ui-library-dark-small.json",
+      "sha256": "f868f8ac0c0df36a9a6df5690474fb3cf18adda707401968e249eaa340199f60"
+    },
+    {
+      "artifact": "artifacts/ui-library/library-dark-small.log",
+      "export": "2026-09-29-ui-library-dark-small.log",
+      "sha256": "fcc0bb801719ab87680860b52e59b2ae67d374bc3c23029d7846a536b3ed4a41"
+    },
+    {
+      "artifact": "artifacts/ui-library/library-light-small.json",
+      "export": "2026-09-29-ui-library-light-small.json",
+      "sha256": "19b404cd8ea6a5568ea5320c7f177baf74b9f38cf55b0ddfce8a1adac0797528"
+    },
+    {
+      "artifact": "artifacts/ui-library/library-light-small.log",
+      "export": "2026-09-29-ui-library-light-small.log",
+      "sha256": "3714ce73c8ecd4b57ca58571d82a8554bf5a3ca4169b1f35b6752cab3d588007"
+    }
+  ],
+  "local_ignored_images": [
+    {
+      "artifact": "artifacts/ui-library/library-dark-small.png",
+      "sha256": "18f3214347d4defafda9be6b6bdff2f15d2fccd1eb2f51a9f994bbf9b5280275",
+      "exported": false,
+      "inspected_by": "lead agent, direct image inspection",
+      "inspection": "Coherent 760x600 local empty playlist; full-width name with Create/Rename/Delete below; no blank list or empty selector; transfer actions fit; Lucide icons and local/account distinction visible; native blue search focus retained."
+    },
+    {
+      "artifact": "artifacts/ui-library/library-light-small.png",
+      "sha256": "2bc4bf7e73b6e9e2ca8b1f7c0d04b9489db383c3eef81070829ce9f72a693ae8",
+      "exported": false,
+      "inspected_by": "lead agent, direct image inspection",
+      "inspection": "Coherent 760x600 local empty playlist; full-width name with Create/Rename/Delete below; no blank list or empty selector; transfer actions fit; Lucide icons and local/account distinction visible; native blue search focus retained."
+    }
+  ],
+  "motion": {
+    "sample_times_ms": [
+      1400,
+      2400
+    ],
+    "grid": [
+      128,
+      72
+    ],
+    "default_changed_pixels": 833,
+    "stable_changed_pixels": 852,
+    "total_grid_pixels": 9216,
+    "scope": "Two diagnostic snapshot readbacks of the composed video ROI, not continuous compositor/scanout or perceptual A/V qualification. Excluded from performance."
+  },
+  "library": {
+    "elapsed_seconds": 28.218,
+    "exit_code": 0,
+    "stages": [
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21,
+      25
+    ],
+    "final_history_enabled": false,
+    "file_loads": 0,
+    "catalog_changes": 0,
+    "catalog_resets": 0,
+    "post_run_database_inspection": false
+  },
+  "stable_refresh": {
+    "elapsed_seconds": 70.512,
+    "exit_code": 0,
+    "file_loads": 2,
+    "fresh_resume_position_seconds": 51.483333333333334,
+    "decoder_and_output_sample_rates_hz": [
+      48000,
+      48000
+    ],
+    "audio_pts_seconds": [
+      79.19252954333179,
+      84.1934780003308
+    ],
+    "cached_audio_sample_rate_zero": "unknown, not evidence of absent audio",
+    "released_source_completed_read_counts": [
+      8,
+      1,
+      2,
+      17
+    ],
+    "released_source_read_errors": 0,
+    "catalog_changes": 0,
+    "catalog_resets": 0,
+    "stable_target_draws": 3509,
+    "private_target_draws": 6,
+    "target_publications": 2,
+    "target_allocations": 2,
+    "target_bytes": 7936128,
+    "final_vo_drops": 1,
+    "decoder_drops": 0
+  },
+  "privacy": "Exports screened for absolute user/temp paths, network URLs, credential headers and known cookie markers. No credentials used; private profile paths and PNG pixels excluded. This bounded screen is not a universal secret detector.",
+  "qualification": "Functional macOS evidence only; no real-account, energy, power-management, full accessibility, other-platform, resource-budget or perceptual A/V pass."
+}

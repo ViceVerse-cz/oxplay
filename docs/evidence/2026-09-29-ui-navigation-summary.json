@@ -1,0 +1,49 @@
+{
+  "source_revision": "e97ad3f916db5b42c7f1a0a3291b8c0fe149ca69",
+  "app_sha256": "f61a860fad7d31d5200dd36a00cf4d37912fb946407a27a16d05bb38a0b4d634",
+  "source_input_hashes_verified_against_commit": 112,
+  "source_association_limit": "Captured source inputs match the commit. This is not an independent rebuild or native dependency reproducibility proof. Older failed binary is retained with its own source input capture, not assigned this commit.",
+  "checks_reported_by_root": "226 Rust tests passed, 3 ignored; 50 Python tests; strict workspace Clippy and locked release build passed.",
+  "icon_assets": 21,
+  "icon_manifest_entries_verified": 22,
+  "qualification": "Native macOS functional callback and wheel/layout checks only; no performance, account, screen-reader, IME, real trackpad, or cross-platform qualification.",
+  "privacy": "Isolated empty profiles, no real credentials. Only boolean/count storage verification is exported. Limited URL/path/session-marker scan passed; bytes unchanged, no comprehensive sanitization guarantee.",
+  "exports": [
+    {
+      "file": "2026-09-29-ui-navigation-local.log",
+      "sha256": "9b4f0872624d3013fc53167c06987dcfd8301422443cf48b14cbe0f347b20442"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-local.json",
+      "sha256": "f4ceea2ce38affb865501cdb501d3d7acb9b2df64dde616b0ae0c1848c7e05d8"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-library.log",
+      "sha256": "b4c38af927d16541e925fd3910038275f3a139b18cbe6f666aa04f6f0f70808d"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-library.json",
+      "sha256": "48ea71a7f6344e2935fcb0b419b23a93ba15c44e1f89099e6541f6e2f5086931"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-library-storage-check.json",
+      "sha256": "ef7a9d6b1014a2f1a73ceb5b392d862250a0dd80d93e62022ee9ea9b99c56e83"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-watch-scroll-failure.log",
+      "sha256": "62a8cee950ebeda33e17951e6961e9e92c18caf67e6205daf137fd55687fcad8"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-watch-scroll-failure.json",
+      "sha256": "5dd0636bf6461355203524ee105e83257201a294ceb885b3290d87d6b56319a4"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-source-watch-fixed.json",
+      "sha256": "11ea234cf584cda042791935eef1568edb041020768397cd954f9933e1eeac93"
+    },
+    {
+      "file": "2026-09-29-ui-navigation-source-watch.json",
+      "sha256": "b8ece919f8cf449b7f60e3688aaee4ddef7d01edd0d8b01b60af03a0bd0597c2"
+    }
+  ]
+}

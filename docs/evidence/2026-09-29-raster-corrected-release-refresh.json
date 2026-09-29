@@ -1,0 +1,11 @@
+{
+  "mode": "refresh",
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+  "exit_code": 0,
+  "forced_termination": false,
+  "elapsed_seconds": 71.60638466704404,
+  "display_awake_fixture": true,
+  "real_account": false,
+  "performance_measurement": false
+}

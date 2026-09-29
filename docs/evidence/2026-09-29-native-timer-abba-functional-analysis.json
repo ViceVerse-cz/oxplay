@@ -1,0 +1,573 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "unmodified_app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "preparation_sha256": "514d3add6b322feff797460f8f59633d2dd5465f1137d595a7fd9eadb0e3c50b",
+  "variants": {
+    "on": {
+      "app_sha256": "e32aea7ebe8b0c4b29f10859819f5585bb7ad5db3a026f462eb5caaf3b225e80",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+      "elapsed_seconds": 47.95899224997265,
+      "actual_loaded_non_system_mpv_closure": [
+        {
+          "label": "cellar/dav1d/1.5.4/lib/libdav1d.7.dylib",
+          "sha256": "c7939084000fb430b9d846a56d7a153879f6f2b8549e335cc14a8da2b107dc0d",
+          "loaded_uuid": "316B61E9-6536-3E46-B700-6A64D0A18E32"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavcodec.63.1.102.dylib",
+          "sha256": "f3359c960778d4f8469700a051d5e9adbacaeeeb7ffdc68c87a1d5d66cd74680",
+          "loaded_uuid": "528C9DF5-D687-3A35-B344-5905A760914F"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavdevice.63.1.102.dylib",
+          "sha256": "9e7e49632247d1b7fa3e5dd1b4ae929091ca46d7a34faff77027c298c85eb033",
+          "loaded_uuid": "EF1B48F9-4980-3E02-8CD5-D767C487269D"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavfilter.12.1.102.dylib",
+          "sha256": "7370aba5ef05f70bedff45ef3c1662c3239691868ffea6a909b2c4c26b73cb90",
+          "loaded_uuid": "EF5A7EC6-EF52-3B22-8C8F-49BA88D62DAA"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavformat.63.1.102.dylib",
+          "sha256": "7037cf9835b02aca3ae66b8cb2c2eed380e5083fa432c3f9ef71e3efebb61262",
+          "loaded_uuid": "9EB50200-B810-3584-9F41-FF8BC3F8137C"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavutil.61.1.102.dylib",
+          "sha256": "d8735f7e878ea9f44d7ec15f0aee0bf473bacb5d44f7a46df1a299462372f664",
+          "loaded_uuid": "C7678543-DE71-35EF-AF5F-A3CF7F71C67B"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libswresample.7.1.102.dylib",
+          "sha256": "cb7096d9fbedbec10b878e68244167e2c9cc7ba8907f9840b6b39becc91969ad",
+          "loaded_uuid": "3F640E9D-DC6D-37D5-AFD9-E4DAB23AF78C"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libswscale.10.1.102.dylib",
+          "sha256": "5677ad33d0c49eb31262e3a4a7fe0eec06544756b53e816f19f598cd8a94bd9e",
+          "loaded_uuid": "626DF816-7FC5-3F4C-93CC-1A4CF369CC4F"
+        },
+        {
+          "label": "cellar/fontconfig/2.18.3/lib/libfontconfig.1.dylib",
+          "sha256": "cfff804ed1ed742ede239e93281db4ab51a1c95140e13e81b04dcd43cb7a9bfc",
+          "loaded_uuid": "8F6B317E-AC6C-3423-B0CB-FB75EB6C613F"
+        },
+        {
+          "label": "cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "1e9248ae3052f82989dfe62a3635b002b8ce1907220b5b2f001e4ae119f1d520",
+          "loaded_uuid": "5C82733D-F161-3551-8D03-3DE562899F2E"
+        },
+        {
+          "label": "cellar/fribidi/1.0.17/lib/libfribidi.0.dylib",
+          "sha256": "62eb4c3a15adb71884407c7bda6cdaad7b0e84d00472630a98f8870b346de1af",
+          "loaded_uuid": "771BEAED-9108-30DC-863F-72E132BFA60B"
+        },
+        {
+          "label": "cellar/gettext/1.0/lib/libintl.8.dylib",
+          "sha256": "9a03af49734a6efa39cb5bfd5e49ac36117835a9aa4aa7e63f15390413855579",
+          "loaded_uuid": "7CE8DE60-343F-3C58-8E99-A84F3D863D79"
+        },
+        {
+          "label": "cellar/glib/2.90.0/lib/libglib-2.0.0.dylib",
+          "sha256": "934e63c138b92bb530478bc5d17abc694e99ee98ecd6252e583a6f612fc3c860",
+          "loaded_uuid": "D52A65AC-C8FF-3040-BD70-02ACB5C7F23B"
+        },
+        {
+          "label": "cellar/graphite2/1.3.15/lib/libgraphite2.3.3.1.dylib",
+          "sha256": "16368a6b70e65ff2d27c6e3380f875a763b6e983ce39da5d98cbf1ab869cdae2",
+          "loaded_uuid": "41812DFC-D14E-3976-BA44-0AAB69211B41"
+        },
+        {
+          "label": "cellar/harfbuzz/14.5.0/lib/libharfbuzz.0.dylib",
+          "sha256": "5894ad09e43e8805edd1f97b2823bca44ab87e26a59472f8e6cc87f8dffbd596",
+          "loaded_uuid": "972DBB28-3AB2-3434-892B-55746D395FF2"
+        },
+        {
+          "label": "cellar/jpeg-turbo/3.2.0/lib/libjpeg.8.3.2.dylib",
+          "sha256": "b26a2bfeec68b9d5d000e308cfc9b7a203793a10bfd1c66cb695e97aac0f68f4",
+          "loaded_uuid": "D713D0E1-7E05-38BB-8701-075F69F0C6A9"
+        },
+        {
+          "label": "cellar/lame/4.0/lib/libmp3lame.0.dylib",
+          "sha256": "60d64aa53ac90a2fb0af33feada0a2149efbfebd1add281d4d978bf1339e72ec",
+          "loaded_uuid": "BF849572-6F5D-3A5E-82AD-BD2C9667F907"
+        },
+        {
+          "label": "cellar/libarchive/3.8.9/lib/libarchive.13.dylib",
+          "sha256": "e8b5b8dd2e5a6f8d0c3ac925d4a91f5ea54c7b05adadad43e9afa6e507e25dd7",
+          "loaded_uuid": "DFDD8543-B3E8-3CD3-A6FA-E409E3B00848"
+        },
+        {
+          "label": "cellar/libass/0.17.5_1/lib/libass.9.dylib",
+          "sha256": "d33ad7743360f5858e5464c526053353c59b81647d5436c424fa1a27e6ce7d5c",
+          "loaded_uuid": "25B1BFDE-CE8A-352B-8E99-350D3F706FCC"
+        },
+        {
+          "label": "cellar/libb2/0.98.1/lib/libb2.1.dylib",
+          "sha256": "1c5d26d250ce0e61b8a187d4616f7ce00cad71abf59a2bda7192fd42e931dfec",
+          "loaded_uuid": "90618C40-89AC-3A43-936F-32F636755D8F"
+        },
+        {
+          "label": "cellar/libbluray/1.5.0/lib/libbluray.4.dylib",
+          "sha256": "cdefbd68904359bd29902e84b462a084da213b0666867e00eaf0c82bc266a9ff",
+          "loaded_uuid": "CE0C07D2-144F-395C-9DAA-82ADBC8A5F00"
+        },
+        {
+          "label": "cellar/libplacebo/7.360.1/lib/libplacebo.360.dylib",
+          "sha256": "a312f9dafbc689c2fcf0c02f4f4fa8dc1bffe460b4edd5b645bafb46375fdf3c",
+          "loaded_uuid": "979693F5-CD8A-310E-B9FD-E4C8AAEB9AC7"
+        },
+        {
+          "label": "cellar/libpng/1.6.58/lib/libpng16.16.dylib",
+          "sha256": "8da1fd86c98b2d78a12255242d8629c703b04ad90512b9627e9873db2e35fd7f",
+          "loaded_uuid": "067956B0-D990-3A46-8DE8-DEB3ECD0D23F"
+        },
+        {
+          "label": "cellar/libsamplerate/0.2.2/lib/libsamplerate.0.2.2.dylib",
+          "sha256": "8080562154f56cbf3af1333cbfdc96b85e314f0db91de699ebabc644d9f7f0e1",
+          "loaded_uuid": "6A12A641-3DD4-38F1-90DB-6532D5B7AF30"
+        },
+        {
+          "label": "cellar/libudfread/1.2.0/lib/libudfread.3.dylib",
+          "sha256": "fcee189132250752a24e94ccae3306496d260edbd9fd745d4d3b6c0d6c01e20e",
+          "loaded_uuid": "8FBB7C71-1621-361C-A9EF-918A12F7776C"
+        },
+        {
+          "label": "cellar/libunibreak/8.0/lib/libunibreak.8.dylib",
+          "sha256": "956081523d9bc76c1d50cf3ca685d266e4626e9cbca45b7dcc41ca4cabad209c",
+          "loaded_uuid": "1CBD4EA2-FBC2-37DD-9126-789E9B9A99DE"
+        },
+        {
+          "label": "cellar/libvmaf/3.2.1/lib/libvmaf.3.dylib",
+          "sha256": "a825cdd3ff46fa6282aa1cb9328c701e9950e944f2c8821d88481779b3472d46",
+          "loaded_uuid": "F11CF4B6-164C-3CFE-9E04-D346E4DD32F2"
+        },
+        {
+          "label": "cellar/libvpx/1.17.0/lib/libvpx.12.dylib",
+          "sha256": "7cbbd0ab0d9f53a699761a3caccf0ea18bf779d46f7225693cb2c1ac4e7bca3b",
+          "loaded_uuid": "1194890E-C14D-36DE-8BE8-796494253295"
+        },
+        {
+          "label": "cellar/little-cms2/2.19.1/lib/liblcms2.2.dylib",
+          "sha256": "b43de9af9f34128b5c5d12a37510383208e96d352147d31f486cf01341fd16cb",
+          "loaded_uuid": "247D934A-222E-3F3D-AABD-D671985D53B2"
+        },
+        {
+          "label": "cellar/luajit/2.1.1788856981/lib/libluajit-5.1.2.1.1788856981.dylib",
+          "sha256": "34ce866c86a66cf983c58588ebef4714e30900e740fab791ea6156d8c730c69a",
+          "loaded_uuid": "027D18F5-4D80-3774-A0A8-3E484D24A5CC"
+        },
+        {
+          "label": "cellar/lz4/1.10.0/lib/liblz4.1.10.0.dylib",
+          "sha256": "b952cda4c132b44c1cdc894ebebd45100d8f103de56e8ff1e138c02f7ecb10be",
+          "loaded_uuid": "756AF95A-87F5-3EDD-9B76-A4409610F85C"
+        },
+        {
+          "label": "cellar/mpg123/1.33.7/lib/libmpg123.0.dylib",
+          "sha256": "c1a5e757f35ca4e15d7888c07c02605a2e583387899ee440176d4e63670f75c8",
+          "loaded_uuid": "D0EAED38-333A-3EBF-90D2-B8FE72A17799"
+        },
+        {
+          "label": "cellar/mujs/1.3.10/lib/libmujs.dylib",
+          "sha256": "a5e331a3b524787a9c9e8e4027eac6c56c1328efd5e091c05059304e1ffe3055",
+          "loaded_uuid": "3F706014-DD35-3664-AE96-1EC46C6A9DA2"
+        },
+        {
+          "label": "cellar/openssl@3/3.6.4/lib/libcrypto.3.dylib",
+          "sha256": "380d32d4d229136f9ded004906634491c8d416779d031abadc3d6463b1ef8e3d",
+          "loaded_uuid": "676BAA2E-300B-3EE4-B95A-069AA60F3B10"
+        },
+        {
+          "label": "cellar/openssl@3/3.6.4/lib/libssl.3.dylib",
+          "sha256": "ebee4a51513f22f6efc6d3b9ff9d638015d2d924c0e443b31df2735798cb8dcb",
+          "loaded_uuid": "C3C6812F-E22F-39CF-83AF-DD844714F050"
+        },
+        {
+          "label": "cellar/opus/1.6.1/lib/libopus.0.dylib",
+          "sha256": "f7df13ab572e991e6bea300c1f5a113d1690de651b8c3a6b0f0e57e54b724453",
+          "loaded_uuid": "A2B464AA-FE61-3144-A7F7-583F81CC0D6F"
+        },
+        {
+          "label": "cellar/pcre2/10.48/lib/libpcre2-8.0.dylib",
+          "sha256": "689fff363f155ed88a5b4bbd79c3d4ea5871ac8f5701f7a0e17e22cebebc0adb",
+          "loaded_uuid": "26ED07F1-62EB-33D8-A408-B24837F88B80"
+        },
+        {
+          "label": "cellar/rubberband/4.0.0/lib/librubberband.3.dylib",
+          "sha256": "c826643344cafa1cd613de55a7c79152082d45fb7f5e5d64865cbef7289fea7b",
+          "loaded_uuid": "9BA2130C-8002-34E6-89FE-AD1CF3BD0149"
+        },
+        {
+          "label": "cellar/shaderc/2026.4/lib/libshaderc_shared.1.dylib",
+          "sha256": "90987a60123cebb6c01221b03979ace770c8b8ace971f37814cd5261b3352354",
+          "loaded_uuid": "A59E081E-4BF3-3D03-8A04-FFB3EFF23063"
+        },
+        {
+          "label": "cellar/svt-av1/4.2.0/lib/libSvtAv1Enc.4.2.0.dylib",
+          "sha256": "84cbb6f982111cf963663834bdeee22a694fcd578202e5719f1e4a8a463f270c",
+          "loaded_uuid": "6D6BF929-F3B3-3D44-8A03-16D602ACA266"
+        },
+        {
+          "label": "cellar/uchardet/0.0.8/lib/libuchardet.0.0.8.dylib",
+          "sha256": "faea4b8ae57312217319f19e5482558e665461e05c29b26715a809b27d501384",
+          "loaded_uuid": "8950793A-9210-3E5E-93FB-E98A6AEEAA2E"
+        },
+        {
+          "label": "cellar/vulkan-loader/1.4.357.0/lib/libvulkan.1.4.357.dylib",
+          "sha256": "b634d74b97f694dfad13d7c23ffdbff3d8349832db2c8c3e15f4deba45ac5d13",
+          "loaded_uuid": "0787E37D-48D4-3A8A-BECD-DFCAFACE2CFB"
+        },
+        {
+          "label": "cellar/x264/r3222/lib/libx264.165.dylib",
+          "sha256": "72994dd5df8639f67eb6404e7c352748bb0a264495ff7518295ba98692358fb7",
+          "loaded_uuid": "901EDD64-1BC8-3FC9-BBF5-EFC64FF59E12"
+        },
+        {
+          "label": "cellar/x265/4.3/lib/libx265.217.dylib",
+          "sha256": "77c26ea29afca3c99cdc45354539eca99c1bbd902d6c1e08f7f5ab0156c11cb0",
+          "loaded_uuid": "57B60449-9FB0-3EF9-ADDA-9DF4A4926CE4"
+        },
+        {
+          "label": "cellar/xz/5.8.4/lib/liblzma.5.dylib",
+          "sha256": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09",
+          "loaded_uuid": "EE743822-2399-31A5-83DE-33580E7738B2"
+        },
+        {
+          "label": "cellar/zimg/3.0.6/lib/libzimg.2.dylib",
+          "sha256": "21166740edf07d074de498d8d97aa4982bfd06a25218e47bffe748a3e13c5624",
+          "loaded_uuid": "CF629271-256C-3D3C-AA3F-52C8ACCF4806"
+        },
+        {
+          "label": "cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+          "sha256": "f07bd1a16d06bc648ba2111516487cb6156abacbcc14f995228fcd82fc5dc2d1",
+          "loaded_uuid": "8CE47816-6271-3BEB-AACC-7BDBBD9F27E4"
+        },
+        {
+          "label": "pair/prefix-on/lib/libmpv.2.dylib",
+          "sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5",
+          "loaded_uuid": "9A9AF36C-3602-374C-8482-A75104113C7D"
+        }
+      ],
+      "loader_state_transition_lines": 54,
+      "loaded_image_count": 1229,
+      "actual_unique_mpv_image": true,
+      "groups_absent": true,
+      "fixture_removed": true,
+      "stages": [
+        5,
+        8,
+        11,
+        14,
+        17,
+        20,
+        23,
+        26,
+        29,
+        32,
+        35,
+        38,
+        41,
+        44
+      ]
+    },
+    "off": {
+      "app_sha256": "bc6010464fb9312f10cc666def369303212bab3cb15905e07def77e463adad7f",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+      "elapsed_seconds": 47.96698337496491,
+      "actual_loaded_non_system_mpv_closure": [
+        {
+          "label": "cellar/dav1d/1.5.4/lib/libdav1d.7.dylib",
+          "sha256": "c7939084000fb430b9d846a56d7a153879f6f2b8549e335cc14a8da2b107dc0d",
+          "loaded_uuid": "316B61E9-6536-3E46-B700-6A64D0A18E32"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavcodec.63.1.102.dylib",
+          "sha256": "f3359c960778d4f8469700a051d5e9adbacaeeeb7ffdc68c87a1d5d66cd74680",
+          "loaded_uuid": "528C9DF5-D687-3A35-B344-5905A760914F"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavdevice.63.1.102.dylib",
+          "sha256": "9e7e49632247d1b7fa3e5dd1b4ae929091ca46d7a34faff77027c298c85eb033",
+          "loaded_uuid": "EF1B48F9-4980-3E02-8CD5-D767C487269D"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavfilter.12.1.102.dylib",
+          "sha256": "7370aba5ef05f70bedff45ef3c1662c3239691868ffea6a909b2c4c26b73cb90",
+          "loaded_uuid": "EF5A7EC6-EF52-3B22-8C8F-49BA88D62DAA"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavformat.63.1.102.dylib",
+          "sha256": "7037cf9835b02aca3ae66b8cb2c2eed380e5083fa432c3f9ef71e3efebb61262",
+          "loaded_uuid": "9EB50200-B810-3584-9F41-FF8BC3F8137C"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libavutil.61.1.102.dylib",
+          "sha256": "d8735f7e878ea9f44d7ec15f0aee0bf473bacb5d44f7a46df1a299462372f664",
+          "loaded_uuid": "C7678543-DE71-35EF-AF5F-A3CF7F71C67B"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libswresample.7.1.102.dylib",
+          "sha256": "cb7096d9fbedbec10b878e68244167e2c9cc7ba8907f9840b6b39becc91969ad",
+          "loaded_uuid": "3F640E9D-DC6D-37D5-AFD9-E4DAB23AF78C"
+        },
+        {
+          "label": "cellar/ffmpeg/9.0.2/lib/libswscale.10.1.102.dylib",
+          "sha256": "5677ad33d0c49eb31262e3a4a7fe0eec06544756b53e816f19f598cd8a94bd9e",
+          "loaded_uuid": "626DF816-7FC5-3F4C-93CC-1A4CF369CC4F"
+        },
+        {
+          "label": "cellar/fontconfig/2.18.3/lib/libfontconfig.1.dylib",
+          "sha256": "cfff804ed1ed742ede239e93281db4ab51a1c95140e13e81b04dcd43cb7a9bfc",
+          "loaded_uuid": "8F6B317E-AC6C-3423-B0CB-FB75EB6C613F"
+        },
+        {
+          "label": "cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "1e9248ae3052f82989dfe62a3635b002b8ce1907220b5b2f001e4ae119f1d520",
+          "loaded_uuid": "5C82733D-F161-3551-8D03-3DE562899F2E"
+        },
+        {
+          "label": "cellar/fribidi/1.0.17/lib/libfribidi.0.dylib",
+          "sha256": "62eb4c3a15adb71884407c7bda6cdaad7b0e84d00472630a98f8870b346de1af",
+          "loaded_uuid": "771BEAED-9108-30DC-863F-72E132BFA60B"
+        },
+        {
+          "label": "cellar/gettext/1.0/lib/libintl.8.dylib",
+          "sha256": "9a03af49734a6efa39cb5bfd5e49ac36117835a9aa4aa7e63f15390413855579",
+          "loaded_uuid": "7CE8DE60-343F-3C58-8E99-A84F3D863D79"
+        },
+        {
+          "label": "cellar/glib/2.90.0/lib/libglib-2.0.0.dylib",
+          "sha256": "934e63c138b92bb530478bc5d17abc694e99ee98ecd6252e583a6f612fc3c860",
+          "loaded_uuid": "D52A65AC-C8FF-3040-BD70-02ACB5C7F23B"
+        },
+        {
+          "label": "cellar/graphite2/1.3.15/lib/libgraphite2.3.3.1.dylib",
+          "sha256": "16368a6b70e65ff2d27c6e3380f875a763b6e983ce39da5d98cbf1ab869cdae2",
+          "loaded_uuid": "41812DFC-D14E-3976-BA44-0AAB69211B41"
+        },
+        {
+          "label": "cellar/harfbuzz/14.5.0/lib/libharfbuzz.0.dylib",
+          "sha256": "5894ad09e43e8805edd1f97b2823bca44ab87e26a59472f8e6cc87f8dffbd596",
+          "loaded_uuid": "972DBB28-3AB2-3434-892B-55746D395FF2"
+        },
+        {
+          "label": "cellar/jpeg-turbo/3.2.0/lib/libjpeg.8.3.2.dylib",
+          "sha256": "b26a2bfeec68b9d5d000e308cfc9b7a203793a10bfd1c66cb695e97aac0f68f4",
+          "loaded_uuid": "D713D0E1-7E05-38BB-8701-075F69F0C6A9"
+        },
+        {
+          "label": "cellar/lame/4.0/lib/libmp3lame.0.dylib",
+          "sha256": "60d64aa53ac90a2fb0af33feada0a2149efbfebd1add281d4d978bf1339e72ec",
+          "loaded_uuid": "BF849572-6F5D-3A5E-82AD-BD2C9667F907"
+        },
+        {
+          "label": "cellar/libarchive/3.8.9/lib/libarchive.13.dylib",
+          "sha256": "e8b5b8dd2e5a6f8d0c3ac925d4a91f5ea54c7b05adadad43e9afa6e507e25dd7",
+          "loaded_uuid": "DFDD8543-B3E8-3CD3-A6FA-E409E3B00848"
+        },
+        {
+          "label": "cellar/libass/0.17.5_1/lib/libass.9.dylib",
+          "sha256": "d33ad7743360f5858e5464c526053353c59b81647d5436c424fa1a27e6ce7d5c",
+          "loaded_uuid": "25B1BFDE-CE8A-352B-8E99-350D3F706FCC"
+        },
+        {
+          "label": "cellar/libb2/0.98.1/lib/libb2.1.dylib",
+          "sha256": "1c5d26d250ce0e61b8a187d4616f7ce00cad71abf59a2bda7192fd42e931dfec",
+          "loaded_uuid": "90618C40-89AC-3A43-936F-32F636755D8F"
+        },
+        {
+          "label": "cellar/libbluray/1.5.0/lib/libbluray.4.dylib",
+          "sha256": "cdefbd68904359bd29902e84b462a084da213b0666867e00eaf0c82bc266a9ff",
+          "loaded_uuid": "CE0C07D2-144F-395C-9DAA-82ADBC8A5F00"
+        },
+        {
+          "label": "cellar/libplacebo/7.360.1/lib/libplacebo.360.dylib",
+          "sha256": "a312f9dafbc689c2fcf0c02f4f4fa8dc1bffe460b4edd5b645bafb46375fdf3c",
+          "loaded_uuid": "979693F5-CD8A-310E-B9FD-E4C8AAEB9AC7"
+        },
+        {
+          "label": "cellar/libpng/1.6.58/lib/libpng16.16.dylib",
+          "sha256": "8da1fd86c98b2d78a12255242d8629c703b04ad90512b9627e9873db2e35fd7f",
+          "loaded_uuid": "067956B0-D990-3A46-8DE8-DEB3ECD0D23F"
+        },
+        {
+          "label": "cellar/libsamplerate/0.2.2/lib/libsamplerate.0.2.2.dylib",
+          "sha256": "8080562154f56cbf3af1333cbfdc96b85e314f0db91de699ebabc644d9f7f0e1",
+          "loaded_uuid": "6A12A641-3DD4-38F1-90DB-6532D5B7AF30"
+        },
+        {
+          "label": "cellar/libudfread/1.2.0/lib/libudfread.3.dylib",
+          "sha256": "fcee189132250752a24e94ccae3306496d260edbd9fd745d4d3b6c0d6c01e20e",
+          "loaded_uuid": "8FBB7C71-1621-361C-A9EF-918A12F7776C"
+        },
+        {
+          "label": "cellar/libunibreak/8.0/lib/libunibreak.8.dylib",
+          "sha256": "956081523d9bc76c1d50cf3ca685d266e4626e9cbca45b7dcc41ca4cabad209c",
+          "loaded_uuid": "1CBD4EA2-FBC2-37DD-9126-789E9B9A99DE"
+        },
+        {
+          "label": "cellar/libvmaf/3.2.1/lib/libvmaf.3.dylib",
+          "sha256": "a825cdd3ff46fa6282aa1cb9328c701e9950e944f2c8821d88481779b3472d46",
+          "loaded_uuid": "F11CF4B6-164C-3CFE-9E04-D346E4DD32F2"
+        },
+        {
+          "label": "cellar/libvpx/1.17.0/lib/libvpx.12.dylib",
+          "sha256": "7cbbd0ab0d9f53a699761a3caccf0ea18bf779d46f7225693cb2c1ac4e7bca3b",
+          "loaded_uuid": "1194890E-C14D-36DE-8BE8-796494253295"
+        },
+        {
+          "label": "cellar/little-cms2/2.19.1/lib/liblcms2.2.dylib",
+          "sha256": "b43de9af9f34128b5c5d12a37510383208e96d352147d31f486cf01341fd16cb",
+          "loaded_uuid": "247D934A-222E-3F3D-AABD-D671985D53B2"
+        },
+        {
+          "label": "cellar/luajit/2.1.1788856981/lib/libluajit-5.1.2.1.1788856981.dylib",
+          "sha256": "34ce866c86a66cf983c58588ebef4714e30900e740fab791ea6156d8c730c69a",
+          "loaded_uuid": "027D18F5-4D80-3774-A0A8-3E484D24A5CC"
+        },
+        {
+          "label": "cellar/lz4/1.10.0/lib/liblz4.1.10.0.dylib",
+          "sha256": "b952cda4c132b44c1cdc894ebebd45100d8f103de56e8ff1e138c02f7ecb10be",
+          "loaded_uuid": "756AF95A-87F5-3EDD-9B76-A4409610F85C"
+        },
+        {
+          "label": "cellar/mpg123/1.33.7/lib/libmpg123.0.dylib",
+          "sha256": "c1a5e757f35ca4e15d7888c07c02605a2e583387899ee440176d4e63670f75c8",
+          "loaded_uuid": "D0EAED38-333A-3EBF-90D2-B8FE72A17799"
+        },
+        {
+          "label": "cellar/mujs/1.3.10/lib/libmujs.dylib",
+          "sha256": "a5e331a3b524787a9c9e8e4027eac6c56c1328efd5e091c05059304e1ffe3055",
+          "loaded_uuid": "3F706014-DD35-3664-AE96-1EC46C6A9DA2"
+        },
+        {
+          "label": "cellar/openssl@3/3.6.4/lib/libcrypto.3.dylib",
+          "sha256": "380d32d4d229136f9ded004906634491c8d416779d031abadc3d6463b1ef8e3d",
+          "loaded_uuid": "676BAA2E-300B-3EE4-B95A-069AA60F3B10"
+        },
+        {
+          "label": "cellar/openssl@3/3.6.4/lib/libssl.3.dylib",
+          "sha256": "ebee4a51513f22f6efc6d3b9ff9d638015d2d924c0e443b31df2735798cb8dcb",
+          "loaded_uuid": "C3C6812F-E22F-39CF-83AF-DD844714F050"
+        },
+        {
+          "label": "cellar/opus/1.6.1/lib/libopus.0.dylib",
+          "sha256": "f7df13ab572e991e6bea300c1f5a113d1690de651b8c3a6b0f0e57e54b724453",
+          "loaded_uuid": "A2B464AA-FE61-3144-A7F7-583F81CC0D6F"
+        },
+        {
+          "label": "cellar/pcre2/10.48/lib/libpcre2-8.0.dylib",
+          "sha256": "689fff363f155ed88a5b4bbd79c3d4ea5871ac8f5701f7a0e17e22cebebc0adb",
+          "loaded_uuid": "26ED07F1-62EB-33D8-A408-B24837F88B80"
+        },
+        {
+          "label": "cellar/rubberband/4.0.0/lib/librubberband.3.dylib",
+          "sha256": "c826643344cafa1cd613de55a7c79152082d45fb7f5e5d64865cbef7289fea7b",
+          "loaded_uuid": "9BA2130C-8002-34E6-89FE-AD1CF3BD0149"
+        },
+        {
+          "label": "cellar/shaderc/2026.4/lib/libshaderc_shared.1.dylib",
+          "sha256": "90987a60123cebb6c01221b03979ace770c8b8ace971f37814cd5261b3352354",
+          "loaded_uuid": "A59E081E-4BF3-3D03-8A04-FFB3EFF23063"
+        },
+        {
+          "label": "cellar/svt-av1/4.2.0/lib/libSvtAv1Enc.4.2.0.dylib",
+          "sha256": "84cbb6f982111cf963663834bdeee22a694fcd578202e5719f1e4a8a463f270c",
+          "loaded_uuid": "6D6BF929-F3B3-3D44-8A03-16D602ACA266"
+        },
+        {
+          "label": "cellar/uchardet/0.0.8/lib/libuchardet.0.0.8.dylib",
+          "sha256": "faea4b8ae57312217319f19e5482558e665461e05c29b26715a809b27d501384",
+          "loaded_uuid": "8950793A-9210-3E5E-93FB-E98A6AEEAA2E"
+        },
+        {
+          "label": "cellar/vulkan-loader/1.4.357.0/lib/libvulkan.1.4.357.dylib",
+          "sha256": "b634d74b97f694dfad13d7c23ffdbff3d8349832db2c8c3e15f4deba45ac5d13",
+          "loaded_uuid": "0787E37D-48D4-3A8A-BECD-DFCAFACE2CFB"
+        },
+        {
+          "label": "cellar/x264/r3222/lib/libx264.165.dylib",
+          "sha256": "72994dd5df8639f67eb6404e7c352748bb0a264495ff7518295ba98692358fb7",
+          "loaded_uuid": "901EDD64-1BC8-3FC9-BBF5-EFC64FF59E12"
+        },
+        {
+          "label": "cellar/x265/4.3/lib/libx265.217.dylib",
+          "sha256": "77c26ea29afca3c99cdc45354539eca99c1bbd902d6c1e08f7f5ab0156c11cb0",
+          "loaded_uuid": "57B60449-9FB0-3EF9-ADDA-9DF4A4926CE4"
+        },
+        {
+          "label": "cellar/xz/5.8.4/lib/liblzma.5.dylib",
+          "sha256": "1b2e12cc1b920264f3dd15eeba22e85b8afd589595d8945d1d12a52afa694b09",
+          "loaded_uuid": "EE743822-2399-31A5-83DE-33580E7738B2"
+        },
+        {
+          "label": "cellar/zimg/3.0.6/lib/libzimg.2.dylib",
+          "sha256": "21166740edf07d074de498d8d97aa4982bfd06a25218e47bffe748a3e13c5624",
+          "loaded_uuid": "CF629271-256C-3D3C-AA3F-52C8ACCF4806"
+        },
+        {
+          "label": "cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+          "sha256": "f07bd1a16d06bc648ba2111516487cb6156abacbcc14f995228fcd82fc5dc2d1",
+          "loaded_uuid": "8CE47816-6271-3BEB-AACC-7BDBBD9F27E4"
+        },
+        {
+          "label": "pair/prefix-off/lib/libmpv.2.dylib",
+          "sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e",
+          "loaded_uuid": "D03D0CB5-F9A5-3C72-ADFC-F50FEDD8F55D"
+        }
+      ],
+      "loader_state_transition_lines": 54,
+      "loaded_image_count": 1229,
+      "actual_unique_mpv_image": true,
+      "groups_absent": true,
+      "fixture_removed": true,
+      "stages": [
+        5,
+        8,
+        11,
+        14,
+        17,
+        20,
+        23,
+        26,
+        29,
+        32,
+        35,
+        38,
+        41,
+        44
+      ]
+    }
+  },
+  "all_other_actual_loaded_image_paths_and_uuids_equal": true,
+  "system_loaded_images_hashed": false,
+  "paused_video_comparison": {
+    "source": "Finite external owning-window capture1 in each variant after actual paused seek20. Logged geometry determines ROI; no scaling or pixel alteration.",
+    "roi_px": {
+      "x": 520,
+      "y": 216,
+      "width": 1328,
+      "height": 747
+    },
+    "pixels": 992016,
+    "different_pixels": 0,
+    "maximum_channel_delta": 0,
+    "sum_absolute_channel_deltas": 0,
+    "exact_pixel_equality": true,
+    "on_png_sha256": "705f93b987d1340cde38d3064cbc5398861026e8209392193c796acf56638d7c",
+    "off_png_sha256": "705f93b987d1340cde38d3064cbc5398861026e8209392193c796acf56638d7c",
+    "on_rgb_sha256": "5be5563ad71cfac0a04eec6481a53d58472e89ca484c40b0aa9f32b42a268852",
+    "off_rgb_sha256": "5be5563ad71cfac0a04eec6481a53d58472e89ca484c40b0aa9f32b42a268852",
+    "decoder_tool_sha256": "c8173e9755795978bce8e104f8d7044fabe7d6d84044aba37d3648c6f4e4e1a8"
+  },
+  "performance_measurement": false,
+  "full_spec_pass": false,
+  "production_patch_adopted": false,
+  "limitations": [
+    "Finite lifecycle and one paused frame comparison are not continuous display or perceptual A/V qualification.",
+    "Other agents may compile; no CPU/RAM/energy inference.",
+    "System dyld-cache images have UUID identity but are not byte-hashed.",
+    "No original application or library modified; both executables are ad-hoc diagnostic copies."
+  ]
+}

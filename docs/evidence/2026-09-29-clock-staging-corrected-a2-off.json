@@ -1,0 +1,2189 @@
+{
+  "status": "completed_not_automatically_qualified",
+  "warmup_seconds": 10,
+  "requested_sample_count": 60,
+  "samples": [
+    {
+      "rss_mib": 187.734375,
+      "cpu_one_core_percent": 51.15960214582459,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 1.0750669999979436,
+      "host_other_cpu_one_core_percent": 66.04239549732904,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.648380054539516
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.511222091286132
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 3.720698337874768
+        },
+        {
+          "executable": "cfprefsd",
+          "cpu_one_core_percent": 1.8603491689400278
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.860349168937384
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9301745844695388
+        },
+        {
+          "executable": "codex-code-mode-host",
+          "cpu_one_core_percent": 0.9301745844695182
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.930174584468692
+        }
+      ]
+    },
+    {
+      "rss_mib": 187.96875,
+      "cpu_one_core_percent": 45.106019298031235,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 2.006206582998857,
+      "host_other_cpu_one_core_percent": 52.62368918101917,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.884160776729665
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.443717042576142
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.147905680856679
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.147905680856679
+        }
+      ]
+    },
+    {
+      "rss_mib": 187.71875,
+      "cpu_one_core_percent": 53.32598619495221,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 3.07510383304907,
+      "host_other_cpu_one_core_percent": 57.06816066478147,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.03500640294725
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.54880532218647
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 3.742174469828437
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9355436174553007
+        },
+        {
+          "executable": "replayd",
+          "cpu_one_core_percent": 0.935543617455115
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9355436174544502
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9355436174544502
+        }
+      ]
+    },
+    {
+      "rss_mib": 187.8125,
+      "cpu_one_core_percent": 46.00210841478407,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 4.0750580000458285,
+      "host_other_cpu_one_core_percent": 55.002520930748254,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.001925074375364
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.0002750106242395
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.0000916702289233
+        },
+        {
+          "executable": "opendirectoryd",
+          "cpu_one_core_percent": 1.0000458351059347
+        },
+        {
+          "executable": "ControlCenter",
+          "cpu_one_core_percent": 1.0000458351045136
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.0000458351030925
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 1.0000458351030925
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.0000458351030925
+        }
+      ]
+    },
+    {
+      "rss_mib": 187.859375,
+      "cpu_one_core_percent": 58.993554956553396,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 5.075167250004597,
+      "host_other_cpu_one_core_percent": 53.99410114667983,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.99541200297749
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999344571853115
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9998907619754808
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 0.9998907619754599
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9998907619745718
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9998907619745718
+        },
+        {
+          "executable": "dasd",
+          "cpu_one_core_percent": 0.9998907619745718
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9998907619745718
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.046875,
+      "cpu_one_core_percent": 61.00330942988008,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 6.075112999998964,
+      "host_other_cpu_one_core_percent": 55.00298391217113,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.002115864992625
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.000379770641306
+        },
+        {
+          "executable": "runningboardd",
+          "cpu_one_core_percent": 5.000271264745414
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 2.000108505895892
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.000054252947946
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.000054252947946
+        }
+      ]
+    },
+    {
+      "rss_mib": 187.96875,
+      "cpu_one_core_percent": 46.00055968755573,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 7.075100833026227,
+      "host_other_cpu_one_core_percent": 69.00083953130287,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.00052318617694
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000073002724876
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 6.0000730027191915
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 5.000060835599326
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 3.0000365013595958
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 1.0000121671227076
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000121671207756
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 1.0000121671198652
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.046875,
+      "cpu_one_core_percent": 61.99931025783454,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 8.075111958023626,
+      "host_other_cpu_one_core_percent": 47.99946600609573,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 38.999566129960954
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999933250758414
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.99997775025091
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.999988875125455
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.421875,
+      "cpu_one_core_percent": 47.99903800310768,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 9.075132000027224,
+      "host_other_cpu_one_core_percent": 60.99877746226305,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.99913821110089
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.9998597087858485
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 2.9999398751923874
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.9999398751914987
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9999599167943327
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 0.9999799584028506
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999799583980766
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999799583971664
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.4375,
+      "cpu_one_core_percent": 58.99915684480273,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 10.075146290997509,
+      "host_other_cpu_one_core_percent": 52.99924258937927,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.99941407857717
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999914255403894
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.99997141846607
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.99997141846607
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.999985709233035
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.999985709233035
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.453125,
+      "cpu_one_core_percent": 47.00212096907563,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 11.075101166032255,
+      "host_other_cpu_one_core_percent": 57.00257223911536,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.00194046109827
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000270762009879
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.0000902540013983
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000451270016066
+        },
+        {
+          "executable": "corebrightnessd",
+          "cpu_one_core_percent": 1.0000451270014097
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.0000451270006991
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000451270006991
+        },
+        {
+          "executable": "duetexpertd",
+          "cpu_one_core_percent": 1.0000451270006991
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.484375,
+      "cpu_one_core_percent": 63.99954931382808,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 12.07510820805328,
+      "host_other_cpu_one_core_percent": 54.99961269152764,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.999704237161524
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999950706199271
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.9999788740829656
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999929580285656
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 0.9999929580276552
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 0.9999929580276552
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.53125,
+      "cpu_one_core_percent": 42.9999336949991,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 13.075109750032425,
+      "host_other_cpu_one_core_percent": 61.999904397470175,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.9999336950281
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 6.999989206168517
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999990748139622
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.9999969160446458
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999984580223229
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999984580223229
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 0.9999984580223229
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 0.9999984580223229
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.890625,
+      "cpu_one_core_percent": 61.99580499196116,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 14.075177416030783,
+      "host_other_cpu_one_core_percent": 55.9962109604879,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.997158220368085
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999526370059453
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.9997970157373293
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9998646771582196
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 0.9999323385847938
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999323385800202
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.734375,
+      "cpu_one_core_percent": 47.00063056011771,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 15.075164000038058,
+      "host_other_cpu_one_core_percent": 56.00075130567877,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.000576895410454
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000080497036529
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 2.000026832343615
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.000013416194545
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.0000134161774918
+        },
+        {
+          "executable": "remotepairingd",
+          "cpu_one_core_percent": 1.000013416172518
+        },
+        {
+          "executable": "secd",
+          "cpu_one_core_percent": 1.0000134161718075
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000134161718075
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.9375,
+      "cpu_one_core_percent": 60.99974331268787,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 16.075168208044488,
+      "host_other_cpu_one_core_percent": 49.99978960057327,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.9998232644809
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999974752067889
+        },
+        {
+          "executable": "thermalmonitord",
+          "cpu_one_core_percent": 0.9999957920132095
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.999995792011275
+        }
+      ]
+    },
+    {
+      "rss_mib": 188.984375,
+      "cpu_one_core_percent": 31.961864536340187,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 17.013786791008897,
+      "host_other_cpu_one_core_percent": 61.79293810361463,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.74661035088397
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.392372907268274
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.1307909691116302
+        },
+        {
+          "executable": "sharingd",
+          "cpu_one_core_percent": 1.0653954845448383
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.065395484543703
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 1.065395484543703
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.065395484543703
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.065395484543703
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.078125,
+      "cpu_one_core_percent": 62.18635686740212,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 18.075112833001185,
+      "host_other_cpu_one_core_percent": 49.93752899958426,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.57313618835376
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.6533051697640575
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9422175282939748
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9422175282931169
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 0.9422175282931169
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.9422175282931169
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9422175282931169
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.03125,
+      "cpu_one_core_percent": 35.002003863680635,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 19.075055583030917,
+      "host_other_cpu_one_core_percent": 75.00429399355566,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.00251914287265
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 12.000687038976638
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000343519488319
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 5.000286266241213
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 4.000229012988423
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000572532471057
+        },
+        {
+          "executable": "fseventsd",
+          "cpu_one_core_percent": 1.0000572532471057
+        },
+        {
+          "executable": "locationd",
+          "cpu_one_core_percent": 1.0000572532471057
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.03125,
+      "cpu_one_core_percent": 51.78740783964658,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 20.040541250025854,
+      "host_other_cpu_one_core_percent": 59.0376449372209,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.46567442854223
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.250237097549816
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 4.142992627167959
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 2.0714963135839795
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.0714963135839795
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0357481567929325
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.046875,
+      "cpu_one_core_percent": 54.61326978227081,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 21.04762250004569,
+      "host_other_cpu_one_core_percent": 54.61326978224947,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.71171020131478
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.9578112489752355
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.9859370829898637
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9859370829898637
+        },
+        {
+          "executable": "PerfPowerServices",
+          "cpu_one_core_percent": 0.9929685414949319
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9929685414949319
+        },
+        {
+          "executable": "runningboardd",
+          "cpu_one_core_percent": 0.9929685414949319
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9929685414949319
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.171875,
+      "cpu_one_core_percent": 61.312041186307205,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 22.07515312504256,
+      "host_other_cpu_one_core_percent": 57.41921317445612,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.90148712123331
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.812449020700123
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9464140059127404
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.9464140059127404
+        },
+        {
+          "executable": "wifip2pd",
+          "cpu_one_core_percent": 0.9732070029574075
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9732070029572535
+        },
+        {
+          "executable": "corebrightnessd",
+          "cpu_one_core_percent": 0.9732070029570616
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 0.9732070029563702
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.109375,
+      "cpu_one_core_percent": 43.00401012444119,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 23.075059875031002,
+      "host_other_cpu_one_core_percent": 62.00578203992175,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.00401012447032
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 7.000652810960549
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.0005595522478385
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.000186517414051
+        },
+        {
+          "executable": "codex-code-mode-host",
+          "cpu_one_core_percent": 1.0000932587079139
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000932587070255
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.0000932587070255
+        },
+        {
+          "executable": "opendirectoryd",
+          "cpu_one_core_percent": 1.0000932587070255
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.171875,
+      "cpu_one_core_percent": 58.998178432824204,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 24.075090750004165,
+      "host_other_cpu_one_core_percent": 54.998301928882334,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.998672417126706
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.9998147558806565
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.999907377937486
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999691259791621
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999691259791621
+        },
+        {
+          "executable": "duetexpertd",
+          "cpu_one_core_percent": 0.9999691259791621
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.171875,
+      "cpu_one_core_percent": 62.997590342155746,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 25.07512900000438,
+      "host_other_cpu_one_core_percent": 68.99736085094781,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 37.99854655559695
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 19.99923502926036
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999732260238852
+        },
+        {
+          "executable": "securityd",
+          "cpu_one_core_percent": 0.999961751463302
+        },
+        {
+          "executable": "DeviceFS",
+          "cpu_one_core_percent": 0.9999617514627914
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999617514627914
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 0.9999617514627692
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.59375,
+      "cpu_one_core_percent": 54.99944543937836,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 26.075139083026443,
+      "host_other_cpu_one_core_percent": 52.99946560523712,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.999596683193275
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999939502477855
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.9999798341573902
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999899170900637
+        },
+        {
+          "executable": "analyticsd",
+          "cpu_one_core_percent": 0.9999899170801162
+        },
+        {
+          "executable": "powerd",
+          "cpu_one_core_percent": 0.9999899170801162
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999899170796055
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999899170786951
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.234375,
+      "cpu_one_core_percent": 61.99924311267359,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 27.07515129103558,
+      "host_other_cpu_one_core_percent": 64.9992064890584,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.99951168555942
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999926752839597
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 2.9999633764226408
+        },
+        {
+          "executable": "networkserviceproxy",
+          "cpu_one_core_percent": 1.9999755842808131
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.999975584277971
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.999975584277971
+        },
+        {
+          "executable": "WallpaperAerialsExtension",
+          "cpu_one_core_percent": 0.9999877921418276
+        },
+        {
+          "executable": "WiFiAgent",
+          "cpu_one_core_percent": 0.9999877921418276
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.234375,
+      "cpu_one_core_percent": 51.00064174020221,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 28.07513870805269,
+      "host_other_cpu_one_core_percent": 52.00065432334841,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.000528491938674
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.000088081987884
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000125831412219
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000125831403142
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000125831403142
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.28125,
+      "cpu_one_core_percent": 63.99988000117382,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 29.075140583037864,
+      "host_other_cpu_one_core_percent": 51.99990250095766,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.999921250777646
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999986875127713
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 0.9999981250174327
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999981250174327
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9999981250174327
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.453125,
+      "cpu_one_core_percent": 47.00007247586755,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 30.07513904100051,
+      "host_other_cpu_one_core_percent": 57.0000878962942,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 45.000069391815174
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000009252238613
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.0000015420445056
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000015420397317
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 1.0000015420397095
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.0000015420388213
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000015420388213
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000015420388213
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.34375,
+      "cpu_one_core_percent": 61.99911390754662,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 31.075153333018534,
+      "host_other_cpu_one_core_percent": 47.99931399290513,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 37.99945691104242
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999914249117646
+        },
+        {
+          "executable": "secd",
+          "cpu_one_core_percent": 0.9999857081881691
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999857081862373
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.999985708185327
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.999985708185327
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.359375,
+      "cpu_one_core_percent": 43.99892752693908,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 32.07517770800041,
+      "host_other_cpu_one_core_percent": 68.99831816726825,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.9989519013558
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.99985375367372
+        },
+        {
+          "executable": "networkserviceproxy",
+          "cpu_one_core_percent": 1.9999512512240998
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.9999512512226787
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.9999512512226787
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9999512512226787
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.9999512512226787
+        },
+        {
+          "executable": "notifyd",
+          "cpu_one_core_percent": 0.9999756256141814
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.375,
+      "cpu_one_core_percent": 50.50292708419357,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 33.065219333046116,
+      "host_other_cpu_one_core_percent": 69.694039376191,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.41240020902421
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 7.0704097917921835
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.070409791786442
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 5.050292708437752
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.0201170833659146
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 2.0201170833659146
+        },
+        {
+          "executable": "configd",
+          "cpu_one_core_percent": 1.0100585416843926
+        },
+        {
+          "executable": "corebrightnessd",
+          "cpu_one_core_percent": 1.0100585416843926
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.421875,
+      "cpu_one_core_percent": 38.61567907696725,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 34.075171791017056,
+      "host_other_cpu_one_core_percent": 62.37917389353662,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.556552781097984
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.940873704149024
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 3.9605824694289304
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.970436852071698
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9802912347144652
+        },
+        {
+          "executable": "opendirectoryd",
+          "cpu_one_core_percent": 0.9901456173600468
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9901456173572326
+        },
+        {
+          "executable": "syspolicyd",
+          "cpu_one_core_percent": 0.9901456173572326
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.484375,
+      "cpu_one_core_percent": 62.000599295571355,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 35.075162125052884,
+      "host_other_cpu_one_core_percent": 51.00049296894415,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.00038664231322
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000057996345846
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000096660576039
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 1.000009666057404
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.0000096660566935
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.0000096660566935
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000096660566935
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.4375,
+      "cpu_one_core_percent": 45.00092814466168,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 36.075141500041354,
+      "host_other_cpu_one_core_percent": 53.00109314816022,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.00090751923036
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.000144378057826
+        },
+        {
+          "executable": "thermalmonitord",
+          "cpu_one_core_percent": 1.0000206254360202
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000206254360202
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.421875,
+      "cpu_one_core_percent": 61.99680716538035,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 37.07519300002605,
+      "host_other_cpu_one_core_percent": 52.99727064138844,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.997940106705855
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999691016004742
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9998970053330192
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 0.9999485026778777
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999485026674144
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 0.9999485026665096
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999485026665096
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9999485026665096
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.4375,
+      "cpu_one_core_percent": 45.1233032173067,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 38.072460416005924,
+      "host_other_cpu_one_core_percent": 52.14248371775779,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.11782307429895
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.016440428974464
+        },
+        {
+          "executable": "Runner.Listener",
+          "cpu_one_core_percent": 1.002740071494794
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.002740071494794
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.002740071494794
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.5625,
+      "cpu_one_core_percent": 60.83686843105491,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 39.075141875015106,
+      "host_other_cpu_one_core_percent": 52.85826273522969,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.89035419139577
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.981279983890894
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9973257120062801
+        },
+        {
+          "executable": "heard",
+          "cpu_one_core_percent": 0.9973257119850208
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9973257119845115
+        },
+        {
+          "executable": "Finder",
+          "cpu_one_core_percent": 0.9973257119836035
+        },
+        {
+          "executable": "ghostty",
+          "cpu_one_core_percent": 0.9973257119836035
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.5,
+      "cpu_one_core_percent": 54.74174421170832,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 40.00678920804057,
+      "host_other_cpu_one_core_percent": 53.66837667810235,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.78796627535315
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.440205201377651
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 1.073367533561925
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 1.073367533561925
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.073367533561925
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.073367533561925
+        },
+        {
+          "executable": "runningboardd",
+          "cpu_one_core_percent": 1.073367533561925
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.073367533561925
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.5625,
+      "cpu_one_core_percent": 59.90709250716698,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 41.07511012500618,
+      "host_other_cpu_one_core_percent": 52.41870594379621,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.1221744191274
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.552338242970762
+        },
+        {
+          "executable": "cfprefsd",
+          "cpu_one_core_percent": 0.9360483204262948
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9360483204244866
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9360483204236344
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9360483204236344
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.65625,
+      "cpu_one_core_percent": 60.10577009779938,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 42.00680104101775,
+      "host_other_cpu_one_core_percent": 51.51923151236493,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.78605828061258
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.439903939056293
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.0733173231740152
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 1.0733173231740152
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0733173231740152
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0733173231740152
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.578125,
+      "cpu_one_core_percent": 56.1635541624808,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 43.07510950003052,
+      "host_other_cpu_one_core_percent": 56.163554162494364,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.994784093967084
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.552414652283461
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 2.808177708121483
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9360592360413466
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9360592360404943
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9360592360404943
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.609375,
+      "cpu_one_core_percent": 58.99647006459427,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 44.07516933302395,
+      "host_other_cpu_one_core_percent": 50.99694869989978,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 38.997666652854676
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999581194109409
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.9999401705911183
+        },
+        {
+          "executable": "locationd",
+          "cpu_one_core_percent": 0.9999401705868554
+        },
+        {
+          "executable": "remotepairingd",
+          "cpu_one_core_percent": 0.9999401705868554
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 0.9999401705854343
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9999401705854343
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.625,
+      "cpu_one_core_percent": 58.99938050522194,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 45.075179833045695,
+      "host_other_cpu_one_core_percent": 54.999422504871944,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.99955900372448
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999937000531256
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 0.9999895000890163
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999895000885056
+        },
+        {
+          "executable": "corebrightnessd",
+          "cpu_one_core_percent": 0.9999895000883058
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 0.9999895000875952
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999895000875952
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999895000875952
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.640625,
+      "cpu_one_core_percent": 63.00297689132191,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 46.075132583035156,
+      "host_other_cpu_one_core_percent": 51.00240986441,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.00189008973741
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.000330765701773
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000472522432087
+        },
+        {
+          "executable": "axassetsd",
+          "cpu_one_core_percent": 1.0000472522430088
+        },
+        {
+          "executable": "WiFiAgent",
+          "cpu_one_core_percent": 1.0000472522422983
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000472522422983
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.6875,
+      "cpu_one_core_percent": 40.998653892735724,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 47.07516541599762,
+      "host_other_cpu_one_core_percent": 54.99819424635404,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.99855539708778
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999803008693271
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9999343362291955
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 0.9999671681145977
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.9999671681145977
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9999671681145977
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.671875,
+      "cpu_one_core_percent": 61.999364505283886,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 48.07517566601746,
+      "host_other_cpu_one_core_percent": 51.99946700439079,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.99959000337246
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999928250595865
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999897500852163
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 0.9999897500843115
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999897500843115
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.9999897500843115
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9999897500843115
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.6875,
+      "cpu_one_core_percent": 33.99966282487421,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 49.07518558303127,
+      "host_other_cpu_one_core_percent": 55.9994446527341,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 45.999543821892175
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999940498507428
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.9999801661672478
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999900830836239
+        },
+        {
+          "executable": "opendirectoryd",
+          "cpu_one_core_percent": 0.9999900830836239
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.71875,
+      "cpu_one_core_percent": 62.00325777630085,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 50.07513304101303,
+      "host_other_cpu_one_core_percent": 47.002469604647274,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.00204924641558
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000315268674511
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.000052544779048
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000525447781377
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.734375,
+      "cpu_one_core_percent": 43.99839955755401,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 51.075169416028075,
+      "host_other_cpu_one_core_percent": 57.997890325889,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.998399557559694
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.999745384155674
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.9998908789441607
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9999636263080518
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 0.9999636263071414
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 0.9999636263071414
+        },
+        {
+          "executable": "secd",
+          "cpu_one_core_percent": 0.9999636263071414
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.796875,
+      "cpu_one_core_percent": 60.99955518984513,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 52.075176708051,
+      "host_other_cpu_one_core_percent": 54.99959894161912,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 39.99970832117341
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.999956248181695
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.9999781240880052
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.9999854160586703
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 1.9999854160586703
+        },
+        {
+          "executable": "clocksyncd",
+          "cpu_one_core_percent": 0.9999927080293352
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 0.9999927080293352
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.75,
+      "cpu_one_core_percent": 45.00159193164871,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 53.075141333043575,
+      "host_other_cpu_one_core_percent": 53.00187494174638,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 43.00152117916024
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000212257553409
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000353762588645
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.0000353762579541
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.0000353762579541
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.0000353762579541
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.765625,
+      "cpu_one_core_percent": 62.00212617664359,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 54.075107041047886,
+      "host_other_cpu_one_core_percent": 51.00174895173724,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.00140602002394
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 7.000240052201012
+        },
+        {
+          "executable": "airportd",
+          "cpu_one_core_percent": 1.000034293170761
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 1.000034293170761
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.000034293170761
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.828125,
+      "cpu_one_core_percent": 46.000492573169716,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 55.07509633305017,
+      "host_other_cpu_one_core_percent": 74.00079240032927,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 42.00044974072721
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 21.000224870363606
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.000064248674504
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.00002141622294
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.0000107081171543
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0000107081123804
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.00001070811147
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.796875,
+      "cpu_one_core_percent": 40.99871879221392,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 56.075127582997084,
+      "host_other_cpu_one_core_percent": 86.99728133958114,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 41.998687543251066
+        },
+        {
+          "executable": "com.apple.Safari.SafeBrowsing.Service",
+          "cpu_one_core_percent": 9.999687510295573
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 5.9998125061779115
+        },
+        {
+          "executable": "dasd",
+          "cpu_one_core_percent": 5.9998125061779115
+        },
+        {
+          "executable": "lsd",
+          "cpu_one_core_percent": 2.9999062530889558
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.9999062530861136
+        },
+        {
+          "executable": "opendirectoryd",
+          "cpu_one_core_percent": 1.9999375020602512
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 1.9999375020602512
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.828125,
+      "cpu_one_core_percent": 51.50894145260034,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 57.00700462504756,
+      "host_other_cpu_one_core_percent": 52.58204439949158,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.77791198327133
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.438617681575257
+        },
+        {
+          "executable": "Runner.Listener",
+          "cpu_one_core_percent": 1.0731029469312428
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0731029469291697
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.073102946928193
+        },
+        {
+          "executable": "launchd",
+          "cpu_one_core_percent": 1.073102946928193
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.073102946928193
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.84375,
+      "cpu_one_core_percent": 46.80962928599815,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 58.07516091602156,
+      "host_other_cpu_one_core_percent": 74.89540685762415,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.00105152886226
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 12.170503614359136
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.553348100039126
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 4.680962928598236
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.8723851714382298
+        },
+        {
+          "executable": "fseventsd",
+          "cpu_one_core_percent": 0.9361925857297582
+        },
+        {
+          "executable": "nsurlsessiond",
+          "cpu_one_core_percent": 0.9361925857201127
+        },
+        {
+          "executable": "appstoreagent",
+          "cpu_one_core_percent": 0.9361925857199463
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.9375,
+      "cpu_one_core_percent": 53.59339225447117,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 59.00811175000854,
+      "host_other_cpu_one_core_percent": 53.59339225447804,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.73097811340964
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.431207070536761
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.1437356901768894
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.1437356901768894
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 1.0718678450894146
+        },
+        {
+          "executable": "cloudflared",
+          "cpu_one_core_percent": 1.0718678450884447
+        }
+      ]
+    },
+    {
+      "rss_mib": 189.859375,
+      "cpu_one_core_percent": 60.56099828966373,
+      "processes": 2,
+      "elapsed_after_warmup_seconds": 60.06489750003675,
+      "host_other_cpu_one_core_percent": 51.09834230688608,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 40.68942072585263
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 6.623859187931374
+        },
+        {
+          "executable": "distnoted",
+          "cpu_one_core_percent": 0.9462655982759827
+        },
+        {
+          "executable": "bluetoothd",
+          "cpu_one_core_percent": 0.9462655982758146
+        },
+        {
+          "executable": "mDNSResponder",
+          "cpu_one_core_percent": 0.9462655982751421
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 0.9462655982751421
+        }
+      ]
+    }
+  ],
+  "include_new_vt_services": true,
+  "media_start": null,
+  "media_end": null,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "measurement_start_utc": "2026-09-29T06:35:56Z",
+  "host_other_cpu_one_core_percent": {
+    "mean": 57.192395249613014,
+    "p95": 74.00079240032927,
+    "peak": 86.99728133958114
+  },
+  "host_audit_top_limit": 8,
+  "rss_mib": {
+    "mean": 189.159375,
+    "p95": 189.828125,
+    "peak": 189.9375
+  },
+  "cpu_one_core_percent": {
+    "mean": 53.13192267688797,
+    "p95": 62.997590342155746,
+    "peak": 63.99988000117382
+  },
+  "process_count_peak": 2,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "exit_code": 0,
+  "forced_termination": false
+}

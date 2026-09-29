@@ -1,0 +1,35 @@
+{
+  "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+  "app_sha256": "6d982bb8c297d80637327e22f7aed4354a7981a0d559982106157df607ebef52",
+  "source_inventory_sha256": "c4b6fcdf7ae19f98ff48bd3051fbb276d5ed168ff190d1b5cb086fd2d827f93d",
+  "build_input_count": 133,
+  "inputs_before_after_identical": true,
+  "build_command": "cargo build --release --locked",
+  "build_result": "exit0, optimized, 1m47s",
+  "native_qualified": false,
+  "performance_qualified": false,
+  "mode": "native-capture",
+  "harness_sha256": "3b71ab09b7c1a343f2719a594fd9fd01eff459e33796ea91eb82066090eca3fb",
+  "exit_code": 0,
+  "forced_termination": false,
+  "failure_type": null,
+  "group_absence_after_reap_confirmed": true,
+  "elapsed_seconds": 21.59809912496712,
+  "real_account": false,
+  "performance_measurement": false,
+  "bounded_external_display_assertion": true,
+  "captures": [
+    {
+      "file": "window-1.png",
+      "sha256": "b0d99dc56df3e13a0974409d38c2cb4c477ee2b57e9fae82887932ecd2d4c290",
+      "elapsed_after_launch": 5.286353500036057
+    },
+    {
+      "file": "window-2.png",
+      "sha256": "e8676b626d13750a08a1406c245bbcb05cf8256c90bcc54c1a94937c038396cc",
+      "elapsed_after_launch": 7.296443583036307
+    }
+  ],
+  "native_log_sha256": "86d7f165cd97f9ef322266cc0feae01587ccfcf19a80a934a0b7cac3769d4572",
+  "capture_scope": "External owning-window captures; numerical motion/orientation/clipping require separate inspection. No display cadence or A/V claim."
+}

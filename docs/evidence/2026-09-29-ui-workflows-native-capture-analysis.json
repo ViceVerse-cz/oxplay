@@ -1,0 +1,69 @@
+{
+  "source_revision": "d78332c23602b1bfaec87688eccba657a208b9be",
+  "app_sha256": "e32cfa128282c781a80eeba06a8259207b07f54da946056b77185fa04efb88b9",
+  "functional_result": "All 16 ordered lifecycle stages passed; finite external window captures reviewed separately.",
+  "elapsed_seconds": 47.468603375018574,
+  "real_account": false,
+  "performance_qualified": false,
+  "production_native_child_qualified": false,
+  "full_spec_pass": false,
+  "visual_review": {
+    "reviewed_capture_numbers": [
+      2,
+      3,
+      5,
+      6,
+      7,
+      9,
+      11,
+      12,
+      13,
+      14
+    ],
+    "message_popup": "Capture5 at15.570s request shows the full combined diagnostic message wrapped in the shared read-only text control, Close action visible, native video area black. Capture6 after Escape restores the paused20s frame.",
+    "ordinary_and_fullscreen": "Paused ordinary, fullscreen playing, resized and restored video is upright in inspected instants. Shared Slint controls remain visible below video.",
+    "suppression": "Inspected Info, Message, captions, Settings and stopped captures show no native video pixels.",
+    "paused_equalities": [
+      [
+        2,
+        4,
+        6
+      ],
+      [
+        8,
+        10
+      ]
+    ],
+    "unvalidated": "Long-message scrolling, text-selection operation, Close-button activation, screen reader/IME, every intermediate frame, subtitle text, perceptual A/V and display cadence remain untested by this run."
+  },
+  "geometry": {
+    "ordinary_captures_px": [
+      2640,
+      1592
+    ],
+    "fullscreen_capture_px": [
+      2880,
+      1864
+    ],
+    "resized_captures_px": [
+      1920,
+      1464
+    ],
+    "ordinary_window_backing_px": [
+      2640,
+      1528
+    ],
+    "ordinary_native_backing_px": [
+      1328,
+      747
+    ],
+    "titlebar_in_capture": true
+  },
+  "engine_observation": "Initial Playing observed direct videotoolbox, H2641920x1080@60, AAC48000/avfoundation; one file load; mute/unmute, paused seek20, fullscreen/pause, minimize/restore and stop assertions passed.",
+  "catalog_changes": 0,
+  "catalog_resets": 1,
+  "terminal_render_publications": 429,
+  "terminal_ui_draws": 77,
+  "shutdown": "Stage44 confirmed hidden Idle, stopped clock and settled stop before ordinary shutdown submitted an additional stop. Generic final stop_pending=true belongs to that later shutdown request.",
+  "scope": "Exact synthetic MP4 and 30 labeled placeholder related rows; no provider network or account result. Bounded external display assertion and screenshot work exclude resource qualification."
+}

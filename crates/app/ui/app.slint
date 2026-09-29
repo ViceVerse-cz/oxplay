@@ -1,0 +1,704 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { LineEdit, Slider, ListView, ComboBox, CheckBox, Palette, ScrollView } from "std-widgets.slint";
+import { Colors, Action, ActionVariant, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
+import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
+import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
+import { CaptionSelector, CaptionsUi } from "captions.slint";
+import { StatusMessage } from "status.slint";
+export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi }
+export component App inherits Window {
+    title: "Serein";
+    public function show-video-details() { root.prepare-native-overlay(); video-details.show(); }
+    private property <string> message-text;
+    private property <int> message-recovery-serial;
+    in-out property <bool> recovery-available;
+    in-out property <bool> recovery-ready;
+    in-out property <int> recovery-serial;
+    in-out property <string> recovery-label: "Retry";
+    callback retry-request(int) -> bool;
+    private property <string> current-status: root.native-video-child ? "DIAGNOSTIC — native child; local only; unqualified. " + root.status : root.diagnostic-warning != "" ? root.diagnostic-warning : root.status;
+    private property <string> displayed-status: root.diagnostic-fixture-label != "" ? root.diagnostic-fixture-label + " " + root.current-status : root.current-status;
+    out property <bool> status-message-open: status-popup.is-open;
+    out property <string> status-message-text: root.message-text;
+    public function show-status-message() {
+        root.prepare-native-overlay();
+        root.message-text = (root.diagnostic-fixture-label != "" ? root.diagnostic-fixture-label + "\n\n" : "") + (root.diagnostic-warning != "" && !root.native-video-child ? root.diagnostic-warning + "\n\n" + root.status : root.current-status);
+        root.message-recovery-serial = root.recovery-serial;
+        status-popup.show();
+    }
+    public function show-captions() { root.prepare-native-overlay(); captions-popup.show(); }
+    public function show-local-save() -> bool {
+        if SaveUi.begin() { root.prepare-native-overlay(); save-popup.show(); return true; }
+        return false;
+    }
+    public function close-local-save() { save-popup.close(); }
+    preferred-width: 1320px; preferred-height: 860px; min-width: 760px; min-height: 600px;
+    background: Colors.canvas;
+    default-font-size: 14px;
+    forward-focus: shortcuts;
+    out property <bool> search-active: search.has-focus;
+    out property <bool> browse-active: shortcuts.has-focus;
+    out property <bool> player-active: focus.has-focus;
+    in property <bool> cache-chrome: false;
+    in property <bool> cache-search: false;
+    in property <bool> cache-related: false;
+    in property <bool> remote-video;
+    in property <bool> native-video-child: false;
+    out property <length> native-clip-x: watch.x;
+    out property <length> native-clip-y: watch.y;
+    out property <length> native-clip-width: watch.visible-width;
+    out property <length> native-clip-height: watch.visible-height;
+    private property <bool> native-overlay-open: save-popup.is-open || playback-settings.is-open || captions-popup.is-open || video-details.is-open || status-popup.is-open;
+    out property <bool> native-child-visible: native-video-child && watching && loaded && (!show-info || fullscreen-active) && !native-overlay-open;
+    callback native-child-hide();
+    function prepare-native-overlay() { if root.native-video-child { root.native-child-hide(); } }
+    changed native-overlay-open => { root.prepare-native-overlay(); }
+    changed show-info => { root.prepare-native-overlay(); }
+    changed loaded => { root.prepare-native-overlay(); }
+    in-out property <int> quality-index;
+    in property <int> speed-index: 1;
+    in property <int> default-quality-index: 0;
+    in property <bool> speed-busy;
+    callback quality(int);
+    in property <[AccountRow]> account-rows;
+    in property <bool> account-connected;
+    in property <bool> account-playback-active;
+    in property <bool> account-media-available;
+    in property <bool> account-busy;
+    in property <bool> account-saved;
+    in property <bool> account-forget-needed;
+    in property <bool> account-pending;
+    in property <bool> account-more;
+    in property <string> account-identity;
+    in property <string> account-status: "No account is connected.";
+    in property <string> account-capabilities;
+    in-out property <bool> account-consent;
+    in-out property <bool> account-remember;
+    in property <bool> rating-known;
+    in property <bool> account-liked;
+    callback account-rating();
+    callback account-wake();
+    callback account-import();
+    callback account-import-path(string, bool);
+    callback account-reconnect();
+    callback account-disconnect();
+    callback account-tab(int);
+    callback account-open(int);
+    callback account-action(int);
+    callback account-play(int);
+    callback account-next();
+    callback account-reconcile();
+    callback open-youtube();
+    callback open-export-guide();
+    in property <image> video-texture;
+    in property <[VideoRow]> videos;
+    in property <[VideoGroup]> groups;
+    in property <[string]> playlists;
+    in property <string> status: "Guest mode · Local history off · Autoplay off";
+    in property <string> video-title;
+    in property <string> video-channel;
+    in property <string> technical;
+    in property <string> playback-status;
+    in property <bool> can-retry-playback;
+    in property <bool> playback-failed;
+    in property <string> diagnostic-warning;
+    // Fixture identity is independent of changing decoder diagnostics.
+    in property <string> diagnostic-fixture-label;
+    in property <string> elapsed: "0:00";
+    in property <string> remaining: "0:00";
+    in property <float> position;
+    in property <float> duration: 1;
+    in property <bool> paused: true;
+    in property <bool> busy;
+    in property <bool> has-more;
+    in property <bool> has-previous;
+    in property <bool> guest-can-back;
+    in property <bool> guest-can-follow;
+    callback follow-guest-channel();
+    in property <int> guest-scope;
+    in-out property <int> search-kind;
+    in-out property <int> channel-tab;
+    callback search-kind-changed(int);
+    callback channel-tab-changed(int);
+    callback guest-previous();
+    callback guest-back();
+    in property <bool> loaded;
+    in property <string> catalog-title: "Find your next watch";
+    in property <string> catalog-subtitle: "Search YouTube, or paste a video link above.";
+    in property <string> catalog-empty-title: "Watch with intention";
+    in property <string> catalog-empty-message: "Start with a search or a YouTube link.\nNo autoplay. No endless recommended feed.";
+    in-out property <int> page: 0;
+    in-out property <int> theme: 0;
+    in property <bool> system-dark: true;
+    in-out property <bool> controls-visible: true;
+    in-out property <bool> show-info: false;
+    in-out property <bool> expanded-sidebar: true;
+    in-out property <bool> fullscreen-active;
+    in-out property <bool> history-enabled;
+    in-out property <int> selected-playlist: -1;
+    in-out property <float> volume-level: 100;
+    in property <bool> muted;
+    in property <bool> mute-known;
+    out property <length> video-width: video.width;
+    out property <length> video-height: video.height;
+    out property <length> video-window-x: watch.x + video.x;
+    out property <length> video-window-y: watch.y + watch.content-y + video.y;
+    out property <length> watch-offset: watch.content-y;
+    out property <length> related-height: related.height;
+    out property <int> visible-related-count: max(0, related-last - related-first);
+    out property <bool> progress-visible: watching && controls-visible && watch-controls.y + watch.content-y < watch.visible-height && watch-controls.y + watch.content-y + 42px > 0px;
+    out property <int> columns: min(6, max(1, floor((browse.width + 20px) / 270px)));
+    in property <int> feed-focus-target: -1;
+    in property <int> feed-focus-surface: -1;
+    in property <int> feed-focus-serial;
+    in property <int> feed-focus-delivery;
+    in property <int> feed-focused-index: -1;
+    out property <bool> feed-parking-active: feed-parking.has-focus;
+    out property <bool> related-parking-active: related-parking.has-focus;
+    // Logical intersection only; native occlusion/compositor state is separate.
+    out property <bool> related-focused-visible: related-in-view && feed-focused-index >= 0
+        && feed-focused-index * 106px + related.content-y >= related-clip-top - 1px
+        && (feed-focused-index + 1) * 106px + related.content-y <= related-clip-bottom + 1px;
+
+    out property <int> feed-page-rows: max(1, floor(feed.visible-height / row-height));
+    out property <int> related-page-rows: max(1, floor((related-clip-bottom - related-clip-top) / 106px));
+    // Positive intersection of thumbnail rectangles with the feed viewport.
+    // Unlike first-row/last-row, this excludes prefetch and text-only rows.
+    // Window occlusion and physical display clipping remain host observations.
+    out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
+    out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
+    private property <bool> watching: page == 2;
+    private property <length> sidebar-width: fullscreen-active ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
+    private property <length> top-height: fullscreen-active ? 0px : 56px;
+    private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
+    private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
+    private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
+    private property <length> related-clip-top: max(0px, -watch.content-y - related.y);
+    private property <length> related-clip-bottom: min(related.visible-height, watch.visible-height - watch.content-y - related.y);
+    private property <bool> related-in-view: root.watching && !root.fullscreen-active && related-clip-bottom > related-clip-top;
+    private property <int> related-first: related-in-view ? max(0, floor((-related.content-y + related-clip-top) / 106px) - 1) : 0;
+    private property <int> related-last: related-in-view ? min(videos.length, ceil((-related.content-y + related-clip-bottom) / 106px) + 1) : 0;
+    private property <length> saved-watch-offset: 0px;
+    callback search(string);
+    callback select-video(int);
+    callback more();
+    callback navigate(int);
+    callback open-local-tab(int);
+    callback columns-changed(int);
+    // First argument identifies the surface: 0 Home feed, 1 watch related list.
+    callback feed-key(int, int, int) -> bool;
+    callback feed-card-focus(int, int, string, string, bool);
+    callback feed-focus-claim(int, int, string, string, int) -> bool;
+    callback feed-focus-ready(int, int, string, string, int);
+    callback feed-focus-complete(int, bool);
+    callback feed-parking-lost();
+    callback feed-focus-cancel();
+    callback feed-focus-entry();
+    callback visible-range(int, int, int, int);
+    callback thumbnail-wake();
+    callback library-wake();
+    callback create-playlist(string);
+    callback choose-playlist(int);
+    callback save-to-playlist(int);
+    callback remove-from-playlist(int);
+    callback delete-playlist(int);
+    callback preferences-changed();
+    callback default-quality(int);
+    callback toggle-pause();
+    callback seek(float);
+    callback volume(float);
+    callback fullscreen();
+    callback exit-fullscreen();
+    callback subtitles();
+    callback relative-seek(float);
+    callback mute();
+    callback speed(float);
+    callback media-wake();
+    callback worker-wake();
+    callback caption-cache-wake();
+    callback toggle-controls();
+    callback watch-visibility-changed();
+    callback cancel-playback-focus();
+    callback search-focus-changed(bool);
+    changed search-active => { root.search-focus-changed(root.search-active); }
+    changed progress-visible => { root.watch-visibility-changed(); }
+    changed columns => { root.columns-changed(root.columns); }
+    changed first-row => { root.refresh-visible(); }
+    changed last-row => { root.refresh-visible(); }
+    changed feed-thumbnail-first => { root.refresh-visible(); }
+    changed feed-thumbnail-end => { root.refresh-visible(); }
+    changed related-first => { root.refresh-visible(); }
+    changed related-last => { root.refresh-visible(); }
+    changed page => { root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
+    changed fullscreen-active => {
+        if root.fullscreen-active {
+            // Retire parking before the related surface disappears.
+            // Transfer only retiring related focus, without resetting the saved
+            // outer watch offset or stealing focus from search/player controls.
+            if root.watching && (related-parking.has-focus || root.feed-focused-index >= 0) { focus.focus(); }
+            root.feed-focus-cancel();
+        }
+        root.restore-watch-scroll();
+        root.refresh-visible();
+    }
+    changed theme => {
+        Colors.dark = root.theme == 0 ? root.system-dark : root.theme == 2;
+        Palette.color-scheme = Colors.dark ? ColorScheme.dark : ColorScheme.light;
+    }
+    changed system-dark => {
+        Colors.dark = root.theme == 0 ? root.system-dark : root.theme == 2;
+        Palette.color-scheme = Colors.dark ? ColorScheme.dark : ColorScheme.light;
+    }
+    public function refresh-visible() {
+        if root.page == 0 {
+            root.visible-range(root.first-row * root.columns, root.last-row * root.columns, root.feed-thumbnail-first, root.feed-thumbnail-end);
+        } else if root.page == 2 && !root.fullscreen-active {
+            root.visible-range(root.related-first, root.related-last, -1, -1);
+        } else { root.visible-range(0, 0, -1, -1); }
+    }
+    public function focus-player() { root.prepare-native-overlay(); root.saved-watch-offset = 0px; watch.content-y = 0px; focus.focus(); }
+    function restore-watch-scroll() {
+        watch.content-y = root.fullscreen-active ? 0px : max(min(root.saved-watch-offset, 0px), min(0px, watch.visible-height - watch.content-height));
+    }
+    public function focus-search() { if !root.native-video-child { search.focus(); } }
+    public function focus-browse() { shortcuts.focus(); }
+    public function park-feed-focus(surface: int) {
+        if surface == 0 { feed-parking.focus(); }
+        else if surface == 1 { related-parking.focus(); }
+    }
+    public function reveal-feed-item(index: int) {
+        let top = floor(index / root.columns) * root.row-height;
+        if top + feed.content-y < 0px { feed.content-y = -top; }
+        if top + root.row-height + feed.content-y > feed.visible-height {
+            feed.content-y = min(0px, feed.visible-height - top - root.row-height);
+        }
+        root.refresh-visible();
+    }
+    public function reveal-related-item(index: int) {
+        // At compact widths the list is below the player. Reveal its outer
+        // viewport first, then the requested row inside the same ListView.
+        if related.y + watch.content-y < 0px { watch.content-y = -related.y; }
+        if related.y + related.height + watch.content-y > watch.visible-height {
+            watch.content-y = min(0px, watch.visible-height - related.y - related.height);
+        }
+        watch.content-y = max(min(0px, watch.content-y), min(0px, watch.visible-height - watch.content-height));
+        root.saved-watch-offset = watch.content-y;
+        let top = index * 106px;
+        if top + related.content-y < root.related-clip-top { related.content-y = root.related-clip-top - top; }
+        if top + 106px + related.content-y > root.related-clip-bottom {
+            related.content-y = min(0px, root.related-clip-bottom - top - 106px);
+        }
+        root.refresh-visible();
+    }
+    shortcuts := FocusScope {
+    x: 0; y: 0; width: root.width; height: root.height;
+    // Neutral startup focus belongs to the stable shared shell. Search keeps
+    // its normal caret when explicitly reached by slash, Tab, click or focus().
+    // This ancestor is not an extra stop in the interactive Tab order.
+    focus-on-tab-navigation: false;
+    focus-on-click: false;
+    key-pressed(event) => {
+        // Child widgets receive keys first, but TextInput rejects some special
+        // keys (including Escape). Do not turn their bubbling events into media
+        // commands while any editor/IME owns focus. Popup default handling stays
+        // in Slint because rejected events continue through its normal path.
+        if TextInputInterface.text-input-focused { return reject; }
+        if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
+        if event.text == "/" { if !root.native-video-child { search.focus(); } return accept; }
+        if root.watching {
+            if event.text == " " || event.text == "k" { root.toggle-pause(); return accept; }
+            if event.text == "j" { root.relative-seek(-10); return accept; }
+            if event.text == "l" { root.relative-seek(10); return accept; }
+            if event.text == Key.LeftArrow { root.relative-seek(-5); return accept; }
+            if event.text == Key.RightArrow { root.relative-seek(5); return accept; }
+            if event.text == Key.UpArrow { root.volume(min(100, root.volume-level + 5)); return accept; }
+            if event.text == Key.DownArrow { root.volume(max(0, root.volume-level - 5)); return accept; }
+            if event.text == "m" { root.mute(); return accept; }
+            if event.text == "f" { root.fullscreen(); return accept; }
+            if event.text == Key.Escape { root.exit-fullscreen(); return accept; }
+        }
+        return reject;
+    }
+    // One persistent host; scrolling moves the existing image, never the player.
+    watch := ScrollView {
+        x: root.fullscreen-active ? 0px : root.sidebar-width + 28px;
+        y: root.fullscreen-active ? 0px : root.top-height + 20px;
+        width: root.fullscreen-active ? root.width : root.width - self.x - 28px;
+        height: root.fullscreen-active ? root.height : root.height - self.y - 48px;
+        visible: root.watching;
+        horizontal-scrollbar-policy: always-off;
+        vertical-scrollbar-policy: root.fullscreen-active ? always-off : as-needed;
+        content-width: self.visible-width;
+        content-height: root.fullscreen-active ? self.visible-height : max(self.visible-height, max(watch-controls.y + watch-controls.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
+        changed content-y => {
+            if root.fullscreen-active && self.content-y != 0px { self.content-y = 0px; }
+        }
+        // Preserve the user's offset independently of native fullscreen resize
+        // clamping, then reapply it against the restored viewport dimensions.
+        scrolled => { root.prepare-native-overlay(); if !root.fullscreen-active { root.saved-watch-offset = self.content-y; } }
+        changed visible-height => { root.restore-watch-scroll(); }
+        changed content-height => { root.restore-watch-scroll(); }
+        // Persistent video host: navigation/control changes never reconstruct media.
+        video := Rectangle {
+            x: 0px;
+            y: 0px;
+            width: root.fullscreen-active ? watch.visible-width : watch.visible-width - (root.width >= 1240px ? 368px : 0px);
+            height: root.fullscreen-active ? max(1px, watch.visible-height - (root.native-video-child ? 58px : 0px)) : self.width * 9 / 16;
+            visible: root.watching;
+            background: #000000;
+            focus := FocusScope {
+                width: parent.width; height: parent.height;
+                TouchArea { clicked => { focus.focus(); } double-clicked => { root.fullscreen(); } }
+            }
+            Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; }
+            if root.show-info && root.watching && !root.fullscreen-active: Rectangle {
+                x: 0px; y: 12px; width: video.width; height: 110px; background: #111315dd;
+                Text { x: 16px; y: 10px; width: parent.width - 32px; height: parent.height - 20px; text: root.technical; color: #eeeeee; font-size: 12px; wrap: word-wrap; }
+            }
+        }
+        watch-controls := Rectangle {
+            x: video.x; y: root.fullscreen-active ? watch.visible-height - 58px : video.y + video.height + 8px;
+            width: video.width; height: root.fullscreen-active ? 58px : 214px;
+            visible: root.watching;
+            background: root.fullscreen-active ? Colors.surface.with-alpha(0.94) : Colors.canvas;
+            if root.controls-visible: HorizontalLayout {
+                y: 0; height: 42px; spacing: 8px;
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
+                Slider { horizontal-stretch: 1; min-width: 80px; accessible-label: "Playback position in seconds"; minimum: 0; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
+                Text { text: root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: Colors.text; width: 124px; horizontal-stretch: 0; vertical-alignment: center; }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
+                // Keep the primary row usable at the narrow watch breakpoint.
+                // Volume remains available in settings when this slider is absent.
+                if watch-controls.width >= 700px: Slider { horizontal-stretch: 0; accessible-label: "Volume percent"; width: 100px; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
+            }
+            if !root.fullscreen-active: Text { x: 0; y: 54px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if !root.fullscreen-active: Text { x: 0; y: 116px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
+            if !root.fullscreen-active: HorizontalLayout {
+                y: 154px; height: 36px; spacing: 8px;
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
+                Rectangle { horizontal-stretch: 1; }
+                if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                Action { width: 96px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "ellipsis"; label: "Show or hide controls"; clicked => { root.toggle-controls(); } }
+            }
+            if root.playback-status != "" && (!root.fullscreen-active || !root.native-video-child): Text {
+                x: 0px; y: root.fullscreen-active ? 42px : 194px;
+                width: parent.width; height: root.fullscreen-active ? 16px : 20px;
+                text: root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : root.playback-status; color: Colors.muted;
+                font-size: 12px; overflow: elide;
+                accessible-label: "Playback status: " + self.text;
+            }
+        }
+        related-parking := FocusScope {
+            x: related.x; y: related.y; width: related.width; height: related.height;
+            // Keep enabled to receive FocusOut: pinned Slint ignores even
+            // FocusOut on a disabled scope, leaving has-focus stale. Rust
+            // guards every request by active surface; this is never a Tab/click stop.
+            focus-on-tab-navigation: false; focus-on-click: false;
+            focus-lost => { root.feed-parking-lost(); }
+            key-pressed(event) => {
+                let command = CatalogKeys.command(event);
+                let index = root.feed-focus-surface == 1 && root.feed-focus-target >= 0 ? root.feed-focus-target : min(root.videos.length - 1, max(0, floor((-related.content-y + root.related-clip-top) / 106px)));
+                if command >= 0 && root.feed-key(1, index, command) { return accept; }
+                root.feed-focus-cancel();
+                return reject;
+            }
+            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
+        }
+        related := ListView {
+            x: root.width >= 1240px ? video.x + video.width + 24px : video.x;
+            y: root.width >= 1240px ? 0px : watch-controls.y + watch-controls.height + 20px;
+            width: root.width >= 1240px ? watch.visible-width - self.x : video.width;
+            height: root.width >= 1240px ? watch.visible-height : max(318px, watch.visible-height * 0.65);
+            visible: root.watching && !root.fullscreen-active;
+            horizontal-scrollbar-policy: always-off;
+            // Opt-in experiment: cache each virtualized related card independently.
+            // Thumbnail/model, theme, size, hover and focus changes invalidate its layer.
+            for item[index] in root.videos: VideoCard {
+                cache-rendering-hint: root.cache-related;
+                enabled: !root.native-video-child;
+                height: 106px; item: item; compact: true;
+                focus-request: root.watching && !root.fullscreen-active && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;
+                focus-delivery: root.feed-focus-delivery;
+                focus-ready(serial) => { root.feed-focus-ready(1, index, item.kind, item.id, serial); }
+                keyboard-move(command) => { return root.feed-key(1, index, command); }
+                card-focus(focused) => { root.feed-card-focus(1, index, item.kind, item.id, focused); }
+                claim-focus(serial) => { return root.feed-focus-claim(1, index, item.kind, item.id, serial); }
+                focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
+                clicked => { root.select-video(index); }
+            }
+        }
+    }
+    save-popup := PopupWindow {
+            x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+            width: 400px; height: SaveUi.destinations-paged ? 450px : 410px;
+            Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
+                VerticalLayout { padding: 16px; spacing: 8px;
+                    Text { text: "Save to a local playlist"; color: Colors.text; font-size: 18px; font-weight: 600; height: 24px; }
+                    Text { text: SaveUi.video-title; color: Colors.text; wrap: word-wrap; overflow: elide; height: 40px; }
+                    Text { text: "On this device only. Your YouTube account is unchanged."; color: Colors.muted; wrap: word-wrap; height: 32px; font-size: 12px; }
+                    if SaveUi.destinations-paged: Text { text: "Showing the current playlist page. More playlists are available in Local playlists."; color: Colors.muted; wrap: word-wrap; height: 32px; font-size: 12px; }
+                    if SaveUi.collections.length > 0: HorizontalLayout { height: 38px; spacing: 8px;
+                        destination := ComboBox { accessible-label: "Local playlist to save into"; model: SaveUi.collections; current-index: 0; enabled: !SaveUi.busy && !SaveUi.saved; horizontal-stretch: 1; }
+                        Action { label: "Save"; variant: ActionVariant.primary; width: 72px; horizontal-stretch: 0; enabled: !SaveUi.busy && !SaveUi.saved && destination.current-index >= 0; clicked => { root.save-to-playlist(destination.current-index); } }
+                    }
+                    if SaveUi.collections.length == 0: Text { text: "Create your first local playlist"; color: Colors.text; height: 30px; }
+                    playlist-name := LineEdit { accessible-label: "New local playlist name"; placeholder-text: "New playlist name"; enabled: !SaveUi.busy && !SaveUi.saved; height: 38px; accepted => { if !SaveUi.busy && !SaveUi.saved { SaveUi.create-and-save(self.text); } } }
+                    Action { label: "Create and save"; variant: ActionVariant.primary; enabled: !SaveUi.busy && !SaveUi.saved; height: 36px; clicked => { SaveUi.create-and-save(playlist-name.text); } }
+                    ScrollView { height: 60px; horizontal-scrollbar-policy: always-off;
+                        Text { width: parent.visible-width; text: SaveUi.status; color: Colors.muted; wrap: word-wrap; }
+                    }
+                    Action { label: SaveUi.saved ? "Done" : "Close"; variant: ActionVariant.secondary; height: 34px; clicked => { save-popup.close(); } }
+                }
+            }
+        }
+    playback-settings := PopupWindow {
+            x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+            width: 280px; height: 320px;
+            Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
+                VerticalLayout { padding: 16px; spacing: 10px;
+                    Text { text: "Volume"; color: Colors.text; }
+                    Slider { accessible-label: "Volume percent"; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
+                    Text { text: "Playback speed"; color: Colors.text; }
+                    ComboBox { accessible-label: "Playback speed"; model: ["0.5×", "1×", "1.5×", "2×"]; current-index: root.speed-index; enabled: !root.speed-busy; selected(value) => { root.speed((self.current-index + 1) * 0.5); self.current-index = root.speed-index; } }
+                    Text { text: "Maximum video quality"; color: Colors.text; }
+                    ComboBox { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; current-index <=> root.quality-index; enabled: root.remote-video && !root.busy; selected(value) => { root.quality(self.current-index); } }
+                    Text { text: root.remote-video ? "Uses the best available stream within this limit." : "Quality selection applies to YouTube videos."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+                }
+            }
+        }
+    Rectangle {
+        x: 0; y: 0;
+        // Cache stable chrome in a GPU layer during video.
+        // Focus, hover, edits and theme changes still invalidate this subtree.
+        cache-rendering-hint: root.cache-chrome;
+        visible: !root.fullscreen-active;
+        width: parent.width; height: root.top-height; background: Colors.canvas;
+        Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: "Toggle sidebar"; clicked => { root.expanded-sidebar = !root.expanded-sidebar; } }
+        Rectangle { x: 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
+            Image { x: 5px; y: 5px; width: 20px; height: 20px; source: @image-url("icons/clapperboard.svg"); colorize: Colors.canvas; }
+        }
+        Text { x: 110px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 25px; font-weight: 700; vertical-alignment: center; }
+        Rectangle {
+            x: max(228px, (root.width - self.width) / 2); y: 7px;
+            width: min(620px, root.width - 418px); height: 42px;
+            search := LineEdit { enabled: !root.native-video-child; cache-rendering-hint: root.cache-search; accessible-label: "Search YouTube"; x: 0; y: 1px; height: 40px; width: parent.width - 52px; placeholder-text: root.native-video-child ? "Local-only diagnostic" : "Search YouTube"; edited => { root.cancel-playback-focus(); } accepted => { root.search(self.text); } }
+            Action { enabled: !root.native-video-child; x: parent.width - 48px; y: 1px; width: 46px; height: 40px; compact: true; icon-name: "search"; label: "Search"; clicked => { root.search(search.text); } }
+        }
+        Action { enabled: !root.native-video-child; x: parent.width - 156px; y: 8px; width: 140px; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
+    }
+    Rectangle {
+        x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
+        cache-rendering-hint: root.cache-chrome;
+        visible: !root.fullscreen-active;
+        VerticalLayout {
+            padding-left: 12px; padding-right: 12px; padding-top: 18px; padding-bottom: 20px; spacing: 6px;
+            Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0; clicked => { root.navigate(0); } }
+            Action { icon-name: "users"; label: "Local subscriptions"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
+            Action { icon-name: "list-video"; label: "Local playlists"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
+            if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
+            if root.loaded: Action { icon-name: "play"; label: "Now playing"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
+            Rectangle { height: 1px; background: Colors.border; }
+            Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
+            Rectangle { vertical-stretch: 1; }
+            Action { icon-name: "settings"; label: "Settings"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 3; clicked => { root.navigate(3); } }
+            if root.sidebar-width > 100px: Text { text: "A quieter place to watch.\nPrivate by default."; color: Colors.muted; font-size: 12px; wrap: word-wrap; height: 48px; }
+        }
+    }
+    browse := Rectangle {
+        x: root.sidebar-width + 28px; y: root.top-height + 22px;
+        width: root.width - self.x - 28px; height: root.height - self.y - 50px;
+        visible: root.page == 0;
+        // Survives virtualized row destruction. Never a normal Tab destination.
+        feed-parking := FocusScope {
+            x: feed.x; y: feed.y; width: feed.width; height: feed.height;
+            focus-on-tab-navigation: false; focus-on-click: false;
+            focus-lost => { root.feed-parking-lost(); }
+            key-pressed(event) => {
+                let command = CatalogKeys.command(event);
+                let index = root.feed-focus-target >= 0 ? root.feed-focus-target : min(root.videos.length - 1, max(0, floor(-feed.content-y / root.row-height) * root.columns));
+                if command >= 0 && root.feed-key(0, index, command) { return accept; }
+                root.feed-focus-cancel();
+                return reject;
+            }
+            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
+        }
+        Text { x: 0; y: 0; width: parent.width; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
+        Text { x: 0; y: 43px; width: parent.width; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
+        HorizontalLayout { y: 80px; height: 38px; spacing: 10px;
+            if root.guest-can-back: Action { icon-name: "chevron-left"; label: "Back"; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
+            if root.guest-scope == 0: ComboBox { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; current-index: root.search-kind; enabled: !root.native-video-child && !root.busy; selected(value) => { root.search-kind-changed(self.current-index); } }
+            if root.guest-scope == 1: ComboBox { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; current-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; selected(value) => { root.channel-tab-changed(self.current-index); } }
+            if root.guest-can-follow: Action { icon-name: "plus"; label: "Follow locally"; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
+            if root.guest-scope == 2: Text { text: "Public YouTube playlist"; color: Colors.muted; vertical-alignment: center; }
+            Rectangle { horizontal-stretch: 1; }
+            Text { text: "Guest browsing"; color: Colors.muted; vertical-alignment: center; }
+        }
+        feed := ListView {
+            y: 132px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
+            horizontal-scrollbar-policy: always-off;
+            for group in root.groups: Rectangle {
+                height: root.row-height;
+                HorizontalLayout {
+                    spacing: 20px; padding-bottom: 20px;
+                    for item[index] in group.items: VideoCard {
+                        enabled: !root.native-video-child;
+                        item: item; width: (feed.visible-width - (root.columns - 1) * 20px) / root.columns;
+                        focus-request: root.page == 0 && root.feed-focus-surface == 0 && root.feed-focus-target == group.start + index ? root.feed-focus-serial : 0;
+                        focus-delivery: root.page == 0 && root.feed-focus-target == group.start + index ? root.feed-focus-delivery : 0;
+                        focus-ready(serial) => { root.feed-focus-ready(0, group.start + index, item.kind, item.id, serial); }
+                        keyboard-move(command) => { return root.feed-key(0, group.start + index, command); }
+                        card-focus(focused) => { root.feed-card-focus(0, group.start + index, item.kind, item.id, focused); }
+                        claim-focus(serial) => { return root.feed-focus-claim(0, group.start + index, item.kind, item.id, serial); }
+                        focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
+                        clicked => { root.select-video(group.start + index); }
+                    }
+                    if group.items.length < root.columns: Rectangle { horizontal-stretch: root.columns - group.items.length; }
+                }
+            }
+        }
+        if root.videos.length == 0: Rectangle {
+            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : 160px; width: min(480px, parent.width); height: root.catalog-title == "Find your next watch" ? 278px : 230px;
+            Image { x: (parent.width - 46px) / 2; y: 7px; width: 46px; height: 46px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
+            Text { y: 86px; width: parent.width; height: 35px; text: root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 600; horizontal-alignment: center; overflow: elide; }
+            Text { y: 137px; width: parent.width; height: 84px; text: root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
+            if root.catalog-title == "Find your next watch": HorizontalLayout {
+                x: 0px; y: 228px; width: parent.width; height: 38px; spacing: 12px;
+                Action { label: "Music"; accessible-label: "Search YouTube for music"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
+                Action { label: "Science"; accessible-label: "Search YouTube for science"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Science"; root.search(search.text); } }
+                Action { label: "Gaming"; accessible-label: "Search YouTube for gaming"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Gaming"; root.search(search.text); } }
+            }
+        }
+        if root.has-more || root.has-previous: HorizontalLayout { y: parent.height - 42px; height: 40px; spacing: 12px;
+            Rectangle { horizontal-stretch: 1; }
+            Action { icon-name: "chevron-left"; label: "Previous page"; width: 170px; enabled: !root.native-video-child && !root.busy && root.has-previous; clicked => { root.guest-previous(); } }
+            Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; width: 170px; enabled: !root.native-video-child && !root.busy && root.has-more; clicked => { root.more(); } }
+            Rectangle { horizontal-stretch: 1; }
+        }
+    }
+    captions-popup := PopupWindow {
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(440px, root.width - 48px); height: 200px;
+        CaptionSelector { width: parent.width; height: parent.height; worker-busy: root.busy; close => { captions-popup.close(); } }
+    }
+    status-popup := PopupWindow {
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(560px, root.width - 48px); height: min(320px, root.height - 80px);
+        StatusMessage {
+            width: parent.width; height: parent.height; message: root.message-text;
+            recovery-available: root.recovery-available && root.message-recovery-serial > 0 && root.message-recovery-serial == root.recovery-serial;
+            recovery-ready: root.recovery-ready && !root.busy && !root.account-busy;
+            recovery-label: root.recovery-label;
+            retry => { if root.retry-request(root.message-recovery-serial) { status-popup.close(); } }
+            close => { status-popup.close(); }
+        }
+    }
+    video-details := PopupWindow {
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(680px, root.width - 48px); height: min(620px, root.height - 80px);
+        VideoDetailsPanel { width: parent.width; height: parent.height; busy: root.busy; close => { video-details.close(); } }
+    }
+    if root.page == 1: LibraryPage {
+        x: root.sidebar-width + 28px; y: root.top-height + 22px;
+        width: root.width - self.x - 28px; height: root.height - self.y - 50px;
+    }
+    if root.page == 3: Rectangle {
+        x: root.sidebar-width + 36px; y: root.top-height + 24px; width: min(720px, root.width - self.x - 36px); height: root.height - self.y - 60px;
+        ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
+        VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 20px;
+            Text { text: "Settings"; color: Colors.text; font-size: 28px; font-weight: 700; height: 40px; }
+            Text { text: "Appearance"; color: Colors.text; font-size: 18px; height: 26px; }
+            ComboBox { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; current-index: root.theme; selected(value) => { root.theme = self.current-index; root.preferences-changed(); } }
+            Text { text: "Default maximum quality"; color: Colors.text; font-size: 18px; height: 26px; }
+            ComboBox { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; current-index: root.default-quality-index; selected(value) => { root.default-quality(self.current-index); self.current-index = root.default-quality-index; } }
+            Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }
+            Rectangle { height: 1px; background: Colors.border; }
+            Text { text: "Privacy by default"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
+            CheckBox { text: "Keep watch history on this device"; checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; toggled => { LibraryUi.history(self.checked); self.checked = LibraryUi.history-enabled; } }
+            Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
+            Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
+            Rectangle { height: 1px; background: Colors.border; }
+            Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "/  Focus search\nSpace or K  Play / pause\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · Esc  Leave fullscreen"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+            Rectangle { height: 1px; background: Colors.border; }
+            Text { text: "About Serein"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Independent, open-source software. Not affiliated with YouTube or Google. Experimental release; playback and platform validation are in progress. GPL-3.0-or-later."; color: Colors.muted; wrap: word-wrap; }
+            Rectangle { vertical-stretch: 1; }
+        }
+        }
+    }
+    if root.page == 4 && !root.native-video-child: Rectangle {
+        x: root.sidebar-width + 36px; y: root.top-height + 24px; width: root.width - self.x - 36px; height: root.height - self.y - 60px;
+        ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
+        VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 14px;
+            Text { text: "Your YouTube account"; color: Colors.text; font-size: 28px; font-weight: 700; height: 44px; }
+            Text { text: root.account-connected ? root.account-identity : "You are browsing as a guest"; color: Colors.text; font-size: 20px; height: 32px; }
+            if !root.account-connected: Text { text: "Connect a browser session to read and manage your YouTube subscriptions and playlists. Public search and playback work without connecting."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Serein is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "Sign in on YouTube in your system browser, preferably in a dedicated profile. Export a Netscape cookie file using the guide, then explicitly select it here. Never enter a Google password or verification code in Serein."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: HorizontalLayout {
+                height: 40px; spacing: 12px;
+                Action { label: "Open YouTube"; clicked => { root.open-youtube(); } }
+                Action { label: "Cookie export guide"; clicked => { root.open-export-guide(); } }
+                Rectangle { horizontal-stretch: 1; }
+            }
+            if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
+            if !root.account-connected: CheckBox { text: "Remember this session using protected storage"; checked <=> root.account-remember; }
+            if !root.account-connected: HorizontalLayout {
+                height: 42px; spacing: 12px;
+                Action { label: root.account-busy ? "Verifying session…" : "Import browser session…"; selected: true; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
+                if root.account-saved: Action { label: "Reconnect saved session"; enabled: root.account-consent && !root.account-busy; clicked => { root.account-reconnect(); } }
+                Rectangle { horizontal-stretch: 1; }
+            }
+            Text { text: root.account-status; color: Colors.text; wrap: word-wrap; }
+            if root.account-connected: Text { text: root.account-capabilities; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+            if root.account-connected: HorizontalLayout {
+                height: 40px; spacing: 12px;
+                Action { label: "Subscriptions"; enabled: !root.account-busy; clicked => { root.account-tab(0); } }
+                Action { label: "Account playlists"; enabled: !root.account-busy; clicked => { root.account-tab(1); } }
+                if root.account-pending: Action { label: "Check pending change"; enabled: !root.account-busy; clicked => { root.account-reconcile(); } }
+                Rectangle { horizontal-stretch: 1; }
+            }
+            if root.account-connected: ListView {
+                vertical-stretch: 1; min-height: 100px; horizontal-scrollbar-policy: always-off;
+                for item[index] in root.account-rows: Rectangle {
+                    height: item.can-account-play ? 116px : 76px;
+                    Action { x: 0; y: 0; width: parent.width - 190px; height: 44px; label: item.title; enabled: !root.account-busy; clicked => { root.account-open(index); } }
+                    Text { x: 12px; y: 46px; width: parent.width - 202px; height: 22px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+                    if item.action != "": Action { x: parent.width - 180px; y: 10px; width: 180px; label: item.action; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-action(index); } }
+                    if item.can-account-play: Action { x: 0; y: 72px; width: 180px; label: "Play with account"; enabled: root.account-connected && root.account-media-available && !root.account-busy && !root.account-pending && !root.busy; clicked => { root.account-play(index); } }
+                }
+            }
+            if root.account-more: Action { label: "Next page"; enabled: !root.account-busy; clicked => { root.account-next(); } }
+            if !root.account-connected: Rectangle { vertical-stretch: 1; }
+            if root.account-connected || root.account-saved || root.account-forget-needed: Text { text: "Disconnect removes Serein's credentials and account data. Your local collections are kept. This does not sign you out of Google in your browser."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if root.account-connected || root.account-saved || root.account-busy || root.account-forget-needed: Action { label: "Disconnect and forget session"; clicked => { root.account-disconnect(); } }
+        }
+        }
+    }
+    Rectangle { visible: !root.fullscreen-active; x: root.sidebar-width + 28px; y: root.height - 34px; width: root.width - self.x - 28px; height: 28px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text { horizontal-stretch: 1; min-width: 0px; text: root.displayed-status; color: root.native-video-child || root.diagnostic-warning != "" || root.diagnostic-fixture-label != "" ? #c58c44 : Colors.muted; font-size: 11px; overflow: elide; vertical-alignment: center; }
+            if root.recovery-available: Action { horizontal-stretch: 0; width: 144px; height: 28px; label: root.recovery-label; variant: ActionVariant.secondary; enabled: root.recovery-ready && !root.busy && !root.account-busy; clicked => { root.retry-request(root.recovery-serial); } }
+            Action { horizontal-stretch: 0; width: 126px; height: 28px; icon-name: "info"; label: "Message"; accessible-label: "Read full status message"; clicked => { root.show-status-message(); } }
+        }
+    }
+    if root.native-video-child && root.fullscreen-active: Rectangle {
+        x: 0; y: root.height - 16px; width: root.width; height: 16px; background: Colors.canvas;
+        Text { x: 8px; width: parent.width - 16px; height: parent.height; text: "DIAGNOSTIC — native child video; local only; layering, timing and performance unqualified"; color: #c58c44; font-size: 11px; overflow: elide; }
+    }
+    // Popups are composited above the shared scene. Dim only modal content,
+    // leaving transient playback settings and tooltips lightweight.
+    if save-popup.is-open || status-popup.is-open || video-details.is-open: Rectangle {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        background: #00000070;
+    }
+    }
+}

@@ -1,0 +1,79 @@
+{
+  "mode": "native",
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "sample_executable_sha256": "0527abd95ea1c5a2885489e0d6a76e06c69b66b8a69c7eab4f9276688815791b",
+  "harness_sha256": "81b68a2815d1be90dc98c4e1bed34c6c23cb6f17bca334e301362804b94a1f38",
+  "libmpv_sha256": "12c400d4ec2740ebf225c3965f4e9963c55de9212094f1337d055b0573812e08",
+  "libmpv_resolved_path": "/opt/homebrew/Cellar/mpv/0.41.0_10/lib/libmpv.2.dylib",
+  "command": [
+    "<frozen-application>",
+    "--local",
+    "<fixed-local-clip>",
+    "--data-root",
+    "<fresh-private-profile>",
+    "--demo-related",
+    "--diagnostics",
+    "--quit-after",
+    "28",
+    "--ui-size",
+    "1320x860",
+    "--ui-theme",
+    "dark",
+    "--native-video-child"
+  ],
+  "profile_precreated": false,
+  "performance_measurement": false,
+  "foreign_compilation_allowed": true,
+  "sample_duration_seconds": 5,
+  "sample_interval_milliseconds": 1,
+  "app_exit": 0,
+  "sample_exit": 0,
+  "cleanup": {
+    "sample_group_absent": true,
+    "app_group_absent": true,
+    "wake_group_absent": true
+  },
+  "sample_start_after_launch": 12.001487458008341,
+  "sample_finish_after_launch": 18.02890291699441,
+  "elapsed_seconds": 29.71454370795982,
+  "files": [
+    {
+      "file": "native.log",
+      "bytes": 6137,
+      "sha256": "dd477ef7ee6e7da3cfa803f7556af734a309666fa0181840a15972e295eb68d3"
+    },
+    {
+      "file": "sample-command.log",
+      "bytes": 260,
+      "sha256": "bec59f4ecb450c4c607cdcbbb673d969baaa6b185326032afd3379a614d4de0e"
+    },
+    {
+      "file": "sample.txt",
+      "bytes": 657956,
+      "sha256": "7068d949c26875e791dedec58a93c04ddba7861e4823afeae29a989453b2cfed"
+    }
+  ],
+  "checkpoint_observations": {
+    "10": {
+      "decoder": "videotoolbox",
+      "video": "H2641920x1080@60",
+      "audio": "AAC48000 AVFoundation",
+      "playing": true,
+      "geometry": "presentation geometry seconds=10: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=true geometry_events=4",
+      "vo_drops": 49,
+      "decoder_drops": 0
+    },
+    "25": {
+      "decoder": "videotoolbox",
+      "video": "H2641920x1080@60",
+      "audio": "AAC48000 AVFoundation",
+      "playing": true,
+      "geometry": "presentation geometry seconds=25: window_px=2640x1528 scale=2 video_logical=(260,76,664,373.5) clip_logical=(260,76,1032,640) page=2 fullscreen=false hidden=false native_child=true geometry_events=4",
+      "vo_drops": 196,
+      "decoder_drops": 0
+    }
+  },
+  "loaded_libmpv_uuid": "1869BFE9-CAA0-373D-8FA2-DAC87D0CC5DF",
+  "loaded_uuid_matches_installed_library": true
+}

@@ -1,0 +1,19 @@
+{
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "file": "library.png",
+  "sha256": "280020568b4b7c7b5b3af1fd12db159a446106e974298e303a5cf6fa81107710",
+  "physical_pixels": [
+    1520,
+    1200
+  ],
+  "requested_logical_window": [
+    760,
+    600
+  ],
+  "theme": "light",
+  "method": "One Slint window snapshot at15seconds, joined image-encoding worker before clean exit. No external window capture used in this run.",
+  "summary_metadata_correction": "The preserved generic summary capture_scope describes the external native-child modes; for library-ui the actual method is the Slint snapshot stated here.",
+  "visual_inspection": "Root inspected: official icons, centered search, primary redCreate, outlinedneutral Import/Export/Backup and destructiveClear, disabledRename/Delete, explicitlocal/account distinction and privacy defaults are visible without clipping.",
+  "data": "New empty local profile, no account, no fixture catalog and no online request.",
+  "performance_measurement": false
+}

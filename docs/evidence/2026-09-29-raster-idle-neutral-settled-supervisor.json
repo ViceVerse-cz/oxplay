@@ -1,0 +1,9 @@
+{
+  "mode": "settled",
+  "exit_code": 0,
+  "failure_type": null,
+  "group_absence_after_reap_confirmed": true,
+  "elapsed_seconds": 86.61124499997823,
+  "resource_sha256": "6b111600518e4f342709369f0bc56d196ebc7ecf6dc08f7f5c0d85800228f975",
+  "qualified": false
+}

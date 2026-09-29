@@ -1,0 +1,347 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "run_order": [
+    "a1-default",
+    "b1-native",
+    "b2-native",
+    "a2-default"
+  ],
+  "complete_resource_samples": 240,
+  "all_four_exit_zero_and_anchored_groups_absent": true,
+  "full_spec_pass": false,
+  "accepted_as_default": false,
+  "native_production_qualified": false,
+  "cpu_25_target_pass": false,
+  "files": [
+    {
+      "original_relative_path": "a1-default.json",
+      "original_sha256": "fce41e2e2123cc205a62a6e645761ef12b654d11f366fa86098cca74080debbc",
+      "export": "2026-09-29-native-child-abba-a1-default.json.gz",
+      "export_sha256": "50982afb4566b5037d87dbb20db9ed0d77bf5b69cde912a25d04193d87ba459c",
+      "uncompressed_sha256": "fce41e2e2123cc205a62a6e645761ef12b654d11f366fa86098cca74080debbc",
+      "original_bytes": 154730,
+      "export_bytes": 11953,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit; deterministic gzip, mtime0"
+    },
+    {
+      "original_relative_path": "a1-default.json.log",
+      "original_sha256": "78ee6f6d87a27cac5fc5ae0bbed422a37e9184d0dc8447e1867b671368cb5fcb",
+      "export": "2026-09-29-native-child-abba-a1-default.json.log",
+      "export_sha256": "78ee6f6d87a27cac5fc5ae0bbed422a37e9184d0dc8447e1867b671368cb5fcb",
+      "uncompressed_sha256": "78ee6f6d87a27cac5fc5ae0bbed422a37e9184d0dc8447e1867b671368cb5fcb",
+      "original_bytes": 7661,
+      "export_bytes": 7661,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a1-default.sampler.log",
+      "original_sha256": "83c53cf0210b9ced99226050fc87d193501b49ff8092348931154c0b028c09f2",
+      "export": "2026-09-29-native-child-abba-a1-default.sampler.log",
+      "export_sha256": "83c53cf0210b9ced99226050fc87d193501b49ff8092348931154c0b028c09f2",
+      "uncompressed_sha256": "83c53cf0210b9ced99226050fc87d193501b49ff8092348931154c0b028c09f2",
+      "original_bytes": 3004,
+      "export_bytes": 3004,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a1-default.supervisor.json",
+      "original_sha256": "b2112e635f99b152859da0f87af43eb7af6ad296f2bcfc1373097a3e09405027",
+      "export": "2026-09-29-native-child-abba-a1-default.supervisor.json",
+      "export_sha256": "b2112e635f99b152859da0f87af43eb7af6ad296f2bcfc1373097a3e09405027",
+      "uncompressed_sha256": "b2112e635f99b152859da0f87af43eb7af6ad296f2bcfc1373097a3e09405027",
+      "original_bytes": 3928,
+      "export_bytes": 3928,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a1-default.command.json",
+      "original_sha256": "cc0f4488b18d2ad6218dd957953b8f8bd745f72b1cb823f72b9a07fd60c74530",
+      "export": "2026-09-29-native-child-abba-a1-default.command.json",
+      "export_sha256": "d13095c3efc97d02806c5639603e8b791febe3807f63c23c3dc47916fa4b8282",
+      "uncompressed_sha256": "d13095c3efc97d02806c5639603e8b791febe3807f63c23c3dc47916fa4b8282",
+      "original_bytes": 804,
+      "export_bytes": 549,
+      "transformation": "Known executable/output/fixture/profile filesystem arguments replaced by semantic labels; all flags and values preserved"
+    },
+    {
+      "original_relative_path": "b1-native.json",
+      "original_sha256": "e4429c1f08e1ff067fcc405b2fa441e7f71421fd0a7391b87197a83e6515e50a",
+      "export": "2026-09-29-native-child-abba-b1-native.json.gz",
+      "export_sha256": "cc9f7d1d0ad6b3f8349f9a115b5affccbeb311831a33f11dceab0fc19954ae86",
+      "uncompressed_sha256": "e4429c1f08e1ff067fcc405b2fa441e7f71421fd0a7391b87197a83e6515e50a",
+      "original_bytes": 153675,
+      "export_bytes": 11635,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit; deterministic gzip, mtime0"
+    },
+    {
+      "original_relative_path": "b1-native.json.log",
+      "original_sha256": "c8ce074b775aab8b7fda6df49fffe6593bf1b53ee06cc5ae658881c423db65a9",
+      "export": "2026-09-29-native-child-abba-b1-native.json.log",
+      "export_sha256": "c8ce074b775aab8b7fda6df49fffe6593bf1b53ee06cc5ae658881c423db65a9",
+      "uncompressed_sha256": "c8ce074b775aab8b7fda6df49fffe6593bf1b53ee06cc5ae658881c423db65a9",
+      "original_bytes": 7590,
+      "export_bytes": 7590,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b1-native.sampler.log",
+      "original_sha256": "d3ed6b8fe09449d988cd63f8175e46de918ba42a13df189a8a63786983b60863",
+      "export": "2026-09-29-native-child-abba-b1-native.sampler.log",
+      "export_sha256": "d3ed6b8fe09449d988cd63f8175e46de918ba42a13df189a8a63786983b60863",
+      "uncompressed_sha256": "d3ed6b8fe09449d988cd63f8175e46de918ba42a13df189a8a63786983b60863",
+      "original_bytes": 3002,
+      "export_bytes": 3002,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b1-native.supervisor.json",
+      "original_sha256": "42c43513960429b0085583b9e1dcd6d753cdfe0c2316805554ef50abbb867bff",
+      "export": "2026-09-29-native-child-abba-b1-native.supervisor.json",
+      "export_sha256": "42c43513960429b0085583b9e1dcd6d753cdfe0c2316805554ef50abbb867bff",
+      "uncompressed_sha256": "42c43513960429b0085583b9e1dcd6d753cdfe0c2316805554ef50abbb867bff",
+      "original_bytes": 4713,
+      "export_bytes": 4713,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b1-native.command.json",
+      "original_sha256": "78ff4e5dd27c152909befa04734fb526540abec430beaa9b6b875b146069af36",
+      "export": "2026-09-29-native-child-abba-b1-native.command.json",
+      "export_sha256": "d80fa91b1fc259477ae21ccb6dd166ad7a6e4ef3a786fcff0b387cdf6747bd60",
+      "uncompressed_sha256": "d80fa91b1fc259477ae21ccb6dd166ad7a6e4ef3a786fcff0b387cdf6747bd60",
+      "original_bytes": 831,
+      "export_bytes": 578,
+      "transformation": "Known executable/output/fixture/profile filesystem arguments replaced by semantic labels; all flags and values preserved"
+    },
+    {
+      "original_relative_path": "b2-native.json",
+      "original_sha256": "39e95bb47be21dfca197e29850b31b04c2a82a5f901d4a3c8daff88149953938",
+      "export": "2026-09-29-native-child-abba-b2-native.json.gz",
+      "export_sha256": "0e33ef1eccb5fd31712aabf12b4b928bd8ebabe01a2b721665976fe00c0cff7a",
+      "uncompressed_sha256": "39e95bb47be21dfca197e29850b31b04c2a82a5f901d4a3c8daff88149953938",
+      "original_bytes": 152760,
+      "export_bytes": 11454,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit; deterministic gzip, mtime0"
+    },
+    {
+      "original_relative_path": "b2-native.json.log",
+      "original_sha256": "e208a12378829c76a4c8b7ec411fa87cf41f9e29e404b1975b996d3addbd17c1",
+      "export": "2026-09-29-native-child-abba-b2-native.json.log",
+      "export_sha256": "e208a12378829c76a4c8b7ec411fa87cf41f9e29e404b1975b996d3addbd17c1",
+      "uncompressed_sha256": "e208a12378829c76a4c8b7ec411fa87cf41f9e29e404b1975b996d3addbd17c1",
+      "original_bytes": 7549,
+      "export_bytes": 7549,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b2-native.sampler.log",
+      "original_sha256": "7a4c98297d98a7b0a4bad8fb97b840f8b7d72fec1567cedbb2f3fd62ad87ddfd",
+      "export": "2026-09-29-native-child-abba-b2-native.sampler.log",
+      "export_sha256": "7a4c98297d98a7b0a4bad8fb97b840f8b7d72fec1567cedbb2f3fd62ad87ddfd",
+      "uncompressed_sha256": "7a4c98297d98a7b0a4bad8fb97b840f8b7d72fec1567cedbb2f3fd62ad87ddfd",
+      "original_bytes": 3006,
+      "export_bytes": 3006,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b2-native.supervisor.json",
+      "original_sha256": "d6ed2373cae00d279e3fb3ef043535c2fae51eeb777fc62dd16cb471e10758ad",
+      "export": "2026-09-29-native-child-abba-b2-native.supervisor.json",
+      "export_sha256": "d6ed2373cae00d279e3fb3ef043535c2fae51eeb777fc62dd16cb471e10758ad",
+      "uncompressed_sha256": "d6ed2373cae00d279e3fb3ef043535c2fae51eeb777fc62dd16cb471e10758ad",
+      "original_bytes": 4717,
+      "export_bytes": 4717,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "b2-native.command.json",
+      "original_sha256": "ea1bcfa238e29e1dd0fcac7653a766399e5808e7e4ef6f242ff3f92728d6cd86",
+      "export": "2026-09-29-native-child-abba-b2-native.command.json",
+      "export_sha256": "d80fa91b1fc259477ae21ccb6dd166ad7a6e4ef3a786fcff0b387cdf6747bd60",
+      "uncompressed_sha256": "d80fa91b1fc259477ae21ccb6dd166ad7a6e4ef3a786fcff0b387cdf6747bd60",
+      "original_bytes": 831,
+      "export_bytes": 578,
+      "transformation": "Known executable/output/fixture/profile filesystem arguments replaced by semantic labels; all flags and values preserved"
+    },
+    {
+      "original_relative_path": "a2-default.json",
+      "original_sha256": "c22bae46b4c2f6794b0653fbd6a39104fb18d27ebd4c4a1f3092ee3ed1bcea66",
+      "export": "2026-09-29-native-child-abba-a2-default.json.gz",
+      "export_sha256": "20b58f22d4ee4da50086391a9e7c4b44c181af7b8a5df0c53af89c1aea6a0139",
+      "uncompressed_sha256": "c22bae46b4c2f6794b0653fbd6a39104fb18d27ebd4c4a1f3092ee3ed1bcea66",
+      "original_bytes": 154291,
+      "export_bytes": 11864,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit; deterministic gzip, mtime0"
+    },
+    {
+      "original_relative_path": "a2-default.json.log",
+      "original_sha256": "a1e916e82ff92d958ce0bf1a28d5b4db1ea7008f1c64ad97886337c37847f645",
+      "export": "2026-09-29-native-child-abba-a2-default.json.log",
+      "export_sha256": "a1e916e82ff92d958ce0bf1a28d5b4db1ea7008f1c64ad97886337c37847f645",
+      "uncompressed_sha256": "a1e916e82ff92d958ce0bf1a28d5b4db1ea7008f1c64ad97886337c37847f645",
+      "original_bytes": 7648,
+      "export_bytes": 7648,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a2-default.sampler.log",
+      "original_sha256": "ad4c7a5b47054dc82eb37f0360276936319c61f102da474c960dcc6c6f427b85",
+      "export": "2026-09-29-native-child-abba-a2-default.sampler.log",
+      "export_sha256": "ad4c7a5b47054dc82eb37f0360276936319c61f102da474c960dcc6c6f427b85",
+      "uncompressed_sha256": "ad4c7a5b47054dc82eb37f0360276936319c61f102da474c960dcc6c6f427b85",
+      "original_bytes": 3004,
+      "export_bytes": 3004,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a2-default.supervisor.json",
+      "original_sha256": "12c2a014b3e846b9aba06ca8a229c6cdad79e24ea1f4b8ba94f2773dcba4363b",
+      "export": "2026-09-29-native-child-abba-a2-default.supervisor.json",
+      "export_sha256": "12c2a014b3e846b9aba06ca8a229c6cdad79e24ea1f4b8ba94f2773dcba4363b",
+      "uncompressed_sha256": "12c2a014b3e846b9aba06ca8a229c6cdad79e24ea1f4b8ba94f2773dcba4363b",
+      "original_bytes": 3927,
+      "export_bytes": 3927,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "a2-default.command.json",
+      "original_sha256": "4bd3ee2770a930a9e2b74cbab429a1ffaa0e8edaf76075892ec90d97ccfdc1ad",
+      "export": "2026-09-29-native-child-abba-a2-default.command.json",
+      "export_sha256": "d13095c3efc97d02806c5639603e8b791febe3807f63c23c3dc47916fa4b8282",
+      "uncompressed_sha256": "d13095c3efc97d02806c5639603e8b791febe3807f63c23c3dc47916fa4b8282",
+      "original_bytes": 804,
+      "export_bytes": 549,
+      "transformation": "Known executable/output/fixture/profile filesystem arguments replaced by semantic labels; all flags and values preserved"
+    },
+    {
+      "original_relative_path": "binary.json",
+      "original_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "export": "2026-09-29-native-child-abba-binary.json",
+      "export_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "uncompressed_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "original_bytes": 514,
+      "export_bytes": 514,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "source-inventory.json",
+      "original_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "export": "2026-09-29-native-child-abba-source-inventory.json",
+      "export_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "uncompressed_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "original_bytes": 54712,
+      "export_bytes": 54712,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "summary.json",
+      "original_sha256": "93d4cb347052340ee455b7b91845392d0775397d5de47490f639dfb690748816",
+      "export": "2026-09-29-native-child-abba-summary.json",
+      "export_sha256": "93d4cb347052340ee455b7b91845392d0775397d5de47490f639dfb690748816",
+      "uncompressed_sha256": "93d4cb347052340ee455b7b91845392d0775397d5de47490f639dfb690748816",
+      "original_bytes": 19580,
+      "export_bytes": 19580,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "manifest.json",
+      "original_sha256": "14b6cb37642a4dd94d562a3ae4e3d56484af354a7b208f41bd09cb754cf1dca0",
+      "export": "2026-09-29-native-child-abba-manifest.json",
+      "export_sha256": "14b6cb37642a4dd94d562a3ae4e3d56484af354a7b208f41bd09cb754cf1dca0",
+      "uncompressed_sha256": "14b6cb37642a4dd94d562a3ae4e3d56484af354a7b208f41bd09cb754cf1dca0",
+      "original_bytes": 4768,
+      "export_bytes": 4768,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "lifecycle-result.json",
+      "original_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+      "export": "2026-09-29-native-child-abba-lifecycle-result.json",
+      "export_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+      "uncompressed_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+      "original_bytes": 1162,
+      "export_bytes": 1162,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "os.log",
+      "original_sha256": "98ec1edfdd0153a7f67baccc3fc2481b06de7a75d245263efaab2412ee753e57",
+      "export": "2026-09-29-native-child-abba-os.log",
+      "export_sha256": "98ec1edfdd0153a7f67baccc3fc2481b06de7a75d245263efaab2412ee753e57",
+      "uncompressed_sha256": "98ec1edfdd0153a7f67baccc3fc2481b06de7a75d245263efaab2412ee753e57",
+      "original_bytes": 64,
+      "export_bytes": 64,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "sampler.py",
+      "original_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+      "export": "2026-09-29-native-child-abba-sampler.py",
+      "export_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+      "uncompressed_sha256": "24f47c2ae1c4809c37c0a16770762e8f6bb9628a0de2091c6c8a2c72f88ea3a6",
+      "original_bytes": 22373,
+      "export_bytes": 22373,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "provenance.json",
+      "original_sha256": "99d7ba6579862b43a2d64de1782a22ed03a3b91af2227e9bc706af54aa969ab6",
+      "export": "2026-09-29-native-child-abba-provenance.json",
+      "export_sha256": "99d7ba6579862b43a2d64de1782a22ed03a3b91af2227e9bc706af54aa969ab6",
+      "uncompressed_sha256": "99d7ba6579862b43a2d64de1782a22ed03a3b91af2227e9bc706af54aa969ab6",
+      "original_bytes": 2905,
+      "export_bytes": 2905,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    },
+    {
+      "original_relative_path": "app-linkage.log",
+      "original_sha256": "1c3752e7e9c8e830a32064acfe331d27c07adadeef32565331b7dd48a9a448f7",
+      "export": "2026-09-29-native-child-abba-app-linkage.log",
+      "export_sha256": "1a04e967ff77fa98feb030c432b1d875ba40ff34d21304ac1470d8facbb1f648",
+      "uncompressed_sha256": "1a04e967ff77fa98feb030c432b1d875ba40ff34d21304ac1470d8facbb1f648",
+      "original_bytes": 2176,
+      "export_bytes": 2163,
+      "transformation": "Workspace absolute prefix replaced; native dependency install names retained"
+    },
+    {
+      "original_relative_path": "kernel.log",
+      "original_sha256": "c51c82bbbbfc6fd559f4e8125948a697287430b46ee93f6c388e5ea36d405bfc",
+      "export": "2026-09-29-native-child-abba-kernel.log",
+      "export_sha256": "f00a2070db816b8eb4efdd5442cd7f4fb41364605217becac206d8c565d3820c",
+      "uncompressed_sha256": "f00a2070db816b8eb4efdd5442cd7f4fb41364605217becac206d8c565d3820c",
+      "original_bytes": 150,
+      "export_bytes": 128,
+      "transformation": "Hostname token replaced; kernel/build/architecture retained"
+    },
+    {
+      "original_relative_path": "harness.py",
+      "original_sha256": "5ded095108519ce2953d779360983b1538f8c3513f64268c0017ceb19182cb15",
+      "export": "2026-09-29-native-child-abba-harness.py.txt",
+      "export_sha256": "72cf2e12f03644e2dcf6c8cbca4124cb84af9bff8370437a529fc3bf06d0eabc",
+      "uncompressed_sha256": "72cf2e12f03644e2dcf6c8cbca4124cb84af9bff8370437a529fc3bf06d0eabc",
+      "original_bytes": 22454,
+      "export_bytes": 22441,
+      "transformation": "Documentary harness copy with private default workspace path replaced; original SHA retained, not an executed export"
+    },
+    {
+      "original_relative_path": "independent post-run analysis",
+      "original_sha256": "5b0eb33b1b5df33a9f01575715d25e7eb10b4cdff49c6243974ba0ec8e0d35d4",
+      "export": "2026-09-29-native-child-abba-analysis.json",
+      "export_sha256": "5b0eb33b1b5df33a9f01575715d25e7eb10b4cdff49c6243974ba0ec8e0d35d4",
+      "uncompressed_sha256": "5b0eb33b1b5df33a9f01575715d25e7eb10b4cdff49c6243974ba0ec8e0d35d4",
+      "original_bytes": 10204,
+      "export_bytes": 10204,
+      "transformation": "exact UTF-8 bytes after schema/prefix and sensitive-content audit"
+    }
+  ],
+  "audit": "Raw resource samples, log prefixes, known summary structures and diagnostic argv were inspected. Resource samples retain all240 per-process RSS/footprint/host-audit rows; no private profile contents, credentials, remote URLs, hostnames or unrelated argv exported. Paths in own known command operands are labeled; original and exported hashes distinguish changed bytes.",
+  "source_association": "Same frozen a45ff676 binary and135-input inventory used by prior corrected lifecycle. All retained raw manifest hashes, each run supervisor hash, sampler/harness/source/lifecycle provenance hashes and all independently recalculated statistics matched. Loaded-image enumeration was not enabled; installed libmpv linkage/hash is evidence of its own scope only.",
+  "qualifications": "This is a matched local fixed-fixture comparison with30 labeled empty-thumbnail related rows. Candidate warning means UI composition is not identical. Warm scalar logs show valid playback/geometry but are not atomically aligned to resource sampling; compositor pixels were validated in separate functional captures, never captured during these measurements.",
+  "sanitization_notes": [
+    "Original source manifest may index private command and host-log originals by hash, not include their content.",
+    "Documentary harness default path is sanitized; sampler source is exact. Raw original programs remain ignored local artifacts.",
+    "RSS and physical footprint are separate ledgers; neither is added to estimated GPU buffers. Temporal service attribution is not exclusive ownership."
+  ]
+}

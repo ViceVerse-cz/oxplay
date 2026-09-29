@@ -1,0 +1,22 @@
+{
+  "capture_sha256": "68dd6e611d14c69b04e4840713ce423c7cb664a193ec9c0e161468aca1c89ff8",
+  "inspection_method": "Assistant viewed the actual PNG using the image-view tool after native process cleanup",
+  "capture_pixels": [1520, 1200],
+  "window_logical_pixels": [760, 600],
+  "theme": "dark",
+  "observations": [
+    "Save popup fits entirely within the captured window",
+    "The real video title wraps over two readable lines",
+    "Local-only account-separation disclosure is legible",
+    "Committed Saved on this device message and Done button are visible",
+    "No popup text or buttons overlap or clip",
+    "Underlying video remains present behind the shared Slint popup"
+  ],
+  "limits": [
+    "This is a one-shot Slint texture snapshot, not an operating-system compositor capture",
+    "The diagnostic invoked real create/save callbacks directly; it did not type into the name editor",
+    "The blank name field and disabled Create button are the acknowledged callback-driven diagnostic state",
+    "This image does not establish keyboard or screen-reader usability, frame cadence or resource budgets"
+  ],
+  "original_harness_summary_and_manifest_preserved": true
+}

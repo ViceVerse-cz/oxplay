@@ -1,0 +1,31 @@
+{
+  "status": "completed_not_automatically_qualified",
+  "warmup_seconds": 10,
+  "requested_sample_count": 60,
+  "include_new_vt_services": true,
+  "media_start": null,
+  "media_end": null,
+  "sample_count": 60,
+  "interval_seconds": 1,
+  "measurement_start_utc": "2026-09-29T06:55:15Z",
+  "host_other_cpu_one_core_percent": {
+    "mean": 60.33911089119702,
+    "p95": 75.65555006051676,
+    "peak": 194.59798199562425
+  },
+  "host_audit_top_limit": 8,
+  "rss_mib": {
+    "mean": 189.35234375,
+    "p95": 190.140625,
+    "peak": 190.234375
+  },
+  "cpu_one_core_percent": {
+    "mean": 53.724027519489326,
+    "p95": 62.00146738885868,
+    "peak": 62.47216780781029
+  },
+  "process_count_peak": 2,
+  "notes": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable.",
+  "exit_code": 0,
+  "forced_termination": false
+}

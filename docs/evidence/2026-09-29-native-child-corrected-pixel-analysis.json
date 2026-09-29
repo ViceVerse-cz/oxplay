@@ -1,0 +1,22 @@
+{
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "capture_dimensions": [
+    2640,
+    1592
+  ],
+  "regions": {
+    "video_interior": {
+      "filter": "crop=1280:690:540:240,scale=96:54:flags=neighbor",
+      "sampled_pixels": 5184,
+      "changed_pixels_max_channel_delta_gt12": 415
+    },
+    "sidebar": {
+      "filter": "crop=400:1250:24:210,scale=32:100:flags=neighbor",
+      "sampled_pixels": 3200,
+      "changed_pixels_max_channel_delta_gt12": 0
+    }
+  },
+  "visual_inspection": "Both external owning-window captures show upright fixture timestamps and moving lines inside the watch slot. Sidebar/header/related rows remain visible. No cadence, A/V, fullscreen overlay, DPI, or end-to-end zero-copy qualification.",
+  "sampling": "RGB grid nearest-neighbor diagnostic comparison of captured PNGs only; not application playback transport.",
+  "harness_sha256": "27b43e2c65f58a2b7dd2b535202e7c669b4e0c0cbed7c81823915f90fa4eff4b"
+}

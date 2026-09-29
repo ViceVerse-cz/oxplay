@@ -1,0 +1,39 @@
+{
+  "scope": "Finite macOS frozen-release related keyboard/scroll/fullscreen functional validation; no performance/AX/other-platform qualification",
+  "source_revision": "d78332c23602b1bfaec87688eccba657a208b9be",
+  "app_sha256": "e32cfa128282c781a80eeba06a8259207b07f54da946056b77185fa04efb88b9",
+  "payloads": [
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/native.log",
+      "export": "2026-09-29-related-focus-release-native.log",
+      "sha256": "e7d688fa262f0f754c30555338ffbab81c2011ccde88af16c6dba20ee56b1ec8"
+    },
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/summary.json",
+      "export": "2026-09-29-related-focus-release-summary.json",
+      "sha256": "940ca8c3bf6cdcbbcbfd20100bdc975404860e15382a9be34851221d1d111d81"
+    },
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/provenance.json",
+      "export": "2026-09-29-related-focus-release-provenance.json",
+      "sha256": "0af8756d3c9610c57bed08d7a4eb5388bd3b8c897793fa168595d68ba7d19e79"
+    },
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/binary.json",
+      "export": "2026-09-29-related-focus-release-binary.json",
+      "sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864"
+    },
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/source-inventory.json",
+      "export": "2026-09-29-related-focus-release-source-inventory.json",
+      "sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab"
+    },
+    {
+      "source": "artifacts/ui-workflows-v1/related-release/harness.py",
+      "export": "2026-09-29-related-focus-release-harness.py",
+      "source_sha256": "26d4a2a5f7ecc8b4a67eed53b91f07d29c144c6b27ea0ae71d8cdeef687511da",
+      "sha256": "ace13daf56cf75c98a8c19de724d3f06f19401d56f0b07683538dc5fbfeb693e",
+      "sanitization": "Replace only host-specific default repository path with Path.cwd(); exact executed original retained privately and its SHA matches provenance.harness_sha256"
+    }
+  ]
+}

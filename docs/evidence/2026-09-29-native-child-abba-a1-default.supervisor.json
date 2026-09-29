@@ -1,0 +1,113 @@
+{
+  "mode": "a1-default",
+  "native_child": false,
+  "exit_code": 0,
+  "failure_type": null,
+  "validation_failure": null,
+  "group_absence_after_reap_confirmed": true,
+  "wake_group_absence_confirmed": true,
+  "elapsed_seconds": 86.92475783301052,
+  "raw_artifact_hashes": {
+    ".json": "fce41e2e2123cc205a62a6e645761ef12b654d11f366fa86098cca74080debbc",
+    ".json.log": "78ee6f6d87a27cac5fc5ae0bbed422a37e9184d0dc8447e1867b671368cb5fcb",
+    ".sampler.log": "83c53cf0210b9ced99226050fc87d193501b49ff8092348931154c0b028c09f2",
+    ".command.json": "cc0f4488b18d2ad6218dd957953b8f8bd745f72b1cb823f72b9a07fd60c74530"
+  },
+  "metrics": {
+    "geometry": {
+      "window_px": [
+        2640,
+        1528
+      ],
+      "scale": 2.0,
+      "video_logical": [
+        260.0,
+        76.0,
+        664.0,
+        373.5
+      ],
+      "clip_logical": [
+        260.0,
+        76.0,
+        1032.0,
+        640.0
+      ],
+      "page": 2,
+      "fullscreen": false,
+      "hidden": false,
+      "native_child": false,
+      "geometry_events": 4
+    },
+    "native_geometry": {},
+    "media_counters": {
+      "dropped_frames": {
+        "cumulative_at_10_seconds": 2,
+        "cumulative_at_70_seconds": 2,
+        "warm_delta": 0
+      },
+      "decoder_dropped_frames": {
+        "cumulative_at_10_seconds": 0,
+        "cumulative_at_70_seconds": 0,
+        "warm_delta": 0
+      },
+      "render_notifications": {
+        "cumulative_at_10_seconds": 578,
+        "cumulative_at_70_seconds": 4178,
+        "warm_delta": 3600
+      }
+    },
+    "ui_draw_delta_10_to_70": 3838,
+    "cpu_one_core_percent": {
+      "mean": 50.65773720899272,
+      "p95": 63.00187953493508,
+      "peak": 64.40464069616984
+    },
+    "rss_mib": {
+      "mean": 189.31328125,
+      "p95": 189.9375,
+      "peak": 189.96875
+    },
+    "macos_footprint": {
+      "enabled": true,
+      "api": "proc_pid_rusage RUSAGE_INFO_V0 ri_phys_footprint",
+      "entry_limit_per_sample": 64,
+      "scope": "Separate OS physical-footprint ledger for existing attributed PIDs; no additional process discovery. Unavailable processes make the aggregate null, never zero. Totals are not unique physical memory and must not be added to RSS or GPU estimates. Sequential ps/rusage observations are not atomic; start-abstime records permit later lifetime comparison but do not validate the preceding ps identity. Temporal VT attribution and excluded baseline-service limits still apply.",
+      "complete_sample_count": 60,
+      "incomplete_sample_count": 0,
+      "all_samples_complete": true,
+      "physical_footprint_mib": {
+        "mean": 318.7882664998372,
+        "p95": 319.5955581665039,
+        "peak": 319.6268081665039
+      }
+    },
+    "host_other_cpu_one_core_percent": {
+      "mean": 50.38040764932442,
+      "p95": 67.14984205415914,
+      "peak": 135.08623579690985
+    },
+    "process_counts": [
+      2
+    ],
+    "baseline_vt": {
+      "enabled": true,
+      "entry_limit_per_sample": 64,
+      "baseline_vt_service_count": 2,
+      "baseline_vt_services": [
+        {
+          "pid": 503,
+          "executable": "VTDecoderXPCService"
+        },
+        {
+          "pid": 80397,
+          "executable": "VTDecoderXPCService"
+        }
+      ],
+      "baseline_vt_services_omitted": 0,
+      "scope": "Same ps scan; root and descendants are distinct from temporally attributed new VT services. Preexisting VT services are excluded even if reused by this app; absent new-service RSS is not evidence of absent or unchanged decoder memory. PIDs are sample identities, not birth-time verified lifetimes. Shared RSS pages may be double-counted; no physical-footprint, private-allocation, or GPU-memory attribution. Short-lived or reparented descendants may be missed. No argv or executable directories."
+    },
+    "pixel_visibility_verified": false,
+    "automatic_performance_qualification": false
+  },
+  "functional_sample_admission_passed": true
+}

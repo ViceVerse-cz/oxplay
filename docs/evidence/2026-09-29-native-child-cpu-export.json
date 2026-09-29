@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "run_order": [
+    "native",
+    "default"
+  ],
+  "files": [
+    {
+      "export": "2026-09-29-native-child-cpu-native-summary.json",
+      "export_sha256": "13b5b573ba0af720adde06c79f355359cb0bab9d7a48a8536878124c09e19630",
+      "original_relative_path": "xctrace-native-v1/summary.json",
+      "original_sha256": "8e8b14be2a3ad93e5e6774775b7dc6c841a5cd6f7089c165ff1196b02769261f",
+      "bytes": 2778,
+      "transformation": "Allowlisted supervision, tool schema, trace hashes and app observations; raw argv/environment/device metadata excluded"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-native-analysis.json",
+      "export_sha256": "c25b48a5597875c080d7b37708d706c0b8e9358d5af6e4b82d781d58c56fa153",
+      "original_relative_path": "xctrace-native-v1/cpu-analysis.json",
+      "original_sha256": "c25b48a5597875c080d7b37708d706c0b8e9358d5af6e4b82d781d58c56fa153",
+      "bytes": 4261,
+      "transformation": "exact useful aggregate/nonsecret app log"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-native.log",
+      "export_sha256": "6d6bf26851ccf6cbe77be14e888a6e8cb440621083198e89fb9cccf901114800",
+      "original_relative_path": "xctrace-native-v1/native.log",
+      "original_sha256": "6d6bf26851ccf6cbe77be14e888a6e8cb440621083198e89fb9cccf901114800",
+      "bytes": 6127,
+      "transformation": "exact useful aggregate/nonsecret app log"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-default-summary.json",
+      "export_sha256": "32fcff014b103ce788a39c619fabfd529f1a41822d8213e92371627286c300a8",
+      "original_relative_path": "xctrace-default-v1/summary.json",
+      "original_sha256": "27db389ca1635c94cde5f8c6512fd4b7a29d519afb46cd3eddd0ec5cb428ebe9",
+      "bytes": 2777,
+      "transformation": "Allowlisted supervision, tool schema, trace hashes and app observations; raw argv/environment/device metadata excluded"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-default-analysis.json",
+      "export_sha256": "3bcf4f2d89d0185c761584fd23b712410beafefbca66a00f03aaff018e8f7c30",
+      "original_relative_path": "xctrace-default-v1/cpu-analysis.json",
+      "original_sha256": "3bcf4f2d89d0185c761584fd23b712410beafefbca66a00f03aaff018e8f7c30",
+      "bytes": 4850,
+      "transformation": "exact useful aggregate/nonsecret app log"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-default.log",
+      "export_sha256": "8e4a3ee33cf8521d7fed1b23b64957e34885e5ccff3c155a28df86b1a15386f2",
+      "original_relative_path": "xctrace-default-v1/native.log",
+      "original_sha256": "8e4a3ee33cf8521d7fed1b23b64957e34885e5ccff3c155a28df86b1a15386f2",
+      "bytes": 6298,
+      "transformation": "exact useful aggregate/nonsecret app log"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-analyzer.py",
+      "export_sha256": "89fcd022b7db1312bdbdbbc23a874f8e5c6586b917d983faab84741791c6a1ec",
+      "original_relative_path": "independent post-run analyzer",
+      "original_sha256": "89fcd022b7db1312bdbdbbc23a874f8e5c6586b917d983faab84741791c6a1ec",
+      "bytes": 3558,
+      "transformation": "exact useful aggregate/nonsecret app log"
+    },
+    {
+      "export": "2026-09-29-native-child-cpu-sampling-audit.json",
+      "export_sha256": "b9f3ea609d1405e1fd7930ad24adc8b524728cefe184443792a9c175eaddc94e",
+      "original_relative_path": "independent sampling audit",
+      "original_sha256": "b9f3ea609d1405e1fd7930ad24adc8b524728cefe184443792a9c175eaddc94e",
+      "bytes": 1762,
+      "transformation": "post-run allowlisted audit of raw CPU rows and explicit tool logs"
+    }
+  ],
+  "running_sample_rows": {
+    "native": 1809,
+    "default": 676
+  },
+  "row_weight_ns": 1000000,
+  "complete_weight_accounting": true,
+  "native_missing_backtrace_rows_retained": 3,
+  "raw_trace_toc_xml_private": true,
+  "performance_measurement": false,
+  "comparative_cpu_percentage_claim": false,
+  "production_patch_adopted": false,
+  "scope": "Two bounded targeted Time Profiler runs with owned35-second apps. Other-agent builds allowed. All CPU rows resolve through XML id/ref to the exact attached application and tool stateRunning. Disjoint category/thread/leaf weights each sum to total; selected inclusive stack weights overlap and are never added. Missing backtraces remain explicit.",
+  "limits": [
+    "Running statistical weights are not an independent exact processCPU measurement or syscall/internal-kernel accounting; user-side kernel-entry leaves remain unresolved because kernel callstacks were disabled.",
+    "Trace sample totals676/default and1809/native differ substantially. No modeCPU percentage comparison, speedup or resource acceptance is inferred.",
+    "Only the application was targeted; separate VT and shared compositor services are not CPU-profiled here.",
+    "Trace bundles and TOC automatically contain environment/device metadata. Only whitelisted summaries, symbol/binary names, weights and sanitized app logs are public. No environment, argv paths, hardware device names/UUIDs, stack addresses or thread IDs are exported."
+  ],
+  "next_candidate": "The existing private matched mpv legacy-pass-timer ON/OFF pair remains a bounded diagnostic candidate for native mode. Use two newly recorded app copies derived from this frozen binary and corresponding matched private libraries, not OFF versus a different Homebrew build. Reverify actual loadedlibmpv and native lifecycle/pixels before any controlled resource comparison. Do notchangeclock/synchronization/quality orproductiondefaults based on profile weights.",
+  "weight_accounting_scope": "All exported rows accounted for, not proof every potential profiler sample was collected; substantially different totals remain unexplained."
+}

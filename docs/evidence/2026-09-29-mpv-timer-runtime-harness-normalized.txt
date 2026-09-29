@@ -1,0 +1,44 @@
+from pathlib import Path
+import hashlib,json,os,re,signal,subprocess,sys,tempfile,time
+repo=Path('[workspace]');base=repo/'artifacts/mpv-timer-apps-v1';out=base/'abba';out.mkdir(exist_ok=False)
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+apps=json.loads((base/'preparation.json').read_text());clip=repo/'artifacts/local-1080p60.mp4'
+for variant in ('on','off'):
+ for mode in ('local','still'):
+  r=json.loads((base/(variant+'-'+mode+'.json')).read_text());assert r['exit_code']==0 and not r['forced_termination'] and r['loaded_library_exact_path_verified']
+assert json.loads((base/'still-comparison.json').read_text())['encoded_png_byte_identical']
+(out/'sampler.py').write_bytes((repo/'scripts/measure.py').read_bytes())
+order=[('a1-on','on'),('b1-off','off'),('b2-off','off'),('a2-on','on')]
+provenance={'source_revision':apps['source_revision'],'apps':apps['variants'],'clip_sha256':sha(clip),'sampler_sha256':sha(out/'sampler.py'),'harness_sha256':sha(Path(__file__)),'run_order':[name for name,_ in order],'scope':'Legacy mpv GPU pass timers ON vs OFF only; same app code, all app cache/timing/stable-target experiments off. No screenshots/profiler/loader logs during measurement.','fixture':'30 explicitly labeled related rows with empty thumbnails; not settled raster library qualification','requested_geometry':'1320x860 logical dark; native OS may constrain height; fixed display1440x900 logical60Hz','display_awake_fixture':'Bounded external caffeinate -d -u; no energy qualification','performance_gate':False}
+(out/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
+env={k:v for k,v in os.environ.items() if not k.startswith(('SEREIN_','DYLD_'))}
+results=[]
+for name,variant in order:
+ selected=apps['variants'][variant];binary=repo/selected['app_relative_path'];lib=repo/selected['library_relative_path']
+ assert sha(binary)==selected['app_sha256'] and sha(lib)==selected['libmpv_sha256']
+ profile=Path(tempfile.mkdtemp(prefix='serein-timers-abba.'))/'data'
+ wake=subprocess.Popen(['/usr/bin/caffeinate','-d','-u','-t','110']);process=None
+ print('Starting '+name,flush=True)
+ try:
+  time.sleep(1)
+  args=[sys.executable,str(out/'sampler.py'),'--include-new-vt-services','--per-process-rss','--warmup','10','--seconds','60','--output',str(out/(name+'.json')),'--',str(binary),'--local',str(clip),'--data-root',str(profile),'--demo-related','--diagnostics','--quit-after','85','--ui-size','1320x860','--ui-theme','dark']
+  with (out/(name+'.sampler.log')).open('wb') as log:
+   process=subprocess.Popen(args,cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+   try:code=process.wait(timeout=100)
+   except subprocess.TimeoutExpired:
+    os.killpg(process.pid,signal.SIGTERM)
+    try:process.wait(timeout=5)
+    except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait(timeout=5)
+    raise RuntimeError('bounded measurement timeout')
+  if code:raise RuntimeError('sampler failed')
+ finally:wake.terminate();wake.wait(timeout=5)
+ native=(out/(name+'.json.log')).read_text();data=json.loads((out/(name+'.json')).read_text())
+ assert data['exit_code']==0 and not data['forced_termination'] and data['sample_count']==60
+ assert 'occluded=true' not in native and 'state: Paused' not in native
+ checkpoints={int(t):line for t,line in re.findall(r'checkpoint seconds=(\d+): (.*)',native)}
+ first,last=checkpoints[10],checkpoints[70]
+ def val(line,key):return int(re.search(r'\b'+key+r': (\d+)',line).group(1))
+ for line in (first,last):
+  assert 'hwdec_current: "videotoolbox"' in line and 'width: 1920, height: 1080, fps: 60.0' in line and 'state: Playing' in line and 'catalog_changes=0 catalog_resets=1' in line
+ metrics={'mode':name,'variant':variant,'cpu_one_core_percent':data['cpu_one_core_percent'],'rss_mib':data['rss_mib'],'vo_drop_delta':val(last,'dropped_frames')-val(first,'dropped_frames'),'decoder_drop_delta':val(last,'decoder_dropped_frames')-val(first,'decoder_dropped_frames'),'media_render_notification_delta':val(last,'render_notifications')-val(first,'render_notifications'),'ui_draw_delta':int(re.search(r'ui_draws=(\d+)',last).group(1))-int(re.search(r'ui_draws=(\d+)',first).group(1)),'process_counts':sorted(set(row['processes'] for row in data['samples'])),'baseline_vt_service_count':data['per_process_rss']['baseline_vt_service_count'],'resource_sha256':sha(out/(name+'.json')),'native_log_sha256':sha(out/(name+'.json.log'))}
+ results.append(metrics);(out/'summary.json').write_text(json.dumps({'complete':len(results)==4,'runs':results,'accepted_as_default':False},indent=2)+'\n');print(json.dumps(metrics),flush=True)

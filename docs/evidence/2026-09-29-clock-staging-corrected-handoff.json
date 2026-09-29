@@ -1,0 +1,12 @@
+{
+  "display_awake_fixture": true,
+  "mode": "handoff",
+  "app_sha256": "541f4cef58a9efb3e7f366a1b1b44938df9ea1cbcb05d4b7ee2ac0449575f84b",
+  "exit_code": 0,
+  "timeout": false,
+  "elapsed_seconds": 30.301,
+  "real_account_used": false,
+  "performance_measurement": false,
+  "stage_progress": true,
+  "stable_video_target": false
+}

@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "source_revision": "a45ff67692e0f25e22c188dc1583c3490d94a542",
+  "app_sha256": "0734e6d46cef1c22eb527a67e0e135eedc69c63f3ca3458dd54b513ceb93afd9",
+  "full_spec_pass": false,
+  "production_native_child_qualified": false,
+  "performance_qualified": false,
+  "account_qualified": false,
+  "files": [
+    {
+      "original_relative_path": "binary.json",
+      "export": "2026-09-29-native-child-corrected-binary.json",
+      "original_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "export_sha256": "bc0764b40240fc2031308f0e635599c355f1064d81ce414bd8f3f051a4e37db9",
+      "bytes": 514,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "inputs-before-release.json",
+      "export": "2026-09-29-native-child-corrected-source.json",
+      "original_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "export_sha256": "1b27c9d7ed46fa796129889e33d643298594f2ba8d1c27868df2d4d1bca648ee",
+      "bytes": 54712,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "default-local/summary.json",
+      "export": "2026-09-29-native-child-corrected-default-local-summary.json",
+      "original_sha256": "e8213ca4bb65947e14d97919c7ff7b974b02847d665b9b7861ef711df4a56026",
+      "export_sha256": "e8213ca4bb65947e14d97919c7ff7b974b02847d665b9b7861ef711df4a56026",
+      "bytes": 1159,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "default-local/native.log",
+      "export": "2026-09-29-native-child-corrected-default-local.log",
+      "original_sha256": "30eff34b6635f9f18351e3330d6271fb8eecc5e2b725e13331f4df5e2a811f48",
+      "export_sha256": "30eff34b6635f9f18351e3330d6271fb8eecc5e2b725e13331f4df5e2a811f48",
+      "bytes": 18170,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-lifecycle/summary.json",
+      "export": "2026-09-29-native-child-corrected-native-lifecycle-summary.json",
+      "original_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+      "export_sha256": "a00d36d7a136f50b47f1bd460d48780e601720216f8ae447fd02b27135ad85c0",
+      "bytes": 1162,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-lifecycle/native.log",
+      "export": "2026-09-29-native-child-corrected-native-lifecycle.log",
+      "original_sha256": "bddac6e3803aeaccedf82d0951daa815cd976bf1d994ba722cd77795929fafac",
+      "export_sha256": "bddac6e3803aeaccedf82d0951daa815cd976bf1d994ba722cd77795929fafac",
+      "bytes": 9682,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/summary.json",
+      "export": "2026-09-29-native-child-corrected-native-lifecycle-capture-summary.json",
+      "original_sha256": "340c37dfac2c8837788001e2bda198d59a2bfe644845ab1f603fce8a2944bc54",
+      "export_sha256": "340c37dfac2c8837788001e2bda198d59a2bfe644845ab1f603fce8a2944bc54",
+      "bytes": 3281,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/native.log",
+      "export": "2026-09-29-native-child-corrected-native-lifecycle-capture.log",
+      "original_sha256": "91351744cbb78393f7bf1c1978f639aa781fafa650f08d55bd5c994cf1d92e75",
+      "export_sha256": "91351744cbb78393f7bf1c1978f639aa781fafa650f08d55bd5c994cf1d92e75",
+      "bytes": 9669,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-capture/summary.json",
+      "export": "2026-09-29-native-child-corrected-native-capture-summary.json",
+      "original_sha256": "12d168ee830ce83e5f901758f24839a09453db15af68332e3aa5eb301a97036a",
+      "export_sha256": "12d168ee830ce83e5f901758f24839a09453db15af68332e3aa5eb301a97036a",
+      "bytes": 1513,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-capture/native.log",
+      "export": "2026-09-29-native-child-corrected-native-capture.log",
+      "original_sha256": "217606ddfc8d7731e8240b5b94fcd0d9dc91e35c696e0b7549a4e1d6ae7db236",
+      "export_sha256": "217606ddfc8d7731e8240b5b94fcd0d9dc91e35c696e0b7549a4e1d6ae7db236",
+      "bytes": 4667,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "library/summary.json",
+      "export": "2026-09-29-native-child-corrected-library-summary.json",
+      "original_sha256": "9cccad66adde01c811c72c51127bb6019578da5a890010b3a1ae66c0e49cc73f",
+      "export_sha256": "9cccad66adde01c811c72c51127bb6019578da5a890010b3a1ae66c0e49cc73f",
+      "bytes": 1153,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "library/native.log",
+      "export": "2026-09-29-native-child-corrected-library.log",
+      "original_sha256": "1872ece7119f051883d256aabcaec8d1a1681f0f19b0acdda0e189ebe9a17f4c",
+      "export_sha256": "1872ece7119f051883d256aabcaec8d1a1681f0f19b0acdda0e189ebe9a17f4c",
+      "bytes": 12278,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "library-ui/summary.json",
+      "export": "2026-09-29-native-child-corrected-library-ui-summary.json",
+      "original_sha256": "03300268205ce5dbfaed97f3a72314eb9e8346fd01d0530618b3ef30d385b08c",
+      "export_sha256": "03300268205ce5dbfaed97f3a72314eb9e8346fd01d0530618b3ef30d385b08c",
+      "bytes": 1156,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "library-ui/native.log",
+      "export": "2026-09-29-native-child-corrected-library-ui.log",
+      "original_sha256": "c99b87f7c88dcfff14f92333a95a04dc9ed5b765f6d5ed20fe227c21751c45df",
+      "export_sha256": "c99b87f7c88dcfff14f92333a95a04dc9ed5b765f6d5ed20fe227c21751c45df",
+      "bytes": 2137,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "native-capture/pixel-analysis.json",
+      "export": "2026-09-29-native-child-corrected-pixel-analysis.json",
+      "original_sha256": "90aae97683e246717b461d065ebd271c88d618a67459eff139825afcee914917",
+      "export_sha256": "90aae97683e246717b461d065ebd271c88d618a67459eff139825afcee914917",
+      "bytes": 960,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    },
+    {
+      "original_relative_path": "library-ui/capture-analysis.json",
+      "export": "2026-09-29-native-child-corrected-library-ui-capture-analysis.json",
+      "original_sha256": "4a21033392f1f6d58ddefb389ca4edca2fd3c858180590709d973da3182f9e1f",
+      "export_sha256": "4a21033392f1f6d58ddefb389ca4edca2fd3c858180590709d973da3182f9e1f",
+      "bytes": 1040,
+      "transformation": "none; exact bytes passed allowlist and sensitive-content rejection"
+    }
+  ],
+  "source_association": "Root captured 135 committed build inputs before and after the locked release build, reported byte-identical inventories, and retained the frozen application hash. The input collector alone explicitly does not verify binary association. Later unbuilt source edits are excluded.",
+  "sanitization": "Exact UTF-8 originals retained after fixed top-level JSON field, input-entry and log-prefix allowlists plus sensitive path/URI/header rejection. No credentials, signed URLs, process argv, personal profile paths or host window titles exported.",
+  "captures": "14 finite own-window PNGs remain in ignored artifacts; their original hashes and elapsed capture times are retained in summaries and independently checked. No image re-encoding or playback readback added.",
+  "observations": {
+    "default_local": "Exit 0; borrowed-texture motion 838/9216 changed grid pixels; mute/seek/keyboard/occlusion/fullscreen transitions passed; 0 unrelated catalog changes and 1 initial fixture reset.",
+    "native_lifecycle": "Two runs each passed all 14 finite lifecycle checkpoints, including paused fullscreen exit, Info/caption/Settings hiding, fresh paused reveal, resize/minimize/restore and stop.",
+    "visual_review": "Reviewed normal, Info, fresh paused, fullscreen, caption popup, Settings, resized, restored and stopped captured states. Upright fixture and unobscured shared controls in observed states; hidden states show no native video pixels. Paused pairs 2/4 and 6/8 are byte-identical.",
+    "moving_pixels": "Separate two-playing-frame grid comparison: video interior 415/5184 changed above delta12; sidebar 0/3200. Readback is external finite diagnostics, not playback transport.",
+    "library_ui": "Root-reviewed light 760x600 logical local-library screenshot, 1520x1200 pixels. Actual method is one Slint snapshot; generic summary capture_scope is inaccurate for this mode and the exported capture-analysis records the correction. No image processing or independent pixel-hash verification of this extra capture during the exclusive benchmark.",
+    "library": "Finite paging/hover/keyboard identity checks passed; remote thumbnail starts 0. Final thumbnail queues are nonempty after later navigation, so this is not a settled resource result.",
+    "geometry": "Requested window size differs from observed macOS clamp. Default-local 5s window2640x1528 backing pixels at scale2, video664x373.5 logical. Native ordinary capture2640x1592 including title bar; compare logged geometry rather than assuming requested dimensions.",
+    "shutdown": "Lifecycle stage44 confirms stopped/hidden before generic event-loop shutdown requests another stop; final generic stop_pending=true is not the earlier lifecycle stop result."
+  },
+  "limitations": [
+    "Finite captured instants do not establish every intermediate frame or all overlay states; tooltip overlays remain unqualified.",
+    "No subtitle text, perceptual A/V synchronization, presentation cadence, other backing scales/displays, screen-reader/IME or production account privacy qualification.",
+    "No CPU/RAM/GPU/energy acceptance from these transition/screenshot runs. Native child remains opt-in local exact-fixture-only; default borrowed presenter unchanged."
+  ]
+}

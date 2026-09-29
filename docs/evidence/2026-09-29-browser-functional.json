@@ -1,0 +1,578 @@
+{
+  "browser": {
+    "version": "154.0.8037.57",
+    "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-arm64/chrome-mac-arm64.zip",
+    "metadata_url": "https://googlechromelabs.github.io/chrome-for-testing/154.0.8037.57.json",
+    "official_metadata": {
+      "version": "154.0.8037.57",
+      "revision": "1689415",
+      "downloads": {
+        "chrome": [
+          {
+            "platform": "linux-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux-arm64/chrome-linux-arm64.zip"
+          },
+          {
+            "platform": "linux64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux64/chrome-linux64.zip"
+          },
+          {
+            "platform": "mac-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-arm64/chrome-mac-arm64.zip"
+          },
+          {
+            "platform": "mac-x64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-x64/chrome-mac-x64.zip"
+          },
+          {
+            "platform": "win32",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win32/chrome-win32.zip"
+          },
+          {
+            "platform": "win64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win64/chrome-win64.zip"
+          }
+        ],
+        "chromedriver": [
+          {
+            "platform": "linux-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux-arm64/chromedriver-linux-arm64.zip"
+          },
+          {
+            "platform": "linux64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux64/chromedriver-linux64.zip"
+          },
+          {
+            "platform": "mac-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-arm64/chromedriver-mac-arm64.zip"
+          },
+          {
+            "platform": "mac-x64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-x64/chromedriver-mac-x64.zip"
+          },
+          {
+            "platform": "win32",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win32/chromedriver-win32.zip"
+          },
+          {
+            "platform": "win64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win64/chromedriver-win64.zip"
+          }
+        ],
+        "chrome-headless-shell": [
+          {
+            "platform": "linux-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux-arm64/chrome-headless-shell-linux-arm64.zip"
+          },
+          {
+            "platform": "linux64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux64/chrome-headless-shell-linux64.zip"
+          },
+          {
+            "platform": "mac-arm64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-arm64/chrome-headless-shell-mac-arm64.zip"
+          },
+          {
+            "platform": "mac-x64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/mac-x64/chrome-headless-shell-mac-x64.zip"
+          },
+          {
+            "platform": "win32",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win32/chrome-headless-shell-win32.zip"
+          },
+          {
+            "platform": "win64",
+            "url": "https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/win64/chrome-headless-shell-win64.zip"
+          }
+        ]
+      }
+    },
+    "archive_sha256": "0e6b3439469c1b8b95b2e89c72ea29f7af00fb2c28a8878358a0b6002b6d3a64",
+    "verified_at_utc": "2026-09-29T03:40:50Z",
+    "signature": "Executable=<repository>/artifacts/browser-baseline/154.0.8037.57/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing\nIdentifier=Google Chrome for Testing\nFormat=app bundle with Mach-O thin (arm64)\nCodeDirectory v=20400 size=536 flags=0x20002(adhoc,linker-signed) hashes=13+0 location=embedded\nVersionPlatform=1\nVersionMin=851968\nVersionSDK=1705216\nHash type=sha256 size=32\nCandidateCDHash sha256=b0112605ef0d8812a510114e8bd609474e233d8f\nCandidateCDHashFull sha256=b0112605ef0d8812a510114e8bd609474e233d8fa7c10403ab1684119d4c6c6a\nHash choices=sha256\nCMSDigest=b0112605ef0d8812a510114e8bd609474e233d8fa7c10403ab1684119d4c6c6a\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=16384\nExecutable Segment flags=0x1\nPage size=4096\nCDHash=b0112605ef0d8812a510114e8bd609474e233d8f\nSignature=adhoc\nInfo.plist=not bound\nTeamIdentifier=not set\nSealed Resources=none\nInternal requirements=none\n",
+    "architecture": "arm64",
+    "strict_bundle_signature_valid": false,
+    "strict_bundle_signature_diagnostic": "<repository>/artifacts/browser-baseline/154.0.8037.57/chrome-mac-arm64/Google Chrome for Testing.app: code has no resources but signature indicates they must be present",
+    "code_pages_valid_ignoring_unsealed_resources": true,
+    "all_archive_members_verified": true,
+    "trust_limit": "Official HTTPS provenance and recorded observed digest; ad-hoc code signatures do not authenticate a publisher; resources unsealed.",
+    "executable_sha256": "4f82263da1a7ed4b71be76d6501bb7edc13c6573b8d950197147ee5776edcf3b"
+  },
+  "harness_sha256": "e6d2c726b5aa0a2f7f5babd72b28eefdda2b7dc8b1b70555ecb504c2b39812d0",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "warmup_seconds": 3,
+  "physical_video_width": 1384,
+  "physical_video_height": 778,
+  "include_new_vt_services": false,
+  "status": "completed_not_automatically_qualified",
+  "samples": [
+    {
+      "rss_mib": 1159.359375,
+      "cpu_one_core_percent": 28.237147592185217,
+      "processes": 11,
+      "elapsed_after_warmup_seconds": 1.0270159160136245,
+      "host_other_cpu_one_core_percent": 72.05341109731933,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 48.68473722790552
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 4.868473722791659
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 3.8947789782344344
+        },
+        {
+          "executable": "VTDecoderXPCService",
+          "cpu_one_core_percent": 3.8947789782324405
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.921084233693814
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.921084233671675
+        },
+        {
+          "executable": "Finder",
+          "cpu_one_core_percent": 0.9736947445599924
+        },
+        {
+          "executable": "Python",
+          "cpu_one_core_percent": 0.9736947445581113
+        }
+      ]
+    },
+    {
+      "rss_mib": 1154.5,
+      "cpu_one_core_percent": 16.32691085483785,
+      "processes": 11,
+      "elapsed_after_warmup_seconds": 2.0682416660129093,
+      "host_other_cpu_one_core_percent": 70.10967602371748,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 47.05991952276879
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 4.802032604365165
+        },
+        {
+          "executable": "VTDecoderXPCService",
+          "cpu_one_core_percent": 3.841626083491259
+        },
+        {
+          "executable": "duetexpertd",
+          "cpu_one_core_percent": 1.9208130417548006
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 1.920813041743882
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 1.920813041743882
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 1.920813041743882
+        },
+        {
+          "executable": "ManagedClient",
+          "cpu_one_core_percent": 0.9604065208728148
+        }
+      ]
+    },
+    {
+      "rss_mib": 1156.4375,
+      "cpu_one_core_percent": 14.110571013570324,
+      "processes": 11,
+      "elapsed_after_warmup_seconds": 3.0604056249721907,
+      "host_other_cpu_one_core_percent": 69.5449571383112,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 44.3475088997979
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 6.047387577244648
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 4.031591718159279
+        },
+        {
+          "executable": "VTDecoderXPCService",
+          "cpu_one_core_percent": 3.023693788622212
+        },
+        {
+          "executable": "com.apple.DriverKit-AppleBCMWLAN",
+          "cpu_one_core_percent": 2.0157958590796397
+        },
+        {
+          "executable": "runningboardd",
+          "cpu_one_core_percent": 2.0157958590796397
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 2.0157958590796397
+        },
+        {
+          "executable": "logd",
+          "cpu_one_core_percent": 1.007897929545549
+        }
+      ]
+    },
+    {
+      "rss_mib": 1156.421875,
+      "cpu_one_core_percent": 9.152316279421727,
+      "processes": 11,
+      "elapsed_after_warmup_seconds": 4.043763249996118,
+      "host_other_cpu_one_core_percent": 80.33699845271407,
+      "host_other_top_cpu": [
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 37.62618914874588
+        },
+        {
+          "executable": "XprotectService",
+          "cpu_one_core_percent": 13.220012403608731
+        },
+        {
+          "executable": "syspolicyd",
+          "cpu_one_core_percent": 5.084620155235461
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 4.067696124189525
+        },
+        {
+          "executable": "fseventsd",
+          "cpu_one_core_percent": 4.067696124183745
+        },
+        {
+          "executable": "trustd",
+          "cpu_one_core_percent": 2.0338480620947625
+        },
+        {
+          "executable": "VTDecoderXPCService",
+          "cpu_one_core_percent": 2.033848062093718
+        },
+        {
+          "executable": "Finder",
+          "cpu_one_core_percent": 2.0338480620918724
+        }
+      ]
+    },
+    {
+      "rss_mib": 1137.109375,
+      "cpu_one_core_percent": 8.00030101152206,
+      "processes": 11,
+      "elapsed_after_warmup_seconds": 5.043725624971557,
+      "host_other_cpu_one_core_percent": 162.0060954833132,
+      "host_other_top_cpu": [
+        {
+          "executable": "build-script-build",
+          "cpu_one_core_percent": 93.00349925894386
+        },
+        {
+          "executable": "WindowServer",
+          "cpu_one_core_percent": 37.00139217827858
+        },
+        {
+          "executable": "XprotectService",
+          "cpu_one_core_percent": 6.000225758641767
+        },
+        {
+          "executable": "codex",
+          "cpu_one_core_percent": 5.00018813220242
+        },
+        {
+          "executable": "zeron",
+          "cpu_one_core_percent": 5.000188132196735
+        },
+        {
+          "executable": "coreaudiod",
+          "cpu_one_core_percent": 4.000150505763073
+        },
+        {
+          "executable": "fseventsd",
+          "cpu_one_core_percent": 3.0001128793294103
+        },
+        {
+          "executable": "VTDecoderXPCService",
+          "cpu_one_core_percent": 2.000075252880515
+        }
+      ]
+    }
+  ],
+  "flags": [
+    "--user-data-dir=<isolated-run-profile>",
+    "--remote-debugging-pipe",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-sync",
+    "--disable-default-apps",
+    "--disable-domain-reliability",
+    "--metrics-recording-only",
+    "--no-pings",
+    "--use-mock-keychain",
+    "--host-resolver-rules=MAP * ~NOTFOUND",
+    "--window-size=1320,860",
+    "about:blank"
+  ],
+  "runtime_version": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/154.0.8037.57",
+    "revision": "@73c14f6228d7cd537c855007e8f88678969cc0eb",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "jsVersion": "15.4.80.11"
+  },
+  "media_start": {
+    "current_time": 2.986045,
+    "duration": 90,
+    "identity_ok": true,
+    "creation_time": 3318.699999988079,
+    "time_origin": 1790654313579.4,
+    "changes": 1,
+    "playback_rate": 1,
+    "in_view": true,
+    "width": 1920,
+    "height": 1080,
+    "paused": false,
+    "muted": false,
+    "volume": 1,
+    "ready_state": 4,
+    "error": null,
+    "visibility": "visible",
+    "focused": true,
+    "css_width": 692,
+    "css_height": 389,
+    "dpr": 2,
+    "viewport_scale": 1,
+    "total_frames": 185,
+    "dropped_frames": 0
+  },
+  "decoder_start": [
+    {
+      "kVideoDecoderName": "VideoToolboxVideoDecoder",
+      "kAudioTracks": "[{\"bytes per channel\":4,\"bytes per frame\":4,\"channel layout\":\"MONO\",\"channels\":1,\"codec\":\"aac\",\"codec delay\":0,\"discard decoder delay\":true,\"encryption scheme\":\"Unencrypted\",\"has extra data\":true,\"profile\":\"unknown\",\"sample format\":\"Float 32-bit planar\",\"samples per second\":48000,\"seek preroll\":\"0us\"}]",
+      "kResolution": "1920x1080",
+      "kRendererName": "RendererImpl",
+      "kIsPlatformAudioDecoder": "false",
+      "kAudioDecoderName": "FFmpegAudioDecoder",
+      "kVideoTracks": "[{\"alpha mode\":\"is_opaque\",\"codec\":\"h264\",\"coded size\":\"1920x1080\",\"color space\":{\"matrix\":\"BT709\",\"primaries\":\"BT709\",\"range\":\"LIMITED\",\"transfer\":\"BT709\"},\"encryption scheme\":\"Unencrypted\",\"has extra data\":true,\"hdr metadata\":{},\"natural size\":\"1920x1080\",\"orientation\":\"0\u00b0\",\"profile\":\"h264 high\",\"visible rect\":\"0,0 1920x1080\"}]",
+      "kIsPlatformVideoDecoder": "true"
+    }
+  ],
+  "player_nodes": {
+    "137B5276B78225537672BA3940A350A9": null
+  },
+  "video_backend_node": 7,
+  "decoder_association": "sole_player_exact_fixture_load",
+  "selected_player": "137B5276B78225537672BA3940A350A9",
+  "cdp_processes_start": [
+    {
+      "type": "browser",
+      "id": 94122,
+      "cpuTime": 0.824211
+    },
+    {
+      "type": "renderer",
+      "id": 94234,
+      "cpuTime": 0.071554
+    },
+    {
+      "type": "renderer",
+      "id": 94139,
+      "cpuTime": 0.057423
+    },
+    {
+      "type": "renderer",
+      "id": 94138,
+      "cpuTime": 0.059184
+    },
+    {
+      "type": "renderer",
+      "id": 94136,
+      "cpuTime": 0.053184
+    },
+    {
+      "type": "renderer",
+      "id": 94137,
+      "cpuTime": 0.217765
+    },
+    {
+      "type": "renderer",
+      "id": 94134,
+      "cpuTime": 0.271128
+    },
+    {
+      "type": "GPU",
+      "id": 94130,
+      "cpuTime": 0.75296
+    },
+    {
+      "type": "network.mojom.NetworkService",
+      "id": 94131,
+      "cpuTime": 0.083725
+    },
+    {
+      "type": "storage.mojom.StorageService",
+      "id": 94132,
+      "cpuTime": 0.033364
+    },
+    {
+      "type": "audio.mojom.AudioService",
+      "id": 94141,
+      "cpuTime": 0.090225
+    }
+  ],
+  "native_window": {
+    "windowId": 726151147,
+    "bounds": {
+      "left": 22,
+      "top": 30,
+      "width": 1320,
+      "height": 796,
+      "windowState": "normal"
+    }
+  },
+  "measurement_start_utc": "2026-09-29T03:58:36Z",
+  "media_end": {
+    "current_time": 8.129396,
+    "duration": 90,
+    "identity_ok": true,
+    "creation_time": 8462.199999988079,
+    "time_origin": 1790654313579.4,
+    "changes": 1,
+    "playback_rate": 1,
+    "in_view": true,
+    "width": 1920,
+    "height": 1080,
+    "paused": false,
+    "muted": false,
+    "volume": 1,
+    "ready_state": 4,
+    "error": null,
+    "visibility": "visible",
+    "focused": true,
+    "css_width": 692,
+    "css_height": 389,
+    "dpr": 2,
+    "viewport_scale": 1,
+    "total_frames": 493,
+    "dropped_frames": 0
+  },
+  "decoder_end": [
+    {
+      "kVideoDecoderName": "VideoToolboxVideoDecoder",
+      "kAudioTracks": "[{\"bytes per channel\":4,\"bytes per frame\":4,\"channel layout\":\"MONO\",\"channels\":1,\"codec\":\"aac\",\"codec delay\":0,\"discard decoder delay\":true,\"encryption scheme\":\"Unencrypted\",\"has extra data\":true,\"profile\":\"unknown\",\"sample format\":\"Float 32-bit planar\",\"samples per second\":48000,\"seek preroll\":\"0us\"}]",
+      "kResolution": "1920x1080",
+      "kRendererName": "RendererImpl",
+      "kIsPlatformAudioDecoder": "false",
+      "kAudioDecoderName": "FFmpegAudioDecoder",
+      "kVideoTracks": "[{\"alpha mode\":\"is_opaque\",\"codec\":\"h264\",\"coded size\":\"1920x1080\",\"color space\":{\"matrix\":\"BT709\",\"primaries\":\"BT709\",\"range\":\"LIMITED\",\"transfer\":\"BT709\"},\"encryption scheme\":\"Unencrypted\",\"has extra data\":true,\"hdr metadata\":{},\"natural size\":\"1920x1080\",\"orientation\":\"0\u00b0\",\"profile\":\"h264 high\",\"visible rect\":\"0,0 1920x1080\"}]",
+      "kIsPlatformVideoDecoder": "true"
+    }
+  ],
+  "cdp_processes_end": [
+    {
+      "type": "browser",
+      "id": 94122,
+      "cpuTime": 0.891145
+    },
+    {
+      "type": "renderer",
+      "id": 94234,
+      "cpuTime": 0.073958
+    },
+    {
+      "type": "renderer",
+      "id": 94139,
+      "cpuTime": 0.060513
+    },
+    {
+      "type": "renderer",
+      "id": 94138,
+      "cpuTime": 0.062218
+    },
+    {
+      "type": "renderer",
+      "id": 94136,
+      "cpuTime": 0.05631
+    },
+    {
+      "type": "renderer",
+      "id": 94137,
+      "cpuTime": 0.37075
+    },
+    {
+      "type": "renderer",
+      "id": 94134,
+      "cpuTime": 0.27693
+    },
+    {
+      "type": "GPU",
+      "id": 94130,
+      "cpuTime": 1.22827
+    },
+    {
+      "type": "network.mojom.NetworkService",
+      "id": 94131,
+      "cpuTime": 0.090819
+    },
+    {
+      "type": "storage.mojom.StorageService",
+      "id": 94132,
+      "cpuTime": 0.035407
+    },
+    {
+      "type": "audio.mojom.AudioService",
+      "id": 94141,
+      "cpuTime": 0.121511
+    }
+  ],
+  "media_counter_interval_seconds": 5.142469583021011,
+  "frame_delta": 308,
+  "dropped_frame_delta": 0,
+  "rss_mib": {
+    "mean": 1152.765625,
+    "p95": 1159.359375,
+    "peak": 1159.359375
+  },
+  "cpu_one_core_percent": {
+    "mean": 15.165449350307435,
+    "p95": 28.237147592185217,
+    "peak": 28.237147592185217
+  },
+  "host_other_cpu_one_core_percent": {
+    "mean": 90.81022763907507,
+    "p95": 162.0060954833132,
+    "peak": 162.0060954833132
+  },
+  "notes": "RSS can double-count shared pages; GPU memory is not added. Short-lived/reparented helpers can escape ps attribution; compare CDP PID inventory. New VT services are temporally attributed, not proven exclusively owned. Host-other CPU includes harness/system work and is never charged to the browser. CSS physical geometry does not establish compositor allocation size or scanout. DOM visibility/focus and transition events do not prove native unoccluded scanout, display wake state or audible device output. Video counters measure submitted/dropped frames, not compositor presentation. No continuous GPU or audio-route probe is made. Decoder evidence, audible output, display state, dropped-frame gate and foreign-work audit require review before comparison. Background flags and page URL blocking are not comprehensive whole-browser egress verification.",
+  "process_group_gone": true,
+  "forced_termination": false,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "profile_retained_for_live_or_unknown_group": false,
+  "evidence_scope": "Functional harness/decoder/cleanup validation only; not a fair performance comparison.",
+  "performance_exclusions": [
+    "Five-second sample is below SPEC required 60 seconds.",
+    "Concurrent application build appears in host-other CPU evidence.",
+    "New VT services were not included in owned attribution for this diagnostic.",
+    "Native scanout, audio output route and complete process attribution remain unqualified."
+  ],
+  "redactions": [
+    "Repository absolute path replaced with <repository> in browser signature diagnostics."
+  ]
+}

@@ -1,0 +1,28 @@
+[package]
+name = "serein"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+slint.workspace = true
+serein-core = { path = "../core" }
+serein-youtube = { path = "../youtube" }
+serein-media = { path = "../media" }
+serein-network = { path = "../network" }
+serein-storage = { path = "../storage" }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+tokio = { version = "1", features = ["rt", "time", "net", "sync", "macros"] }
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+zeroize = "1.9"
+webbrowser = "1.2.4"
+ring = "0.17"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[build-dependencies]
+slint-build.workspace = true
+
+[target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
+rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal", "wayland"] }

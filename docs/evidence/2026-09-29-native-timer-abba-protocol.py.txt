@@ -1,0 +1,387 @@
+#!/usr/bin/env python3
+"""PREPARED, NOT EXECUTED. Root-owned exclusive native-child comparison.
+
+No build, download, screenshot, profiler, account or network request is performed.
+The default output leaf must not exist; failed attempts are never overwritten.
+"""
+from pathlib import Path
+import argparse
+import hashlib
+import json
+import math
+import os
+import re
+import signal
+import stat
+import subprocess
+import sys
+import time
+
+FIXTURE_SHA = 'd5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0'
+ORDER = [('a1-default', False), ('b1-native', True), ('b2-native', True), ('a2-default', False)]
+WARM_CHECKPOINTS = (10, 25, 70)
+MAX_LOG = 8 * 1024 * 1024
+GEOMETRY = re.compile(
+    r'^presentation geometry seconds=(\d+): window_px=(\d+)x(\d+) scale=([^ ]+) '
+    r'video_logical=\(([^)]+)\) clip_logical=\(([^)]+)\) page=(\d+) '
+    r'fullscreen=(true|false) hidden=(true|false) native_child=(true|false) geometry_events=(\d+)$', re.M)
+NATIVE_GEOMETRY = re.compile(
+    r'^native geometry seconds=(\d+): backing_px=(\d+)x(\d+) geometry_changes=(\d+) '
+    r'visible=(true|false) renders=(\d+) publications=(\d+)$', re.M)
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def sha(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as source:
+        while chunk := source.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def read_json(path):
+    require(path.stat().st_size <= MAX_LOG, 'JSON evidence exceeds bound')
+    return json.loads(path.read_text())
+
+
+def write_json(path, value):
+    # All output lives below a newly-created private directory. Never discard
+    # prior raw samples/logs; only this invocation's aggregate is atomically updated.
+    temporary = path.with_name(path.name + '.new')
+    with temporary.open('x') as target:
+        json.dump(value, target, indent=2)
+        target.write('\n')
+    temporary.replace(path)
+
+
+def wait_unreaped(process, timeout):
+    deadline = time.monotonic() + timeout
+    while True:
+        event = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+        if event is not None:
+            return event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+        if time.monotonic() >= deadline:
+            raise TimeoutError('bounded subprocess deadline')
+        time.sleep(.20)
+
+
+def finish_group(process):
+    """Signal while our unreaped leader still anchors its process-group number.
+
+    EPERM can occur for an exited Darwin zombie; it is NOT absence. After reap,
+    only probe, never send a destructive signal to a potentially recycled PGID.
+    A remaining group is a failed cleanup and stops the experiment.
+    """
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    process.wait(timeout=3)
+    deadline = time.monotonic() + 3
+    while True:
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            return
+        except PermissionError:
+            pass
+        if time.monotonic() >= deadline:
+            raise RuntimeError('owned process-group absence not confirmed')
+        time.sleep(.025)
+
+
+def bounded_tool(command, path, env):
+    # Only run before/after the four measurement windows, not inside them.
+    with path.open('xb') as log:
+        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
+                                 env=env, start_new_session=True)
+        try:
+            code = wait_unreaped(child, 10)
+        finally:
+            finish_group(child)
+    require(code == 0 and path.stat().st_size <= MAX_LOG, 'provenance command failed')
+    return path.read_text()
+
+
+def number(line, key, integer=False):
+    match = re.search(r'\b' + re.escape(key) + r': ([^,}]+)', line)
+    require(match is not None, 'missing native numeric field: ' + key)
+    value = int(match[1]) if integer else float(match[1])
+    require(math.isfinite(value), 'nonfinite native numeric observation')
+    return value
+
+
+def rect(value):
+    parsed = [float(item) for item in value.split(',')]
+    require(len(parsed) == 4 and all(math.isfinite(item) for item in parsed), 'invalid geometry')
+    require(parsed[2] > 0 and parsed[3] > 0, 'empty presentation geometry')
+    return parsed
+
+
+def validate(resource, log, native):
+    require(resource.get('status') == 'completed_not_automatically_qualified', 'incomplete resource result')
+    require(resource.get('sample_count') == 60 and len(resource.get('samples', [])) == 60,
+            'measurement did not retain all sixty samples')
+    require(resource.get('warmup_seconds') == 10 and resource.get('exit_code') == 0
+            and resource.get('forced_termination') is False, 'unclean measurement')
+    require(resource.get('include_new_vt_services') is True
+            and resource.get('per_process_rss', {}).get('enabled') is True, 'missing process audit')
+    require('occluded=true' not in log, 'occlusion occurred during application lifetime')
+    require('state: Paused' not in log and 'state: Failed' not in log, 'paused or failed checkpoint')
+    checkpoints = {}
+    for match in re.finditer(r'^checkpoint seconds=(\d+): (.+)$', log, re.M):
+        second = int(match[1])
+        require(second not in checkpoints, 'duplicate media checkpoint')
+        checkpoints[second] = match[2]
+    for second in WARM_CHECKPOINTS:
+        line = checkpoints[second]
+        for token in ('state: Playing', 'paused: false', 'paused_for_cache: false',
+                      'hwdec_current: "videotoolbox"', 'audio_codec: "aac"',
+                      'audio_output: "avfoundation"', 'audio_sample_rate: 48000',
+                      'diagnostic_silent_audio: false', 'muted: false', 'error: None',
+                      'catalog_changes=0 catalog_resets=1'):
+            require(token in line, 'missing expected warm media observation: ' + token)
+        require(number(line, 'width', True) == 1920 and number(line, 'height', True) == 1080
+                and abs(number(line, 'fps') - 60) < .01, 'fixed fixture dimensions/rate differ')
+        require(number(line, 'speed') == 1 and number(line, 'volume') == 100
+                and number(line, 'file_loads', True) == 1, 'workload changed')
+    first, last = checkpoints[10], checkpoints[70]
+    require(58 <= number(last, 'position') - number(first, 'position') <= 62,
+            'observed playback position did not advance through warm interval')
+    records = {}
+    for match in GEOMETRY.finditer(log):
+        second = int(match[1])
+        require(second not in records, 'duplicate presentation geometry checkpoint')
+        records[second] = {
+            'window_px': [int(match[2]), int(match[3])], 'scale': float(match[4]),
+            'video_logical': rect(match[5]), 'clip_logical': rect(match[6]),
+            'page': int(match[7]), 'fullscreen': match[8] == 'true', 'hidden': match[9] == 'true',
+            'native_child': match[10] == 'true', 'geometry_events': int(match[11])}
+    geometry = records[10]
+    require(math.isfinite(geometry['scale']) and geometry['scale'] > 0
+            and min(geometry['window_px']) > 0, 'invalid window dimensions/scale')
+    for second in WARM_CHECKPOINTS:
+        observed = records[second]
+        require(observed == geometry, 'warm presentation geometry/events changed')
+        require(observed['page'] == 2 and not observed['hidden'] and not observed['fullscreen']
+                and observed['native_child'] == native, 'wrong presentation scope')
+    native_records = {}
+    for match in NATIVE_GEOMETRY.finditer(log):
+        second = int(match[1])
+        require(second not in native_records, 'duplicate native geometry checkpoint')
+        native_records[second] = {'backing_px': [int(match[2]), int(match[3])],
+                                 'geometry_changes': int(match[4]), 'visible': match[5] == 'true',
+                                 'renders': int(match[6]), 'publications': int(match[7])}
+    if native:
+        for second in WARM_CHECKPOINTS:
+            observed = native_records[second]
+            require(observed['visible'] and min(observed['backing_px']) > 0,
+                    'native presenter not logically visible')
+            require(observed['backing_px'] == native_records[10]['backing_px']
+                    and observed['geometry_changes'] == native_records[10]['geometry_changes'],
+                    'native backing geometry changed')
+        require(native_records[70]['renders'] > native_records[10]['renders']
+                and native_records[70]['publications'] > native_records[10]['publications'],
+                'native render/publication counters did not advance')
+    else:
+        require(not native_records, 'default unexpectedly used native child')
+    deltas = {}
+    for field in ('dropped_frames', 'decoder_dropped_frames', 'render_notifications'):
+        before, after = number(first, field, True), number(last, field, True)
+        require(after >= before, 'native counter reset during warm interval')
+        deltas[field] = {'cumulative_at_10_seconds': before, 'cumulative_at_70_seconds': after,
+                         'warm_delta': after - before}
+    before = int(re.search(r'ui_draws=(\d+)', first)[1])
+    after = int(re.search(r'ui_draws=(\d+)', last)[1])
+    require(after >= before, 'UI draw counter reset')
+    return {'geometry': geometry, 'native_geometry': native_records,
+            'media_counters': deltas, 'ui_draw_delta_10_to_70': after - before,
+            'cpu_one_core_percent': resource['cpu_one_core_percent'], 'rss_mib': resource['rss_mib'],
+            'macos_footprint': resource.get('macos_footprint'),
+            'host_other_cpu_one_core_percent': resource.get('host_other_cpu_one_core_percent'),
+            'process_counts': sorted({row['processes'] for row in resource['samples']}),
+            'baseline_vt': resource['per_process_rss'],
+            'pixel_visibility_verified': False, 'automatic_performance_qualification': False}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--repo', type=Path, default=Path('<workspace>'))
+    parser.add_argument('--base', type=Path, help='defaults to repo/artifacts/native-child-v2')
+    parser.add_argument('--output-name', default='abba')
+    parser.add_argument('--inventory', type=Path, help='defaults to base/inputs-after-release.json')
+    parser.add_argument('--lifecycle-result', type=Path, required=True,
+                        help='successful corrected lifecycle JSON for this exact frozen binary')
+    parser.add_argument('--libmpv', type=Path, default=Path('/opt/homebrew/opt/mpv/lib/libmpv.2.dylib'))
+    parser.add_argument('--macos-footprint', action='store_true')
+    options = parser.parse_args()
+    require(sys.platform == 'darwin' and hasattr(os, 'WNOWAIT'), 'macOS unreaped-leader supervision required')
+    require(re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}', options.output_name), 'unsafe output leaf')
+    os.umask(0o077)
+    repo = options.repo.resolve(strict=True)
+    base = (options.base or repo / 'artifacts/native-child-v2').resolve(strict=True)
+    app, clip = base / 'serein-frozen', repo / 'artifacts/local-1080p60.mp4'
+    inventory_path = options.inventory or base / 'inputs-after-release.json'
+    identity = read_json(base / 'binary.json')
+    require(sha(app) == identity['app_sha256'], 'frozen binary identity mismatch')
+    require(sha(clip) == FIXTURE_SHA, 'fixed local fixture identity mismatch')
+    require(identity.get('inputs_before_after_identical') is True
+            and sha(inventory_path) == identity['source_inventory_sha256'], 'unverified build association')
+    inventory = read_json(inventory_path)
+    require(all(entry.get('state') == 'matches_commit' for entry in inventory['files']),
+            'source inventory has uncommitted inputs')
+    require(inventory.get('git_revision') == identity['source_revision']
+            and inventory.get('file_count') == identity['build_input_count'], 'inventory/build revision differs')
+    lifecycle = read_json(options.lifecycle_result)
+    require(lifecycle.get('mode') == 'native-lifecycle', 'expected exact finite native lifecycle mode')
+    lifecycle_log = options.lifecycle_result.parent / 'native.log'
+    require(sha(lifecycle_log) == lifecycle.get('native_log_sha256'), 'lifecycle log identity differs')
+    lifecycle_text = lifecycle_log.read_text()
+    require([int(x) for x in re.findall(r'^native-child lifecycle stage=(\d+) passed;', lifecycle_text, re.M)]
+            == list(range(5,45,3)), 'native lifecycle checkpoints incomplete')
+    require(lifecycle.get('app_sha256') == identity['app_sha256'] and lifecycle.get('exit_code') == 0
+            and lifecycle.get('forced_termination') is False and lifecycle.get('failure_type') is None
+            and lifecycle.get('group_absence_after_reap_confirmed') is True,
+            'corrected same-binary lifecycle has not passed/cleaned up')
+    library = options.libmpv.resolve(strict=True)
+    library_sha = sha(library)
+    out = base / options.output_name
+    out.mkdir(mode=0o700, exist_ok=False)
+    (out / 'profiles').mkdir(mode=0o700)
+    (out / 'sampler.py').write_bytes((repo / 'scripts/measure.py').read_bytes())
+    (out / 'harness.py').write_bytes(Path(__file__).read_bytes())
+    (out / 'source-inventory.json').write_bytes(inventory_path.read_bytes())
+    (out / 'binary.json').write_bytes((base / 'binary.json').read_bytes())
+    (out / 'lifecycle-result.json').write_bytes(options.lifecycle_result.read_bytes())
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith(('SEREIN_', 'DYLD_', 'SLINT_'))}
+    env['NO_COLOR'] = '1'
+    linkage = bounded_tool(['/usr/bin/otool', '-L', str(app)], out / 'app-linkage.log', env)
+    require(str(options.libmpv) in linkage or str(library) in linkage,
+            'frozen app linkage does not name the expected installed libmpv')
+    bounded_tool(['/usr/bin/sw_vers'], out / 'os.log', env)
+    bounded_tool(['/usr/bin/uname', '-a'], out / 'kernel.log', env)
+    provenance = {
+        **identity, 'run_order': [name for name, _ in ORDER], 'fixture_sha256': FIXTURE_SHA,
+        'sampler_sha256': sha(out / 'sampler.py'), 'harness_sha256': sha(out / 'harness.py'),
+        'python_executable_sha256': sha(Path(sys.executable).resolve()), 'python_version': sys.version,
+        'installed_libmpv': {'requested_path': str(options.libmpv), 'resolved_path': str(library),
+                            'sha256': library_sha, 'app_linkage_sha256': sha(out / 'app-linkage.log'),
+                            'runtime_loaded_image_inventory': False},
+        'lifecycle_result_sha256': sha(out / 'lifecycle-result.json'),
+        'requested_window_logical': [1320, 860], 'theme': 'dark', 'warmup_seconds': 10,
+        'samples': 60, 'quit_after_seconds': 85, 'macos_footprint': options.macos_footprint,
+        'scope': 'Same frozen app; default borrowed-texture vs opt-in native child only. Thirty explicit demo related rows with EMPTY thumbnails, not thirty decoded rasters. Candidate warning is visible; identical UI composition is not claimed.',
+        'limitations': ['Finite media/geometry observations are not atomic with resource sampling boundaries.',
+                       'Geometry/event counters prove only their observed scope; no pixel/compositor visibility claim.',
+                       'New VT service attribution is temporal, not exclusive ownership; preexisting reused services are excluded.',
+                       'Whole-process-tree ps snapshots may miss short-lived/reparented children or PID reuse.',
+                       'RSS may double-count shared pages; physical footprint is a separate ledger, not additive to RSS/GPU.',
+                       'No screenshots/profilers or DYLD image logging in the measurement interval.',
+                       'Installed libmpv linkage/hash is recorded; this run does not independently enumerate loaded images.',
+                       'Native startup copies/hash-verifies the fixed fixture, unlike default; startup is outside the warm comparison only if ready at the ten-second observation.'],
+        'real_account': False, 'accepted_as_default': False, 'performance_qualified': False}
+    write_json(out / 'provenance.json', provenance)
+    results = []
+    reference_geometry = None
+    abort = False
+    for name, native in ORDER:
+        started = time.monotonic()
+        record = {'mode': name, 'native_child': native, 'exit_code': None,
+                  'failure_type': None, 'validation_failure': None,
+                  'group_absence_after_reap_confirmed': False, 'wake_group_absence_confirmed': False}
+        process = wake = None
+        profile = out / 'profiles' / name
+        # Native admission itself requires a nonexistent leaf and creates0700.
+        # Default has no such admission; create its equivalent fresh private leaf.
+        if not native:
+            profile.mkdir(mode=0o700, exist_ok=False)
+        args = [sys.executable, str(out / 'sampler.py'), '--include-new-vt-services',
+                '--per-process-rss', '--warmup', '10', '--seconds', '60',
+                '--output', str(out / (name + '.json'))]
+        if options.macos_footprint:
+            args.append('--macos-footprint')
+        args += ['--', str(app), '--local', str(clip), '--data-root', str(profile),
+                 '--demo-related', '--diagnostics', '--quit-after', '85',
+                 '--ui-size', '1320x860', '--ui-theme', 'dark']
+        if native:
+            args.append('--native-video-child')
+        write_json(out / (name + '.command.json'), {'command': args, 'profile_precreated': not native})
+        print('Starting ' + name, flush=True)
+        try:
+            require(sha(app) == identity['app_sha256'] and sha(library) == library_sha
+                    and sha(clip) == FIXTURE_SHA and options.libmpv.resolve(strict=True) == library, 'binary/library changed between runs')
+            wake = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-u', '-t', '120'],
+                                    start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            with (out / (name + '.sampler.log')).open('xb') as log:
+                process = subprocess.Popen(args, cwd=repo, env=env, stdout=log,
+                                           stderr=subprocess.STDOUT, start_new_session=True)
+                record['exit_code'] = wait_unreaped(process, 120)
+        except BaseException as error:
+            record['failure_type'] = type(error).__name__
+            abort = isinstance(error, (KeyboardInterrupt, SystemExit))
+        finally:
+            for child, field in ((process, 'group_absence_after_reap_confirmed'),
+                                 (wake, 'wake_group_absence_confirmed')):
+                if child is not None:
+                    try:
+                        finish_group(child)
+                        record[field] = True
+                    except BaseException as error:
+                        record['cleanup_failure_type'] = type(error).__name__
+                        abort = True
+            record['elapsed_seconds'] = time.monotonic() - started
+            record['raw_artifact_hashes'] = {suffix: sha(out / (name + suffix))
+                for suffix in ('.json', '.json.log', '.sampler.log', '.command.json')
+                if (out / (name + suffix)).exists()}
+            write_json(out / (name + '.supervisor.json'), record)
+        try:
+            require(record['exit_code'] == 0 and not record['failure_type']
+                    and record['group_absence_after_reap_confirmed']
+                    and record['wake_group_absence_confirmed'], 'unclean supervised run')
+            require(sha(app) == identity['app_sha256'] and sha(library) == library_sha
+                    and sha(clip) == FIXTURE_SHA and options.libmpv.resolve(strict=True) == library,
+                    'binary/library identity changed during run')
+            require(profile.is_dir() and not profile.is_symlink()
+                    and stat.S_IMODE(profile.stat().st_mode) == 0o700, 'profile was not private0700')
+            raw_log = out / (name + '.json.log')
+            require(raw_log.stat().st_size <= MAX_LOG, 'native diagnostic log exceeds bound')
+            metrics = validate(read_json(out / (name + '.json')), raw_log.read_text(), native)
+            geometry = {key: value for key, value in metrics['geometry'].items()
+                        if key not in ('native_child', 'geometry_events')}
+            if reference_geometry is None:
+                reference_geometry = geometry
+            require(geometry == reference_geometry, 'actual warm presentation geometry does not match A1')
+            record['metrics'] = metrics
+            record['functional_sample_admission_passed'] = True
+        except (Exception, KeyboardInterrupt) as error:
+            record['validation_failure'] = str(error) if isinstance(error, ValueError) else type(error).__name__
+            record['functional_sample_admission_passed'] = False
+            abort = abort or isinstance(error, KeyboardInterrupt)
+        results.append(record)
+        write_json(out / (name + '.supervisor.json'), record)
+        write_json(out / 'summary.json', {'complete': len(results) == 4, 'runs': results,
+                   'all_functional_sample_admission_passed': all(row.get('functional_sample_admission_passed') for row in results),
+                   'accepted_as_default': False, 'performance_qualified': False})
+        print(json.dumps({'mode': name, 'exit_code': record['exit_code'],
+                          'validation_failure': record['validation_failure']}), flush=True)
+        if abort:
+            break
+    write_json(out / 'manifest.json', {
+        'files': [{'name': path.name, 'bytes': path.stat().st_size, 'sha256': sha(path)}
+                  for path in sorted(out.iterdir()) if path.is_file()],
+        'private_profile_contents_excluded': True,
+        'native_profiles_retained_for_manual_review': True,
+        'sample_or_native_failure_evidence_removed': False,
+    })
+    require(len(results) == 4 and all(row.get('functional_sample_admission_passed') for row in results),
+            'one or more attempts remain incomplete or inadmissible; raw evidence retained')
+
+
+if __name__ == '__main__':
+    main()

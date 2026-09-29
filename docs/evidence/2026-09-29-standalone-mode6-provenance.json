@@ -1,0 +1,110 @@
+{
+  "binary_sha256": "f19d1d40032a13a7f1c842aafaffd4bf3db66f9063999dccf4c4451efc4fa528",
+  "source_sha256": "cf7a2949ba531af191a4c3c8042944b3e03a2f91f2d645bd8f7c12c1e03bfdc4",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "head_at_run": "e1725dfe8c844ac32258beda5cc4d9a3fd3df8c4",
+  "source_dirty": true,
+  "args": [
+    "<absolute-owned-local-fixture>",
+    "85",
+    "0",
+    "0.05",
+    "0",
+    "6",
+    "692",
+    "389"
+  ],
+  "preexisting_vt_service_count": 2,
+  "warm_frame_drop_delta": 0,
+  "warm_decoder_drop_delta": 0,
+  "warm_draw_delta": 3599,
+  "checkpoint_start_ms": 10028,
+  "checkpoint_end_ms": 70012,
+  "host_audit_note": "Per-name means are lower bounds from top-eight entries per sample; omitted samples contribute zero. Host-other activity is not charged to the baseline. Preexisting VT services are excluded from newly-launched-service attribution.",
+  "host_audit": [
+    {
+      "executable": "WindowServer",
+      "mean_recorded_lower_bound": 17.585935400917684,
+      "peak_recorded": 21.363429198297563,
+      "top8_samples": 60
+    },
+    {
+      "executable": "WallpaperAerialsExtension",
+      "mean_recorded_lower_bound": 10.84556775319307,
+      "peak_recorded": 13.000026545832133,
+      "top8_samples": 60
+    },
+    {
+      "executable": "coreaudiod",
+      "mean_recorded_lower_bound": 6.585454066105588,
+      "peak_recorded": 7.895418276312477,
+      "top8_samples": 60
+    },
+    {
+      "executable": "zeron",
+      "mean_recorded_lower_bound": 6.573064164905397,
+      "peak_recorded": 108.97184663993906,
+      "top8_samples": 41
+    },
+    {
+      "executable": "VTDecoderXPCService",
+      "mean_recorded_lower_bound": 4.771285463906385,
+      "peak_recorded": 5.921563707235059,
+      "top8_samples": 60
+    },
+    {
+      "executable": "codex",
+      "mean_recorded_lower_bound": 2.2594039434055606,
+      "peak_recorded": 17.906524219594036,
+      "top8_samples": 35
+    },
+    {
+      "executable": "com.apple.DriverKit-AppleBCMWLAN",
+      "mean_recorded_lower_bound": 1.3215457959538521,
+      "peak_recorded": 3.2361268253449245,
+      "top8_samples": 42
+    },
+    {
+      "executable": "launchd",
+      "mean_recorded_lower_bound": 0.6694963911367964,
+      "peak_recorded": 18.80579002055122,
+      "top8_samples": 5
+    },
+    {
+      "executable": "loginwindow",
+      "mean_recorded_lower_bound": 0.6147106074086697,
+      "peak_recorded": 16.022571898704957,
+      "top8_samples": 6
+    },
+    {
+      "executable": "Python",
+      "mean_recorded_lower_bound": 0.46734054185879886,
+      "peak_recorded": 2.136342919829271,
+      "top8_samples": 25
+    },
+    {
+      "executable": "mDNSResponder",
+      "mean_recorded_lower_bound": 0.2051227555382044,
+      "peak_recorded": 2.1428401149421696,
+      "top8_samples": 9
+    },
+    {
+      "executable": "MTLCompilerService",
+      "mean_recorded_lower_bound": 0.20366853237495736,
+      "peak_recorded": 12.220111942497441,
+      "top8_samples": 1
+    },
+    {
+      "executable": "cloudflared",
+      "mean_recorded_lower_bound": 0.16427768495299272,
+      "peak_recorded": 1.0060775474613266,
+      "top8_samples": 10
+    },
+    {
+      "executable": "airportd",
+      "mean_recorded_lower_bound": 0.15218514288911641,
+      "peak_recorded": 1.0681801121285426,
+      "top8_samples": 9
+    }
+  ]
+}

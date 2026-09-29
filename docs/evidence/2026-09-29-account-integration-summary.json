@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "date": "2026-09-29",
+  "scope": "macOS Apple M1 native functional regressions; local synthetic/public guest only",
+  "real_account_used": false,
+  "performance_measurement": false,
+  "exact_source_commit": null,
+  "source_association": "Earlier release inputs were not frozen. The 9a48e9 run has 108 post-build source-input hashes, each verified against checkpoint 287a7c0 after it was committed; its per-run entry records the exact association. Native dependencies remain separately qualified.",
+  "repository_head_observed_at_export": "e1725dfe8c844ac32258beda5cc4d9a3fd3df8c4",
+  "harness_current_file_sha256": "22b51ee56e92fbb2b0c585affa39744ca750cf59a60094e7f593251fcba92b15",
+  "harness_scope": "Current harness view corroborates --diagnostics --ui-size 1320x860, a fresh isolated --data-root and bounded external display-awake assertion. Earlier harness revisions, including the wrong caption fixture, were not independently snapshotted.",
+  "fixtures": {
+    "handoff": "generated artifacts/local-1080p60.mp4 and synthetic audio-only WAV",
+    "refresh_guest_video_id": "aqz-KE-bpKQ",
+    "clear_guest_caption_video_id": "wsQiKKfKxug",
+    "clear_wrong_fixture_guest_video_id": "aqz-KE-bpKQ"
+  },
+  "runs": {
+    "handoff": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "handoff",
+        "app_sha256": "785ed516f5d703031b1756161ea7a9676197ca963665fc2a6ffe2db3a090222d",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 30.849,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Passed post-ownership-fix video/audio-only/paused-video/terminal-stop/video lifecycle; 4 loads, blank texture on audio-only/stop, video texture on paused video; zero catalog changes/resets.",
+      "log": "2026-09-29-account-integration-handoff.log",
+      "log_sha256": "3378c72517dde8219673259b840a30c75b0ccfd8799e6717c8915460e4237c71",
+      "metadata_sha256": "59ea7ce0129d587bdaeab086d4e552f6a7675176085f1ea5d71021bf31346b47"
+    },
+    "refresh": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "refresh",
+        "app_sha256": "785ed516f5d703031b1756161ea7a9676197ca963665fc2a6ffe2db3a090222d",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 70.443,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Passed once-only scoped guest refresh assertions with two loads and a fresh 49.933-second native position. The initial source recorded 23 unclassified read errors. Cached audio_sample_rate=0 after replacement is unknown, not proof of silence or decoder failure. New diagnostics require a separate run.",
+      "log": "2026-09-29-account-integration-refresh.log",
+      "log_sha256": "02b535befeb8db0d40a4841d99e949af67994d89673418e76145b7c76ccd239f",
+      "metadata_sha256": "aadb6e28ab0c051770a35e19984e060dcf17b54b038139c37ba3f1343a231fe8"
+    },
+    "clear": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "clear",
+        "app_sha256": "785ed516f5d703031b1756161ea7a9676197ca963665fc2a6ffe2db3a090222d",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 85.331,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Passed 85-second caption selection/Off/cache/paused-quality/clear lifecycle; see read-only post-exit SQLite/VTT inspection.",
+      "log": "2026-09-29-account-integration-clear.log",
+      "log_sha256": "938e8cfa35f592a2999ec35392e2dac8946a5214667a7a28be25ed5bdba20d73",
+      "metadata_sha256": "f5a80daa1689d7cbf45e2749da0ecca1ae0c8b000edce6a0cc778ba2ae852dde"
+    },
+    "handoff-occluded": {
+      "metadata": {
+        "mode": "handoff",
+        "app_sha256": "aedd865c006c234798402d1de7569d034591e61db40915dc08384153f7f63322",
+        "exit_code": 101,
+        "timeout": false,
+        "elapsed_seconds": 16.019,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Retained failed attempt: logged native occlusion, then paused-video texture assertion failed. Not a pass; does not isolate all causes.",
+      "log": "2026-09-29-account-integration-handoff-occluded.log",
+      "log_sha256": "7292a35048faadb34f29c0fee550a33a3c5d977be312987cffbec93287886a97",
+      "metadata_sha256": "46dcf4d7110423f6ce44c28bbabb77d890ac1dc303e607c5a288d79471bb0f2a"
+    },
+    "handoff-aedd": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "handoff",
+        "app_sha256": "aedd865c006c234798402d1de7569d034591e61db40915dc08384153f7f63322",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 30.348,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Historical pass predating texture-ownership and unavailable-property fixes, not validation of later fixes.",
+      "log": "2026-09-29-account-integration-handoff-aedd.log",
+      "log_sha256": "cbc4757d8b3754292e21b4b713883941f8c29f5610287d824fddab760fbcaddf",
+      "metadata_sha256": "ad0cbd231e9f2774e8a91bbeb60ed2e558863e65dbb9193367c04fdf7e6ba28d"
+    },
+    "local-aedd": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "local",
+        "app_sha256": "aedd865c006c234798402d1de7569d034591e61db40915dc08384153f7f63322",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 20.526,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Historical 20-second local lifecycle pass, same pre-fix binary.",
+      "log": "2026-09-29-account-integration-local-aedd.log",
+      "log_sha256": "6246969f90089b2458ee1e725881d2f5f048c04bad735d312f439bbe3f411dca",
+      "metadata_sha256": "16810da4f966d8f2828259b892d8621e97e620a2cc8ee8ea01e0106481795e5c"
+    },
+    "refresh-aedd": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "refresh",
+        "app_sha256": "aedd865c006c234798402d1de7569d034591e61db40915dc08384153f7f63322",
+        "exit_code": 101,
+        "timeout": false,
+        "elapsed_seconds": 60.32,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Retained failure: still one file load when one completed refresh was required. Buffering was logged at 25 seconds; the old log lacks the later independent paused_for_cache/playback_restarted fields. Later code changes and a passing run do not establish every cause of this failed attempt.",
+      "log": "2026-09-29-account-integration-refresh-aedd.log",
+      "log_sha256": "bb46f0ecf5fc7d2bd5c6eb5a8eb12adeab6e20b52475aa72954f39a6f241a807",
+      "metadata_sha256": "8dfada5cfe58133eb910b4acf1c0a4db27ba82ddbdc36ebc63d44a54044ef1ab"
+    },
+    "clear-wrong-fixture": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "clear",
+        "app_sha256": "785ed516f5d703031b1756161ea7a9676197ca963665fc2a6ffe2db3a090222d",
+        "exit_code": 101,
+        "timeout": false,
+        "elapsed_seconds": 12.194,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Retained harness fixture failure: the selected public video did not yield supported guest captions. A different caption fixture then passed; this failed harness choice does not establish a product caption regression.",
+      "log": "2026-09-29-account-integration-clear-wrong-fixture.log",
+      "log_sha256": "0b4514593226bc24aeb9250de989e2e1254e04f02a94a1fd1e50b35ebcd3eda2",
+      "metadata_sha256": "de93f888594ae6f0f44d01fcbeca5f1ee067863302ab5f3e3d0d0d5945948b7b"
+    },
+    "refresh-9a48e9": {
+      "metadata": {
+        "display_awake_fixture": true,
+        "mode": "refresh",
+        "app_sha256": "9a48e90f8a7f75adba352ae11d3a2f3df3f0f28d98cf3a71f184a2b1b776a799",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 71.074,
+        "real_account_used": false,
+        "performance_measurement": false
+      },
+      "assessment": "Passed once-only scoped guest refresh with two loads and a fresh 51.550-second native position. Two fresh request-correlated audio probes returned decoder/output sample rates 48000 and advancing audio PTS 79.03769191599844\u219284.03826737299745. All 28 recorded ranges completed with zero errors in every classified category; earlier 23 errors remain unexplained and were not reproduced. Cached audio_sample_rate=0 is unknown, not actual decoder/output rate. No audible-output/account/performance qualification.",
+      "log": "2026-09-29-account-integration-refresh-9a48e9.log",
+      "log_sha256": "0c9333c663934e79592a2954e856e10552474325ced174e41a604acbacc0e611",
+      "metadata_sha256": "05c7f4a7739c15437aaa160609cc72639f647bb2383e26e3b54fb23079e32850",
+      "source_manifest": "2026-09-29-account-integration-source-9a48e9.json",
+      "source_manifest_sha256": "34f3c2ab37e40fd4313be631463014a5d9d24d9ddf472c52cb6410727a573827",
+      "source_manifest_kind": "Post-build input capture, subsequently byte-verified against all 108 corresponding files in the committed checkpoint; not an independent native dependency rebuild",
+      "source_manifest_inputs": 108,
+      "source_manifest_matches_current_inputs_at_export": true,
+      "verified_matching_source_commit": "287a7c0c0d64a62df55ce9011ebadbe9791706f5",
+      "verified_source_inputs": 108
+    }
+  },
+  "clear_profile_post_exit": {
+    "observed_at_utc": "2026-09-29T05:19:02.020179+00:00",
+    "inspection": "read-only SQLite URI mode=ro; table counts and nonsecret defaults only; no private paths or content exported",
+    "table_counts": {
+      "local_playlists": 0,
+      "local_playlist_items": 0,
+      "local_subscriptions": 0,
+      "local_history": 0,
+      "local_preferences": 1
+    },
+    "preferences": {
+      "local_history": 0,
+      "autoplay": 0,
+      "thumbnail_previews": 0,
+      "background_refresh": 0,
+      "telemetry": 0,
+      "volume_percent": 100,
+      "theme": "system",
+      "history_retention_days": 30
+    },
+    "sqlite_quick_check": "ok",
+    "vtt_files_under_isolated_profile": 0,
+    "caption_regular_files": 1,
+    "caption_non_registry_files": 0,
+    "remaining_caption_files_are_only_app_registry_lock": true
+  },
+  "process_tree_after_exit": "Not independently audited by this export. Application exit metadata is retained; do not infer a whole-tree cleanup claim.",
+  "redaction_review": "Exported logs/metadata contain no matching URL, home/private-profile path, Cookie/Authorization header, SAPISID, __Secure cookie or googlevideo marker. No log changes were needed. This bounded marker review is not a comprehensive secret audit."
+}

@@ -1,0 +1,18 @@
+[workspace]
+members = ["crates/app", "crates/core", "crates/youtube", "crates/media", "crates/storage", "crates/network"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+rust-version = "1.98"
+
+[workspace.dependencies]
+slint = { git = "https://github.com/slint-ui/slint", rev = "cf3b07d4917e6759a63b0c03913a2594ec653414", default-features = false, features = ["std", "compat-1-18", "backend-winit", "renderer-femtovg", "accessibility", "unstable-winit-030"] }
+slint-build = { git = "https://github.com/slint-ui/slint", rev = "cf3b07d4917e6759a63b0c03913a2594ec653414", default-features = false, features = ["compat-1-18"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

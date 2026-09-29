@@ -1,0 +1,311 @@
+{
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "full_resource_samples": 240,
+  "runs": 4,
+  "sampler_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+  "original_harness_sha256": "4caa3e2fc379407062b15b7a21f17f3c59db21997e01e43873277671a21a4142",
+  "files": [
+    {
+      "file": "2026-09-29-mpv-timer-a1-on.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a1-on.json",
+      "input_sha256": "92388dd5dc7cff9af674a370676d04f17c3e41883f7effa0d145718b2e40093a",
+      "export_sha256": "92388dd5dc7cff9af674a370676d04f17c3e41883f7effa0d145718b2e40093a",
+      "bytes": 97534,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-a1-on.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a1-on.json.log",
+      "input_sha256": "4b56c6c6a4fbeb0c57b3f1dc4fe7fe792915d3381a90ee663909fd4d9e58b224",
+      "export_sha256": "4b56c6c6a4fbeb0c57b3f1dc4fe7fe792915d3381a90ee663909fd4d9e58b224",
+      "bytes": 6836,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-a1-on.sampler.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a1-on.sampler.log",
+      "input_sha256": "5df156768ee597b2048a1e0ac282d376fbb887604d9bf91dbc87b9be63270f40",
+      "export_sha256": "5df156768ee597b2048a1e0ac282d376fbb887604d9bf91dbc87b9be63270f40",
+      "bytes": 2137,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b1-off.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b1-off.json",
+      "input_sha256": "8b65a0e1aa90d817bfb9369be5efab9fe2113608d7af281b4b16db6e83232b0e",
+      "export_sha256": "8b65a0e1aa90d817bfb9369be5efab9fe2113608d7af281b4b16db6e83232b0e",
+      "bytes": 97558,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b1-off.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b1-off.json.log",
+      "input_sha256": "152b7dcbf982caba61826bec6a537eba84f1e59c5ad9a9966c2ed83eaa30a732",
+      "export_sha256": "152b7dcbf982caba61826bec6a537eba84f1e59c5ad9a9966c2ed83eaa30a732",
+      "bytes": 6862,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b1-off.sampler.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b1-off.sampler.log",
+      "input_sha256": "eb23fdbc9b81ded324b65f759fe5c8504c9f10975c6a3163538eeaf6ad0e0775",
+      "export_sha256": "eb23fdbc9b81ded324b65f759fe5c8504c9f10975c6a3163538eeaf6ad0e0775",
+      "bytes": 2138,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b2-off.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b2-off.json",
+      "input_sha256": "9c4d1d7f91e00502a2f41bd0681187bd4f3a238fd412f444fa2ac400095a7ff9",
+      "export_sha256": "9c4d1d7f91e00502a2f41bd0681187bd4f3a238fd412f444fa2ac400095a7ff9",
+      "bytes": 99080,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b2-off.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b2-off.json.log",
+      "input_sha256": "f8ccba3eb711882bbdcb86bae0c8648db43e15d3c7a7edfba51b66f6c4316264",
+      "export_sha256": "f8ccba3eb711882bbdcb86bae0c8648db43e15d3c7a7edfba51b66f6c4316264",
+      "bytes": 6837,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-b2-off.sampler.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/b2-off.sampler.log",
+      "input_sha256": "83572eca293a2bdc5d9b05b36779b2e5d463cdd800d4837297dbdea38298e780",
+      "export_sha256": "83572eca293a2bdc5d9b05b36779b2e5d463cdd800d4837297dbdea38298e780",
+      "bytes": 2143,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-a2-on.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a2-on.json",
+      "input_sha256": "b935986632586fa5f1c9bbfc96c3e9378ad57e87dbd57437f051e487f4b7880d",
+      "export_sha256": "b935986632586fa5f1c9bbfc96c3e9378ad57e87dbd57437f051e487f4b7880d",
+      "bytes": 98140,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-a2-on.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a2-on.json.log",
+      "input_sha256": "3afe8e09884cd381db081c1620d9c56869522beacda8703cf290e94ed44e22a5",
+      "export_sha256": "3afe8e09884cd381db081c1620d9c56869522beacda8703cf290e94ed44e22a5",
+      "bytes": 6862,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-a2-on.sampler.log",
+      "original": "artifacts/mpv-timer-apps-v1/abba/a2-on.sampler.log",
+      "input_sha256": "440fa3bc7cf8f9d17304026824c9db202b8d01d7eadd313033eb0730659618e6",
+      "export_sha256": "440fa3bc7cf8f9d17304026824c9db202b8d01d7eadd313033eb0730659618e6",
+      "bytes": 2135,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-summary.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/summary.json",
+      "input_sha256": "00680abf1c5d532f4c5ffddc2670a5b710d3211f4d696324e77995bc6099610e",
+      "export_sha256": "00680abf1c5d532f4c5ffddc2670a5b710d3211f4d696324e77995bc6099610e",
+      "bytes": 2950,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-provenance.json",
+      "original": "artifacts/mpv-timer-apps-v1/abba/provenance.json",
+      "input_sha256": "e93adfa64dc57c85cf54f4adc33dafa74d55990c64ae218c7f3db13cd25d907d",
+      "export_sha256": "e93adfa64dc57c85cf54f4adc33dafa74d55990c64ae218c7f3db13cd25d907d",
+      "bytes": 1848,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-preparation.json",
+      "original": "artifacts/mpv-timer-apps-v1/preparation.json",
+      "input_sha256": "a17234655c51467a2c7d33d30c0450a1eb8c34f89af0111f8fc7e10914667e8a",
+      "export_sha256": "a17234655c51467a2c7d33d30c0450a1eb8c34f89af0111f8fc7e10914667e8a",
+      "bytes": 1245,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-still-comparison.json",
+      "original": "artifacts/mpv-timer-apps-v1/still-comparison.json",
+      "input_sha256": "436a2a744407585d2690dfd2971f1d2fd7e3878d039788a172c4bbba05bec735",
+      "export_sha256": "436a2a744407585d2690dfd2971f1d2fd7e3878d039788a172c4bbba05bec735",
+      "bytes": 336,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-sampler.py",
+      "original": "artifacts/mpv-timer-apps-v1/abba/sampler.py",
+      "input_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+      "export_sha256": "ce9e9dd415f7464061b87b928be14d4fa0d8829f44668e52611197b531ed25f4",
+      "bytes": 13182,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-harness-normalized.txt",
+      "original": "temporary ABBA harness",
+      "input_sha256": "4caa3e2fc379407062b15b7a21f17f3c59db21997e01e43873277671a21a4142",
+      "export_sha256": "313ab1c9097a6e67ba792142d8ccd7e2b8c9b5c63eb87a57cd7144735f7b7e7d",
+      "bytes": 4636,
+      "policy": "only absolute workspace root replaced with [workspace]; record, not runnable relocation"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-source.json",
+      "original": "docs/evidence/2026-09-29-raster-corrected-release-source.json",
+      "input_sha256": "b0cc22af9ad2e6de791a14c185492b79ed454d9c1ce72b35d93eb36112d24b7a",
+      "export_sha256": "b0cc22af9ad2e6de791a14c185492b79ed454d9c1ce72b35d93eb36112d24b7a",
+      "bytes": 13448,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-on-local.json",
+      "original": "artifacts/mpv-timer-apps-v1/on-local.json",
+      "input_sha256": "8ed8e5045e7dfa02b826326949ef8a8065ab6c501f4747d3c203d271a8421393",
+      "export_sha256": "8ed8e5045e7dfa02b826326949ef8a8065ab6c501f4747d3c203d271a8421393",
+      "bytes": 730,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-on-local.log",
+      "original": "artifacts/mpv-timer-apps-v1/on-local.native.log",
+      "input_sha256": "48f4e643126bf8db1ab2826cd4e1069b414b16ec30aee875dd488c650a41b06f",
+      "export_sha256": "48f4e643126bf8db1ab2826cd4e1069b414b16ec30aee875dd488c650a41b06f",
+      "bytes": 17781,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-on-still.json",
+      "original": "artifacts/mpv-timer-apps-v1/on-still.json",
+      "input_sha256": "571e22b8cfedd56ac1e6184ed3b942669be0d9e09f15b9913b5c5882b316fa17",
+      "export_sha256": "571e22b8cfedd56ac1e6184ed3b942669be0d9e09f15b9913b5c5882b316fa17",
+      "bytes": 729,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-on-still.log",
+      "original": "artifacts/mpv-timer-apps-v1/on-still.native.log",
+      "input_sha256": "d47c8a371af368b03cd441fcb493176b81095d1d0d593d5f5c1690cfd5abd600",
+      "export_sha256": "d47c8a371af368b03cd441fcb493176b81095d1d0d593d5f5c1690cfd5abd600",
+      "bytes": 4496,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-off-local.json",
+      "original": "artifacts/mpv-timer-apps-v1/off-local.json",
+      "input_sha256": "27d88a246647383b8a9a1dbe2076dac78d446cdb8421094e8705838f28a58bc2",
+      "export_sha256": "27d88a246647383b8a9a1dbe2076dac78d446cdb8421094e8705838f28a58bc2",
+      "bytes": 731,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-off-local.log",
+      "original": "artifacts/mpv-timer-apps-v1/off-local.native.log",
+      "input_sha256": "24b42a520ab636d894b3fe0fbc95f74610d6eb714400126734ba47ce5d0af55f",
+      "export_sha256": "24b42a520ab636d894b3fe0fbc95f74610d6eb714400126734ba47ce5d0af55f",
+      "bytes": 17838,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-off-still.json",
+      "original": "artifacts/mpv-timer-apps-v1/off-still.json",
+      "input_sha256": "f4fa4fb9fb0d6adb783eb646a405b279b9acf5d5cce0104845ae8419ef9b346a",
+      "export_sha256": "f4fa4fb9fb0d6adb783eb646a405b279b9acf5d5cce0104845ae8419ef9b346a",
+      "bytes": 730,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-off-still.log",
+      "original": "artifacts/mpv-timer-apps-v1/off-still.native.log",
+      "input_sha256": "d750f8f61b5170d8720d13e0aa33cf19f5d22e27624ff67a8f7299867039be87",
+      "export_sha256": "d750f8f61b5170d8720d13e0aa33cf19f5d22e27624ff67a8f7299867039be87",
+      "bytes": 4498,
+      "policy": "byte-identical"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-runtime-still.png",
+      "original": "artifacts/mpv-timer-apps-v1/on-still.png",
+      "input_sha256": "2cd39c7fb1806bfcb374ca0f64134ebf786aa566c4a7aae7f7e5af1c652c4bd6",
+      "export_sha256": "2cd39c7fb1806bfcb374ca0f64134ebf786aa566c4a7aae7f7e5af1c652c4bd6",
+      "bytes": 1189580,
+      "policy": "byte-identical shared paused capture; both variant originals identical"
+    }
+  ],
+  "functional_loaded_library_checks": [
+    {
+      "variant": "on",
+      "mode": "local",
+      "record": "2026-09-29-mpv-timer-runtime-on-local.json",
+      "native_log": "2026-09-29-mpv-timer-runtime-on-local.log",
+      "private_loader_log_sha256": "a3bc4c0113e411053242ab7b982fc5e329af450d5e9349eb9a18a04b6868a04e",
+      "selected_library_line": "dyld[96568]: <9A9AF36C-3602-374C-8482-A75104113C7D> [workspace]/artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "loaded_library_count": 1,
+      "app_sha256": "e7ecb8a71ade690b996d4109fcd8b4069b03fcb68d48e523de8a2818afc23f8b",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5"
+    },
+    {
+      "variant": "on",
+      "mode": "still",
+      "record": "2026-09-29-mpv-timer-runtime-on-still.json",
+      "native_log": "2026-09-29-mpv-timer-runtime-on-still.log",
+      "private_loader_log_sha256": "022a968e970d31dcfcc4127feeeb9db28c5ea6ebca1d1bfb5e5bd542090c67de",
+      "selected_library_line": "dyld[97172]: <9A9AF36C-3602-374C-8482-A75104113C7D> [workspace]/artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+      "loaded_library_count": 1,
+      "app_sha256": "e7ecb8a71ade690b996d4109fcd8b4069b03fcb68d48e523de8a2818afc23f8b",
+      "libmpv_sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5"
+    },
+    {
+      "variant": "off",
+      "mode": "local",
+      "record": "2026-09-29-mpv-timer-runtime-off-local.json",
+      "native_log": "2026-09-29-mpv-timer-runtime-off-local.log",
+      "private_loader_log_sha256": "641e41878b5db764740c5f83bccc81e7091e7f70a661dc60e536c066c67eb6df",
+      "selected_library_line": "dyld[96896]: <D03D0CB5-F9A5-3C72-ADFC-F50FEDD8F55D> [workspace]/artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "loaded_library_count": 1,
+      "app_sha256": "9a3adccf774fb628d68b624b431b7f3056954caf44e5873eb3b65d511e6c76c5",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e"
+    },
+    {
+      "variant": "off",
+      "mode": "still",
+      "record": "2026-09-29-mpv-timer-runtime-off-still.json",
+      "native_log": "2026-09-29-mpv-timer-runtime-off-still.log",
+      "private_loader_log_sha256": "bd7fbf9611ed7c49b0212c353ee5496c727aed1dc11451bd4e65fb38d61b84c1",
+      "selected_library_line": "dyld[97682]: <D03D0CB5-F9A5-3C72-ADFC-F50FEDD8F55D> [workspace]/artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+      "loaded_library_count": 1,
+      "app_sha256": "9a3adccf774fb628d68b624b431b7f3056954caf44e5873eb3b65d511e6c76c5",
+      "libmpv_sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e"
+    }
+  ],
+  "existing_build_evidence": [
+    {
+      "file": "2026-09-29-mpv-timer-build-summary.json",
+      "sha256": "53d29f6ac8c54805b630be20166d9b931fded6d34e7e4f503d3afa192954adc4"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-build-provenance.json",
+      "sha256": "58ef19c9e5454645ae75c0ff85ae424a7177df5ca823b3eeb45ef58323b3eed4"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-linked-audit.json",
+      "sha256": "c8971466383822d9975128001f33eee4d1c95019f1a0304122455c9c4c75d12f"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-prerequisites.json",
+      "sha256": "57f0cafc2c96be6771b131ae0d2c6a484ced6ce0c24c278c145c41df046e0d4c"
+    },
+    {
+      "file": "2026-09-29-mpv-timer-command-plan-normalized.json",
+      "sha256": "ec8a8830e9128fe9d693ad61217d5d59b69e92a1bb9a8f76b75e818a63218352"
+    }
+  ],
+  "historical_provenance_note": "Preparation/ABBA apps.runtime_loaded_library_verified=false fields were copied before functional checks; unchanged original records are retained. Successful functional loader observations are separate records here. Loader logging was off during ABBA.",
+  "privacy": "Scalar logs/payloads reject private-home/temp paths, HTTP URLs and credential markers. Raw loader logs remain private with hashes. Only the owning private libmpv line is normalized. Samples and counters are not truncated or altered.",
+  "qualification": {
+    "adopted": false,
+    "optimized_playback": false,
+    "energy": false,
+    "account": false,
+    "thirty_visible_raster_thumbnails": false,
+    "cross_platform": false
+  }
+}

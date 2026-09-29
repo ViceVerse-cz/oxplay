@@ -1,0 +1,101 @@
+{
+  "archive_format": "normalized_uncompressed_pax_v1",
+  "archived_tree_payload_bytes": 36749882,
+  "bounds": {
+    "aggregate_object_bytes": 536870912,
+    "aggregate_tree_payload_bytes": 536870912,
+    "blob_bytes": 134217728,
+    "command_seconds": 20,
+    "databases": 64,
+    "objects_per_revision": 30000,
+    "revisions": 16,
+    "shared_command_budget_seconds": 120,
+    "tree_depth": 64
+  },
+  "complete_corresponding_source": false,
+  "exports": [
+    {
+      "archive": "git-cf3b07d4917e6759a63b0c03913a2594ec653414.tar",
+      "bytes": 41410560,
+      "entries": 6428,
+      "git_lfs_pointer_paths_not_materialized": [],
+      "gitlinks": [],
+      "logical_tree_bytes": 36749882,
+      "packages": [
+        {
+          "name": "const-field-offset",
+          "version": "0.2.1"
+        },
+        {
+          "name": "const-field-offset-macro",
+          "version": "0.2.1"
+        },
+        {
+          "name": "i-slint-backend-selector",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-backend-winit",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-common",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-compiler",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-core",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-core-macros",
+          "version": "1.19.0"
+        },
+        {
+          "name": "i-slint-renderer-femtovg",
+          "version": "1.19.0"
+        },
+        {
+          "name": "slint",
+          "version": "1.19.0"
+        },
+        {
+          "name": "slint-build",
+          "version": "1.19.0"
+        },
+        {
+          "name": "slint-macros",
+          "version": "1.19.0"
+        },
+        {
+          "name": "vtable",
+          "version": "0.5.0"
+        },
+        {
+          "name": "vtable-macro",
+          "version": "0.5.0"
+        }
+      ],
+      "revision": "cf3b07d4917e6759a63b0c03913a2594ec653414",
+      "sha256": "b3b310b8704bfde1580a8727670ee6bed5063afee6375cdcb13dd706187f6bbd",
+      "status": "verified_locked_git_tree",
+      "tree": "77c0790f0a3878682eac1b86707428a1499b2663"
+    }
+  ],
+  "limits": [
+    "Local SHA-1 Git objects are independently hashed; commit signatures/publisher identity are not authenticated",
+    "Archives use our normalized PAX format; committed export-ignore/export-subst attributes are not applied",
+    "Gitlinks are empty directories with explicitly uncovered source; Git LFS pointers are not materialized",
+    "Generated sources, build tools, SDKs, external resources, other dependencies and licensing remain separate obligations",
+    "No network, editable checkout reads, cache mutation, build or archive extraction",
+    "Private diagnostic object streams may be retained; distribute only reviewed manifest and verified tar files",
+    "Inputs must remain quiescent; deadlines bound supervised commands, not hard real-time OS scheduling or filesystem operations"
+  ],
+  "publisher_authenticated": false,
+  "purpose": "immutable_locked_git_tree_archives_only",
+  "schema": 1,
+  "verified_object_payload_bytes": 36867941
+}

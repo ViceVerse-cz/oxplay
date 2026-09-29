@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "source_revision": "d78332c23602b1bfaec87688eccba657a208b9be",
+  "app_sha256": "e32cfa128282c781a80eeba06a8259207b07f54da946056b77185fa04efb88b9",
+  "source_inventory_sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+  "build_input_count": 138,
+  "full_spec_pass": false,
+  "production_native_child_qualified": false,
+  "performance_qualified": false,
+  "account_qualified": false,
+  "files": [
+    {
+      "original_relative_path": "binary.json",
+      "original_sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864",
+      "export": "2026-09-29-ui-workflows-native-binary.json",
+      "export_sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864",
+      "bytes": 502,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "inputs-after-release.json",
+      "original_sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+      "export": "2026-09-29-ui-workflows-native-source.json",
+      "export_sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+      "bytes": 55897,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/summary.json",
+      "original_sha256": "41c352724cda26df22ca196df853dfe875ee130910ae199ac42d7fd048fdf5ee",
+      "export": "2026-09-29-ui-workflows-native-summary.json",
+      "export_sha256": "41c352724cda26df22ca196df853dfe875ee130910ae199ac42d7fd048fdf5ee",
+      "bytes": 7099,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/native.log",
+      "original_sha256": "8d8ebbe9468313782a3f329aa47ecf823977abcb1edfe18e79b92157e69afd0c",
+      "export": "2026-09-29-ui-workflows-native-native.log",
+      "export_sha256": "8d8ebbe9468313782a3f329aa47ecf823977abcb1edfe18e79b92157e69afd0c",
+      "bytes": 10198,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/capture-analysis.json",
+      "original_sha256": "77b95477df322386c8b26d7c07cbb0c7647343f5949f7354fd6dd36cd2e1d477",
+      "export": "2026-09-29-ui-workflows-native-capture-analysis.json",
+      "export_sha256": "77b95477df322386c8b26d7c07cbb0c7647343f5949f7354fd6dd36cd2e1d477",
+      "bytes": 2586,
+      "transformation": "none; exact original bytes"
+    },
+    {
+      "original_relative_path": "native-lifecycle-capture/harness.py",
+      "original_sha256": "62c78d691ef32b71543282bc1e8d3afab697d814a02b39c5761a5fdb8bd787e0",
+      "export": "2026-09-29-ui-workflows-native-harness.py",
+      "export_sha256": "466a69d7143539456c918ed958657d6b2d194869958b8552533a33830bc76dd9",
+      "bytes": 11089,
+      "transformation": "workspace literal replaced with <workspace>; documentary harness"
+    }
+  ],
+  "sanitization": "Fixed artifact list, lifecycle log-prefix allowlist and sensitive path/URI/header rejection. Exact JSON/log/source bytes retained; documentary harness replaces only workspace path. PNG bytes and private profile path remain ignored; all 14 PNG hashes independently checked against summary.",
+  "source_association": "Frozen root build record retains matching138 committed input inventories before/after release. Collector alone does not prove binary association. This harness rechecked frozen binary and records before/after run.",
+  "capture_scope": "External owning-window captures only, not Slint snapshot; 14 fixed times. Pixel conclusions are finite visual inspection, not continuous motion/cadence or resource acceptance."
+}

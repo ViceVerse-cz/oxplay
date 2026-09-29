@@ -1,0 +1,65 @@
+{
+  "source_revision": "7a4c9bf460eb72cbbc697c1853b6aef5a84395ba",
+  "app_sha256": "914e39501233981b20c932af323c9ac65b6f95452c191f5c82473546991265e6",
+  "conclusion": "Default off. Initial staged version showed no useful CPU gain; generated get_position during render can establish an invalidating dependency before mutation. A corrected cache is a separate unmeasured version.",
+  "measurement_limits": "60 samples after 10s warmup, bounded display-awake fixture, one local H264/AAC 1080p60 clip, labeled related rows with empty thumbnails, host-other activity recorded, new VT services temporally attributed rather than exclusive ownership proof. No power/complete-platform/account/soak qualification.",
+  "privacy": "Local synthetic media only, no real account. Limited path/header scan, not a comprehensive redaction guarantee.",
+  "exports": [
+    {
+      "file": "2026-09-29-clock-staging-initial-source.json",
+      "sha256": "b15034240ac873037339251f057b5688fcaafd5353f118229cc388877954f6cc"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-provenance.json",
+      "sha256": "1ebd35f34b750327d7819a4dbb0ef3dced9fd1c8430c819f8c93932d41999c43"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-local.json",
+      "sha256": "f2610d79f7c8ec69d6852b42676669e47d7d1b1b4e1ddeb05c9179d67d7545e6"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-local.log",
+      "sha256": "dee9224ae4de6003af3a866a7ff2141bac90a91aea0e043dc2b57b3e710825d5"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-handoff.json",
+      "sha256": "d1f0fda1ef98272f2ad1e4a3b45b8aaed50521c9a1da8ef09c942a66b32aa5b3"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-handoff.log",
+      "sha256": "18daba60d36e7243ac9b5d884ac11d6a14afceaa0766a1e68b2ef093a7095984"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-a1-off.json",
+      "sha256": "08ed52901fa76bfd9fde4e97a0888f4db7554d4b0c412010c00e36976b1d830d"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-a1-off.json.log",
+      "sha256": "d4c84b34dc3d6c2d5a308ba05ae291bc62266ce7d2827471304f444dcc5ce3a1"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-b1-staged.json",
+      "sha256": "182dbdc649663b85d025b0ad5626a755991ae7db2b907edcc5e92f855e244ca3"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-b1-staged.json.log",
+      "sha256": "a24f7de886fa7495f525304e99dfbf2de44e31bf779034cd5e18797adaa31786"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-b2-staged.json",
+      "sha256": "6db818a24f47a8baf25a7eba57dcbc1a36a44a8fc2d2e344821ccbc4766a4345"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-b2-staged.json.log",
+      "sha256": "cdd9fa8e89324ec56e2d6a26a30464ec3bbfcca8dd0315cfc7264a04df909ba9"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-a2-off.json",
+      "sha256": "0154d18ddfe58da83feaed2b4a25fd138344d68376e28f294cbcf834746831ce"
+    },
+    {
+      "file": "2026-09-29-clock-staging-initial-a2-off.json.log",
+      "sha256": "3664bef2da13ba1b8e7f83d45cec37820260c546bdfed552e6ea5a1d262c83cd"
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "diagnostic": "qualitative sampled stack comparison, not resource qualification",
+  "binary_sha256": "ac87f2c3ad53ff066fcb5596ec9ffc614c5f0e81c737700ed25f1a7f8628ea80",
+  "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "logical_window": [
+    1320,
+    860
+  ],
+  "fixture_related_rows": 30,
+  "whole_ui_cache": false,
+  "run_seconds": 25,
+  "bounded_wake": "caffeinate -u -t5 before each run",
+  "sampled_allocation_path": [
+    "GLItemRenderer::draw_border_rectangle",
+    "Canvas::stroke_path_internal",
+    "GradientStore::lookup_or_add",
+    "ImageStore::alloc",
+    "GlTexture::new",
+    "glTexImage2D"
+  ],
+  "runs": [
+    {
+      "cache": "off",
+      "requested_profile_seconds": 5,
+      "requested_interval_ms": 1,
+      "profile_offset_seconds": 12,
+      "main_thread_inclusive_sample_weight": 2415,
+      "gradient_lookup_sample_weights": [
+        6
+      ],
+      "glTexImage2D_sample_weights": [
+        5
+      ],
+      "profile_sha256": "27f9168ad864dbb90d2e02bcc3301ea330283f6f61bfc550516c0f0fc054af38",
+      "native_log_sha256": "a9ceb9803d1a8ad6d8b90bb046e0d2fe1d4f80d912bb517e024ddb1740a32ce0",
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 4,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        }
+      ],
+      "hardware_decoder": "videotoolbox",
+      "codec": "H264",
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "audio_codec": "aac",
+      "audio_sample_rate": 48000,
+      "audio_output": "avfoundation",
+      "gpu_timing_requested": false,
+      "error": null,
+      "exit_code": 0,
+      "sample_exit_code": 0
+    },
+    {
+      "cache": "on",
+      "requested_profile_seconds": 5,
+      "requested_interval_ms": 1,
+      "profile_offset_seconds": 12,
+      "main_thread_inclusive_sample_weight": 2398,
+      "gradient_lookup_sample_weights": [],
+      "glTexImage2D_sample_weights": [],
+      "profile_sha256": "a1f820747e711923da47af26ddd6eaaff0bed88081429d45dfdbdc64ba97bbbf",
+      "native_log_sha256": "19c3b4249fddf951bed91bfb72c0d66225e53b8c9bc9d0f9510e1ff8dea33dca",
+      "checkpoints": [
+        {
+          "seconds": 5,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        },
+        {
+          "seconds": 10,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        },
+        {
+          "seconds": 25,
+          "dropped_frames": 2,
+          "decoder_dropped_frames": 0,
+          "catalog_changes": 0,
+          "catalog_resets": 1
+        }
+      ],
+      "hardware_decoder": "videotoolbox",
+      "codec": "H264",
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "audio_codec": "aac",
+      "audio_sample_rate": 48000,
+      "audio_output": "avfoundation",
+      "gpu_timing_requested": false,
+      "error": null,
+      "exit_code": 0,
+      "sample_exit_code": 0
+    }
+  ],
+  "interpretation": "Off profile contains sampled gradient allocation path; on profile does not. Sample weights are inclusive, nested and not call counts/rates or CPU percentages. Absence is not proof of zero allocation. Native sampling perturbs timing; use separate ABBA resource results for efficiency claims."
+}

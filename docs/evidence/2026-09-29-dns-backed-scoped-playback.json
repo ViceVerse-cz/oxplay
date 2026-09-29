@@ -1,0 +1,56 @@
+{
+  "source_revision": "bc2e53f",
+  "binary_sha256": {
+    "serein": "6791c634802d1649b5d4ff26a7c5cfd6d3e1c334527a527760fe26233edcf874",
+    "serein-dns": "2b6215e3854806298e5be4f835354b034eae423e6d4a0b65eb8e44d0963c3cae"
+  },
+  "duration_seconds": 40,
+  "exit_code": 0,
+  "arguments": [
+    "--scoped-media",
+    "--url",
+    "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+    "--ui-size",
+    "1100x760",
+    "--diagnostics",
+    "--quit-after",
+    "40",
+    "--data-root",
+    "<isolated-profile>"
+  ],
+  "environment": {
+    "SEREIN_HTTP_TIMING": "1"
+  },
+  "decoder": "videotoolbox",
+  "video": "H.264 1920x1080 60 fps",
+  "audio": "Opus / AVFoundation",
+  "final_position_seconds": 37.516666666666666,
+  "vo_drops": 19,
+  "decoder_drops": 0,
+  "catalog_changes": 0,
+  "catalog_resets": 0,
+  "persistent_target_allocations": 2,
+  "target_bytes": 11663872,
+  "observed_occlusion": false,
+  "qualification": "Functional guest scoped-media playback with first-party DNS helper; not a performance or VPN qualification. Compilation and other diagnostic preparation overlapped. No CPU/RSS/A-V synchronization measurement.",
+  "range_sources": [
+    {
+      "starts": 21,
+      "completions": 21,
+      "errors": 1,
+      "cancellations": 1,
+      "validated_bytes": 20971520,
+      "total_us": 1142115,
+      "max_us": 380411
+    },
+    {
+      "starts": 1,
+      "completions": 1,
+      "errors": 0,
+      "cancellations": 0,
+      "validated_bytes": 1048576,
+      "total_us": 219636,
+      "max_us": 219636
+    }
+  ]
+}

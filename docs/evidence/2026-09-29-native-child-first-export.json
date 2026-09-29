@@ -1,0 +1,91 @@
+{
+  "source_revision": "d7c58acd0096c7b767377f29f423e1ed79668c2a",
+  "files": [
+    {
+      "file": "2026-09-29-native-child-first-binary.json",
+      "sha256": "fc2ab93fa2b76378069ac50c7add59dd14bb0744bcb22d6666733154b2f05c60",
+      "bytes": 479,
+      "artifact_relative": "binary.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-source.json",
+      "sha256": "c4b6fcdf7ae19f98ff48bd3051fbb276d5ed168ff190d1b5cb086fd2d827f93d",
+      "bytes": 53908,
+      "artifact_relative": "inputs-before-release.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-pixel-analysis.json",
+      "sha256": "007b29264da12379553b8d7896d85957bfc1cd6fc952e2869324ec973b4450fc",
+      "bytes": 960,
+      "artifact_relative": "native-capture/pixel-analysis.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-default-local.json",
+      "sha256": "57978bb28c71e16df525dcdaa1727d0be2a508026df33b1f01e47d0709461f7a",
+      "bytes": 1125,
+      "artifact_relative": "default-local/summary.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-default-local.log",
+      "sha256": "ccafe53481431dc4a8ce66002a4987dbe8ed25f31c801717555ce20caf8a9b43",
+      "bytes": 17886,
+      "artifact_relative": "default-local/native.log",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-library.json",
+      "sha256": "9e749cf5e64959cff900a0052c76b3a5caca7b8eff371cc2e2f07000b3e1b66a",
+      "bytes": 1117,
+      "artifact_relative": "library/summary.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-library.log",
+      "sha256": "246064056f341dd80728b319e651c5d865aa2f1082ef8ab976fb8dddddeefafb",
+      "bytes": 12278,
+      "artifact_relative": "library/native.log",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-native-lifecycle.json",
+      "sha256": "755d184c243a542911495c309d9cc27422ea186ea88cba6eec07e55e47e71f2a",
+      "bytes": 1127,
+      "artifact_relative": "native-lifecycle/summary.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-native-lifecycle.log",
+      "sha256": "b0c58162713125f3ddd510088191ce9c58e968be75cb654274b12693a071c9be",
+      "bytes": 5818,
+      "artifact_relative": "native-lifecycle/native.log",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-native-capture.json",
+      "sha256": "3a06ce2c37eaaf2f80ab71ec00e9141b245a29cf04bd8738478c00cd0680cca7",
+      "bytes": 1477,
+      "artifact_relative": "native-capture/summary.json",
+      "transformation": "byte-for-byte copy"
+    },
+    {
+      "file": "2026-09-29-native-child-first-native-capture.log",
+      "sha256": "86d7f165cd97f9ef322266cc0feae01587ccfcf19a80a934a0b7cac3769d4572",
+      "bytes": 4040,
+      "artifact_relative": "native-capture/native.log",
+      "transformation": "byte-for-byte copy"
+    }
+  ],
+  "default_local_pass": true,
+  "library_pass": true,
+  "native_lifecycle_pass": false,
+  "native_capture_pass": true,
+  "native_production_qualified": false,
+  "performance_qualified": false,
+  "failure": "Native-child stage23: queued user pause was overwritten by fullscreen occlusion restoration using stale observed pause. Exit1; clean supervised group teardown. Fix pending separate build.",
+  "capture_scope": "External own-window PNGs retained privately with exact hashes in capture summary; two actual video interior grids differ410/5184 samples, sidebar0/3200. Upright/clipped video visually inspected. No cadence, other geometry or A/V qualification.",
+  "privacy": "Selected logs/inventory contain scalar diagnostics and tracked relative source paths only. No argv/private profile locator copied; all selected text checked against private path and credential/URI markers. Native window integer is temporary OS identity. No real account."
+}

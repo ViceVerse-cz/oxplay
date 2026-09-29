@@ -1,0 +1,139 @@
+{
+  "schema": 1,
+  "experiment": "Local playlist Save functional diagnostic",
+  "source_revision": "d78332c23602b1bfaec87688eccba657a208b9be",
+  "app_sha256": "e32cfa128282c781a80eeba06a8259207b07f54da946056b77185fa04efb88b9",
+  "original_manifest_verified": true,
+  "raw_private_artifacts_unchanged": true,
+  "exported_files": [
+    {
+      "file": "2026-09-29-local-save-binary.json",
+      "bytes": 502,
+      "sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864",
+      "original_artifact": "binary.json",
+      "original_bytes": 502,
+      "original_sha256": "857edd5c467f539a1b30b0d371bc368f1f4e6da03336a54d7e8dec6037d26864",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-database-assertions.json",
+      "bytes": 604,
+      "sha256": "33907f8cf82fd96dd80f17026004bc85c88d22c4507ec31fc18dec8fd166bf33",
+      "original_artifact": "database-assertions.json",
+      "original_bytes": 745,
+      "original_sha256": "e5bc235275f7529c67e98e1eeafadef77b75c1e75708c46d0c68c8fcd75e0985",
+      "transformations": [
+        "Omitted private SQLite file inventory; retained actual public metadata and read-only database assertions"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-harness.py.txt",
+      "bytes": 14697,
+      "sha256": "c2984d1c53bfd60c30edb8464d9c4e1f3308b6fa097e4144bb74c99324d102f0",
+      "original_artifact": "harness.py",
+      "original_bytes": 14711,
+      "original_sha256": "d00076f1ad78c55e32e5dce4c34823f90b4f245709311763610af3ee949d9d9c",
+      "transformations": [
+        "Exact workspace/private diagnostic path substitution; all other content retained"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-native.log",
+      "bytes": 7834,
+      "sha256": "ced504a305096335955d00b8d92e30138f25691b6165a069c9dcd7a0df8c8aaa",
+      "original_artifact": "native.log",
+      "original_bytes": 7834,
+      "original_sha256": "ced504a305096335955d00b8d92e30138f25691b6165a069c9dcd7a0df8c8aaa",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-provenance.json",
+      "bytes": 1574,
+      "sha256": "3a39c89159210ecc6fa42e438d13ca2ae315e73436b051f5bdfdce43b11a9481",
+      "original_artifact": "provenance.json",
+      "original_bytes": 1696,
+      "original_sha256": "1c342a9178efd38c3a81ed986ac077eb24bff7f5c896ccc353d1c37b22aa9a5c",
+      "transformations": [
+        "Exact workspace/private diagnostic path substitution; all other content retained"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-source-inventory.json",
+      "bytes": 55897,
+      "sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+      "original_artifact": "source-inventory.json",
+      "original_bytes": 55897,
+      "original_sha256": "c863a3906d5df89bced3fd3f122ac086195ac4fb09ce6bc78f32be84353480ab",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-summary.json",
+      "bytes": 2163,
+      "sha256": "30d42e03e6160fe3dcaf2e2708de263b777a166098fdb8b29eebd6d119071507",
+      "original_artifact": "summary.json",
+      "original_bytes": 2285,
+      "original_sha256": "8ffc1b34507a70b237eb27ab4dfaaa84a4dbc53aaa1136c06c82a0490ef410ba",
+      "transformations": [
+        "Exact workspace/private diagnostic path substitution; all other content retained"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-supervisor.json",
+      "bytes": 395,
+      "sha256": "a9e8be8d2e8f42324ef6f57382f043f94f9acb8a61395e067eeef9e78d5c465f",
+      "original_artifact": "supervisor.json",
+      "original_bytes": 395,
+      "original_sha256": "a9e8be8d2e8f42324ef6f57382f043f94f9acb8a61395e067eeef9e78d5c465f",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-visual-review.json",
+      "bytes": 1179,
+      "sha256": "c27359b631fd3065fc545f1eea140253d461f378be51b55845f7ad6174354054",
+      "original_artifact": "visual-review.json",
+      "original_bytes": 1179,
+      "original_sha256": "c27359b631fd3065fc545f1eea140253d461f378be51b55845f7ad6174354054",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-original-manifest.json",
+      "bytes": 1291,
+      "sha256": "35b23ac2b732e9ab8f06b0dd968bffb1b4bf6d272c5ecccaad7a462fc6702f15",
+      "original_artifact": "manifest.json",
+      "original_bytes": 1291,
+      "original_sha256": "35b23ac2b732e9ab8f06b0dd968bffb1b4bf6d272c5ecccaad7a462fc6702f15",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    },
+    {
+      "file": "2026-09-29-local-save-popup.png",
+      "bytes": 669145,
+      "sha256": "68dd6e611d14c69b04e4840713ce423c7cb664a193ec9c0e161468aca1c89ff8",
+      "original_artifact": "private capture (path omitted)",
+      "original_bytes": 669145,
+      "original_sha256": "68dd6e611d14c69b04e4840713ce423c7cb664a193ec9c0e161468aca1c89ff8",
+      "transformations": [
+        "Byte-identical copy"
+      ]
+    }
+  ],
+  "scope": [
+    "One real public guest video; no account credentials or account mutations",
+    "Eight callback-driven finite stages, actual committed SQLite assertions, and one inspected Slint texture snapshot",
+    "No SQLite database, WAL/SHM, private profile directory, credentials or signed URLs exported",
+    "The original automatic summary predates visual inspection; its false inspection field is preserved and the later visual-review record is separate",
+    "Normalized harness/provenance/result paths are explicitly transformed; original hashes identify executed artifacts",
+    "Functional evidence only: no account, screen-reader, OS compositor, performance or cross-platform qualification"
+  ]
+}

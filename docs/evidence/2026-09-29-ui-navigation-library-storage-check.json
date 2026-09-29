@@ -1,0 +1,11 @@
+{
+  "local_history_enabled": false,
+  "all_default_privacy_flags_off": true,
+  "row_counts": {
+    "local_playlists": 0,
+    "local_playlist_items": 0,
+    "local_subscriptions": 0,
+    "local_history": 0
+  },
+  "read_only_sqlite_verification": true
+}

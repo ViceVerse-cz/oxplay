@@ -1,0 +1,11 @@
+{
+  "mode": "local",
+  "source_revision": "0f311dde095ca2ddd1199c734fb22096343e024a",
+  "app_sha256": "1e2d82b1c603e64ddcc849dbc3a4629687d9458d98b2efefe7268256971d1cf4",
+  "exit_code": 101,
+  "forced_termination": false,
+  "elapsed_seconds": 13.261709291953593,
+  "display_awake_fixture": true,
+  "real_account": false,
+  "performance_measurement": false
+}

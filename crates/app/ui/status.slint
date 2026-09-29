@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { TextEdit } from "std-widgets.slint";
+import { Colors, Action, ActionVariant } from "components.slint";
+
+// An explicit, stable snapshot of the message the user chose to read. No
+// transient notification timer, history, or broad application-state model.
+export component StatusMessage inherits Rectangle {
+    in property <string> message;
+    in property <bool> recovery-available;
+    in property <bool> recovery-ready;
+    in property <string> recovery-label: "Retry";
+    callback close();
+    callback retry();
+    background: Colors.surface;
+    border-color: Colors.border;
+    border-width: 1px;
+    border-radius: 12px;
+    VerticalLayout {
+        padding: 20px;
+        spacing: 16px;
+        HorizontalLayout {
+            height: 40px;
+            spacing: 12px;
+            Text { text: root.recovery-available ? "Couldn't complete the request" : "Current message"; color: Colors.text; font-size: 20px; font-weight: 600; horizontal-stretch: 1; wrap: word-wrap; }
+            Action { label: "Close"; variant: ActionVariant.secondary; width: 76px; horizontal-stretch: 0; clicked => { root.close(); } }
+        }
+        TextEdit {
+            text: root.message;
+            read-only: true;
+            accessible-label: "Complete application message";
+            wrap: word-wrap;
+            font-size: 14px;
+            vertical-stretch: 1;
+        }
+        if root.recovery-available: HorizontalLayout {
+            height: 38px;
+            spacing: 12px;
+            Text { text: root.recovery-ready ? "" : "Please wait before trying again."; color: Colors.muted; wrap: word-wrap; horizontal-stretch: 1; vertical-alignment: center; }
+            Action { width: 160px; horizontal-stretch: 0; label: root.recovery-label; variant: ActionVariant.primary; enabled: root.recovery-ready; clicked => { root.retry(); } }
+        }
+    }
+}

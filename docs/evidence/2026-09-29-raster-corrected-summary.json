@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+  "build_input_count_per_profile": 125,
+  "source_association": "The lead independently verified 125 captured input hashes against unchanged committed Git source before native runs; inventories are retained. No new verification report or independently rebuilt native closure is asserted.",
+  "central_checks_reported": {
+    "rust_passed": 285,
+    "rust_explicitly_ignored": 3,
+    "python_passed": 114,
+    "formatting": "passed",
+    "strict_workspace_all_target_clippy": "passed"
+  },
+  "runs": [
+    {
+      "profile": "debug",
+      "mode": "library",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "f68e5cfe0cdc6581fb59fdab64706833f6656ba9468c16d97e0940a88446d66f",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 44.825002625002526,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-debug-library.json",
+      "log": "2026-09-29-raster-corrected-debug-library.log"
+    },
+    {
+      "profile": "debug",
+      "mode": "local",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "f68e5cfe0cdc6581fb59fdab64706833f6656ba9468c16d97e0940a88446d66f",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 21.72259295801632,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-debug-local.json",
+      "log": "2026-09-29-raster-corrected-debug-local.log"
+    },
+    {
+      "profile": "release",
+      "mode": "captions",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 71.72985933395103,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-release-captions.json",
+      "log": "2026-09-29-raster-corrected-release-captions.log"
+    },
+    {
+      "profile": "release",
+      "mode": "library",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 43.88712054200005,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-release-library.json",
+      "log": "2026-09-29-raster-corrected-release-library.log"
+    },
+    {
+      "profile": "release",
+      "mode": "local",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 21.549260540981777,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-release-local.json",
+      "log": "2026-09-29-raster-corrected-release-local.log"
+    },
+    {
+      "profile": "release",
+      "mode": "refresh",
+      "source_revision": "ca21de92a94abf209b76576c8b584751d3d20b4f",
+      "app_sha256": "96ad51a9d54014204b49925e00d8e59a47f01780513f7c011e033aee65d82645",
+      "exit_code": 0,
+      "forced_termination": false,
+      "elapsed_seconds": 71.60638466704404,
+      "display_awake_fixture": true,
+      "real_account": false,
+      "performance_measurement": false,
+      "metadata": "2026-09-29-raster-corrected-release-refresh.json",
+      "log": "2026-09-29-raster-corrected-release-refresh.log"
+    }
+  ],
+  "files": [
+    {
+      "file": "2026-09-29-raster-corrected-debug-library.json",
+      "bytes": 357,
+      "sha256": "2e9ad07ad35fb2c3ea3db039803508e3708b905477b1c6a49dd5346486712b1b",
+      "original_artifact": "raster-debug-v2/library.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-debug-library.log",
+      "bytes": 5162,
+      "sha256": "21eb1f69af9213cdcc5309a505385f7854ea2ca555c31cb15806c64d29fc93eb",
+      "original_artifact": "raster-debug-v2/library.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-debug-local.json",
+      "bytes": 354,
+      "sha256": "659ef2cb66176bb21604b3006ff618295ed03bae4039767c68a76c370a006376",
+      "original_artifact": "raster-debug-v2/local.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-debug-local.log",
+      "bytes": 17800,
+      "sha256": "a51f4e3e2256d53d74ee566912eb8709eb47db146f753f493be3027ee6a720c3",
+      "original_artifact": "raster-debug-v2/local.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-debug-source.json",
+      "bytes": 13446,
+      "sha256": "1cf148fc543415c9bc21ec6179f5dc7935a6c09c3026591f739b854bafdce53f",
+      "original_artifact": "raster-debug-v2/source.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-captions.json",
+      "bytes": 357,
+      "sha256": "ea8de6bc2809d216d977072c5a69eea0cdc6dc718a008ad1a9691192b3c67b62",
+      "original_artifact": "raster-native-v2/captions.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-captions.log",
+      "bytes": 7324,
+      "sha256": "97373d3ba3e0e81cf83a473723ff1ba86791eca897b913dd7e86d3024c37319f",
+      "original_artifact": "raster-native-v2/captions.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-library.json",
+      "bytes": 356,
+      "sha256": "dacae9e34a12a0718822a6e52e2ce21c86723f727b79c65a34fab56900be10bb",
+      "original_artifact": "raster-native-v2/library.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-library.log",
+      "bytes": 5161,
+      "sha256": "3a40064ba95727289e1e4b456678f0071c0dcfcc1223fed45bd9cedc0511ba3d",
+      "original_artifact": "raster-native-v2/library.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-local.json",
+      "bytes": 355,
+      "sha256": "393d1f79a630351c2b083c51cbbb31f8af32bfc1039c7594d26952309db12615",
+      "original_artifact": "raster-native-v2/local.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-local.log",
+      "bytes": 17899,
+      "sha256": "5d1b0ccd96a60707a36ea385bb2cc559fcecc318285d8388021857572c2dd632",
+      "original_artifact": "raster-native-v2/local.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-refresh.json",
+      "bytes": 356,
+      "sha256": "a3c82ffbb39bcae0da3bf4f5977aeda7738176fa2c3ffe0cd127feddf9597115",
+      "original_artifact": "raster-native-v2/refresh.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-refresh.log",
+      "bytes": 8031,
+      "sha256": "e589a88d651024974f41f385ec731bcb2c9b77cf1adc7c645e0771100794a263",
+      "original_artifact": "raster-native-v2/refresh.log",
+      "transformation": "byte-for-byte copy after privacy audit"
+    },
+    {
+      "file": "2026-09-29-raster-corrected-release-source.json",
+      "bytes": 13448,
+      "sha256": "b0cc22af9ad2e6de791a14c185492b79ed454d9c1ce72b35d93eb36112d24b7a",
+      "original_artifact": "raster-native-v2/source.json",
+      "transformation": "byte-for-byte copy after privacy audit"
+    }
+  ],
+  "prior_failures": "2026-09-29-raster-first-summary.json retains the 0f311dd library deferred-focus and local scroll-restoration failures. These repeats do not erase them.",
+  "scope": [
+    "macOS Apple M1 native functional diagnostics only; no real account or performance qualification.",
+    "Library: five 100-row page/hover checkpoints, six intersecting thumbnails and nine near-viewport references, not thirty visible thumbnails.",
+    "End/Home/PageDown, Tab boundary, column resize and cancelled focus handoff observed; screen reader and IME remain unqualified.",
+    "Local finite snapshots prove changing composed video pixels, not continuous presentation or performance.",
+    "Guest refresh forces in-memory expiry and uses actual re-resolution. Fresh audio rates/PTS do not prove audible quality or perceptual synchronization.",
+    "Caption selection, Off, cached reselection and quality reattachment passed; no new glyph-appearance qualification.",
+    "The earlier raster screenshot remains associated with its original 0f311dd capture. No new screenshot is published."
+  ],
+  "privacy_audit": "All 14 selected UTF-8 JSON/log files were parsed/read and scanned for absolute private-path prefixes, URIs and credential-header markers; none were present. No redaction was needed. Private profile locator files were excluded. Signed URLs, cookies, caption bodies and argv are not exported."
+}

@@ -1,0 +1,239 @@
+{
+  "source_revision": "83a07b4b493a7d411fc21fdbc55daf529596be7e",
+  "app_sha256": "c2ff7d1c0f93145713e2de039e9aa6b574051afcba5d07ed331650c025568398",
+  "source_capture": "2026-09-29-motion-stable-source.json",
+  "independently_verified_source_input_hashes": 115,
+  "sampler_matches_commit": true,
+  "provenance": {
+    "source_revision": "83a07b4b493a7d411fc21fdbc55daf529596be7e",
+    "app_sha256": "c2ff7d1c0f93145713e2de039e9aa6b574051afcba5d07ed331650c025568398",
+    "clip_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+    "sampler_sha256": "00a4e38039fb6523988a044b5de20a8853f3e131d1c5d662a5aed7d0941d03de",
+    "run_order": [
+      "a1-off",
+      "b1-stable",
+      "b2-stable",
+      "a2-off"
+    ],
+    "fixture": "30 explicitly labeled related rows, empty thumbnails",
+    "geometry": "1320x860 logical, dark theme",
+    "display_awake_fixture": "bounded caffeinate -d -u during each run; not power or sleep-prevention evidence",
+    "scope": "Stable admitted texture identity only; clock staging and all cache flags off, no smoke snapshots, screenshot, profiler or GPU query enabled"
+  },
+  "exports": [
+    {
+      "artifact": "artifacts/stable-target/abba/a1-off.json",
+      "export": "2026-09-29-stable-target-abba-a1-off.json",
+      "sha256": "bb77a665c8462fbec770feb70d8543e436fc2a34ea6faaaf3c3d3ce53b4b989c"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/a1-off.json.log",
+      "export": "2026-09-29-stable-target-abba-a1-off.json.log",
+      "sha256": "269cb4306f9ad67122420c121b8c2a9028c162088ffc1282752e82eb5e60703f"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/a1-off.sampler.log",
+      "export": "2026-09-29-stable-target-abba-a1-off.sampler.log",
+      "sha256": "fceaee121fd639c0c962a259a2dbe45889adef068a15017993bc1f52c9499ea3"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/a2-off.json",
+      "export": "2026-09-29-stable-target-abba-a2-off.json",
+      "sha256": "d55c4c0a91a896be6e088eb88d78379e8ab2a318c3a9405c633cd74c0f10ec21"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/a2-off.json.log",
+      "export": "2026-09-29-stable-target-abba-a2-off.json.log",
+      "sha256": "61486d7130388ba38f55e61cc4d3b45bc661938bc2dd01883d8912a8e28c9b75"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/a2-off.sampler.log",
+      "export": "2026-09-29-stable-target-abba-a2-off.sampler.log",
+      "sha256": "20bd3e7078adc1a22c7a6d420db46fb814a087d8726d540efbeefda4a5dc075d"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b1-stable.json",
+      "export": "2026-09-29-stable-target-abba-b1-stable.json",
+      "sha256": "bbc6428814678b4ccc1ddad794bd6cc43bc8b737ff9a6d6db750a3ad858ca00e"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b1-stable.json.log",
+      "export": "2026-09-29-stable-target-abba-b1-stable.json.log",
+      "sha256": "bfaa9ec9b20cb56e6abce158a577739876dba6632c77c15d2dc705183f8ecf09"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b1-stable.sampler.log",
+      "export": "2026-09-29-stable-target-abba-b1-stable.sampler.log",
+      "sha256": "9bc8e5f76e999f49d4152307b3e230940fe6ca1c4e37a42820c4cadd8f87da9b"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b2-stable.json",
+      "export": "2026-09-29-stable-target-abba-b2-stable.json",
+      "sha256": "18ffd054e5f36be6d7509395f1b4bf7e932884eda764c4f9bf1a94a746decf88"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b2-stable.json.log",
+      "export": "2026-09-29-stable-target-abba-b2-stable.json.log",
+      "sha256": "f83e65629c3f0bfbef9ea85e96698bdc9d45f39036a36b8c7c6d3d54bc932bd0"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/b2-stable.sampler.log",
+      "export": "2026-09-29-stable-target-abba-b2-stable.sampler.log",
+      "sha256": "b493159cb63b424945ecc5604947d1d4454f34eb6c940d564db80405a497e9ac"
+    },
+    {
+      "artifact": "artifacts/stable-target/abba/provenance.json",
+      "export": "2026-09-29-stable-target-abba-provenance.json",
+      "sha256": "c58d1734cac720643981a0238569c1320afa1bc4575bc3dcf0907fe243ee0b61"
+    }
+  ],
+  "runs": [
+    {
+      "run": "a1-off",
+      "cpu_one_core_percent": {
+        "mean": 54.385038922882295,
+        "p95": 63.61338776755128,
+        "peak": 64.67344218790622
+      },
+      "rss_mib": {
+        "mean": 189.30572916666668,
+        "p95": 190.0,
+        "peak": 190.140625
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 60.77589589421729,
+        "p95": 75.99991449721621,
+        "peak": 177.74458207617033
+      },
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_ui_draw_delta": 3952,
+      "warm_media_notification_delta": 3600,
+      "warm_vo_drop_delta": 0,
+      "final_vo_drops": 3,
+      "decoder_drops": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "final_video_draws": 5076,
+      "final_ui_draws": 5555,
+      "stable_target_draws": 0,
+      "private_target_draws": 1,
+      "target_publications": 5075,
+      "target_allocations": 2,
+      "target_bytes": 7936128,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "run": "b1-stable",
+      "cpu_one_core_percent": {
+        "mean": 44.43134710360651,
+        "p95": 62.328456566511626,
+        "peak": 63.00113143632698
+      },
+      "rss_mib": {
+        "mean": 189.36458333333334,
+        "p95": 190.015625,
+        "peak": 190.09375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 84.89465617831374,
+        "p95": 163.86814361365853,
+        "peak": 165.38182273936079
+      },
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_ui_draw_delta": 3945,
+      "warm_media_notification_delta": 3600,
+      "warm_vo_drop_delta": 0,
+      "final_vo_drops": 3,
+      "decoder_drops": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "final_video_draws": 5076,
+      "final_ui_draws": 5576,
+      "stable_target_draws": 5074,
+      "private_target_draws": 1,
+      "target_publications": 1,
+      "target_allocations": 2,
+      "target_bytes": 7936128,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "run": "b2-stable",
+      "cpu_one_core_percent": {
+        "mean": 54.14623289938773,
+        "p95": 61.999170760190104,
+        "peak": 62.580728847136406
+      },
+      "rss_mib": {
+        "mean": 189.31145833333332,
+        "p95": 190.0625,
+        "peak": 190.078125
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 57.777357842482076,
+        "p95": 72.99645054819071,
+        "peak": 103.41096856903293
+      },
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_ui_draw_delta": 3937,
+      "warm_media_notification_delta": 3600,
+      "warm_vo_drop_delta": 0,
+      "final_vo_drops": 2,
+      "decoder_drops": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "final_video_draws": 5078,
+      "final_ui_draws": 5569,
+      "stable_target_draws": 5076,
+      "private_target_draws": 1,
+      "target_publications": 1,
+      "target_allocations": 2,
+      "target_bytes": 7936128,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "run": "a2-off",
+      "cpu_one_core_percent": {
+        "mean": 53.724027519489326,
+        "p95": 62.00146738885868,
+        "peak": 62.47216780781029
+      },
+      "rss_mib": {
+        "mean": 189.35234375,
+        "p95": 190.140625,
+        "peak": 190.234375
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 60.33911089119702,
+        "p95": 75.65555006051676,
+        "peak": 194.59798199562425
+      },
+      "sample_count": 60,
+      "process_count_peak": 2,
+      "warm_ui_draw_delta": 3958,
+      "warm_media_notification_delta": 3600,
+      "warm_vo_drop_delta": 0,
+      "final_vo_drops": 3,
+      "decoder_drops": 0,
+      "catalog_changes": 0,
+      "catalog_resets": 1,
+      "final_video_draws": 5076,
+      "final_ui_draws": 5588,
+      "stable_target_draws": 0,
+      "private_target_draws": 1,
+      "target_publications": 5075,
+      "target_allocations": 2,
+      "target_bytes": 7936128,
+      "exit_code": 0,
+      "forced_termination": false
+    }
+  ],
+  "decision": "Stable target remains default off. First B CPU improvement did not repeat in B2; every mean exceeds the 25%-of-one-logical-core target. No optimized gate pass.",
+  "scope": "Four finite macOS local 1080p60 samples with separate host load, no readback/profiler/GPU queries. No power, energy, compositor scanout, perceptual A/V, real-account or cross-platform qualification.",
+  "accounting": "New VideoToolbox service attribution is temporal, not proven exclusive ownership. Unrelated services may overcount. Aggregate RSS may double-count shared pages. Unified GPU memory overlaps RSS and is not added. Short-lived descendants may be missed. Host-other CPU is separate, not charged to the app; it includes system work and the measurement harness. Names are basenames only, no argv. New/exited processes without two comparable samples are missed. PID reuse under the same executable is not detectable."
+}

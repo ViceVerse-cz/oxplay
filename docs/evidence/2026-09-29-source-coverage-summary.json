@@ -1,0 +1,23 @@
+{
+  "report_file": "2026-09-29-source-coverage-bc2e53f.json",
+  "report_sha256": "443c4c94cc23cf1785a12f0476a7cab55bd9f9f90687faef626305f215655b90",
+  "collector_sha256": "429b6980ac83e56ea2d7907922a2a37dbee7d1fee3135120fbee72f5ba62476f",
+  "collector_source_revision": null,
+  "collector_source_association": "Uncommitted working-tree script identified by hash, not assigned an invented revision.",
+  "package_build_manifest_sha256": "2ac9679dffe3acb59e3f53a270c47199523cf771ec35df4e6e247120475fc500",
+  "package_application_source_archive_sha256": "25170c02d344794d7ed88bed3965105a60e5649349bb597138f1b343ab025b96",
+  "package_input": "Existing unchanged Serein-bc2e53f developer bundle BuildInfo",
+  "execution": "Offline local read-only audit, repeated after plain-tar header bounds added; byte-identical report",
+  "tests": "12 synthetic collector tests,14 packaging boundary tests,14 artifact verifier tests passed.",
+  "privacy": "No local paths/URLs are emitted by the report schema; limited home/temp/header-marker export scan passed; no credentials accessed.",
+  "scope": "Recognized cached source availability only, not complete corresponding source, Deno closure, publisher authentication, legal clearance, clean-machine or new bundle qualification.",
+  "counts": {
+    "cargo_packages": 334,
+    "verified_registry_archives": 314,
+    "git_head_matches_unverified_worktrees": 14,
+    "workspace_crates": 6,
+    "native_recipes": 51,
+    "recognized_native_inputs_absent": 70,
+    "hashed_input_bytes": 43995665
+  }
+}

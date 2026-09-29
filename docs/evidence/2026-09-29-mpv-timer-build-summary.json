@@ -1,0 +1,174 @@
+{
+  "actual_loaded_library_verified": false,
+  "audit_runner_sha256": "3b7e7b1051166d29d1775bbeb12421b3a18bea195f0b2695aa33f282d7cf412a",
+  "date": "2026-09-29",
+  "diagnostic_patch_upstream": false,
+  "driver_sha256": "5349f11454a30bb026a791975fec4c6ecb615baf45a2f65ac26adf00e41c7580",
+  "effective_option_differences": [
+    "gpu-pass-timers"
+  ],
+  "evidence_files": [
+    {
+      "bytes": 467162,
+      "normalization": "byte-identical",
+      "path": "2026-09-29-mpv-timer-build-provenance.json",
+      "raw_input_sha256": "58ef19c9e5454645ae75c0ff85ae424a7177df5ca823b3eeb45ef58323b3eed4",
+      "sha256": "58ef19c9e5454645ae75c0ff85ae424a7177df5ca823b3eeb45ef58323b3eed4"
+    },
+    {
+      "bytes": 235683,
+      "normalization": "byte-identical",
+      "path": "2026-09-29-mpv-timer-linked-audit.json",
+      "raw_input_sha256": "c8971466383822d9975128001f33eee4d1c95019f1a0304122455c9c4c75d12f",
+      "sha256": "c8971466383822d9975128001f33eee4d1c95019f1a0304122455c9c4c75d12f"
+    },
+    {
+      "bytes": 4292,
+      "normalization": "byte-identical",
+      "path": "2026-09-29-mpv-timer-prerequisites.json",
+      "raw_input_sha256": "57f0cafc2c96be6771b131ae0d2c6a484ced6ce0c24c278c145c41df046e0d4c",
+      "sha256": "57f0cafc2c96be6771b131ae0d2c6a484ced6ce0c24c278c145c41df046e0d4c"
+    },
+    {
+      "bytes": 17334,
+      "normalization": "private pair/tool roots replaced with labels",
+      "path": "2026-09-29-mpv-timer-command-plan-normalized.json",
+      "raw_input_sha256": "bdaea91f838ff7920ca737a3b8af594a8fbc55c6c5971e31883740e3e55dc49b",
+      "sha256": "ec8a8830e9128fe9d693ad61217d5d59b69e92a1bb9a8f76b75e818a63218352"
+    }
+  ],
+  "external_linked_closures_identical": true,
+  "first_attempt": {
+    "followup": "New private v2 prefix captures exact Homebrew macOS27 .pc metadata and selected-SDK override; original outputs retained.",
+    "local_path": "artifacts/mpv-timers-pair-20260929",
+    "outcome": "failed before compilation: isolated pkg-config omitted Homebrew macOS system zlib/bzip2 metadata",
+    "stage": "on configure",
+    "stage_metadata": {
+      "exit_code": 1,
+      "log": "on-configure.log",
+      "log_sha256": "202cf4cde2b674320d7ce3e3fb696c2994798dcc601419a96c3e12a73a6375c3",
+      "output_bytes": 2242,
+      "seconds": 1.8804292500135489
+    }
+  },
+  "functional_playback_verified": false,
+  "generated_config_macro_differences": [
+    "CONFIGURATION",
+    "FULLCONFIG",
+    "HAVE_GPU_PASS_TIMERS"
+  ],
+  "limits": [
+    "No Homebrew keg mutation, global tool installation, app playback, standalone mpv playback, timing or benchmark run.",
+    "Private tools installed from exact PyPI wheel hashes; matching sdists retained. This does not prove reproducible prerequisite builds.",
+    "Native linked-file closure is distinct from actual dyld-loaded images and dynamic plugin/ICD resources.",
+    "System dyld-cache images and full SDK/toolchain resources are not byte-inventoried; selected SDK settings and compiler executables are recorded.",
+    "Fresh rebuilt ON must be compared with fresh rebuilt OFF under the same decoded clip/settings after actual-loaded-path and functional verification."
+  ],
+  "linked_nodes_per_variant": 48,
+  "native_files_checked_before_after_each_stage": 2775,
+  "native_input_bytes": 450388431,
+  "non_system_dependency_nodes_per_variant": 47,
+  "normalized_dependency_record_count": 28,
+  "performance_qualified": false,
+  "post_build_linker": {
+    "bytes": 2749664,
+    "name": "ld",
+    "scope": "Additional post-build hash only; both configure logs recorded the same linker version.",
+    "sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c"
+  },
+  "private_build_result_sha256": "52061b40ceb4d56981d93fe10aa3b84874d1697d2b70a609544cd715e2f2179d",
+  "private_tool_module_files_checked_before_after_each_stage": 1741,
+  "production_default_changed": false,
+  "reproduces_homebrew_bottle": false,
+  "runner_local_path": "artifacts/mpv-timers-pair-20260929-v2/run_pair.py",
+  "runner_sha256": "d6a43a936c5cd68ef688e30cdb40c3ff51c1731a36dba87df572316af2363b69",
+  "schema": 1,
+  "source_association": "Exact verified official archive plus two installed-recipe patches and tracked local diagnostic patch; driver files hashed without inventing an uncommitted source revision.",
+  "source_files_checked_before_after_each_stage": 832,
+  "status": "paired_private_builds_and_linked_file_audit_passed",
+  "system_pc_files_checked_before_after_each_stage": 13,
+  "tests": {
+    "focused_preparer_tests": 20,
+    "result": "passed"
+  },
+  "variants": [
+    {
+      "architecture": "arm64",
+      "cli": {
+        "bytes": 4760592,
+        "local_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/bin/mpv",
+        "sha256": "0db0ea12bc3a9e9e0e1c8c6d622faab15ed1c1fb99aea1070203a92ca431f7eb"
+      },
+      "installed_file_count": 25,
+      "library": {
+        "bytes": 4760512,
+        "local_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-on/lib/libmpv.2.dylib",
+        "sha256": "fc873c29f7f7cac23f419c7030c9351ee70a4662f4d257f974f87a7a1bca93c5"
+      },
+      "minimum_macos": "27.0",
+      "stages": [
+        {
+          "exit_code": 0,
+          "log": "on-configure.log",
+          "log_sha256": "2152ddac571f4456ca8192b944f148d7d202d4491b2ff788f8417be17afec44d",
+          "output_bytes": 12786,
+          "seconds": 8.494120458024554
+        },
+        {
+          "exit_code": 0,
+          "log": "on-compile.log",
+          "log_sha256": "cb75166ca30297d9ecc2fe4314675caf617690812362eaa066a1c587a493e325",
+          "output_bytes": 621439,
+          "seconds": 35.485421833000146
+        },
+        {
+          "exit_code": 0,
+          "log": "on-install.log",
+          "log_sha256": "f9fff2aab6e4b1213b47eb39bc63567dfeed2c07655fff3d13105d4edf4ad679",
+          "output_bytes": 4779,
+          "seconds": 0.2807557500200346
+        }
+      ],
+      "variant": "on"
+    },
+    {
+      "architecture": "arm64",
+      "cli": {
+        "bytes": 4760592,
+        "local_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/bin/mpv",
+        "sha256": "8166b2f21a7bbbd780c13d12db4df7e5f6dcd91419a715668d8ac84249941061"
+      },
+      "installed_file_count": 25,
+      "library": {
+        "bytes": 4760512,
+        "local_path": "artifacts/mpv-timers-pair-20260929-v2/prefix-off/lib/libmpv.2.dylib",
+        "sha256": "895e653209230e86dd46f58ffe8a8ab983c8686308ef4383830ff65f41e4224e"
+      },
+      "minimum_macos": "27.0",
+      "stages": [
+        {
+          "exit_code": 0,
+          "log": "off-configure.log",
+          "log_sha256": "76ad212282b9070ae4ed797e37da12b689addb896bde18d0f85e0ed39fc85563",
+          "output_bytes": 12774,
+          "seconds": 5.847049749980215
+        },
+        {
+          "exit_code": 0,
+          "log": "off-compile.log",
+          "log_sha256": "219413456b11aee558aca2290f51e634d0864a622ead87e06c529ba1552ba464",
+          "output_bytes": 621420,
+          "seconds": 30.59967795800185
+        },
+        {
+          "exit_code": 0,
+          "log": "off-install.log",
+          "log_sha256": "81c8b21c9618780bc0761f2876592810be3b7dd289935986cb39f714c602157c",
+          "output_bytes": 4806,
+          "seconds": 0.2598937919829041
+        }
+      ],
+      "variant": "off"
+    }
+  ]
+}

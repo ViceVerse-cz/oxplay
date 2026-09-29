@@ -1,0 +1,262 @@
+#!/usr/bin/env python3
+"""Prepared-only root-owned finite guest Save validation; do not run before GUI handoff."""
+from pathlib import Path
+import argparse
+import hashlib
+import json
+import os
+import re
+import signal
+import sqlite3
+import stat
+import subprocess
+import sys
+import time
+
+VIDEO_ID = 'aqz-KE-bpKQ'
+URL = 'https://www.youtube.com/watch?v=' + VIDEO_ID
+PLAYLIST_NAME = 'TEST FIXTURE — explicit local Save diagnostic'
+STAGES = [30, 36, 42, 48, 54, 60, 66, 70]
+MAX_LOG = 8 * 1024 * 1024
+
+
+def require(value, message):
+    if not value:
+        raise ValueError(message)
+
+
+def sha(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        while data := stream.read(1024 * 1024):
+            digest.update(data)
+    return digest.hexdigest()
+
+
+def json_read(path):
+    require(path.stat().st_size <= MAX_LOG, 'JSON evidence exceeds bound')
+    return json.loads(path.read_text())
+
+
+def json_write(path, value):
+    with path.open('x') as stream:
+        json.dump(value, stream, indent=2)
+        stream.write('\n')
+
+
+def unreaped_status(process):
+    return os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOWAIT | os.WNOHANG)
+
+
+def reap_owned_group(process):
+    # Keep this unreaped leader to pin its PGID until after the only destructive
+    # signal. An exited Darwin zombie may return EPERM: that is not absence.
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    process.wait(timeout=3)
+    deadline = time.monotonic() + 3
+    while True:
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            return
+        except PermissionError:
+            pass
+        if time.monotonic() >= deadline:
+            raise RuntimeError('owned process-group absence not confirmed')
+        time.sleep(.025)
+
+
+def inspect_private_database(profile):
+    require(not profile.is_symlink() and stat.S_IMODE(profile.stat().st_mode) == 0o700,
+            'diagnostic profile is not a private0700 directory')
+    directory = profile / 'Serein'
+    require(not directory.is_symlink() and stat.S_IMODE(directory.stat().st_mode) == 0o700,
+            'application data directory is not private0700')
+    path = directory / 'library.sqlite3'
+    metadata = path.lstat()
+    require(stat.S_ISREG(metadata.st_mode) and metadata.st_size <= 16 * 1024 * 1024,
+            'private SQLite file is not a bounded regular file')
+    require(stat.S_IMODE(metadata.st_mode) & 0o077 == 0, 'private SQLite file grants group/other access')
+    # No immutable=1 shortcut: a retained WAL must participate in committed reads.
+    connection = sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=.5)
+    calls = 0
+    def bounded_query():
+        nonlocal calls
+        calls += 1
+        return calls > 1000
+    connection.set_progress_handler(bounded_query, 1000)
+    try:
+        connection.execute('PRAGMA query_only=ON')
+        require(connection.execute('PRAGMA quick_check').fetchone() == ('ok',), 'SQLite integrity check failed')
+        require(not connection.execute('PRAGMA foreign_key_check').fetchall(), 'SQLite foreign-key check failed')
+        playlists = connection.execute('SELECT id,name FROM local_playlists ORDER BY id LIMIT 2').fetchall()
+        require(len(playlists) == 1 and playlists[0][1] == PLAYLIST_NAME,
+                'committed database does not contain the single requested collection')
+        rows = connection.execute('SELECT playlist_id,video_id,title,channel_name,channel_id,duration_seconds FROM local_playlist_items ORDER BY id LIMIT 2').fetchall()
+        require(len(rows) == 1 and rows[0][0] == playlists[0][0] and rows[0][1] == VIDEO_ID,
+                'committed video identity/membership differs or a duplicate was saved')
+        row = rows[0]
+        for value in (row[2], row[3]):
+            require(isinstance(value, str) and 0 < len(value.encode('utf-8')) <= 1024
+                    and all(character.isprintable() for character in value), 'invalid persisted public metadata')
+        require(row[4] is None or re.fullmatch(r'UC[A-Za-z0-9_-]{22}', row[4]), 'invalid persisted public channel ID')
+        require(row[5] is None or isinstance(row[5], int) and row[5] > 0, 'invalid public duration')
+        require(connection.execute('SELECT count(*) FROM local_subscriptions').fetchone() == (0,), 'unexpected local subscription')
+        require(connection.execute('SELECT count(*) FROM local_history').fetchone() == (0,), 'history was recorded without opt-in')
+        privacy = connection.execute('SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry FROM local_preferences WHERE id=1').fetchone()
+        require(privacy == (0, 0, 0, 0, 0), 'diagnostic changed a privacy default')
+        columns = [entry[1] for entry in connection.execute('PRAGMA table_info(local_playlist_items)')]
+        require(set(columns) == {'id', 'playlist_id', 'video_id', 'title', 'channel_name', 'channel_id', 'duration_seconds'},
+                'unexpected persisted playlist fields')
+        result = {'playlist_count': 1, 'video_count': 1, 'membership_idempotent': True,
+                  'playlist_id': playlists[0][0], 'playlist_name': playlists[0][1],
+                  'public_video': {'id': row[1], 'title': row[2], 'channel': row[3],
+                                   'channel_id': row[4], 'duration_seconds': row[5]},
+                  'local_history_rows': 0, 'local_subscriptions': 0, 'privacy_defaults_off': True,
+                  'signed_urls_or_credentials_selected': False}
+    finally:
+        connection.close()
+    result['database_files'] = [
+        {'name': item.name, 'bytes': item.stat().st_size, 'sha256': sha(item)}
+        for item in (path, Path(str(path) + '-wal'), Path(str(path) + '-shm')) if item.is_file()
+    ]
+    sessions = directory / 'sessions'
+    if sessions.exists():
+        require(not sessions.is_symlink() and sessions.is_dir(), 'unexpected sessions path')
+        require(next(sessions.iterdir(), None) is None, 'unexpected account session file in fresh diagnostic')
+    result['account_session_files'] = 0
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--repo', type=Path, default=Path('/WORKSPACE'))
+    parser.add_argument('--binary', type=Path, required=True)
+    parser.add_argument('--identity', type=Path, required=True)
+    parser.add_argument('--inventory', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True, help='NEW absolute private evidence directory')
+    parser.add_argument('--capture', action='store_true', help='One explicit37s Save-popup snapshot encoded on existing worker')
+    options = parser.parse_args()
+    require(sys.platform == 'darwin' and hasattr(os, 'WNOWAIT'), 'macOS anchored group supervision required')
+    os.umask(0o077)
+    identity = json_read(options.identity)
+    inventory = json_read(options.inventory)
+    binary = options.binary.resolve(strict=True)
+    require(sha(binary) == identity['app_sha256'], 'frozen application hash mismatch')
+    require(sha(options.inventory) == identity['source_inventory_sha256'], 'source inventory hash mismatch')
+    require(identity.get('inputs_before_after_identical') is True
+            and inventory.get('inputs_match_commit') is True
+            and inventory.get('git_revision') == identity['source_revision']
+            and inventory.get('file_count') == identity['build_input_count'], 'incomplete frozen build association')
+    require(all(row.get('state') == 'matches_commit' for row in inventory['files']), 'uncommitted selected source input')
+    out = options.output
+    require(out.is_absolute(), 'output requires an absolute new directory')
+    out.mkdir(mode=0o700, exist_ok=False)
+    profile = out / 'private-profile'  # Must remain absent until app admission.
+    (out / 'binary.json').write_bytes(options.identity.read_bytes())
+    (out / 'source-inventory.json').write_bytes(options.inventory.read_bytes())
+    (out / 'harness.py').write_bytes(Path(__file__).read_bytes())
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith(('SEREIN_', 'SLINT_', 'DYLD_'))}
+    command = [str(binary), '--save-smoke-test', '--url', URL,
+               '--data-root', str(profile), '--ui-size', '760x600', '--ui-theme', 'dark',
+               '--diagnostics', '--quit-after', '75']
+    if options.capture:
+        command += ['--snapshot', str(profile / 'save.png')]
+    provenance = {**identity, 'harness_sha256': sha(out / 'harness.py'),
+                  'python_executable_sha256': sha(Path(sys.executable).resolve()),
+                  'command': command, 'utc_started': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                  'public_video_id': VIDEO_ID, 'fresh_private_profile': True,
+                  'real_account': False, 'existing_profile_used': False,
+                  'performance_measurement': False, 'pixel_visibility_verified': False,
+                  'explicit_single_snapshot': options.capture,
+                  'process_group_scope': 'Own app and wake-assertion groups only. The application supervises its resolver helper groups; no XPC service is signalled. Group absence is not universal system egress/process inventory.'}
+    json_write(out / 'provenance.json', provenance)
+    result = {'exit_code': None, 'failure_type': None, 'validation_failure': None,
+              'forced_termination': False, 'group_absence_after_reap_confirmed': False,
+              'wake_group_absence_confirmed': False, 'native_stages_passed': False,
+              'database_assertions_passed': False}
+    started = time.monotonic()
+    child = wake = None
+    def interrupted(*_):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, interrupted)
+    try:
+        wake = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-u', '-t', '110'],
+                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, start_new_session=True)
+        time.sleep(1)
+        with (out / 'native.log').open('xb') as log:
+            child = subprocess.Popen(command, cwd=options.repo, env=env, stdin=subprocess.DEVNULL,
+                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            deadline = time.monotonic() + 100
+            while True:
+                event = unreaped_status(child)
+                if event is not None:
+                    result['exit_code'] = event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+                    break
+                if time.monotonic() >= deadline:
+                    result['forced_termination'] = True
+                    raise TimeoutError('Save application exceeded the external deadline')
+                if (out / 'native.log').stat().st_size > MAX_LOG:
+                    result['forced_termination'] = True
+                    raise ValueError('native log exceeds bound')
+                time.sleep(.20)
+    except BaseException as error:
+        result['failure_type'] = type(error).__name__
+        result['forced_termination'] = child is not None and result['exit_code'] is None
+    finally:
+        for process, key in ((child, 'group_absence_after_reap_confirmed'), (wake, 'wake_group_absence_confirmed')):
+            if process is not None:
+                try:
+                    reap_owned_group(process)
+                    result[key] = True
+                except BaseException as error:
+                    result['cleanup_failure_type'] = type(error).__name__
+        result['elapsed_seconds'] = time.monotonic() - started
+        if (out / 'native.log').is_file():
+            result['native_log_sha256'] = sha(out / 'native.log')
+        # Retain the supervisor outcome before any log/database validation can fail.
+        json_write(out / 'supervisor.json', result)
+    try:
+        require(result['group_absence_after_reap_confirmed'] and result['wake_group_absence_confirmed'], 'cleanup absence not confirmed')
+        require(result['exit_code'] == 0 and result['failure_type'] is None
+                and not result['forced_termination'], 'native application did not finish cleanly')
+        require(sha(binary) == identity['app_sha256'], 'frozen binary changed during native run')
+        require((out / 'native.log').stat().st_size <= MAX_LOG, 'native log exceeds bound')
+        log = (out / 'native.log').read_text()
+        stages = [(int(second), status) for second, status in re.findall(r'^save diagnostic stage=(\d+) result=(.+)$', log, re.M)]
+        require(stages == [(second, 'Ok(())') for second in STAGES], 'native Save stages were missing, duplicated or failed')
+        require(log.count('save diagnostic complete: real_guest=true collection_count=1 video_count=1 worker_reads=3 idempotent_save=true invalid_name_rejected=true stale_load_rejected=true account_used=false') == 1,
+                'native Save completion record missing')
+        result['native_stages_passed'] = True
+        database = inspect_private_database(profile)
+        json_write(out / 'database-assertions.json', database)
+        result['database_assertions_passed'] = True
+        if options.capture:
+            image = profile / 'save.png'
+            require(image.is_file() and not image.is_symlink() and image.stat().st_size <= 20 * 1024 * 1024,
+                    'requested Save-popup snapshot is missing or exceeds bound')
+            with image.open('rb') as stream:
+                require(stream.read(8) == b'\x89PNG\r\n\x1a\n', 'requested snapshot is not PNG')
+            result['snapshot_sha256'] = sha(image)
+            result['snapshot_bytes'] = image.stat().st_size
+            result['snapshot_visual_inspection_performed'] = False
+    except Exception as error:
+        result['validation_failure'] = str(error) if isinstance(error, ValueError) else type(error).__name__
+    json_write(out / 'summary.json', {**provenance, **result, 'native_qualified': False,
+                                    'performance_qualified': False, 'screen_reader_tested': False})
+    json_write(out / 'manifest.json', {'files': [
+        {'name': path.name, 'bytes': path.stat().st_size, 'sha256': sha(path)}
+        for path in sorted(out.iterdir()) if path.is_file()],
+        'profile_retained_privately': True, 'failed_evidence_removed': False})
+    print(json.dumps(result, indent=2), flush=True)
+    if result['validation_failure'] is not None or not result['native_stages_passed'] or not result['database_assertions_passed']:
+        raise SystemExit(1)
+
+
+if __name__ == '__main__':
+    main()

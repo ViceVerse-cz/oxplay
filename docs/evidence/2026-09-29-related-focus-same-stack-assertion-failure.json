@@ -1,0 +1,17 @@
+{
+  "binary_sha256": "268b2271205b9668948f1506eff6c4d9528306611daad06d1de0f7adcfc5cf34",
+  "source_commit": "e1cc653e2ac3b74485b41a66deb731f2d881ec1b",
+  "working_tree_changes": true,
+  "binary_source_association": "working-tree debug build, not committed-source qualification",
+  "harness_sha256": "c5d19ec0f49e88210ca45c58d8604ad76e278c0652901e0b50fddd194137a27d",
+  "exit_code": 1,
+  "failure_type": null,
+  "forced_termination": false,
+  "process_group_absent": true,
+  "elapsed_seconds": 33.06282908300636,
+  "native_log_sha256": "27a15c9e552a4b00e0e530373cccbec1cbc33eee4d9434fbc8cdcbce8688b5e7",
+  "private_fixture_removed": true,
+  "real_account": false,
+  "performance_measurement": false,
+  "display_fixture": "bounded external display assertion; no application power claim"
+}

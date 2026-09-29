@@ -1,0 +1,10 @@
+   Compiling serein-media v0.1.0 ([workspace]/crates/media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.23s
+     Running unittests src/lib.rs (target/debug/deps/serein_media-0bf2f6686a94df25)
+
+running 1 test
+test tls_tests::synthetic_loopback_certificate_and_hostname_verification ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 1.28s
+
+{"untrusted_chain_rejected": true, "explicit_ca_accepted": true, "hostname_mismatch_rejected": true, "trusted_http_requests": 1, "untrusted_http_requests": 0, "mismatched_host_http_requests": 0, "network_scope": "loopback only"}

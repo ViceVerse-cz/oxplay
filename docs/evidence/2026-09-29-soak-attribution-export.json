@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "source_revision": "ee59eaa47289382b6784547e8bece1b38e5e60a5",
+  "app_sha256": "464fdcf1432f1425698cf2892f2fd7f3e942c4e132dfb176c5c45bcb5582b0a8",
+  "local_functional_evidence_complete": true,
+  "full_spec_soak_gate": false,
+  "current_build_qualification": false,
+  "memory_acceptance": false,
+  "files": [
+    {
+      "file": "2026-09-29-soak-attribution-resource.json.gz",
+      "sha256": "77eb7318831dcb72c8cbe6c8a6c9f20b10f46b6f0f6847d823bd8c43da5d1cd3",
+      "bytes": 460919,
+      "original_artifact": "resource.json",
+      "original_sha256": "97b447165b53b70959a615cea985fb68da4221faf710f476ed4405e5ce5da99a",
+      "original_bytes": 5944112,
+      "transformation": "deterministic gzip level9 mtime0; original bytes preserved"
+    },
+    {
+      "file": "2026-09-29-soak-attribution-summary.json",
+      "sha256": "fb45882fdff5d6990462e35b863d8f2b31902ca87e2a4b4b752eda3d42f933de",
+      "bytes": 33834,
+      "original_artifact": "summary.json",
+      "original_sha256": "fb45882fdff5d6990462e35b863d8f2b31902ca87e2a4b4b752eda3d42f933de",
+      "original_bytes": 33834,
+      "transformation": "byte-for-byte copy after static schema/privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-attribution-source.json",
+      "sha256": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+      "bytes": 12935,
+      "original_artifact": "source.json",
+      "original_sha256": "411bd56a953b1a0e32e8646a329886c608f69c6c230e6f022f3243dc97062939",
+      "original_bytes": 12935,
+      "transformation": "byte-for-byte copy after static schema/privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-attribution-analysis.json",
+      "sha256": "00a3c1d882f93f9d39fb6d9b0be379ca52798e38b92751f88bad90279346d08b",
+      "bytes": 59575,
+      "original_artifact": "analysis.json",
+      "original_sha256": "00a3c1d882f93f9d39fb6d9b0be379ca52798e38b92751f88bad90279346d08b",
+      "original_bytes": 59575,
+      "transformation": "byte-for-byte copy after static schema/privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-attribution-native.log",
+      "sha256": "894d6858e4210bbb48a9548b4408f5555360ef48c5e146f40284d10c02ee8ecb",
+      "bytes": 59089,
+      "original_artifact": "resource.json.log",
+      "original_sha256": "894d6858e4210bbb48a9548b4408f5555360ef48c5e146f40284d10c02ee8ecb",
+      "original_bytes": 59089,
+      "transformation": "byte-for-byte copy after static schema/privacy audit"
+    },
+    {
+      "file": "2026-09-29-soak-attribution-functional-analysis.json",
+      "sha256": "780d977fb09b2fe6bae8c794d42e5f8e8ad7fcdf3d1bd73227c6aa67a0c6bda4",
+      "bytes": 10551,
+      "original_artifact": "youtube-soak-attribution-functional-analysis.json",
+      "original_sha256": "780d977fb09b2fe6bae8c794d42e5f8e8ad7fcdf3d1bd73227c6aa67a0c6bda4",
+      "original_bytes": 10551,
+      "transformation": "byte-for-byte copy after static schema/privacy audit"
+    }
+  ],
+  "independent_checks": "All60 minute medians recomputed from raw samples exactly match retained analysis; all3600 per-process sums and stable root/service identities match. Strict functional analyzer accepts exact120 ordered checkpoints/60cycles/12loads and cleanup. Final sample3600.15s lies outside minute60 bin by the retained half-open minute convention.",
+  "matched_trends": {
+    "rss_median_mib": {
+      "growth_median_percent": 9.305912987091947,
+      "growth_min_percent": 9.078473241692242,
+      "growth_max_percent": 10.947420988799305,
+      "pairs_above_ten_percent": 2,
+      "delta_median_mib": 21.3125,
+      "minute_11": 219.015625,
+      "minute_30": 234.546875,
+      "minute_60": 255.8671875
+    },
+    "root_median_mib": {
+      "growth_median_percent": 8.881808234173638,
+      "growth_min_percent": 8.71031600557226,
+      "growth_max_percent": 10.63979927865768,
+      "pairs_above_ten_percent": 2,
+      "delta_median_mib": 18.55078125,
+      "minute_11": 199.28125,
+      "minute_30": 213.4921875,
+      "minute_60": 232.125
+    },
+    "temporal_vt_service_median_mib": {
+      "growth_median_percent": 13.609310485496872,
+      "growth_min_percent": 12.769116555308102,
+      "growth_max_percent": 14.604058893752491,
+      "pairs_above_ten_percent": 20,
+      "delta_median_mib": 2.7734375,
+      "minute_11": 19.703125,
+      "minute_30": 21.046875,
+      "minute_60": 23.734375
+    }
+  },
+  "privacy_audit": {
+    "exported_fields": "Static allowlist of JSON field names; bounded executable basenames, PID/sample numbers, scalar counters and relative tracked source names/hashes. Native log limited to eight known diagnostic record prefixes.",
+    "checks": "All selected UTF-8 values scanned for private absolute path prefixes, URI, cookie/authentication-header markers; none present. All numbers finite. Full3600 samples retained; no argv, private profile locator, executable directories or credentials exported.",
+    "excluded": "Private profile locator, binary, raw sampler console, frozen harness/sampler and redundant start/helper audit files remain ignored. Frozen tool SHA256 values are retained in summary.",
+    "redactions_applied": false
+  },
+  "verification_scope": "Export hashes and gzip roundtrip checked. Root previously verified frozen119 build input hashes and executable identity; no new persisted Git verification report or current-build association claimed."
+}

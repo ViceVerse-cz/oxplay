@@ -1,0 +1,16 @@
+{
+  "exit": 0,
+  "remaining_vtt_files": 0,
+  "row_counts": {
+    "local_playlists": 0,
+    "local_playlist_items": 0,
+    "local_subscriptions": 0,
+    "local_preferences": 1,
+    "local_history": 0
+  },
+  "release_sha256": "6791c634802d1649b5d4ff26a7c5cfd6d3e1c334527a527760fe26233edcf874",
+  "diagnostic": "clear-local-smoke-test",
+  "duration_seconds": 85,
+  "qualifies_performance": false,
+  "occluded_at_ms": 9004
+}
