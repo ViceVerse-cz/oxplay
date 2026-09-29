@@ -289,8 +289,9 @@ export component App inherits Window {
     out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
     out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
-    private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
-    private property <length> top-height: video-only ? 0px : 48px;
+    private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 240px : 72px;
+    private property <bool> guide-compact: root.sidebar-width < 100px;
+    private property <length> top-height: video-only ? 0px : 56px;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
     private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
     private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
@@ -476,7 +477,7 @@ export component App inherits Window {
         forward-focus: share-address;
         x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
         width: min(420px, root.width - 24px); height: 340px;
-        Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
+        Rectangle { background: Colors.dialog; border-width: 1px; border-color: Colors.border; border-radius: 16px;
             VerticalLayout { padding: 20px; spacing: 12px;
                 Text { text: "Share video"; color: Colors.text; font-size: 20px; font-weight: 600; height: 28px; }
                 Text { text: "Copies a public YouTube address. Private videos still require access. Nothing is sent automatically."; color: Colors.muted; wrap: word-wrap; font-size: 12px; height: 44px; }
@@ -494,7 +495,7 @@ export component App inherits Window {
         close-policy: close-on-click-outside;
             x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
             width: 400px; height: SaveUi.destinations-paged ? 450px : 410px;
-            Rectangle { background: Colors.surface; border-width: 1px; border-color: Colors.border; border-radius: 12px;
+            Rectangle { background: Colors.dialog; border-width: 1px; border-color: Colors.border; border-radius: 16px;
                 VerticalLayout { padding: 16px; spacing: 8px;
                     Text { text: "Save to a local playlist"; color: Colors.text; font-size: 18px; font-weight: 600; height: 24px; }
                     Text { text: SaveUi.video-title; color: Colors.text; wrap: word-wrap; overflow: elide; height: 40px; }
@@ -553,19 +554,20 @@ export component App inherits Window {
             pointer-event(event) => { if event.kind == PointerEventKind.down && event.button == PointerEventButton.left { root.window-header-drag(); } }
         }
         header-menu := Action { x: root.header-leading-inset + 16px; y: (parent.height - self.height) / 2; width: 40px; height: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
-        Rectangle { x: root.header-leading-inset + 72px; y: (parent.height - self.height) / 2; width: 26px; height: 26px; border-radius: 8px; background: Colors.accent;
-            Image { x: 4px; y: 4px; width: 18px; height: 18px; source: @image-url("icons/clapperboard.svg"); colorize: #ffffff; }
+        // Wordmark: a small red play tile beside tightly set lowercase type.
+        Rectangle { x: root.header-leading-inset + 72px; y: (parent.height - self.height) / 2; width: 30px; height: 21px; border-radius: 6px; background: Colors.accent;
+            Path { x: 11px; y: 6px; width: 9px; height: 9px; fill: #ffffff; viewbox-width: 9; viewbox-height: 9; commands: "M 0 0 L 9 4.5 L 0 9 Z"; }
         }
-        Text { x: root.header-leading-inset + 106px; y: 0; height: parent.height; width: 100px; text: "serein"; color: Colors.text; font-size: 23px; font-weight: 700; vertical-alignment: center; }
+        Text { x: root.header-leading-inset + 108px; y: 0; height: parent.height; width: 90px; text: "serein"; color: Colors.text; font-size: 20px; font-weight: 700; letter-spacing: -0.6px; vertical-alignment: center; }
         search := SearchField {
             x: max(root.header-leading-inset + 220px, (root.width - self.width) / 2); y: (parent.height - self.height) / 2;
-            width: min(620px, root.width - 410px - root.header-leading-inset); height: 38px;
+            width: min(640px, root.width - 420px - root.header-leading-inset); height: 40px;
             enabled: !root.native-video-child; cache-rendering-hint: root.cache-search;
             placeholder: root.native-video-child ? "Local-only diagnostic" : "Search YouTube";
             edited => { root.cancel-playback-focus(); }
             accepted(text) => { root.search(text); }
         }
-        header-account := Action { enabled: !root.native-video-child; x: parent.width - 156px; y: (parent.height - self.height) / 2; width: 140px; height: 40px; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
+        header-account := Action { enabled: !root.native-video-child; x: parent.width - self.width - 20px; y: (parent.height - self.height) / 2; width: 136px; height: 36px; variant: ActionVariant.secondary; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
     }
     Rectangle {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
@@ -573,25 +575,28 @@ export component App inherits Window {
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only && !root.theatre-active;
         VerticalLayout {
-            padding-left: 12px; padding-right: 12px; padding-top: 18px; padding-bottom: 20px; spacing: 6px;
-            Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
-            Action { icon-name: "users"; label: "Local subscriptions"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
-            Action { icon-name: "list-video"; label: "Local playlists"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
-            if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
-            Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; compact: root.sidebar-width < 100px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
-            if root.local-file-cancellable: Action { label: "Cancel file selection"; icon-name: "chevron-left"; compact: root.sidebar-width < 100px; clicked => { root.cancel-local-file(); } }
-            if root.loaded: Action { icon-name: "play"; label: "Now playing"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
-            Rectangle { height: 1px; background: Colors.border; }
-            Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
+            padding-left: root.guide-compact ? 4px : 12px; padding-right: root.guide-compact ? 4px : 12px; padding-top: 8px; padding-bottom: 16px;
+            spacing: root.guide-compact ? 0px : 2px;
+            Action { icon-name: "house"; label: "Home"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
+            if !root.guide-compact: Rectangle { height: 17px; Rectangle { x: 2px; y: 8px; width: parent.width - 4px; height: 1px; background: Colors.border; } }
+            if !root.guide-compact: Rectangle { height: 40px; Text { x: 14px; width: parent.width - 14px; height: parent.height; text: "Your library"; color: Colors.text; font-size: 16px; font-weight: 600; vertical-alignment: center; } }
+            Action { icon-name: "users"; label: "Local subscriptions"; caption: "Subscriptions"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
+            Action { icon-name: "list-video"; label: "Local playlists"; caption: "Playlists"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
+            if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
+            Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; caption: root.local-file-busy ? "Opening…" : "Open file"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
+            if root.local-file-cancellable: Action { label: "Cancel file selection"; caption: "Cancel"; icon-name: "chevron-left"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; clicked => { root.cancel-local-file(); } }
+            if root.loaded: Action { icon-name: "play"; label: "Now playing"; caption: "Playing"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
+            if !root.guide-compact: Rectangle { height: 17px; Rectangle { x: 2px; y: 8px; width: parent.width - 4px; height: 1px; background: Colors.border; } }
+            Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; caption: "Account"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
             Rectangle { vertical-stretch: 1; }
-            if root.recovery-available: Action { icon-name: "info"; label: "Connection issue"; compact: root.sidebar-width < 100px; clicked => { root.show-status-message(); } }
-            Action { icon-name: "settings"; label: "Settings"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 3; clicked => { root.navigate(3); } }
-            if root.sidebar-width > 100px: Text { text: "A quieter place to watch.\nPrivate by default."; color: Colors.muted; font-size: 12px; wrap: word-wrap; height: 48px; }
+            if root.recovery-available: Action { icon-name: "info"; label: "Connection issue"; caption: "Issue"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; clicked => { root.show-status-message(); } }
+            Action { icon-name: "settings"; label: "Settings"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 3; clicked => { root.navigate(3); } }
+            if !root.guide-compact: Rectangle { height: 52px; Text { x: 14px; width: parent.width - 14px; height: parent.height; text: "A quieter place to watch.\nPrivate by default."; color: Colors.muted; font-size: 12px; wrap: word-wrap; vertical-alignment: bottom; } }
         }
     }
     browse := Rectangle {
-        x: root.sidebar-width + 28px; y: root.top-height + 22px;
-        width: root.width - self.x - 28px; height: root.height - self.y - 20px;
+        x: root.sidebar-width + 24px; y: root.top-height + 16px;
+        width: root.width - self.x - 24px; height: root.height - self.y - 16px;
         visible: root.page == 0;
         private property <bool> channel-header: root.guest-scope == 1;
         private property <length> toolbar-y: self.channel-header ? 112px : 80px;
@@ -613,23 +618,23 @@ export component App inherits Window {
                 root.feed-focus-cancel();
                 return reject;
             }
-            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
+            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.focus; border-radius: 12px; background: transparent; }
         }
-        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
-        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 43px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
-        HorizontalLayout { y: browse.toolbar-y; height: 38px; spacing: 10px;
-            if root.home-active: Action { icon-name: "history"; label: root.home-loading ? "Loading…" : "Refresh"; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
-            if root.home-active: Action { icon-name: "list-video"; label: "Local playlists"; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
-            if root.guest-can-back: Action { icon-name: "chevron-left"; label: "Back"; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
+        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
+        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
+        HorizontalLayout { y: browse.toolbar-y; height: 36px; spacing: 8px;
+            if root.home-active: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "refresh-cw"; label: root.home-loading ? "Loading…" : "Refresh"; width: 112px; horizontal-stretch: 0; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
+            if root.home-active: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "list-video"; label: "Local playlists"; width: 156px; horizontal-stretch: 0; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
+            if root.guest-can-back: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "chevron-left"; label: "Back"; width: 92px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
             if root.guest-scope == 0: ConfirmedChoice { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; acknowledged-index: root.search-kind; enabled: !root.native-video-child && !root.busy; choose(index) => { root.search-kind-changed(index); } }
             if root.guest-scope == 1: ConfirmedChoice { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; acknowledged-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; choose(index) => { root.channel-tab-changed(index); } }
-            if root.guest-can-follow: Action { icon-name: "plus"; label: "Follow locally"; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
+            if root.guest-can-follow: Action { height: 36px; variant: ActionVariant.primary; icon-name: "plus"; label: "Follow locally"; width: 148px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
             if root.guest-scope == 2: Text { text: "Public YouTube playlist"; color: Colors.muted; vertical-alignment: center; }
             Rectangle { horizontal-stretch: 1; }
-            Text { text: root.home-active ? "Saved on this device" : "Guest browsing"; color: Colors.muted; vertical-alignment: center; }
+            Text { text: root.home-active ? "Saved on this device" : "Guest browsing"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
         }
         feed := ListView {
-            y: browse.toolbar-y + 52px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
+            y: browse.toolbar-y + 56px; width: parent.width; height: parent.height - self.y - (root.has-more || root.has-previous ? 48px : 0px);
             horizontal-scrollbar-policy: always-off;
             for group in root.groups: Rectangle {
                 height: root.row-height;
@@ -653,20 +658,22 @@ export component App inherits Window {
         }
         if root.videos.length == 0: Rectangle {
             x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
-            Image { x: (parent.width - 46px) / 2; y: 7px; width: 46px; height: 46px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
-            Text { y: 86px; width: parent.width; height: 35px; text: root.home-loading ? "Loading saved videos…" : root.home-active && root.home-error ? "Couldn’t load Home" : root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 600; horizontal-alignment: center; overflow: elide; }
+            Rectangle { x: (parent.width - 72px) / 2; y: 0px; width: 72px; height: 72px; border-radius: 36px; background: Colors.hover;
+                Image { x: (parent.width - 32px) / 2; y: (parent.height - 32px) / 2; width: 32px; height: 32px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
+            }
+            Text { y: 86px; width: parent.width; height: 35px; text: root.home-loading ? "Loading saved videos…" : root.home-active && root.home-error ? "Couldn’t load Home" : root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 700; horizontal-alignment: center; overflow: elide; }
             Text { y: 137px; width: parent.width; height: 84px; text: root.home-loading ? "Reading your local playlists. No network request is needed." : root.home-active && root.home-error ? "Your saved library couldn’t be read. Use Refresh to try again, or open Settings for connection details." : root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
             if (root.home-active && !root.home-loading && !root.home-error) || root.catalog-title == "Find your next watch": HorizontalLayout {
-                x: 0px; y: 228px; width: parent.width; height: 38px; spacing: 12px;
-                Action { label: "Music"; accessible-label: "Search YouTube for music"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
-                Action { label: "Science"; accessible-label: "Search YouTube for science"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Science"; root.search(search.text); } }
-                Action { label: "Gaming"; accessible-label: "Search YouTube for gaming"; variant: ActionVariant.secondary; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Gaming"; root.search(search.text); } }
+                x: 0px; y: 228px; width: parent.width; height: 36px; spacing: 8px; alignment: center;
+                Action { label: "Music"; accessible-label: "Search YouTube for music"; variant: ActionVariant.secondary; height: 36px; width: 96px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
+                Action { label: "Science"; accessible-label: "Search YouTube for science"; variant: ActionVariant.secondary; height: 36px; width: 96px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Science"; root.search(search.text); } }
+                Action { label: "Gaming"; accessible-label: "Search YouTube for gaming"; variant: ActionVariant.secondary; height: 36px; width: 96px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Gaming"; root.search(search.text); } }
             }
         }
-        if root.has-more || root.has-previous: HorizontalLayout { y: parent.height - 42px; height: 40px; spacing: 12px;
+        if root.has-more || root.has-previous: HorizontalLayout { y: parent.height - 42px; height: 36px; spacing: 8px;
             Rectangle { horizontal-stretch: 1; }
-            Action { icon-name: "chevron-left"; label: "Previous page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
-            Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
+            Action { icon-name: "chevron-left"; label: "Previous page"; variant: ActionVariant.secondary; height: 36px; width: 150px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
+            Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; variant: ActionVariant.secondary; height: 36px; width: 150px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
             Rectangle { horizontal-stretch: 1; }
         }
     }
@@ -696,40 +703,40 @@ export component App inherits Window {
         }
     }
     if root.page == 1: LibraryPage {
-        x: root.sidebar-width + 28px; y: root.top-height + 22px;
-        width: root.width - self.x - 28px; height: root.height - self.y - 20px;
+        x: root.sidebar-width + 24px; y: root.top-height + 16px;
+        width: root.width - self.x - 24px; height: root.height - self.y - 16px;
     }
     if root.page == 3: Rectangle {
         x: root.sidebar-width + 36px; y: root.top-height + 24px; width: min(720px, root.width - self.x - 36px); height: root.height - self.y - 20px;
         ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
         VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 20px;
-            Text { text: "Settings"; color: Colors.text; font-size: 28px; font-weight: 700; height: 40px; }
-            Text { text: "Appearance"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Settings"; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 40px; }
+            Text { text: "Appearance"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             ConfirmedChoice { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; acknowledged-index: root.theme; choose(index) => { root.theme-changed(index); } }
             CheckBox { text: "Translucent window"; enabled: root.window-translucency-available; checked <=> root.window-translucent; }
             CheckBox { text: "Blur behind window (experimental)"; enabled: root.window-blur-available && root.window-translucent; checked <=> root.window-blur-enabled; }
             Text { text: root.window-appearance-status + " Changes apply to this session."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
-            Text { text: "Default maximum quality"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Default maximum quality"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             ConfirmedChoice { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
             Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
-            Text { text: "Privacy by default"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Privacy by default"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
             ConfirmedToggle { text: "Show comments and load the first page automatically"; acknowledged-checked: CommentsUi.enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { CommentsUi.set-enabled(checked); } }
             Text { text: "Public comments load when you open a guest video. Turning this off cancels comment requests and hides comments. No account comments are fetched."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             ConfirmedToggle { text: "Keep watch history on this device"; acknowledged-checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { LibraryUi.history(checked); } }
             Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
-            Text { text: "Saved video artwork"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Saved video artwork"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             ConfirmedChoice { accessible-label: "Saved video artwork cache"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; model: ["Off — remove cached artwork", "Up to 32 MiB", "Up to 128 MiB", "Up to 256 MiB"]; acknowledged-index: root.thumbnail-cache-index; choose(index) => { root.thumbnail-cache-changed(index); } }
             Text { text: "Keep artwork from guest browsing on this device. These images can reveal browsing interests even when history is off. Home reads them without contacting YouTube. Clear local data removes them with your local library."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
-            Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 18px; height: 26px; }
+            Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             Text { text: "Ctrl / Cmd + O  Open video file\n/  Focus search\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
-            Action { icon-name: "info"; label: "Connection and playback details"; height: 36px; clicked => { root.show-status-message(); } }
-            Text { text: "About Serein"; color: Colors.text; font-size: 18px; height: 26px; }
+            HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
+            Text { text: "About Serein"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             Text { text: "Independent, open-source software. Not affiliated with YouTube or Google. Experimental release; playback and platform validation are in progress. GPL-3.0-or-later."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { vertical-stretch: 1; }
         }
@@ -739,15 +746,15 @@ export component App inherits Window {
         x: root.sidebar-width + 36px; y: root.top-height + 24px; width: root.width - self.x - 36px; height: root.height - self.y - 20px;
         ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
         VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 14px;
-            Text { text: "Your YouTube account"; color: Colors.text; font-size: 28px; font-weight: 700; height: 44px; }
+            Text { text: "Your YouTube account"; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 44px; }
             Text { text: root.account-connected ? root.account-identity : "You are browsing as a guest"; color: Colors.text; font-size: 20px; height: 32px; }
             if !root.account-connected: Text { text: "Connect a browser session to read and manage your YouTube subscriptions and playlists. Public search and playback work without connecting."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Serein is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: Text { text: "1. Sign in with your Google account on YouTube in your browser.\n2. Export that YouTube session using the guide below.\n3. Select the exported file here. Serein verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: HorizontalLayout {
                 height: 40px; spacing: 12px;
-                Action { label: "Sign in on YouTube"; clicked => { root.open-youtube(); } }
-                Action { label: "Cookie export guide"; clicked => { root.open-export-guide(); } }
+                Action { label: "Sign in on YouTube"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-youtube(); } }
+                Action { label: "Cookie export guide"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-export-guide(); } }
                 Rectangle { horizontal-stretch: 1; }
             }
             if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
@@ -755,7 +762,7 @@ export component App inherits Window {
             if !root.account-connected: CheckBox { text: "Remember this session using protected storage"; checked <=> root.account-remember; }
             if !root.account-connected: HorizontalLayout {
                 height: 42px; spacing: 12px;
-                Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; selected: true; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
+                Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; variant: ActionVariant.primary; width: 240px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
                 if root.account-saved: Action { label: "Reconnect saved session"; enabled: root.account-consent && !root.account-busy; clicked => { root.account-reconnect(); } }
                 Rectangle { horizontal-stretch: 1; }
             }
@@ -918,7 +925,7 @@ export component App inherits Window {
             width: video.width; height: 108px;
             visible: root.watching && !root.video-only;
             background: transparent;
-            if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; visible: !root.watch-loading || root.video-title != ""; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; visible: !root.watch-loading || root.video-title != ""; wrap: word-wrap; color: Colors.text; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; overflow: elide; }
             if root.watch-loading && root.video-title == "": Rectangle { x: 0px; y: 10px; width: parent.width * 0.72; height: 20px; border-radius: 4px; background: Colors.raised; }
             if !root.video-only: HorizontalLayout {
                 x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
@@ -932,16 +939,16 @@ export component App inherits Window {
                         if root.watch-channel-avatar-ready: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; source: root.watch-channel-avatar; image-fit: cover; }
                         if !root.watch-channel-avatar-ready: Image { x: 5px; y: 5px; width: 30px; height: 30px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
                     }
-                    creator-name := Text { x: 50px; y: root.watch-channel-subscribers != "" ? 2px : 0px; width: max(0px, parent.width - 58px); height: root.watch-channel-subscribers != "" ? 22px : parent.height; text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; overflow: elide; vertical-alignment: center; }
+                    creator-name := Text { x: 50px; y: root.watch-channel-subscribers != "" ? 2px : 0px; width: max(0px, parent.width - 58px); height: root.watch-channel-subscribers != "" ? 22px : parent.height; text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 16px; overflow: elide; vertical-alignment: center; }
                     creator-subs := Text { visible: root.watch-channel-subscribers != ""; x: 50px; y: 24px; width: max(0px, parent.width - 58px); height: 18px; text: root.watch-channel-subscribers; color: Colors.muted; font-size: 12px; overflow: elide; vertical-alignment: center; }
                     if root.watch-loading && root.video-channel == "": Rectangle { x: 50px; y: 14px; width: min(160px, max(0px, parent.width - 54px)); height: 16px; border-radius: 4px; background: Colors.raised; }
                 }
                 Rectangle { horizontal-stretch: 1; min-width: 0px; }
-                if root.account-connected && !root.watch-loading && root.watch-load-error == "": Action { width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
-                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
-                share-button := Action { width: 72px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
-                Action { width: 88px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
-                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; enabled: root.loaded && !root.watch-loading; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
+                if root.account-connected && !root.watch-loading && root.watch-load-error == "": Action { variant: ActionVariant.secondary; width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
+                share-button := Action { variant: ActionVariant.secondary; width: 76px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
+                Action { variant: ActionVariant.secondary; width: 92px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
+                Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; enabled: root.loaded && !root.watch-loading; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
             }
 
         }
@@ -977,7 +984,7 @@ export component App inherits Window {
                 root.feed-focus-cancel();
                 return reject;
             }
-            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
+            Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.focus; border-radius: 12px; background: transparent; }
         }
         related := ListView {
             x: root.wide-related ? video.x + video.width + 24px : video.x;
@@ -991,7 +998,7 @@ export component App inherits Window {
             for item[index] in root.watch-videos: VideoCard {
                 cache-rendering-hint: root.cache-related;
                 enabled: !root.native-video-child;
-                height: 106px; item: item; compact: true; show-channel: false;
+                height: 106px; item: item; compact: true;
                 focus-request: root.watching && !root.video-only && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;
                 focus-delivery: root.feed-focus-delivery;
                 focus-ready(serial) => { root.feed-focus-ready(1, index, item.kind, item.id, serial); }

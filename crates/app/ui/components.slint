@@ -40,18 +40,27 @@ export global Colors {
     // alpha; text, accents and decoded video remain fully opaque.
     in-out property <bool> translucent;
     out property <color> canvas: dark ? (translucent ? #0f0f0fb8 : #0f0f0f) : (translucent ? #ffffffc7 : #ffffff);
-    out property <color> surface: dark ? (translucent ? #181818a8 : #181818) : (translucent ? #f5f5f5b8 : #f5f5f5);
-    out property <color> raised: dark ? (translucent ? #282828c7 : #282828) : (translucent ? #eeeeeed1 : #eeeeee);
-    out property <color> border: dark ? (translucent ? #ffffff24 : #3a3a3a) : (translucent ? #00000020 : #dedede);
+    out property <color> surface: dark ? (translucent ? #1c1c1cb8 : #1c1c1c) : (translucent ? #f7f7f7c7 : #f7f7f7);
+    out property <color> raised: dark ? (translucent ? #272727d1 : #272727) : (translucent ? #f0f0f0d9 : #f0f0f0);
+    out property <color> border: dark ? (translucent ? #ffffff24 : #333333) : (translucent ? #0000001f : #e5e5e5);
     out property <color> text: dark ? #f1f1f1 : #0f0f0f;
     out property <color> muted: dark ? #aaaaaa : #606060;
-    out property <color> accent: dark ? #ff0033 : #d9002b;
-    out property <color> selected: raised;
-    // Filled actions keep white text above 4.5:1 in both themes.
-    out property <color> primary: #d9002b;
-    out property <color> primary-hover: #c50027;
-    out property <color> primary-pressed: #ad0022;
+    out property <color> accent: dark ? #ff0033 : #e0002b;
+    // Neutral state layers over any surface, as used by guide rows and chips.
+    out property <color> hover: dark ? #ffffff1a : #0000000d;
+    out property <color> pressed: dark ? #ffffff33 : #0000001a;
+    out property <color> strong: dark ? #ffffff47 : #00000029;
+    out property <color> selected: hover;
+    // Keyboard focus and editable fields use a calm blue instead of the brand red.
+    out property <color> focus: dark ? #3ea6ff : #065fd4;
+    // Filled actions are monochrome pills: inverted text keeps 15:1+ contrast.
+    out property <color> primary: text;
+    out property <color> primary-text: dark ? #0f0f0f : #ffffff;
+    out property <color> primary-hover: dark ? #d9d9d9 : #272727;
+    out property <color> primary-pressed: dark ? #bfbfbf : #3f3f3f;
     out property <color> destructive: dark ? #ff8295 : #b00020;
+    // Popups stay opaque above translucent chrome and video.
+    out property <color> dialog: dark ? #212121 : #ffffff;
 }
 export enum ActionVariant { quiet, primary, secondary, destructive }
 export component Action inherits Rectangle {
@@ -64,23 +73,30 @@ export component Action inherits Rectangle {
     in property <bool> enabled: true;
     in property <bool> compact;
     in property <bool> on-video;
-    in property <length> icon-size: root.on-video ? 24px : 20px;
+    // Mini-guide presentation: icon above a short caption, without a tooltip.
+    in property <bool> stacked;
+    // Short visible caption for stacked rows; the accessible label stays complete.
+    in property <string> caption: root.label;
+    // Negative keeps the variant's shape; embedded segments can square it off.
+    in property <length> corner-radius: -1px;
+    in property <length> icon-size: root.on-video ? 24px : root.stacked ? 22px : 20px;
     // Visual emphasis is independent of selection/check state and accessibility.
     in property <ActionVariant> variant: quiet;
     private property <bool> keyboard-pressed;
     private property <bool> pressed: enabled && (touch.pressed || keyboard-pressed);
-    private property <color> foreground: root.on-video || variant == primary ? #ffffff : variant == destructive ? Colors.destructive : Colors.text;
+    private property <bool> hovered: touch.has-hover && enabled;
+    private property <color> foreground: root.on-video ? #ffffff : variant == primary ? Colors.primary-text : variant == destructive ? Colors.destructive : Colors.text;
     callback clicked;
     height: 40px;
     min-width: compact ? 40px : 70px;
-    border-radius: root.on-video ? 20px : 8px;
-    background: root.on-video ? (pressed ? #ffffff38 : touch.has-hover && enabled ? #ffffff24 : selected ? #ffffff18 : transparent)
-        : variant == primary ? (pressed ? Colors.primary-pressed : touch.has-hover && enabled ? Colors.primary-hover : Colors.primary)
-        : pressed ? Colors.border : touch.has-hover && enabled ? Colors.raised
-        : selected ? Colors.selected : variant == quiet ? transparent : Colors.surface;
-    border-width: focus.has-focus ? 2px : variant == secondary || variant == destructive ? 1px : 0px;
-    border-color: focus.has-focus ? (variant == primary ? Colors.text : Colors.accent)
-        : variant == destructive ? Colors.destructive : Colors.border;
+    // Filled/tonal actions are pills; quiet rows keep a softer rounded rectangle.
+    border-radius: root.corner-radius >= 0px ? root.corner-radius : root.on-video || (root.compact && !root.stacked && root.variant == quiet) || root.variant != quiet ? self.height / 2 : 10px;
+    background: root.on-video ? (pressed ? #ffffff38 : hovered ? #ffffff24 : selected ? #ffffff18 : transparent)
+        : variant == primary ? (pressed ? Colors.primary-pressed : hovered ? Colors.primary-hover : Colors.primary)
+        : variant == quiet ? (pressed ? Colors.strong : hovered ? (selected ? Colors.pressed : Colors.hover) : selected ? Colors.selected : transparent)
+        : pressed ? Colors.strong : hovered || selected ? Colors.pressed : Colors.hover;
+    border-width: focus.has-focus ? 2px : 0px;
+    border-color: Colors.focus;
     opacity: enabled ? 1 : 0.4;
     accessible-role: button;
     accessible-label: label;
@@ -138,17 +154,29 @@ export component Action inherits Rectangle {
             : root.icon-name == "image-off" ? @image-url("icons/image-off.svg")
             : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
         colorize: root.variant == quiet && root.selected && !root.on-video ? Colors.accent : root.foreground;
-        x: root.compact ? (root.width - root.icon-size) / 2 : 12px;
-        y: (root.height - root.icon-size) / 2; width: root.icon-size; height: root.icon-size;
+        x: root.compact ? (root.width - root.icon-size) / 2 : root.variant == quiet ? 14px : 12px;
+        y: root.stacked ? 12px : (root.height - root.icon-size) / 2; width: root.icon-size; height: root.icon-size;
     }
-    if !root.compact: Text { x: root.icon-name != "" ? 44px : 12px; y: 0; width: parent.width - self.x - 12px; height: parent.height; text: root.label; color: root.foreground; font-size: 14px; font-weight: root.variant == primary ? 600 : 400; vertical-alignment: center; overflow: elide; }
+    if !root.compact: Text {
+        x: root.icon-name != "" ? (root.variant == quiet ? 50px : 40px) : root.variant == quiet ? 14px : 16px; y: 0;
+        width: parent.width - self.x - (root.variant == quiet ? 12px : 16px); height: parent.height;
+        text: root.label; color: root.foreground; font-size: 14px;
+        font-weight: root.variant != quiet || root.selected ? 600 : 400;
+        horizontal-alignment: root.variant == quiet || root.icon-name != "" ? left : center;
+        vertical-alignment: center; overflow: elide;
+    }
+    if root.compact && root.stacked: Text {
+        x: 2px; y: 38px; width: parent.width - 4px; height: 16px;
+        text: root.caption; color: root.foreground; font-size: 10px;
+        font-weight: root.selected ? 600 : 400;
+        horizontal-alignment: center; vertical-alignment: center; overflow: elide;
+    }
     touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
-    if root.compact: Tooltip {
+    if root.compact && !root.stacked: Tooltip {
         Rectangle {
-            width: tip.preferred-width + 20px; height: 34px;
-            background: Colors.raised; border-radius: 6px;
-            border-width: 1px; border-color: Colors.border;
-            tip := Text { text: root.label; color: Colors.text; x: 10px; height: parent.height; vertical-alignment: center; font-size: 12px; }
+            width: tip.preferred-width + 16px; height: 30px;
+            background: #3a3a3aef; border-radius: 6px;
+            tip := Text { text: root.label; color: #ffffff; x: 8px; height: parent.height; vertical-alignment: center; font-size: 12px; }
         }
     }
 }
@@ -197,10 +225,11 @@ export component VideoCard inherits Rectangle {
     changed focus-request => { if root.focus-request > 0 { root.focus-ready(root.focus-request); } }
     changed focus-delivery => { root.try-requested-focus(); }
     callback clicked;
-    border-radius: 10px;
-    background: touch.has-hover ? Colors.surface : transparent;
+    private property <bool> channel: root.item.kind == "Channel";
+    border-radius: root.compact ? 10px : 14px;
+    background: transparent;
     border-width: focus.has-focus ? 2px : 0px;
-    border-color: Colors.accent;
+    border-color: Colors.focus;
     accessible-role: button;
     accessible-enabled: root.enabled;
     accessible-label: item.kind + ", " + item.title + ", " + item.channel;
@@ -221,32 +250,47 @@ export component VideoCard inherits Rectangle {
         x: 0; y: 0;
         width: root.compact ? 160px : parent.width;
         height: self.width * 9 / 16;
-        background: Colors.raised;
-        border-radius: 10px;
+        // Channels read as a round avatar on the canvas, like a creator profile.
+        background: root.channel ? transparent : Colors.raised;
+        border-radius: root.compact ? 8px : 12px;
         clip: true;
-        if root.item.thumbnail-ready: Image { source: root.item.thumbnail; width: parent.width; height: parent.height; image-fit: root.item.kind == "Channel" ? contain : cover; }
-        if !root.item.thumbnail-ready: Image { x: (parent.width - 30px) / 2; y: (parent.height - 30px) / 2; width: 30px; height: 30px; source: root.item.kind == "Channel" ? @image-url("icons/circle-user-round.svg") : root.item.kind == "Playlist" ? @image-url("icons/library-big.svg") : @image-url("icons/image-off.svg"); colorize: Colors.muted; }
-        if root.item.kind == "Channel" || root.item.kind == "Playlist": Rectangle {
-            x: 7px; y: 7px; height: 23px; width: kind-label.preferred-width + 14px;
-            border-radius: 4px; background: #000000cc;
-            kind-label := Text { text: root.item.kind; color: white; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        if !root.channel && root.item.thumbnail-ready: Image { source: root.item.thumbnail; width: parent.width; height: parent.height; image-fit: cover; }
+        if root.channel: Rectangle {
+            width: parent.height * 0.78; height: self.width;
+            x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+            border-radius: self.width / 2; clip: true; background: Colors.raised;
+            if root.item.thumbnail-ready: Image { source: root.item.thumbnail; width: parent.width; height: parent.height; image-fit: cover; }
+            if !root.item.thumbnail-ready: Image { x: (parent.width - 36px) / 2; y: (parent.height - 36px) / 2; width: 36px; height: 36px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
+        }
+        if !root.channel && !root.item.thumbnail-ready: Image { x: (parent.width - 28px) / 2; y: (parent.height - 28px) / 2; width: 28px; height: 28px; source: root.item.kind == "Playlist" ? @image-url("icons/library-big.svg") : @image-url("icons/image-off.svg"); colorize: Colors.muted; }
+        if root.item.kind == "Playlist": Rectangle {
+            x: parent.width - self.width - 8px; y: parent.height - self.height - 8px;
+            height: 22px; width: kind-label.preferred-width + 35px;
+            border-radius: 5px; background: #000000b3;
+            Image { x: 7px; y: (parent.height - self.height) / 2; width: 13px; height: 13px; source: @image-url("icons/list-video.svg"); colorize: #ffffff; }
+            kind-label := Text { x: 24px; height: parent.height; text: root.item.kind; color: #ffffff; font-size: 12px; font-weight: 600; vertical-alignment: center; }
         }
         if root.item.duration != "": Rectangle {
-            x: parent.width - self.width - 7px; y: parent.height - 25px;
-            width: length-label.preferred-width + 10px; height: 19px; border-radius: 4px; background: #000000d9;
-            length-label := Text { text: root.item.duration; font-size: 11px; font-weight: 600; color: white; horizontal-alignment: center; vertical-alignment: center; }
+            x: parent.width - self.width - (root.compact ? 5px : 8px); y: parent.height - self.height - (root.compact ? 5px : 8px);
+            width: length-label.preferred-width + 10px; height: 20px; border-radius: 5px; background: #000000b3;
+            length-label := Text { text: root.item.duration; font-size: 12px; font-weight: 600; color: #ffffff; horizontal-alignment: center; vertical-alignment: center; }
         }
     }
-    Text {
-        x: root.compact ? 174px : 2px; y: root.compact ? 3px : preview.height + 12px;
-        width: parent.width - self.x - 6px; height: 40px;
-        text: root.item.title; color: Colors.text; font-size: 14px; font-weight: 600;
+    title := Text {
+        x: root.compact ? 172px : 4px; y: root.compact ? 0px : preview.height + 12px;
+        width: parent.width - self.x - 8px;
+        // Up to two lines; the channel line follows the actual title height.
+        height: min(self.preferred-height, root.compact ? 38px : 44px);
+        text: root.item.title; color: Colors.text;
+        font-size: root.compact ? 14px : 15px; font-weight: 600;
+        horizontal-alignment: root.channel && !root.compact ? center : left;
         wrap: word-wrap; overflow: elide;
     }
     if root.show-channel: Text {
-        x: root.compact ? 174px : 2px; y: root.compact ? 48px : preview.height + 57px;
-        width: parent.width - self.x - 6px; height: 20px;
-        text: root.item.channel; color: Colors.muted; font-size: 12px; overflow: elide;
+        x: title.x; y: title.y + title.height + (root.compact ? 4px : 6px);
+        width: title.width; height: 18px;
+        text: root.item.channel; color: Colors.muted; font-size: root.compact ? 12px : 13px;
+        horizontal-alignment: root.channel && !root.compact ? center : left; overflow: elide;
     }
     touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { focus.focus(); root.clicked(); } }
 }

@@ -12,8 +12,8 @@ export global JumpUi {
 export component JumpDialog inherits Rectangle {
     callback dismissed();
     forward-focus: time-input;
-    background: Colors.surface;
-    border-radius: 12px;
+    background: Colors.dialog;
+    border-radius: 16px;
     VerticalLayout {
         padding: 20px; spacing: 12px;
         Text { text: "Jump to time"; color: Colors.text; font-size: 20px; font-weight: 600; height: 28px; }

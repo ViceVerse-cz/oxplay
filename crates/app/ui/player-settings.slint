@@ -23,8 +23,8 @@ export component PlayerSettingsPanel inherits Rectangle {
     private property <string> current-speed: root.speed-index >= 0 && root.speed-index < root.speeds.length ? root.speeds[root.speed-index] : "Unknown";
     private property <string> current-quality: root.quality-index >= 0 && root.quality-index < root.qualities.length ? root.qualities[root.quality-index] : "Unknown";
     preferred-height: root.section == 2 ? 336px : root.section == 1 ? 256px : root.remote-video ? 296px : 336px;
-    background: Colors.surface;
-    border-width: 1px; border-color: Colors.border; border-radius: 12px;
+    background: Colors.dialog;
+    border-width: 1px; border-color: Colors.border; border-radius: 16px;
     forward-focus: header-action;
     function back() { if root.section != 0 { root.section = 0; header-action.focus(); } else { root.close(); } }
 

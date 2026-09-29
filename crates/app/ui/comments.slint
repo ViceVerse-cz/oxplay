@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { Colors, Action } from "components.slint";
+import { Colors, Action, ActionVariant } from "components.slint";
 export struct CommentRow { author: string, metadata: string, likes: string, creator: bool, content: string }
 export global CommentsUi {
     in property <string> description;
@@ -39,14 +39,14 @@ export component WatchDetails inherits Rectangle {
     content := VerticalLayout {
         spacing: 24px;
         Rectangle {
-            background: Colors.surface;
+            background: Colors.hover;
             border-radius: 12px;
             height: description-layout.preferred-height;
             description-layout := VerticalLayout {
-                padding: 16px; spacing: 8px;
+                padding: 14px; padding-left: 16px; padding-right: 16px; spacing: 6px;
                 if CommentsUi.metadata != "": Text {
                     text: CommentsUi.metadata; color: Colors.text;
-                    font-size: 13px; font-weight: 600; wrap: word-wrap;
+                    font-size: 14px; font-weight: 600; wrap: word-wrap;
                 }
                 description-text := TextInput {
                     text: CommentsUi.description-expanded ? CommentsUi.description : CommentsUi.description-preview;
@@ -58,7 +58,7 @@ export component WatchDetails inherits Rectangle {
                 if CommentsUi.description-expandable: HorizontalLayout {
                     height: 32px;
                     Action {
-                        width: 116px; height: 32px; horizontal-stretch: 0;
+                        width: 104px; height: 32px; horizontal-stretch: 0; corner-radius: 8px;
                         label: CommentsUi.description-expanded ? "Show less" : "Show more";
                         checkable: true; selected: CommentsUi.description-expanded;
                         clicked => { CommentsUi.description-expanded = !CommentsUi.description-expanded; }
@@ -75,7 +75,7 @@ export component WatchDetails inherits Rectangle {
                 spacing: 18px;
                 HorizontalLayout {
                     height: 36px; spacing: 8px;
-                    Text { text: CommentsUi.heading; color: Colors.text; font-size: 20px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                    Text { text: CommentsUi.heading; color: Colors.text; font-size: 20px; font-weight: 700; vertical-alignment: center; horizontal-stretch: 1; }
                     if CommentsUi.available && !CommentsUi.request-active: Action {
                         width: 36px; height: 36px; horizontal-stretch: 0;
                         label: CommentsUi.has-loaded ? "Refresh comments" : "Load comments";
@@ -105,21 +105,21 @@ export component WatchDetails inherits Rectangle {
                         height: comment-layout.preferred-height;
                         background: transparent;
                         Rectangle {
-                            x: 0px; y: 0px; width: 36px; height: 36px;
-                            background: Colors.raised; border-radius: 18px;
+                            x: 0px; y: 0px; width: 40px; height: 40px;
+                            background: Colors.hover; border-radius: 20px;
                             Image {
-                                x: 7px; y: 7px; width: 22px; height: 22px;
+                                x: 9px; y: 9px; width: 22px; height: 22px;
                                 source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted;
                             }
                         }
                         comment-layout := VerticalLayout {
-                            x: 50px; width: max(0px, parent.width - 50px);
-                            spacing: 7px;
+                            x: 56px; width: max(0px, parent.width - 56px);
+                            spacing: 6px;
                             HorizontalLayout {
                                 height: 20px; spacing: 8px;
                                 Text { text: item.author; color: Colors.text; font-size: 13px; font-weight: 600; overflow: elide; horizontal-stretch: 0; max-width: parent.width * 0.65; vertical-alignment: center; }
                                 if item.creator: Rectangle {
-                                    width: 52px; height: 20px; border-radius: 5px; background: Colors.raised;
+                                    width: 56px; height: 20px; border-radius: 10px; background: Colors.pressed;
                                     Text { text: "Creator"; color: Colors.text; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; }
                                 }
                                 Text { text: item.metadata; color: Colors.muted; font-size: 12px; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
@@ -127,7 +127,7 @@ export component WatchDetails inherits Rectangle {
                             comment-text := TextInput {
                                 text: item.content; accessible-label: "Comment by " + item.author;
                                 color: Colors.text; font-size: 14px; wrap: word-wrap; read-only: true; single-line: false;
-                                selection-background-color: Colors.accent;
+                                selection-background-color: Colors.focus;
                                 selection-foreground-color: #fff;
                             }
                             if item.likes != "": Text { text: item.likes + " likes"; color: Colors.muted; font-size: 12px; height: 18px; }
@@ -136,8 +136,8 @@ export component WatchDetails inherits Rectangle {
                 }
                 if CommentsUi.previous || CommentsUi.next: HorizontalLayout {
                     height: 36px; spacing: 8px;
-                    Action { width: 114px; label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
-                    Action { width: 100px; label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.next; clicked => { CommentsUi.page(true); } }
+                    Action { width: 114px; height: 36px; variant: ActionVariant.secondary; label: "Previous"; icon-name: "chevron-left"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.previous; clicked => { CommentsUi.page(false); } }
+                    Action { width: 96px; height: 36px; variant: ActionVariant.secondary; label: "Next"; icon-name: "chevron-right"; enabled: !root.busy && !CommentsUi.request-active && CommentsUi.next; clicked => { CommentsUi.page(true); } }
                     Rectangle { horizontal-stretch: 1; }
                 }
             }

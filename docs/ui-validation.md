@@ -431,3 +431,36 @@ are retained separately from the earlier a45ff67614-stage passes. This run does
 not exercise text-selection operation, long-message scrolling, Close-button
 activation, screen readers or real IME input; it supplies finite visual and
 Escape/lifecycle evidence, not resource or production-native qualification.
+
+## Visual refresh (2026-09-30)
+
+The shared shell now follows familiar YouTube proportions with a quieter,
+monochrome finish, as SPEC.md's restrained neutral/limited-red guidance asks:
+
+- 56 px header: a red play tile beside a tightly set wordmark, a 40 px
+  segmented search pill (a leading glass appears while it has focus), and a
+  tonal account pill.
+- Guide: 40 px rounded rows with a red selected icon and bold label, a
+  "Your library" section with dividers, and a stacked icon-over-caption
+  mini-guide below 1100 px. Captions are short; accessible labels are unchanged.
+- Actions: neutral translucent state layers (`hover`/`pressed`/`strong`), pill
+  shapes for tonal/filled variants, inverted monochrome primary buttons and one
+  blue focus ring (`Colors.focus`) for controls, cards, parking scopes and fields.
+- Cards: 12 px thumbnails, 15 px two-line titles with the channel line following
+  the real title height, compact duration/playlist badges, and round channel
+  avatars. Related rows now show the channel name.
+- Watch page, comments, library tabs, settings, account and popups use the same
+  tokens; dialogs share one opaque `Colors.dialog` surface with 16 px corners.
+
+No hover animation was added (reduced motion is not yet observed). The video
+host keeps square corners so rounded clipping does not add a per-frame layer.
+Row geometry constants (card text band, 106 px related rows) are unchanged.
+
+Validation: `cargo build --locked -p serein`, `cargo fmt --all -- --check` and
+`cargo test --locked -p serein` (225 unit + 13 controlled-widget tests) passed.
+Native `--snapshot` captures on the development Mac were inspected for home,
+guest search (dark 1320×860 and light 1000×760 mini-guide) and settings (light).
+Playback could not be presented in that capture session (display clock
+unavailable), so the transport over live video, the populated watch details and
+the related column still need visual confirmation with playback running.
+Screen-reader and keyboard traversal passes were not repeated.

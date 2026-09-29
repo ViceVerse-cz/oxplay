@@ -8,33 +8,44 @@ export component SearchField inherits Rectangle {
     callback accepted(string);
     callback edited();
     forward-focus: input;
-    height: 42px;
+    height: 40px;
     border-radius: self.height / 2;
-    border-width: input.has-focus ? 2px : 1px;
-    border-color: input.has-focus ? Colors.accent : Colors.border;
-    background: Colors.surface;
+    border-width: 1px;
+    border-color: input.has-focus ? Colors.focus : Colors.border;
+    background: Colors.dark ? #121212 : #ffffff;
     clip: true;
+    private property <length> button-width: 64px;
+    // A leading glass appears while typing, as a quiet cue that Enter searches.
+    private property <length> text-x: input.has-focus ? 44px : 18px;
+    if input.has-focus: Image {
+        x: 16px; y: (parent.height - self.height) / 2; width: 18px; height: 18px;
+        source: @image-url("icons/search.svg"); colorize: Colors.muted;
+    }
     if root.text == "": Text {
-        x: 20px; height: parent.height; width: parent.width - 80px;
+        x: root.text-x; height: parent.height; width: parent.width - self.x - root.button-width - 12px;
         text: root.placeholder; color: Colors.muted;
         vertical-alignment: center; overflow: elide;
     }
     input := TextInput {
-        x: 20px; width: max(0px, parent.width - 82px); height: parent.height;
+        x: root.text-x; width: max(0px, parent.width - self.x - root.button-width - 12px); height: parent.height;
         enabled: root.enabled; single-line: true;
         text <=> root.text;
         color: Colors.text; vertical-alignment: center;
-        selection-background-color: Colors.accent;
+        selection-background-color: Colors.focus;
         selection-foreground-color: #ffffff;
         accessible-label: "Search YouTube";
         edited => { root.edited(); }
         accepted => { root.accepted(root.text); }
     }
-    Rectangle { x: parent.width - 58px; y: 1px; width: 1px; height: parent.height - 2px; background: Colors.border; }
-    Action {
-        x: parent.width - 54px; y: 1px; width: 50px; height: parent.height - 2px;
-        compact: true; icon-name: "search"; label: "Search";
-        enabled: root.enabled;
-        clicked => { root.accepted(root.text); }
+    Rectangle {
+        x: parent.width - root.button-width; y: 0px; width: root.button-width; height: parent.height;
+        background: Colors.dark ? #222222 : #f8f8f8;
+        Rectangle { x: 0px; width: 1px; height: parent.height; background: Colors.border; }
+        Action {
+            x: 1px; y: 0px; width: parent.width - 1px; height: parent.height;
+            compact: true; corner-radius: 0px; icon-name: "search"; label: "Search";
+            enabled: root.enabled;
+            clicked => { root.accepted(root.text); }
+        }
     }
 }
