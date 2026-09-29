@@ -78,6 +78,12 @@ fn delay(error: ProviderError, attempt: u8) -> Option<Duration> {
 pub fn retryable(error: ProviderError) -> bool {
     delay(error, 0).is_some()
 }
+/// Slint's pinned timer clock and duration addition both truncate to milliseconds.
+/// Add two milliseconds so even fractional remaining time has at least one
+/// millisecond of slack after that conversion. Admission still uses std::Instant.
+pub fn deadline_wakeup_delay(remaining: Duration) -> Duration {
+    remaining.saturating_add(Duration::from_millis(2))
+}
 impl Ledger {
     fn begin(&mut self, target: Option<Target>, scope: Scope) {
         self.job = target.map(|target| Job {
@@ -139,16 +145,19 @@ impl Ledger {
             .then_some(serial)
     }
     fn ready(&self, serial: i32, scope: Scope, page: i32, now: Instant) -> bool {
-        self.matches(serial, scope, page)
-            && self
-                .job
+        self.remaining(serial, scope, page, now) == Some(Duration::ZERO)
+    }
+    fn remaining(&self, serial: i32, scope: Scope, page: i32, now: Instant) -> Option<Duration> {
+        self.matches(serial, scope, page).then(|| {
+            self.job
                 .as_ref()
                 .unwrap()
                 .failure
                 .as_ref()
                 .unwrap()
                 .deadline
-                <= now
+                .saturating_duration_since(now)
+        })
     }
     fn take(&mut self, serial: i32, scope: Scope, page: i32, now: Instant) -> Option<(Target, u8)> {
         if !self.ready(serial, scope, page, now) {
@@ -220,27 +229,32 @@ pub fn failed(app: &App, state: &Rc<UiState>, generation: u64, error: ProviderEr
         )
         .into(),
     );
+    arm_readiness(app, state, serial, wait);
+}
+fn arm_readiness(app: &App, state: &Rc<UiState>, serial: i32, wait: Duration) {
     let weak = app.as_weak();
     let state_weak = Rc::downgrade(state);
-    state
-        .guest_recovery
-        .deadline
-        .start(TimerMode::SingleShot, wait, move || {
+    state.guest_recovery.deadline.start(
+        TimerMode::SingleShot,
+        deadline_wakeup_delay(wait),
+        move || {
             let (Some(app), Some(state)) = (weak.upgrade(), state_weak.upgrade()) else {
                 return;
             };
-            let valid = state.guest_recovery.ledger.borrow().ready(
+            let remaining = state.guest_recovery.ledger.borrow().remaining(
                 serial,
                 scope(&state),
                 app.get_page(),
                 Instant::now(),
             );
-            if valid {
-                app.set_recovery_ready(true);
-            } else {
-                invalidate(&app, &state);
+            match remaining {
+                Some(Duration::ZERO) => app.set_recovery_ready(true),
+                Some(wait) => arm_readiness(&app, &state, serial, wait),
+                None if app.get_recovery_serial() == serial => invalidate(&app, &state),
+                None => {}
             }
-        });
+        },
+    );
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
     let weak = app.as_weak();
@@ -343,6 +357,38 @@ mod tests {
             VideoId::new("aqz-KE-bpKQ").unwrap(),
             QualityCeiling::default(),
         )
+    }
+    #[test]
+    fn fractional_deadline_wakeup_survives_both_slint_millisecond_truncations() {
+        for nanos in (1..2_000_000).step_by(997) {
+            let remaining = Duration::from_nanos(nanos);
+            let scheduled_ms = deadline_wakeup_delay(remaining).as_millis();
+            // The timer's starting clock can itself be almost one millisecond
+            // behind std::Instant, in addition to duration truncation.
+            let earliest = Duration::from_millis((scheduled_ms - 1) as u64);
+            assert!(earliest >= remaining);
+        }
+        let mut ledger = Ledger::default();
+        let now = Instant::now();
+        ledger.begin(Some(video()), scope());
+        let (serial, wait, _) = ledger
+            .fail(scope(), 2, ProviderError::Offline, now)
+            .unwrap();
+        let early = now + wait - Duration::from_nanos(1);
+        assert_eq!(
+            ledger.remaining(serial, scope(), 2, early),
+            Some(Duration::from_nanos(1))
+        );
+        assert!(!ledger.ready(serial, scope(), 2, early));
+        assert!(
+            ledger.job.is_some(),
+            "early timer inspection must retain recovery ownership"
+        );
+        assert_eq!(
+            ledger.remaining(serial, scope(), 2, now + wait),
+            Some(Duration::ZERO)
+        );
+        assert_eq!(ledger.remaining(serial + 1, scope(), 2, now + wait), None);
     }
     #[test]
     fn every_provider_error_has_an_explicit_recovery_classification() {

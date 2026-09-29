@@ -94,6 +94,8 @@ pub struct AccountResponse {
     pub playback_selection: Option<u64>,
     /// Latest verified identity/capabilities; None after expiry or disconnection.
     pub connection: Option<ConnectionInfo>,
+    /// Nonsecret remaining provider cooldown, measured after this operation.
+    pub retry_after: Option<std::time::Duration>,
     pub result: Result<Response, WorkerError>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -268,6 +270,10 @@ impl Worker {
                         generation: work.operation.session_generation,
                         playback_selection,
                         connection: engine.client.as_ref().and_then(AccountClient::connection),
+                        retry_after: engine
+                            .client
+                            .as_ref()
+                            .and_then(AccountClient::cooldown_remaining),
                         result,
                     });
                     drop(state);
@@ -968,6 +974,7 @@ mod tests {
                 generation: 0,
                 playback_selection: None,
                 connection: None,
+                retry_after: None,
                 result,
             });
             worker.cancel_playback().unwrap();
@@ -978,6 +985,7 @@ mod tests {
             generation: 0,
             playback_selection: Some(42),
             connection: None,
+            retry_after: None,
             result: Err(WorkerError::Resolver(ProviderError::Offline)),
         });
         worker.cancel_playback().unwrap();
@@ -1205,6 +1213,7 @@ mod tests {
                 generation: 1,
                 playback_selection: None,
                 connection: None,
+                retry_after: None,
                 result: Ok(Response::SavedProfile(None)),
             });
         }

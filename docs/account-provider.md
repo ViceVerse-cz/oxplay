@@ -1,8 +1,30 @@
 # Account provider research and implementation gate
 
-Research date: 2026-09-29. This is source-backed implementation research, not a
-completed login feature. No browser profile was inspected, no human credential
-was imported, and no authenticated request or remote account mutation was made.
+The current application implements the connection flow: explicit browser-session
+export selection, bounded import, remote identity verification, optional protected
+storage, re-verification on reconnect, account reads/writes and sign-out. Open
+the account page, sign in with your Google account on YouTube in the system
+browser, follow the export guide, then select **Connect with session file…**.
+The UI does not enable connected capabilities merely because parsing succeeded.
+This is a YouTube browser-session connection, not Google OAuth or a password form.
+
+Failed authenticated playback now offers an explicit **Retry from start** through
+the same authenticated resolver. It retains the exact failed load, current
+video/session and quality policy, requires a valid account lease and rejects stale
+results after replacement or sign-out. Retry never switches to guest credentials.
+Provider cooldowns and Retry-After delays disable the action until a bounded
+one-shot timer allows it; authentication/policy failures require reconnect or a
+new selection. Synthetic regressions cover unverified identity, explicit repeated
+resolution, cooldown admission, revoked leases and post-sign-out rejection.
+Guest and account retry wakeups account for Slint's millisecond clock rounding;
+an early callback retains the action and arms one weak timer for the remaining
+deadline. Precise monotonic deadlines continue to prevent premature retries.
+No live account or real credentials were used for these checks.
+
+Research date: 2026-09-29. The implemented flow and synthetic checks do not
+complete real-account acceptance. No browser profile was inspected, no human
+credential was imported, and no live authenticated request or remote account
+mutation was made.
 AC-08, AC-09 and live AC-10 remain unverified. Parsing a cookie file will not
 change those statuses.
 

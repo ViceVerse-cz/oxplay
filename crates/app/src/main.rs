@@ -31,6 +31,8 @@ mod motion_smoke;
 mod native_child;
 mod native_child_fixture;
 mod native_child_smoke;
+mod picture_in_picture;
+mod pip_smoke;
 mod playback_preferences;
 mod playback_ui;
 mod preferences_smoke;
@@ -54,6 +56,9 @@ use std::{
 slint::include_modules!();
 
 struct UiState {
+    pip: picture_in_picture::Controller,
+    pip_exit_pending: Cell<bool>,
+    presenter_generations: Cell<u64>,
     account_ui: account_ui::State,
     account_playback: account_playback::State,
     guest_playback: guest_playback::State,
@@ -142,7 +147,12 @@ fn update(app: &App, state: &Rc<UiState>) {
         app.set_playback_status(playback_status.into());
         state.ui_assignments.set(state.ui_assignments.get() + 1);
     }
-    let can_retry = guest_playback::can_retry(app, state, &snapshot);
+    let can_retry = account_playback::can_retry(app, state, &snapshot)
+        || guest_playback::can_retry(app, state, &snapshot);
+    let account_retry_ready = account_playback::retry_ready(state, &snapshot);
+    if app.get_account_retry_ready() != account_retry_ready {
+        app.set_account_retry_ready(account_retry_ready);
+    }
     if app.get_can_retry_playback() != can_retry {
         app.set_can_retry_playback(can_retry);
         state.ui_assignments.set(state.ui_assignments.get() + 1);
@@ -303,6 +313,37 @@ fn start_local_media(app: &App, state: &Rc<UiState>, startup: &mut Option<Startu
         }
     }
 }
+fn native_fullscreen(app: &App) -> bool {
+    app.window().is_fullscreen()
+        || app
+            .window()
+            .with_winit_window(|window| window.fullscreen().is_some())
+            .unwrap_or(false)
+}
+
+fn request_windowed(app: &App) {
+    app.window().set_fullscreen(false);
+    app.window()
+        .with_winit_window(|window| window.set_fullscreen(None));
+    app.set_fullscreen_active(false);
+}
+
+fn exit_picture_in_picture(app: &App, state: &UiState) {
+    if native_fullscreen(app) {
+        state.pip_exit_pending.set(true);
+        request_windowed(app);
+        return;
+    }
+    let result = state.pip.exit(app);
+    match result {
+        Ok(()) => {
+            state.pip_exit_pending.set(false);
+            app.invoke_focus_video_mode();
+        }
+        Err(error) => app.set_status(error.into()),
+    }
+}
+
 fn setup_presenter(
     app: &App,
     state: &Rc<UiState>,
@@ -333,6 +374,10 @@ fn setup_presenter(
     // SAFETY: only called from Setup/BeforeRendering with the one owning context current.
     match unsafe { GlPresenter::new(&state.player, get_proc_address) } {
         Ok(presenter) => {
+            app.set_pip_available(picture_in_picture::availability(app.window()).is_ok());
+            state
+                .presenter_generations
+                .set(state.presenter_generations.get().saturating_add(1));
             state.presentation_ready.set(true);
             eprintln!("graphics: {}", presenter.graphics_info());
             app.set_technical(presenter.graphics_info().into());
@@ -641,6 +686,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else if options.clear_local_smoke
             || options.save_smoke
             || options.recovery_smoke
+            || options.pip_smoke
             || options.library_smoke
             || options.soak_minutes.is_some()
             || options.native_video_child
@@ -747,6 +793,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
     let state = Rc::new(UiState {
+        pip: picture_in_picture::Controller::default(),
+        pip_exit_pending: Cell::new(false),
+        presenter_generations: Cell::new(0),
         account_ui,
         account_playback: account_playback::State::default(),
         guest_playback: guest_playback::State::default(),
@@ -810,7 +859,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s = state.clone();
     app.on_toggle_pause(move || {
         if let Some(app) = weak.upgrade() {
-            if guest_playback::retry_failed(&app, &s) {
+            if account_playback::retry_failed(&app, &s) || guest_playback::retry_failed(&app, &s) {
                 return;
             }
             report(&app, s.player.toggle_pause());
@@ -927,6 +976,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s = state.clone();
     app.on_fullscreen(move || {
         if let Some(app) = weak.upgrade() {
+            if app.get_picture_in_picture() {
+                exit_picture_in_picture(&app, &s);
+                return;
+            }
             native_child::hide(&s);
             let fullscreen = !app.window().is_fullscreen();
             app.window().set_fullscreen(fullscreen);
@@ -942,6 +995,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s = state.clone();
     app.on_exit_fullscreen(move || {
         if let Some(app) = weak.upgrade() {
+            if app.get_picture_in_picture() {
+                exit_picture_in_picture(&app, &s);
+                return;
+            }
             native_child::hide(&s);
             if let Some(counter) = &exit_attempts {
                 counter.set(counter.get() + 1);
@@ -963,6 +1020,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.on_watch_visibility_changed(move || {
         if let Some(app) = weak.upgrade() {
             update(&app, &s);
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_picture_in_picture_toggle(move || {
+        let Some(app) = weak.upgrade() else { return };
+        if app.get_picture_in_picture() {
+            exit_picture_in_picture(&app, &s);
+            return;
+        }
+        if !app.get_loaded()
+            || app.get_page() != 2
+            || app.get_playback_overlay_open()
+            || app.get_fullscreen_active()
+            || s.native_child.enabled
+        {
+            return;
+        }
+        match s.pip.enter(&app) {
+            Ok(()) => {
+                app.invoke_focus_video_mode();
+            }
+            Err(error) => app.set_status(error.into()),
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_exit_picture_in_picture(move || {
+        if let Some(app) = weak.upgrade() {
+            exit_picture_in_picture(&app, &s);
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.window().on_close_requested(move || {
+        if let Some(app) = weak.upgrade()
+            && app.get_picture_in_picture()
+        {
+            exit_picture_in_picture(&app, &s);
+            slint::CloseRequestResponse::KeepWindowShown
+        } else {
+            slint::CloseRequestResponse::HideWindow
         }
     });
     guest_ui::bind(&app, &state);
@@ -1024,6 +1123,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         fixture_quiescence::window_event(&s, event);
         if let Some(app) = weak.upgrade() {
+            if !app.get_pip_available()
+                && !s.native_child.enabled
+                && matches!(
+                    event,
+                    winit::event::WindowEvent::Focused(true)
+                        | winit::event::WindowEvent::Resized(_)
+                )
+            {
+                app.set_pip_available(picture_in_picture::availability(app.window()).is_ok());
+            }
+            if s.pip.active() {
+                if native_fullscreen(&app) {
+                    request_windowed(&app);
+                } else if s.pip_exit_pending.get() {
+                    exit_picture_in_picture(&app, &s);
+                }
+            }
             native_child::window_event(&app, &s, event);
             feed_focus::window_event(&app, &s, event);
         }
@@ -1246,7 +1362,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let timer = Timer::default();
         // Save's explicit capture occurs after its committed acknowledgement,
         // while the shared popup is still open. Ordinary captures remain at15s.
-        let seconds = if options.save_smoke { 37 } else { 15 };
+        let seconds = if options.save_smoke {
+            37
+        } else if options.pip_smoke {
+            6
+        } else {
+            15
+        };
         timer.start(
             TimerMode::SingleShot,
             Duration::from_secs(seconds),
@@ -1356,6 +1478,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let recovery_diagnostic = options
         .recovery_smoke
         .then(|| recovery_smoke::Smoke::start(&app, &state));
+    let pip_diagnostic = options.pip_smoke.then(|| {
+        app.set_diagnostic_fixture_label("TEST FIXTURE — local picture-in-picture exercise".into());
+        pip_smoke::Smoke::start(&app, &state)
+    });
     let motion_diagnostic = smoke.then(|| motion_smoke::Smoke::start(&app, &state));
     let focus_smoke_complete = Rc::new(Cell::new(!smoke));
     let mute_smoke_complete = Rc::new(Cell::new(!smoke));
@@ -1846,6 +1972,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = related_focus_diagnostic {
+        diagnostic.finish().map_err(std::io::Error::other)?;
+    }
+    if let Some(diagnostic) = pip_diagnostic {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = recovery_diagnostic {

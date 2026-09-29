@@ -1,5 +1,12 @@
 # Video integration — experimental macOS path
 
+The [picture-in-picture mode](picture-in-picture.md) reuses this window's
+existing presenter and decoder. Its nine-stage local lifecycle test preserved
+native window, media-load and presenter identities across compact resize and
+restoration; no cross-window borrowed-texture sharing was introduced. macOS
+floating-layer and subtitle observations are recorded separately from resource
+qualification, which remains paused and incomplete.
+
 The current working tree embeds libmpv inside the compiled Slint window. This is
 a functional spike, not a passed optimized/release gate. There is one player,
 one Slint window, one rendering context, and two persistent RGBA8 textures. No

@@ -78,6 +78,10 @@ slices; deep-page efficiency is not yet qualified. See the
 [guest catalog UI evidence](docs/guest-catalog-ui.md).
 The CC button opens the [guest caption selector](docs/captions.md) for online videos
 and cycles available tracks for local files. Info shows observed decoder and application counters. Local collections and YouTube account data remain separate.
+The picture-in-picture button or **P** switches the same window into a floating
+player; **P**, **Escape** or closing that compact window restores browsing.
+It has been functionally exercised on the development Mac; native Wayland and
+the experimental child presenter keep it disabled. See [PiP details](docs/picture-in-picture.md).
 The account page explains session import and its risks before enabling an explicit
 file selection. Account playlist videos have a separate **Play with account**
 action backed by revocable scoped media transport. This path is implemented but

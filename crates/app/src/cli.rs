@@ -26,6 +26,7 @@ pub struct Options {
     pub related_focus_check: bool,
     pub save_smoke: bool,
     pub recovery_smoke: bool,
+    pub pip_smoke: bool,
     pub paused: bool,
     pub minimized: bool,
     pub smoke: bool,
@@ -70,6 +71,7 @@ impl Options {
                 "--related-focus-check" => options.related_focus_check = true,
                 "--save-smoke-test" => options.save_smoke = true,
                 "--recovery-smoke-test" => options.recovery_smoke = true,
+                "--pip-smoke-test" => options.pip_smoke = true,
                 "--refresh-smoke-test" => options.refresh_smoke = true,
                 "--demo-related" => options.demo_related = true,
                 "--ui-cache" => options.ui_cache = true,
@@ -203,6 +205,35 @@ impl Options {
         }
         if options.help {
             return Ok(options);
+        }
+        if options.pip_smoke {
+            const ALLOWED: &[&str] = &[
+                "--pip-smoke-test",
+                "--local",
+                "--subtitle",
+                "--data-root",
+                "--quit-after",
+                "--ui-size",
+                "--ui-theme",
+                "--snapshot",
+            ];
+            if options.local.is_none()
+                || options
+                    .data_root
+                    .as_ref()
+                    .is_none_or(|root| !root.is_absolute())
+                || options.quit_after.is_some_and(|seconds| seconds != 25)
+                || seen.iter().any(|key| {
+                    !ALLOWED
+                        .iter()
+                        .any(|allowed| key == std::ffi::OsStr::new(allowed))
+                })
+            {
+                return Err(
+                    "--pip-smoke-test requires local video and a NEW absolute --data-root, with a 25-second watchdog and no online or other diagnostic inputs",
+                );
+            }
+            options.quit_after = Some(25);
         }
         if options.recovery_smoke {
             const ALLOWED: &[&str] = &[
@@ -608,6 +639,7 @@ pub const HELP: &str = "Serein experimental native client
   --preferences-smoke-test write|verify  Offline preference/restart test (requires isolated --data-root)
   --soak-minutes N  Explicit 60–240 minute local lifecycle soak (requires --local, --demo-related, NEW --data-root)
   --related-focus-check  Finite offline related keyboard/resize/fullscreen checks (42s; exact fixture and NEW data root)
+  --pip-smoke-test  Finite offline picture-in-picture lifecycle checks (25s; local video and NEW absolute --data-root)
   --recovery-smoke-test  Finite synthetic failure/retry checks (20s; --yt-dlp /usr/bin/false and NEW private --data-root)
   --save-smoke-test  Finite real guest/local Save checks (75s; public --url and NEW private --data-root)
   --demo-related    Labeled static fixture rows (requires --local)
@@ -626,6 +658,34 @@ No network requests occur until search or URL submission.";
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn pip_diagnostic_is_offline_isolated_and_has_a_finite_watchdog() {
+        let base = [
+            "--pip-smoke-test",
+            "--local",
+            "/synthetic/clip.mp4",
+            "--data-root",
+            "/synthetic/profile",
+        ];
+        let parse =
+            |args: &[&str]| super::Options::parse(args.iter().map(std::ffi::OsString::from));
+        let options = parse(&base).unwrap();
+        assert!(options.pip_smoke);
+        assert_eq!(options.quit_after, Some(25));
+        for extra in [
+            vec!["--url", "https://www.youtube.com/watch?v=abcdefghijk"],
+            vec!["--paused"],
+            vec!["--native-video-child"],
+            vec!["--smoke-test"],
+            vec!["--quit-after", "5"],
+        ] {
+            let mut args = base.to_vec();
+            args.extend(extra);
+            assert!(parse(&args).is_err());
+        }
+        assert!(parse(&["--pip-smoke-test", "--local", "/synthetic/clip.mp4"]).is_err());
+        assert!(parse(&["--pip-smoke-test", "--data-root", "/synthetic/profile"]).is_err());
+    }
     #[cfg(unix)]
     #[test]
     fn recovery_diagnostic_requires_exact_inert_helper_and_isolated_inputs() {

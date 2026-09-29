@@ -882,6 +882,7 @@ mod tests {
             .unwrap()
             .join("synthetic-helper");
         let script = r#"#!/bin/sh
+printf x >> "$0.invocations"
 cookie=
 policy=
 previous=
@@ -897,6 +898,22 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         std::fs::write(&binary, script).unwrap();
         std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
         let resolver = crate::YtDlp::new(&binary).unwrap();
+        let invocations = binary.with_file_name("synthetic-helper.invocations");
+        let mut unverified = AccountClient::new(SessionControl::default()).unwrap();
+        assert!(matches!(
+            unverified.resolve_authenticated(
+                &resolver,
+                &VideoId::new("abcdefghijk").unwrap(),
+                &context()
+            ),
+            Err(AuthenticatedResolveError::Account(
+                AccountError::IdentityNotVerified
+            ))
+        ));
+        assert!(
+            !invocations.exists(),
+            "unverified identity must never launch the helper"
+        );
         let item = client
             .resolve_authenticated_with_policy(
                 &resolver,
@@ -928,9 +945,47 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
             "replacement must preserve playing authority"
         );
         assert!(replacement.authorization.is_valid());
-        client.control.invalidate();
+        assert_eq!(
+            std::fs::read(&invocations).unwrap(),
+            b"xx",
+            "explicit repeat performs fresh extraction"
+        );
+        client.http.limit_requests(Some("120"));
+        assert!(client.cooldown_remaining().unwrap() > std::time::Duration::from_secs(100));
+        assert!(matches!(
+            client.resolve_authenticated(
+                &resolver,
+                &VideoId::new("abcdefghijk").unwrap(),
+                &context()
+            ),
+            Err(AuthenticatedResolveError::Account(
+                AccountError::RateLimited
+            ))
+        ));
+        assert_eq!(
+            std::fs::read(&invocations).unwrap(),
+            b"xx",
+            "same client preserves server cooldown across explicit retries"
+        );
+        client.disconnect();
         assert!(!item.authorization.is_valid());
         assert!(!replacement.authorization.is_valid());
+        assert!(matches!(
+            client.resolve_authenticated(
+                &resolver,
+                &VideoId::new("abcdefghijk").unwrap(),
+                &context()
+            ),
+            Err(AuthenticatedResolveError::Account(
+                AccountError::StaleSession
+            ))
+        ));
+        assert_eq!(
+            std::fs::read(&invocations).unwrap(),
+            b"xx",
+            "sign-out rejects stale restart before helper launch"
+        );
+        std::fs::remove_file(invocations).unwrap();
         std::fs::remove_file(binary).unwrap();
         fixture_files.close().unwrap();
     }

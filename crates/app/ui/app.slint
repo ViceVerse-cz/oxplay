@@ -7,7 +7,8 @@ import { CaptionSelector, CaptionsUi } from "captions.slint";
 import { StatusMessage } from "status.slint";
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi }
 export component App inherits Window {
-    title: "Serein";
+    title: root.picture-in-picture ? "Serein — Picture in picture" : "Serein";
+    always-on-top: root.picture-in-picture;
     public function show-video-details() { root.prepare-native-overlay(); video-details.show(); }
     private property <string> message-text;
     private property <int> message-recovery-serial;
@@ -32,7 +33,7 @@ export component App inherits Window {
         return false;
     }
     public function close-local-save() { save-popup.close(); }
-    preferred-width: 1320px; preferred-height: 860px; min-width: 760px; min-height: 600px;
+    preferred-width: 1320px; preferred-height: 860px; min-width: root.picture-in-picture ? 360px : 760px; min-height: root.picture-in-picture ? 240px : 600px;
     background: Colors.canvas;
     default-font-size: 14px;
     forward-focus: shortcuts;
@@ -100,6 +101,7 @@ export component App inherits Window {
     in property <string> technical;
     in property <string> playback-status;
     in property <bool> can-retry-playback;
+    in property <bool> account-retry-ready: true;
     in property <bool> playback-failed;
     in property <string> diagnostic-warning;
     // Fixture identity is independent of changing decoder diagnostics.
@@ -134,6 +136,13 @@ export component App inherits Window {
     in-out property <bool> show-info: false;
     in-out property <bool> expanded-sidebar: true;
     in-out property <bool> fullscreen-active;
+    in-out property <bool> picture-in-picture;
+    in property <bool> pip-available;
+    out property <bool> playback-overlay-open: native-overlay-open;
+    private property <bool> video-only: fullscreen-active || picture-in-picture;
+    callback picture-in-picture-toggle();
+    callback exit-picture-in-picture();
+    public function focus-video-mode() { focus.focus(); }
     in-out property <bool> history-enabled;
     in-out property <int> selected-playlist: -1;
     in-out property <float> volume-level: 100;
@@ -146,7 +155,7 @@ export component App inherits Window {
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
     out property <int> visible-related-count: max(0, related-last - related-first);
-    out property <bool> progress-visible: watching && controls-visible && watch-controls.y + watch.content-y < watch.visible-height && watch-controls.y + watch.content-y + 42px > 0px;
+    out property <bool> progress-visible: watching && (controls-visible || picture-in-picture) && watch-controls.y + watch.content-y < watch.visible-height && watch-controls.y + watch.content-y + 42px > 0px;
     out property <int> columns: min(6, max(1, floor((browse.width + 20px) / 270px)));
     in property <int> feed-focus-target: -1;
     in property <int> feed-focus-surface: -1;
@@ -168,14 +177,14 @@ export component App inherits Window {
     out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
     out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
-    private property <length> sidebar-width: fullscreen-active ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
-    private property <length> top-height: fullscreen-active ? 0px : 56px;
+    private property <length> sidebar-width: video-only ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
+    private property <length> top-height: video-only ? 0px : 56px;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
     private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
     private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
     private property <length> related-clip-top: max(0px, -watch.content-y - related.y);
     private property <length> related-clip-bottom: min(related.visible-height, watch.visible-height - watch.content-y - related.y);
-    private property <bool> related-in-view: root.watching && !root.fullscreen-active && related-clip-bottom > related-clip-top;
+    private property <bool> related-in-view: root.watching && !root.video-only && related-clip-bottom > related-clip-top;
     private property <int> related-first: related-in-view ? max(0, floor((-related.content-y + related-clip-top) / 106px) - 1) : 0;
     private property <int> related-last: related-in-view ? min(videos.length, ceil((-related.content-y + related-clip-bottom) / 106px) + 1) : 0;
     private property <length> saved-watch-offset: 0px;
@@ -229,9 +238,9 @@ export component App inherits Window {
     changed feed-thumbnail-end => { root.refresh-visible(); }
     changed related-first => { root.refresh-visible(); }
     changed related-last => { root.refresh-visible(); }
-    changed page => { root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
-    changed fullscreen-active => {
-        if root.fullscreen-active {
+    changed page => { if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
+    changed video-only => {
+        if root.video-only {
             // Retire parking before the related surface disappears.
             // Transfer only retiring related focus, without resetting the saved
             // outer watch offset or stealing focus from search/player controls.
@@ -252,13 +261,13 @@ export component App inherits Window {
     public function refresh-visible() {
         if root.page == 0 {
             root.visible-range(root.first-row * root.columns, root.last-row * root.columns, root.feed-thumbnail-first, root.feed-thumbnail-end);
-        } else if root.page == 2 && !root.fullscreen-active {
+        } else if root.page == 2 && !root.video-only {
             root.visible-range(root.related-first, root.related-last, -1, -1);
         } else { root.visible-range(0, 0, -1, -1); }
     }
     public function focus-player() { root.prepare-native-overlay(); root.saved-watch-offset = 0px; watch.content-y = 0px; focus.focus(); }
     function restore-watch-scroll() {
-        watch.content-y = root.fullscreen-active ? 0px : max(min(root.saved-watch-offset, 0px), min(0px, watch.visible-height - watch.content-height));
+        watch.content-y = root.video-only ? 0px : max(min(root.saved-watch-offset, 0px), min(0px, watch.visible-height - watch.content-height));
     }
     public function focus-search() { if !root.native-video-child { search.focus(); } }
     public function focus-browse() { shortcuts.focus(); }
@@ -304,7 +313,7 @@ export component App inherits Window {
         // in Slint because rejected events continue through its normal path.
         if TextInputInterface.text-input-focused { return reject; }
         if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
-        if event.text == "/" { if !root.native-video-child { search.focus(); } return accept; }
+        if event.text == "/" { if !root.picture-in-picture && !root.native-video-child { search.focus(); } return accept; }
         if root.watching {
             if event.text == " " || event.text == "k" { root.toggle-pause(); return accept; }
             if event.text == "j" { root.relative-seek(-10); return accept; }
@@ -315,35 +324,36 @@ export component App inherits Window {
             if event.text == Key.DownArrow { root.volume(max(0, root.volume-level - 5)); return accept; }
             if event.text == "m" { root.mute(); return accept; }
             if event.text == "f" { root.fullscreen(); return accept; }
+            if event.text == "p" { root.picture-in-picture-toggle(); return accept; }
             if event.text == Key.Escape { root.exit-fullscreen(); return accept; }
         }
         return reject;
     }
     // One persistent host; scrolling moves the existing image, never the player.
     watch := ScrollView {
-        x: root.fullscreen-active ? 0px : root.sidebar-width + 28px;
-        y: root.fullscreen-active ? 0px : root.top-height + 20px;
-        width: root.fullscreen-active ? root.width : root.width - self.x - 28px;
-        height: root.fullscreen-active ? root.height : root.height - self.y - 48px;
+        x: root.video-only ? 0px : root.sidebar-width + 28px;
+        y: root.video-only ? 0px : root.top-height + 20px;
+        width: root.video-only ? root.width : root.width - self.x - 28px;
+        height: root.video-only ? root.height : root.height - self.y - 48px;
         visible: root.watching;
         horizontal-scrollbar-policy: always-off;
-        vertical-scrollbar-policy: root.fullscreen-active ? always-off : as-needed;
+        vertical-scrollbar-policy: root.video-only ? always-off : as-needed;
         content-width: self.visible-width;
-        content-height: root.fullscreen-active ? self.visible-height : max(self.visible-height, max(watch-controls.y + watch-controls.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
+        content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-controls.y + watch-controls.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
         changed content-y => {
-            if root.fullscreen-active && self.content-y != 0px { self.content-y = 0px; }
+            if root.video-only && self.content-y != 0px { self.content-y = 0px; }
         }
         // Preserve the user's offset independently of native fullscreen resize
         // clamping, then reapply it against the restored viewport dimensions.
-        scrolled => { root.prepare-native-overlay(); if !root.fullscreen-active { root.saved-watch-offset = self.content-y; } }
+        scrolled => { root.prepare-native-overlay(); if !root.video-only { root.saved-watch-offset = self.content-y; } }
         changed visible-height => { root.restore-watch-scroll(); }
         changed content-height => { root.restore-watch-scroll(); }
         // Persistent video host: navigation/control changes never reconstruct media.
         video := Rectangle {
             x: 0px;
             y: 0px;
-            width: root.fullscreen-active ? watch.visible-width : watch.visible-width - (root.width >= 1240px ? 368px : 0px);
-            height: root.fullscreen-active ? max(1px, watch.visible-height - (root.native-video-child ? 58px : 0px)) : self.width * 9 / 16;
+            width: root.video-only ? watch.visible-width : watch.visible-width - (root.width >= 1240px ? 368px : 0px);
+            height: root.video-only ? max(1px, watch.visible-height - (root.native-video-child || root.picture-in-picture ? 58px : 0px)) : self.width * 9 / 16;
             visible: root.watching;
             background: #000000;
             focus := FocusScope {
@@ -351,32 +361,33 @@ export component App inherits Window {
                 TouchArea { clicked => { focus.focus(); } double-clicked => { root.fullscreen(); } }
             }
             Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; }
-            if root.show-info && root.watching && !root.fullscreen-active: Rectangle {
+            if root.show-info && root.watching && !root.video-only: Rectangle {
                 x: 0px; y: 12px; width: video.width; height: 110px; background: #111315dd;
                 Text { x: 16px; y: 10px; width: parent.width - 32px; height: parent.height - 20px; text: root.technical; color: #eeeeee; font-size: 12px; wrap: word-wrap; }
             }
         }
         watch-controls := Rectangle {
-            x: video.x; y: root.fullscreen-active ? watch.visible-height - 58px : video.y + video.height + 8px;
-            width: video.width; height: root.fullscreen-active ? 58px : 214px;
+            x: video.x; y: root.video-only ? watch.visible-height - 58px : video.y + video.height + 8px;
+            width: video.width; height: root.video-only ? 58px : 214px;
             visible: root.watching;
-            background: root.fullscreen-active ? Colors.surface.with-alpha(0.94) : Colors.canvas;
-            if root.controls-visible: HorizontalLayout {
+            background: root.video-only ? Colors.surface.with-alpha(0.94) : Colors.canvas;
+            if root.controls-visible || root.picture-in-picture: HorizontalLayout {
                 y: 0; height: 42px; spacing: 8px;
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
                 Slider { horizontal-stretch: 1; min-width: 80px; accessible-label: "Playback position in seconds"; minimum: 0; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
-                Text { text: root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: Colors.text; width: 124px; horizontal-stretch: 0; vertical-alignment: center; }
+                Text { text: root.picture-in-picture ? root.elapsed : root.elapsed + " / −" + root.remaining; accessible-label: "Elapsed " + root.elapsed + ", remaining " + root.remaining; color: Colors.text; width: root.picture-in-picture ? 48px : 124px; horizontal-stretch: 0; vertical-alignment: center; }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
                 // Keep the primary row usable at the narrow watch breakpoint.
                 // Volume remains available in settings when this slider is absent.
                 if watch-controls.width >= 700px: Slider { horizontal-stretch: 0; accessible-label: "Volume percent"; width: 100px; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
+                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
+                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
+                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
+                if !root.picture-in-picture: Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
             }
-            if !root.fullscreen-active: Text { x: 0; y: 54px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
-            if !root.fullscreen-active: Text { x: 0; y: 116px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
-            if !root.fullscreen-active: HorizontalLayout {
+            if !root.video-only: Text { x: 0; y: 54px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
+            if !root.video-only: Text { x: 0; y: 116px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
+            if !root.video-only: HorizontalLayout {
                 y: 154px; height: 36px; spacing: 8px;
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "library-big"; label: "Description and public comments"; enabled: root.remote-video && root.loaded && !root.account-playback-active; clicked => { root.show-video-details(); } }
                 Rectangle { horizontal-stretch: 1; }
@@ -385,10 +396,10 @@ export component App inherits Window {
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
                 Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "ellipsis"; label: "Show or hide controls"; clicked => { root.toggle-controls(); } }
             }
-            if root.playback-status != "" && (!root.fullscreen-active || !root.native-video-child): Text {
-                x: 0px; y: root.fullscreen-active ? 42px : 194px;
-                width: parent.width; height: root.fullscreen-active ? 16px : 20px;
-                text: root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : root.playback-status; color: Colors.muted;
+            if (root.playback-status != "" || root.picture-in-picture) && (!root.video-only || !root.native-video-child): Text {
+                x: 0px; y: root.video-only ? 42px : 194px;
+                width: parent.width; height: root.video-only ? 16px : 20px;
+                text: root.picture-in-picture && root.diagnostic-fixture-label != "" ? "TEST FIXTURE · Picture in picture" : root.picture-in-picture && root.diagnostic-warning != "" ? root.diagnostic-warning : root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : (root.picture-in-picture && root.playback-status == "" ? "Picture in picture · P or Esc to return" : root.playback-status); color: Colors.muted;
                 font-size: 12px; overflow: elide;
                 accessible-label: "Playback status: " + self.text;
             }
@@ -414,7 +425,7 @@ export component App inherits Window {
             y: root.width >= 1240px ? 0px : watch-controls.y + watch-controls.height + 20px;
             width: root.width >= 1240px ? watch.visible-width - self.x : video.width;
             height: root.width >= 1240px ? watch.visible-height : max(318px, watch.visible-height * 0.65);
-            visible: root.watching && !root.fullscreen-active;
+            visible: root.watching && !root.video-only;
             horizontal-scrollbar-policy: always-off;
             // Opt-in experiment: cache each virtualized related card independently.
             // Thumbnail/model, theme, size, hover and focus changes invalidate its layer.
@@ -422,7 +433,7 @@ export component App inherits Window {
                 cache-rendering-hint: root.cache-related;
                 enabled: !root.native-video-child;
                 height: 106px; item: item; compact: true;
-                focus-request: root.watching && !root.fullscreen-active && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;
+                focus-request: root.watching && !root.video-only && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;
                 focus-delivery: root.feed-focus-delivery;
                 focus-ready(serial) => { root.feed-focus-ready(1, index, item.kind, item.id, serial); }
                 keyboard-move(command) => { return root.feed-key(1, index, command); }
@@ -476,7 +487,7 @@ export component App inherits Window {
         // Cache stable chrome in a GPU layer during video.
         // Focus, hover, edits and theme changes still invalidate this subtree.
         cache-rendering-hint: root.cache-chrome;
-        visible: !root.fullscreen-active;
+        visible: !root.video-only;
         width: parent.width; height: root.top-height; background: Colors.canvas;
         Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: "Toggle sidebar"; clicked => { root.expanded-sidebar = !root.expanded-sidebar; } }
         Rectangle { x: 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
@@ -494,7 +505,7 @@ export component App inherits Window {
     Rectangle {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
         cache-rendering-hint: root.cache-chrome;
-        visible: !root.fullscreen-active;
+        visible: !root.video-only;
         VerticalLayout {
             padding-left: 12px; padding-right: 12px; padding-top: 18px; padding-bottom: 20px; spacing: 6px;
             Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0; clicked => { root.navigate(0); } }
@@ -624,7 +635,7 @@ export component App inherits Window {
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 18px; height: 26px; }
-            Text { text: "/  Focus search\nSpace or K  Play / pause\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · Esc  Leave fullscreen"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "/  Focus search\nSpace or K  Play / pause\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "About Serein"; color: Colors.text; font-size: 18px; height: 26px; }
@@ -641,18 +652,19 @@ export component App inherits Window {
             Text { text: root.account-connected ? root.account-identity : "You are browsing as a guest"; color: Colors.text; font-size: 20px; height: 32px; }
             if !root.account-connected: Text { text: "Connect a browser session to read and manage your YouTube subscriptions and playlists. Public search and playback work without connecting."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Serein is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
-            if !root.account-connected: Text { text: "Sign in on YouTube in your system browser, preferably in a dedicated profile. Export a Netscape cookie file using the guide, then explicitly select it here. Never enter a Google password or verification code in Serein."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "1. Sign in with your Google account on YouTube in your browser.\n2. Export that YouTube session using the guide below.\n3. Select the exported file here. Serein verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: HorizontalLayout {
                 height: 40px; spacing: 12px;
-                Action { label: "Open YouTube"; clicked => { root.open-youtube(); } }
+                Action { label: "Sign in on YouTube"; clicked => { root.open-youtube(); } }
                 Action { label: "Cookie export guide"; clicked => { root.open-export-guide(); } }
                 Rectangle { horizontal-stretch: 1; }
             }
+            if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
             if !root.account-connected: CheckBox { text: "Remember this session using protected storage"; checked <=> root.account-remember; }
             if !root.account-connected: HorizontalLayout {
                 height: 42px; spacing: 12px;
-                Action { label: root.account-busy ? "Verifying session…" : "Import browser session…"; selected: true; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
+                Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; selected: true; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
                 if root.account-saved: Action { label: "Reconnect saved session"; enabled: root.account-consent && !root.account-busy; clicked => { root.account-reconnect(); } }
                 Rectangle { horizontal-stretch: 1; }
             }
@@ -682,7 +694,7 @@ export component App inherits Window {
         }
         }
     }
-    Rectangle { visible: !root.fullscreen-active; x: root.sidebar-width + 28px; y: root.height - 34px; width: root.width - self.x - 28px; height: 28px;
+    Rectangle { visible: !root.video-only; x: root.sidebar-width + 28px; y: root.height - 34px; width: root.width - self.x - 28px; height: 28px;
         HorizontalLayout {
             spacing: 8px;
             Text { horizontal-stretch: 1; min-width: 0px; text: root.displayed-status; color: root.native-video-child || root.diagnostic-warning != "" || root.diagnostic-fixture-label != "" ? #c58c44 : Colors.muted; font-size: 11px; overflow: elide; vertical-alignment: center; }
@@ -690,7 +702,7 @@ export component App inherits Window {
             Action { horizontal-stretch: 0; width: 126px; height: 28px; icon-name: "info"; label: "Message"; accessible-label: "Read full status message"; clicked => { root.show-status-message(); } }
         }
     }
-    if root.native-video-child && root.fullscreen-active: Rectangle {
+    if root.native-video-child && root.video-only: Rectangle {
         x: 0; y: root.height - 16px; width: root.width; height: 16px; background: Colors.canvas;
         Text { x: 8px; width: parent.width - 16px; height: parent.height; text: "DIAGNOSTIC — native child video; local only; layering, timing and performance unqualified"; color: #c58c44; font-size: 11px; overflow: elide; }
     }

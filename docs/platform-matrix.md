@@ -2,6 +2,15 @@
 
 All targets are experimental. A native compile/run is not release support.
 
+The current [PiP slice](picture-in-picture.md) passed debug and release native
+functional tests on Apple M1/macOS 27.0: P entry, pause, seek, resume, resize,
+Escape and close-request restoration preserved the same window/media/presenter.
+An owned-window CoreGraphics query verified floating layer 3 and restored layer 0.
+Windows and X11 PiP remain unvalidated; native Wayland and the experimental
+native-child presenter explicitly disable PiP. The account page was visually
+checked in guest mode; this does not validate a live Google/YouTube connection.
+No resource measurements were added.
+
 The [CI run for source 036da68](https://github.com/ViceVerse-cz/yt/actions/runs/36574672656)
 passed macOS ARM64 formatting, strict Clippy, all 369 Rust tests, 163 Python tests
 and release compilation on a hosted macOS 26 runner. The Ubuntu 24.04 job passed

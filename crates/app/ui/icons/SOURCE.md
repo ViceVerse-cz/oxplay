@@ -9,3 +9,5 @@ Source path for each SVG: `icons/<same filename>` at that revision. No paths, st
 `SHA256SUMS` records every vendored SVG and the upstream license. Verify with `shasum -a 256 -c SHA256SUMS` from this directory. Deliberate updates must resolve a new official revision, recopy unchanged assets/license, regenerate the hashes, and validate the Slint build and visible icon rendering.
 
 The mute-state action includes the unchanged `icons/volume-x.svg` from this same pinned checkout, alongside `volume-2.svg`. Its state reflects the observed native player property; it does not imply a persisted mute preference.
+
+The picture-in-picture control uses the unchanged `icons/picture-in-picture-2.svg` from this same revision. Its checksum is included alongside the existing icons.

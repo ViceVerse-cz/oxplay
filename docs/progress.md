@@ -6,7 +6,34 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-CI and the first repository push are the current user-requested slice. The
+The newest slice adds [floating picture in picture](picture-in-picture.md) to the
+same shared Slint window and implements explicit authenticated playback recovery.
+PiP preserves the existing player, window and presenter; P/Escape/close restore
+the main layout. Official Lucide supplies the new icon. Debug and release native
+nine-stage checks passed on macOS, including pause/seek/resume/resize, and a
+separate owned-window query verified the actual floating layer and restoration.
+Both captures retain visible subtitles and the diagnostic fixture label. Native
+Wayland and the experimental native-child presenter keep PiP unavailable.
+
+The existing real account-provider flow now has clearer Google/YouTube browser
+sign-in and explicit session-file import instructions. Failed account playback
+can retry through its authenticated resolver with exact load/session authority,
+provider cooldowns and no guest fallback. Final review also corrected fractional
+retry-deadline wakeups in both guest and account paths so a quiescent failed file
+cannot retain a permanently disabled Retry control. Synthetic regressions cover unverified
+identity, repeated authorized resolution, cooldowns and revocation. The 900×720
+account screen was visually inspected in guest mode and exited cleanly
+(`artifacts/account-ui-v2`); an earlier invalid numeric page argument was rejected
+before startup. No human credentials or live account were used. Account acceptance
+remains open and must be locally authorized.
+
+Local validation passed: locked workspace tests (379 passed, four explicitly
+ignored external integrations), strict workspace/all-target Clippy, formatting,
+locked debug and release builds. Release executable SHA256 and native evidence
+are recorded in the PiP notes. Remote CI for this slice is pending the push.
+No performance or usage benchmark was run.
+
+CI and the initial repository push are complete. The
 new [workflows](ci-release.md) check macOS ARM64 and Linux compilation/tests
 with the pinned toolchain, and provide an explicit manual draft source preview.
 Binary releases remain blocked on existing packaging/licensing/platform gates.
@@ -357,10 +384,10 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Continue account-scoped playback recovery through the existing authenticated
-resolver, preserving its session/selection authority, active quality and manual
-backoff without entering guest recovery. Complete native keyboard handling
-checks for playlist creation/renaming and failed-stream restart. Resource
+Complete native keyboard handling checks for playlist creation/renaming and
+failed-stream restart, then additional PiP monitor/fullscreen lifecycle cases.
+Real-account identity, reads, explicitly authorized writes and expiry still need
+local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,
 complete overlay/subtitle/A/V checks and full production soak remain open.
 Keep unavailable human/platform tests explicit; synthetic or guest results never

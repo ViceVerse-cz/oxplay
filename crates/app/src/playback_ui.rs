@@ -96,6 +96,21 @@ impl State {
 }
 
 impl State {
+    fn account_retry_video(
+        &self,
+        load: u64,
+        session: u64,
+        displayed: Option<&serein_core::VideoId>,
+    ) -> Option<serein_core::VideoId> {
+        if load == 0 || self.current_load.get() != load {
+            return None;
+        }
+        self.current.borrow().as_ref().and_then(|item| {
+            (!item.guest && item.session_generation == session && displayed == Some(&item.video.id))
+                .then(|| item.video.id.clone())
+        })
+    }
+
     fn guest_retry_video(
         &self,
         load: u64,
@@ -109,6 +124,19 @@ impl State {
                 .then(|| item.video.id.clone())
         })
     }
+}
+
+/// Authority is checked by the account coordinator; metadata alone grants none.
+pub fn account_retry_video(
+    state: &UiState,
+    load: u64,
+    session: u64,
+) -> Option<serein_core::VideoId> {
+    state.playback_ui.account_retry_video(
+        load,
+        session,
+        state.current_video.borrow().as_ref().map(|video| &video.id),
+    )
 }
 
 /// Return only the typed identity of the guest stream accepted by this exact
@@ -760,6 +788,24 @@ mod tests {
         s.clear();
         assert_eq!(s.current_load.get(), 0);
         assert_eq!(s.guest_retry_video(19, Some(&id)), None);
+    }
+
+    #[test]
+    fn account_restart_metadata_never_accepts_guest_wrong_session_or_old_load() {
+        let s = State::default();
+        let mut item = synthetic_playback();
+        let id = item.video.id.clone();
+        s.current_load.set(12);
+        *s.current.borrow_mut() = Some(item.clone());
+        assert_eq!(s.account_retry_video(12, 7, Some(&id)), Some(id.clone()));
+        assert_eq!(s.account_retry_video(11, 7, Some(&id)), None);
+        assert_eq!(s.account_retry_video(12, 8, Some(&id)), None);
+        assert_eq!(s.account_retry_video(12, 7, None), None);
+        item.guest = true;
+        *s.current.borrow_mut() = Some(item);
+        assert_eq!(s.account_retry_video(12, 7, Some(&id)), None);
+        s.clear();
+        assert_eq!(s.account_retry_video(12, 7, Some(&id)), None);
     }
 
     #[test]
