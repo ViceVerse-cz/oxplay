@@ -6,7 +6,30 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The newest slice adds a [bounded guest artwork cache](artwork-cache.md), with
+The newest slice fixes [playlist keyboard editing and confirmation focus](library-reconciliation.md#keyboard-name-editing-and-confirmations).
+The editor stays focused/read-only during writes, Escape safely cancels unsubmitted
+renames, and confirmations focus Cancel then restore their originating control.
+Accepted video pagination retires stale Rename UI; rejected playlist selection
+returns both the dropdown index and label to its acknowledged identity, including
+after deferred callbacks. Shared controlled widgets also keep saved playback,
+quality, artwork and history preferences synchronized. All screens remain shared
+compiled Slint; no platform-specific application frontend was added.
+
+Local validation passed 414 Rust tests (four external integrations ignored), all
+163 Python tooling tests, formatting and strict Clippy. A PID readiness race in
+an existing DNS test fixture was fixed with a complete-record handshake, keeping
+production supervision and reaping assertions unchanged. The final debug native
+check passed twelve injected-key stages and exited 0; its inspected capture shows
+one correct confirmation focus outline. An earlier strengthened check caught the
+disabled-control focus bug before the passing fix. Read-only SQL confirmed the
+two expected persisted playlists and history off. The final debug and release
+checks also passed deferred selector rollback and a subsequent real accepted
+selection; the compact 760×600 light release capture was inspected and shutdown
+returned 0. Both native processes were reaped. Remote CI is pending.
+This tests Slint key delivery in a native window, not OS/physical keyboard, IME
+or screen-reader qualification. No performance/usage benchmark was run.
+
+The preceding slice adds a [bounded guest artwork cache](artwork-cache.md), with
 Off/32/128/256 MiB Settings controls and schema-v6 persistence. Saved Home videos
 read it without HTTP fallback. Image identities survive unchanged refreshes;
 reindexed rows reject old completions. Clear local data waits for caption and
@@ -444,11 +467,15 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Complete the remaining shared-UI keyboard/focus paths for playlist creation and
-renaming, with native functional checks and fixes where needed. Follow with
-failed-stream restart and additional PiP monitor/fullscreen lifecycle cases.
-The bounded anonymous artwork cache and coordinated deletion are implemented;
-its native evidence is recorded above.
+Fix creation beyond the first 100 local playlists: the current summary excludes
+the newly created ID and falls back to an older selection. Add bounded
+bidirectional collection pagination and a correlated window containing the new
+ID; preserve Previous/Next and typed selection after rename/deletion. Continue
+the controlled-widget review for captions, Appearance and catalog filters, then
+cover actual queue saturation and page-navigation rename cancellation with native
+interaction checks. Failed-stream restart and additional PiP monitor/fullscreen
+lifecycle cases remain next. Physical keyboard/IME/screen-reader qualification
+remains open despite the passing injected-key slice.
 Real-account identity, reads, explicitly authorized writes and expiry still need
 local human qualification; synthetic checks cannot pass those gates. Resource
 experiments remain paused. The required30-visible-thumbnail geometry,

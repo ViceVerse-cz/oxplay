@@ -36,6 +36,7 @@ pub struct Options {
     pub captions_smoke: bool,
     pub clear_local_smoke: bool,
     pub library_smoke: bool,
+    pub library_keyboard_smoke: bool,
     pub refresh_smoke: bool,
     pub demo_related: bool,
     pub ui_cache: bool,
@@ -68,6 +69,7 @@ impl Options {
                 "--captions-smoke-test" => options.captions_smoke = true,
                 "--clear-local-smoke-test" => options.clear_local_smoke = true,
                 "--library-smoke-test" => options.library_smoke = true,
+                "--library-keyboard-smoke-test" => options.library_keyboard_smoke = true,
                 "--library-resource-smoke-test" => options.library_resource_smoke = true,
                 "--related-focus-check" => options.related_focus_check = true,
                 "--save-smoke-test" => options.save_smoke = true,
@@ -298,6 +300,37 @@ impl Options {
                 );
             }
             options.quit_after = Some(20);
+        }
+        if options.library_keyboard_smoke {
+            const ALLOWED: &[&str] = &[
+                "--library-keyboard-smoke-test",
+                "--data-root",
+                "--quit-after",
+                "--ui-size",
+                "--ui-theme",
+                "--snapshot",
+            ];
+            if !cfg!(unix)
+                || options
+                    .data_root
+                    .as_ref()
+                    .is_none_or(|root| !root.is_absolute())
+                || options.quit_after.is_some_and(|seconds| seconds != 38)
+                || options.snapshot.as_ref().is_some_and(|path| {
+                    path.parent() != options.data_root.as_deref()
+                        || path.extension().is_none_or(|extension| extension != "png")
+                })
+                || seen.iter().any(|key| {
+                    !ALLOWED
+                        .iter()
+                        .any(|allowed| key == std::ffi::OsStr::new(allowed))
+                })
+            {
+                return Err(
+                    "--library-keyboard-smoke-test requires only NEW absolute --data-root and its exact38-second watchdog; no media, network, helper or other diagnostic inputs",
+                );
+            }
+            options.quit_after = Some(38);
         }
         if options.save_smoke {
             const ALLOWED: &[&str] = &[
@@ -658,6 +691,7 @@ pub const HELP: &str = "Serein experimental native client
   --captions-smoke-test 70-second guest caption/quality test (requires --url)
   --clear-local-smoke-test 85-second caption/cache deletion test (requires --url and NEW --data-root)
   --library-smoke-test 28-second offline local-navigation test (requires NEW --data-root)
+  --library-keyboard-smoke-test 38-second offline injected-key playlist test (requires NEW --data-root)
   --library-resource-fixture ROOT  Prepared, labeled offline 10,000-item fixture (uses ROOT/Serein)
   --library-resource-smoke-test  Five 100-row page/input checks plus keyboard/resize checks (44s; requires prepared fixture; no resource qualification)
   --comments-smoke-test 70-second guest details/comments test (requires --url)
@@ -1073,6 +1107,42 @@ mod tests {
             vec!["--ui-page", "library"],
             vec!["--smoke-test"],
             vec!["--clear-local-smoke-test"],
+        ] {
+            let mut args = base.to_vec();
+            args.extend(extra);
+            assert!(parse(&args).is_err());
+        }
+    }
+    #[test]
+    fn keyboard_library_diagnostic_rejects_every_unrelated_input() {
+        assert!(parse(&["--library-keyboard-smoke-test"]).is_err());
+        assert!(parse(&["--library-keyboard-smoke-test", "--data-root", "relative"]).is_err());
+        let base = ["--library-keyboard-smoke-test", "--data-root", "/new-root"];
+        let result = parse(&base);
+        if cfg!(unix) {
+            let options = result.unwrap();
+            assert!(options.library_keyboard_smoke);
+            assert_eq!(options.quit_after, Some(38));
+        } else {
+            assert!(result.is_err());
+        }
+        for extra in [
+            vec!["--quit-after", "37"],
+            vec!["--quit-after", "39"],
+            vec!["--local", "clip"],
+            vec!["--url", "https://youtu.be/aqz-KE-bpKQ"],
+            vec!["--search", "fixture"],
+            vec!["--yt-dlp", "/usr/bin/false"],
+            vec!["--deno", "/usr/bin/false"],
+            vec!["--library-smoke-test"],
+            vec!["--home-smoke-test"],
+            vec!["--minimized"],
+            vec!["--diagnostics"],
+            vec!["--snapshot", "/elsewhere/image.png"],
+            vec!["--ui-page", "library"],
+            vec!["--ui-cache"],
+            vec!["--scoped-media"],
+            vec!["--paused"],
         ] {
             let mut args = base.to_vec();
             args.extend(extra);

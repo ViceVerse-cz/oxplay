@@ -1187,6 +1187,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 return;
             }
             s.library_ui.route_epoch.set(epoch);
+            // Page navigation retires the captured rename epoch. Retire its
+            // visible editor at the same time, rather than leaving a Save
+            // control whose stale target can only fail and discard the edit.
+            cancel_name(&app, &s);
             *s.library_ui.pages.borrow_mut() = page;
             publish(&app, &s, Vec::new(), None);
         }

@@ -24,6 +24,7 @@ mod home_smoke;
 mod home_ui;
 pub mod library;
 mod library_fixture;
+mod library_keyboard_smoke;
 mod library_resource_smoke;
 mod library_smoke;
 mod library_ui;
@@ -723,6 +724,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             || options.recovery_smoke
             || options.pip_smoke
             || options.library_smoke
+            || options.library_keyboard_smoke
             || options.soak_minutes.is_some()
             || options.native_video_child
             || options.related_focus_check
@@ -1893,6 +1895,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let library_diagnostic = options
         .library_smoke
         .then(|| library_smoke::Smoke::start(&app, &state));
+    let library_keyboard_diagnostic = options
+        .library_keyboard_smoke
+        .then(|| library_keyboard_smoke::Smoke::start(&app, &state));
     let native_child_diagnostic = options
         .native_video_child_smoke
         .then(|| native_child_smoke::Smoke::start(&app, &state));
@@ -2028,6 +2033,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = library_diagnostic {
+        diagnostic.finish().map_err(std::io::Error::other)?;
+    }
+    if let Some(diagnostic) = library_keyboard_diagnostic {
         diagnostic.finish().map_err(std::io::Error::other)?;
     }
     if let Some(diagnostic) = native_child_diagnostic {

@@ -64,5 +64,86 @@ separate new-playlist draft. Create and Rename retain text after validation or
 storage errors, and clear it only after their committed success response. Errors
 appear beside the editor. The Save dialog uses the same name validation messages.
 Focused identity and UTF-8 boundary regressions pass in the364-test workspace
-suite, and the compiled Slint UI passes strict Clippy. Physical keyboard input
-and complete native create/rename/cancel validation remain pending.
+suite, and the compiled Slint UI passes strict Clippy. Physical keyboard delivery remains unqualified. The later native injected-key
+validation is recorded below.
+
+## Keyboard name editing and confirmations
+
+The editor remains mounted and temporarily read-only while its write and
+follow-up reads are pending. Enter and the Create/Save action focus that editor
+before submitting; committed results do not schedule a later focus steal. Rename
+selects the existing name for replacement. Escape cancels an unsubmitted rename
+and restores the independent Create draft. Escape during an accepted write does
+not pretend to cancel SQLite. Invalid input retains its text and adjacent error.
+
+Deletion confirmation explicitly focuses Cancel, scrolls into view, and restores
+its originating control/scroll position on Escape or Cancel. Confirm parks focus
+on the stable page before controls become busy. Hidden controls are excluded
+from keyboard traversal. The playlist dropdown returns to the acknowledged
+selection if its request is rejected. The shared `ConfirmedChoice` mirrors later
+acknowledged changes even after the underlying ComboBox changes its index; the
+same component now serves playback speed, default quality, artwork settings and
+history retention. It restores both index and displayed value synchronously:
+index-only rollback can coalesce away its change callback and leave a rejected
+label to reverse-select the wrong row on the next turn. The two history toggles
+use the same acknowledgment pattern for their checked state.
+Accepted video-page navigation retires
+both the rename authority and its visible editor, avoiding an unusable stale Save
+control.
+
+`--library-keyboard-smoke-test` is a finite, explicitly labeled offline check in
+a fresh private profile. It dispatches keys through the pinned Slint
+`Window::dispatch_event_with_result` API: real widget traversal/text/Enter/Space/
+Escape, real SQLite writes, and actual delivered focus/model observations. Route
+bootstrap and the deliberate navigation-away use application callbacks. It does
+not qualify macOS/Winit key delivery, physical keyboard input, IME or screen
+readers. It admits no startup media, account, helper or online inputs; accidental
+search/video-selection callbacks record failure instead of starting requests.
+
+The strengthened twelve-stage debug check passed create/rename, invalid names,
+cancellation, two independently persisted collections and navigation during an
+accepted write. It also verified actual Cancel focus while confirmation was open
+and Delete focus after Escape. The 1000×800 dark capture was inspected; only
+Cancel retains the active focus outline. The native process exited 0 and was
+reaped (`artifacts/keyboard-debug-v3`). Post-exit read-only SQL confirmed exactly
+the two expected fixture names/IDs and history remained disabled.
+
+The initial check passed, but a stronger delayed confirmation checkpoint exposed
+stale focus on a disabled Delete control (`keyboard-debug-v2`, failed). Moving
+focus to the stable page before disabling/hiding the previous control fixed it;
+assertions were retained and passed in v3. The final debug check in
+`artifacts/keyboard-debug-v4` also passed the selector regression: displayed
+index and label match after both Creates; a deliberately rejected keyboard
+choice remains rolled back across event-loop turns; a later real selection
+reads SQLite and displays the acknowledged original playlist. Its capture was
+inspected and post-exit SQL again matched both expected IDs/names. This injects
+a rejecting callback, not actual worker queue saturation. The final locked release
+also passed all twelve stages at 760×600/light and exited 0; its inspected capture
+shows the confirmation in view with Cancel focused. Post-exit read-only SQL again
+confirmed both expected playlists and history disabled. Both owned processes were
+reaped. Evidence is in `artifacts/keyboard-release-v2`; executable SHA256 is
+`11659bbc976c2b6f8fd3c8bc9c9ac24bd50091b76644048dc2cdb9bad96f6dc8`.
+Remote CI is pending.
+Tests exposed an unrelated existing DNS-fixture PID publication race: readiness
+now requires a complete newline-terminated PID, with process-reaping assertions
+unchanged. The integrated workspace suite then passed 414 Rust tests (four
+external integrations ignored). No resource/usage benchmark was run.
+
+A separate remaining issue is creation beyond the first 100 playlists: the
+current summary omits the new ID and selection falls back to an older playlist.
+The next fix requires bounded bidirectional collection pages and a correlated
+read containing the created ID. Actual queue-saturation rejection and video-page
+rename cancellation still need dedicated native interaction cases; the finite
+selector check injects a rejecting callback rather than saturating the worker.
+
+Repeat the functional diagnostic with a new absolute profile directory:
+
+```sh
+cargo build --workspace --release --locked
+./target/release/serein --library-keyboard-smoke-test \
+  --data-root /absolute/path/new-keyboard-profile --ui-size 760x600 \
+  --ui-theme light --snapshot /absolute/path/new-keyboard-profile/keyboard.png
+```
+
+It exits after38seconds and returns an error if any stage fails or never completes.
+The screenshot is an explicit one-shot capture; normal presentation is unchanged.

@@ -408,7 +408,7 @@ mod tests {
             let pid = path.join("pid").to_string_lossy().replace('\'', "'\\''");
             std::fs::write(
                 path.join("helper"),
-                format!("#!/bin/sh\nprintf '%s' \"$$\" > '{pid}'\n{body}\n"),
+                format!("#!/bin/sh\nprintf '%s\\n' \"$$\" > '{pid}'\n{body}\n"),
             )
             .unwrap();
             std::fs::set_permissions(path.join("helper"), std::fs::Permissions::from_mode(0o700))
@@ -418,11 +418,24 @@ mod tests {
         fn helper(&self) -> PathBuf {
             self.0.join("helper")
         }
+        fn published_pid(&self) -> Option<i32> {
+            let file = std::fs::File::open(self.0.join("pid")).ok()?;
+            let mut contents = String::new();
+            file.take(17).read_to_string(&mut contents).ok()?;
+            // Opening/truncating the file is not readiness. A partial decimal
+            // prefix could even parse as another live PID; the immutable final
+            // newline is the fixture's publication boundary.
+            let digits = contents.strip_suffix('\n')?;
+            if digits.is_empty() || digits.len() > 10 || !digits.bytes().all(|b| b.is_ascii_digit())
+            {
+                return None;
+            }
+            digits.parse::<i32>().ok().filter(|pid| *pid > 1)
+        }
         fn assert_reaped(&self) {
-            let pid: i32 = std::fs::read_to_string(self.0.join("pid"))
-                .unwrap()
-                .parse()
-                .unwrap();
+            let pid = self
+                .published_pid()
+                .expect("fixture must publish its complete PID before cancellation/reply");
             assert_eq!(unsafe { libc::kill(pid, 0) }, -1);
             assert_eq!(io::Error::last_os_error().raw_os_error(), Some(libc::ESRCH));
         }
@@ -472,8 +485,8 @@ mod tests {
                 _ = &mut request => panic!("fixture should wait"),
                 _ = async {
                     let deadline = Instant::now() + Duration::from_secs(2);
-                    while !fixture.0.join("pid").exists() {
-                        assert!(Instant::now() < deadline);
+                    while fixture.published_pid().is_none() {
+                        assert!(Instant::now() < deadline, "fixture did not publish a complete PID");
                         tokio::time::sleep(Duration::from_millis(5)).await;
                     }
                 } => {}
@@ -486,6 +499,28 @@ mod tests {
             std::thread::sleep(Duration::from_millis(5));
         }
         fixture.assert_reaped();
+    }
+    #[test]
+    fn fixture_readiness_requires_complete_pid_not_existence_or_decimal_prefix() {
+        let fixture = Fixture::new("exit 0");
+        assert!(fixture.published_pid().is_none());
+        for incomplete in [
+            "",
+            "12",
+            "12345",
+            "0\n",
+            "1\n",
+            "12\n34\n",
+            "999999999999999999999\n",
+        ] {
+            std::fs::write(fixture.0.join("pid"), incomplete).unwrap();
+            assert!(
+                fixture.published_pid().is_none(),
+                "invalid fixture readiness accepted"
+            );
+        }
+        std::fs::write(fixture.0.join("pid"), b"12345\n").unwrap();
+        assert_eq!(fixture.published_pid(), Some(12345));
     }
     #[test]
     fn admission_is_bounded_without_queue_and_protocol_is_strict() {

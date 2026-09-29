@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { LineEdit, Slider, ListView, ComboBox, CheckBox, Palette, ScrollView } from "std-widgets.slint";
-import { Colors, Action, ActionVariant, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
+import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
 import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
 import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
 import { CaptionSelector, CaptionsUi } from "captions.slint";
@@ -483,7 +483,7 @@ export component App inherits Window {
                     Text { text: "Volume"; color: Colors.text; }
                     Slider { accessible-label: "Volume percent"; minimum: 0; maximum: 100; value: root.volume-level; changed(value) => { root.volume(value); } }
                     Text { text: "Playback speed"; color: Colors.text; }
-                    ComboBox { accessible-label: "Playback speed"; model: ["0.5×", "1×", "1.5×", "2×"]; current-index: root.speed-index; enabled: !root.speed-busy; selected(value) => { root.speed((self.current-index + 1) * 0.5); self.current-index = root.speed-index; } }
+                    ConfirmedChoice { accessible-label: "Playback speed"; model: ["0.5×", "1×", "1.5×", "2×"]; acknowledged-index: root.speed-index; enabled: !root.speed-busy; choose(index) => { root.speed((index + 1) * 0.5); } }
                     Text { text: "Maximum video quality"; color: Colors.text; }
                     ComboBox { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; current-index <=> root.quality-index; enabled: root.remote-video && !root.busy; selected(value) => { root.quality(self.current-index); } }
                     Text { text: root.remote-video ? "Uses the best available stream within this limit." : "Quality selection applies to YouTube videos."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
@@ -635,15 +635,15 @@ export component App inherits Window {
             Text { text: "Appearance"; color: Colors.text; font-size: 18px; height: 26px; }
             ComboBox { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; current-index: root.theme; selected(value) => { root.theme = self.current-index; root.preferences-changed(); } }
             Text { text: "Default maximum quality"; color: Colors.text; font-size: 18px; height: 26px; }
-            ComboBox { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; current-index: root.default-quality-index; selected(value) => { root.default-quality(self.current-index); self.current-index = root.default-quality-index; } }
+            ConfirmedChoice { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
             Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Privacy by default"; color: Colors.text; font-size: 18px; height: 26px; }
             Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
-            CheckBox { text: "Keep watch history on this device"; checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; toggled => { LibraryUi.history(self.checked); self.checked = LibraryUi.history-enabled; } }
+            ConfirmedToggle { text: "Keep watch history on this device"; acknowledged-checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { LibraryUi.history(checked); } }
             Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Saved video artwork"; color: Colors.text; font-size: 18px; height: 26px; }
-            ComboBox { accessible-label: "Saved video artwork cache"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; model: ["Off — remove cached artwork", "Up to 32 MiB", "Up to 128 MiB", "Up to 256 MiB"]; current-index: root.thumbnail-cache-index; selected(value) => { root.thumbnail-cache-changed(self.current-index); self.current-index = root.thumbnail-cache-index; } }
+            ConfirmedChoice { accessible-label: "Saved video artwork cache"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; model: ["Off — remove cached artwork", "Up to 32 MiB", "Up to 128 MiB", "Up to 256 MiB"]; acknowledged-index: root.thumbnail-cache-index; choose(index) => { root.thumbnail-cache-changed(index); } }
             Text { text: "Keep artwork from guest browsing on this device. These images can reveal browsing interests even when history is off. Home reads them without contacting YouTube. Clear local data removes them with your local library."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }

@@ -1,4 +1,39 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import { ComboBox, CheckBox } from "std-widgets.slint";
+
+// A controlled selector keeps its external acknowledgement binding alive even
+// after the underlying ComboBox assigns current-index during user navigation.
+export component ConfirmedChoice inherits ComboBox {
+    in property <int> acknowledged-index;
+    private property <string> acknowledged-value: root.acknowledged-index >= 0 && root.acknowledged-index < root.model.length ? root.model[root.acknowledged-index] : "";
+    callback choose(int);
+    current-index: root.acknowledged-index;
+    current-value: root.acknowledged-value;
+    function synchronize-acknowledgement() {
+        // ComboBox.select changes both fields before invoking selected. An
+        // index-only A -> B -> A rollback can coalesce its changed callback,
+        // leaving value B to reverse-select the rejected row next event turn.
+        root.current-index = root.acknowledged-index;
+        root.current-value = root.acknowledged-value;
+    }
+    changed acknowledged-index => { root.synchronize-acknowledgement(); }
+    changed acknowledged-value => { root.synchronize-acknowledgement(); }
+    selected(value) => {
+        root.choose(root.current-index);
+        root.synchronize-acknowledgement();
+    }
+}
+// Boolean controls have the same imperative-write binding loss as selectors.
+export component ConfirmedToggle inherits CheckBox {
+    in property <bool> acknowledged-checked;
+    callback choose(bool);
+    checked: root.acknowledged-checked;
+    changed acknowledged-checked => { root.checked = root.acknowledged-checked; }
+    toggled => {
+        root.choose(root.checked);
+        root.checked = root.acknowledged-checked;
+    }
+}
 export global Colors {
     in-out property <bool> dark: true;
     out property <color> canvas: dark ? #0f0f0f : #ffffff;
@@ -17,6 +52,7 @@ export global Colors {
 }
 export enum ActionVariant { quiet, primary, secondary, destructive }
 export component Action inherits Rectangle {
+    out property <bool> has-focus: focus.has-focus;
     in property <string> label;
     in property <string> icon-name;
     in property <bool> selected;

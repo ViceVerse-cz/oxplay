@@ -227,3 +227,18 @@ The guest artwork cache uses the already locked `image`, `libc`, SQLite and
 Tokio dependencies. No framework revision, production feature combination or
 license route changed for this slice. Cache path/platform limitations and the
 schema-v6 migration are recorded in [artwork-cache.md](artwork-cache.md).
+
+Playlist keyboard behavior was checked against the same pinned Slint source:
+`internal/compiler/widgets/common/lineedit-base.slint` exposes read-only, focus,
+selection and key callbacks; `internal/core/api.rs` provides native-window key
+dispatch. The finite diagnostic exercises Slint input directly and does not
+qualify Winit/OS input or screen readers. The controlled `ConfirmedChoice` widget
+uses an acknowledged-index change handler because `Property::set` in
+`internal/core/properties.rs` removes ordinary bindings, and
+`internal/compiler/widgets/common/combobox-base.slint` assigns its index before
+emitting `selected`. A one-time rollback assignment is therefore insufficient
+to follow later acknowledgments. Both the index and value must be restored
+synchronously because the base widget reverse-resolves value changes to an index.
+Confirmed history toggles likewise mirror asynchronous checked acknowledgments.
+No dependency, feature or license selection
+changed for this slice.
