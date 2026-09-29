@@ -33,7 +33,27 @@ script loading. The first Linux CI run built libmpv with Lua disabled and caught
 20 native media initialization failures from unavailable options; it passed
 168 app tests, 10 core tests and 37 other media tests before stopping (one media
 test explicitly ignored). The corrected native build preserves the application's
-privacy settings and test coverage; a follow-up CI run must verify it.
+privacy settings and test coverage. The
+[corrected run](https://github.com/ViceVerse-cz/yt/actions/runs/36574672656)
+passed every check on both platforms, including the unchanged media tests and
+both locked release workspace builds.
+
+The corrected macOS ARM64 job for source `036da68` completed successfully:
+formatting, strict Clippy, 369 Rust tests (four explicit integrations ignored),
+163 Python tests and the locked release workspace build. Its Homebrew mpv was
+0.41.0_9, reporting client API 2.5.0. This is distinct from the development
+machine's package revision. The source archive helper was also exercised on
+the actual initial snapshot `97d0263`: all 784 tracked files were included and
+the generated asset checksums verified. The manual draft-creation workflow has
+not been dispatched; no GitHub release or tag has been created.
+
+The Ubuntu24.04 job passed 351 Rust tests (one explicit external integration
+ignored), all 163 Python tests, formatting, strict Clippy and the locked release
+workspace build. Its native inputs included mpv 0.41.0 / client API 2.5.0,
+FFmpeg development packages `7:6.1.1-3ubuntu5`, libplacebo `6.338.2-2build1`
+and LuaJIT `2.1.0+git20231223.c525bcb+dfsg-1ubuntu0.1`. Platform-specific test
+counts differ because macOS adapters have their own tests. No runtime desktop,
+account, performance or usage test was run.
 
 Compilation with both Linux backends is not an X11 or native Wayland runtime
 qualification. Neither CI job establishes working hardware decoding, account

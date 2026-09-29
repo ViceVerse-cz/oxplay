@@ -6,6 +6,11 @@ No Developer ID identity, account credential, notarization service, publication
 endpoint or automatic updater is used. Windows, Linux/X11 and native Wayland
 packaging have not been validated.
 
+The [manual GitHub release workflow](ci-release.md) creates draft source previews
+only. It does not upload this developer bundle, native libraries or helper
+runtimes. Signing, portability and the documented redistribution gaps must be
+resolved before adding binary assets to that workflow.
+
 ## Run the offline tooling
 
 Install the documented native prerequisites and build with the committed lock:

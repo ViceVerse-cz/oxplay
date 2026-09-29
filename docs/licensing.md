@@ -28,6 +28,12 @@ graph, preserve applicable notices, and supply corresponding source/build
 material as required. No binary package is cleared for publication by this
 document alone.
 
+The [manual source-preview workflow](ci-release.md) archives this application's
+tracked source and existing notices only. It publishes no compiled application,
+media or helper binary and makes no complete dependency-source coverage claim.
+The developer bundle and its outstanding audit findings remain outside that
+workflow's release assets.
+
 The local storage crate adds `rusqlite 0.40.2` and `libsqlite3-sys 0.38.2`, both
 MIT according to their fetched package manifests. The explicitly selected
 `bundled` feature compiles SQLite `3.53.2` (observed in the bundled

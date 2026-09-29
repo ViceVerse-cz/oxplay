@@ -36,7 +36,8 @@ cargo build --locked --release
 The inspected development environment is Apple Silicon macOS 27.0. Other targets
 remain experimental; see [platform matrix](docs/platform-matrix.md). Linux builds
 need libmpv development files and Winit/X11/Wayland development prerequisites;
-those builds have not yet been executed here. Windows extraction currently fails
+the [CI workflow](docs/ci-release.md) compiles and tests the selected features
+on Ubuntu. Native X11 and Wayland playback remain unvalidated. Windows extraction currently fails
 closed until process-tree supervision is implemented.
 
 Slint runtime/build compiler use the identical upstream Git revision recorded in

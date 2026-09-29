@@ -10,20 +10,29 @@ CI and the first repository push are the current user-requested slice. The
 new [workflows](ci-release.md) check macOS ARM64 and Linux compilation/tests
 with the pinned toolchain, and provide an explicit manual draft source preview.
 Binary releases remain blocked on existing packaging/licensing/platform gates.
-Local actionlint, shellcheck, Rust formatting and all163 Python tooling tests
+Local actionlint, shellcheck, Rust formatting and all 163 Python tooling tests
 pass, including seven exact-commit source-release regressions. The initial
 snapshot `97d0263` is pushed to `ViceVerse-cz/yt`; 45 prior development commits
 remain on the local `archive/local-development` branch. The
 [first remote run](https://github.com/ViceVerse-cz/yt/actions/runs/36573332667)
-passed macOS formatting, strict Clippy and all369 Rust tests, then exposed the
-CI-selected Python3.12's missing macOS `os.waitid` primitive. CI now pins the
-locally tested Python3.14.7 and checks supervision support before compiling.
+passed macOS formatting, strict Clippy and all 369 Rust tests, then exposed the
+CI-selected Python 3.12's missing macOS `os.waitid` primitive. CI now pins the
+locally tested Python 3.14.7 and checks supervision support before compiling.
 Linux's official libmpv source build/API check and strict production-feature
-Clippy passed, followed by168 app and10 domain tests. Media tests then found
+Clippy passed, followed by 168 app and 10 domain tests. Media tests then found
 that disabling Lua at build time removes options required by the application's
-script-disable policy (37 media passes,20 initialization failures). The CI mpv
+script-disable policy (37 media passes, 20 initialization failures). The CI mpv
 build now includes LuaJIT; runtime scripts remain explicitly disabled. Neither
-failure is hidden by skipping tests. The corrected remote run remains pending.
+failure is hidden by skipping tests. The
+[corrected run for 036da68](https://github.com/ViceVerse-cz/yt/actions/runs/36574672656)
+is green on both runners: macOS passed 369 Rust tests (four ignored), Linux
+passed 351 (one ignored), and each passed all 163 Python tests, formatting,
+strict Clippy and locked release compilation. The ignored integrations remain
+explicitly external/human-authorized. No performance or usage test was run.
+The source archive was generated and checksum-verified locally from the actual
+initial snapshot; manual GitHub draft creation has not been dispatched. No
+release/tag or binary package was published. Production and native platform
+qualification remain open.
 
 Performance/resource experiments are paused at the user's request. Current work
 focuses on product usability: generation-scoped catalog loading/error states,

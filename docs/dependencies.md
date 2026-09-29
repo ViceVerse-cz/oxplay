@@ -18,8 +18,9 @@ system-testing server is requested. slint-build defaults are also disabled, with
 only compat-1-18 selected; compiler software-renderer asset embedding is unneeded.
 Actual target graph must also be audited;
 Cargo.lock includes packages for other targets and is not a shipped inventory.
-Linux/X11 and native Wayland have not been compiled or run in this environment;
-their enabled feature declarations are not runtime support evidence.
+The selected Linux X11 and Wayland feature graph now passes strict Clippy,
+automated Rust tests and release compilation on Ubuntu 24.04 CI (source `036da68`). Neither native
+presentation backend has been run; compilation is not runtime support evidence.
 
 Toolchain: rustc 1.98.1 (48a229cea 2026-09-01), cargo 1.98.1
 (797e8a9bc 2026-08-05), Homebrew. Build using `cargo build --locked` after initial

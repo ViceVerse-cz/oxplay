@@ -2,6 +2,14 @@
 
 All targets are experimental. A native compile/run is not release support.
 
+The [CI run for source 036da68](https://github.com/ViceVerse-cz/yt/actions/runs/36574672656)
+passed macOS ARM64 formatting, strict Clippy, all 369 Rust tests, 163 Python tests
+and release compilation on a hosted macOS 26 runner. The Ubuntu 24.04 job passed
+formatting, strict Clippy, 351 Rust tests, 163 Python tests and release compilation
+with both Linux backend features enabled. CI uses null audio/video outputs
+in media unit tests and never opens a native desktop window. It provides no
+new X11/Wayland/macOS presentation or hardware-decoder qualification.
+
 The latest d78332c macOS release passed genuine guest local Save (eight stages),
 related-video keyboard navigation (16 stages) and the restricted native-child
 lifecycle (16 stages). Compact Save and full-message dialogs, fullscreen controls
@@ -21,8 +29,8 @@ equivalent Windows, X11 or native Wayland result exists.
 |---|---|---|---|---|
 | macOS 27.0 arm64, Apple M1 | Debug/release compiled and native Winit/FemtoVG window run | Local and public YouTube H.264 video advance in shared Slint window; scripted pause/seek/resize/fullscreen and teardown exercised | `hwdec-current=videotoolbox` for H.264 input at 1920×1080/60 fps; OpenGL 4.1 Metal - 91.7 observed; bounded native display-clock path has zero warm VO drops in 60-second sample; A/V timing unqualified | Unqualified: repeatable playback CPU qualification remains open; default presenter still misses the ceiling in repeated measurements, and the restricted native-child candidate misses the target; sound/sync perception, accessibility, real-account and security gates pending |
 | Windows | Not compiled/run | Not tested | None | Experimental; safe helper supervision currently fails closed |
-| Linux / X11 | Not compiled/run | Not tested | None | Experimental |
-| Linux / native Wayland | Not compiled/run | Not tested | None | Experimental; XWayland is not a substitute |
+| Linux / X11 | Release compilation and automated tests pass in Ubuntu 24.04 CI; native shell not run | No native presentation test | None | Experimental |
+| Linux / native Wayland | Same CI build enables Wayland; native shell not run | No native presentation test | None | Experimental; XWayland is not a substitute |
 
 The same compiled `.slint` UI is used. Only one initial desktop OpenGL presenter
 exists, with a macOS-only native display-clock adapter for this context. No platform-specific app frontend, CPU video upload fallback, or browser
