@@ -301,3 +301,10 @@ reproduction remain unresolved. The existing dispatch notice gap and objc2/SDK
 review items remain unchanged. Future application source snapshots include the
 unchanged SPEC and standalone baseline tool; earlier artifacts are preserved and
 have not been relabeled as containing those additions.
+
+The development-only `i-slint-backend-testing` crate uses the same pinned Slint
+revision and framework license declaration; its selected route remains
+GPL-3.0-only. It is excluded from the production normal/build dependency graph.
+Its test metadata and mock backend do not change the application's license or
+qualify any binary distribution. No icon, font, helper or native-media dependency
+was replaced by this test addition.

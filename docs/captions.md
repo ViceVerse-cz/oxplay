@@ -161,3 +161,58 @@ The selected decoder/audio observations were VideoToolbox/Opus/AVFoundation.
 The idle snapshot retains some last-observed stream fields; `Idle`, load identity
 invalidation and confirmed cache deletion establish the terminal state, not a
 stale subtitle-ID field alone. No account credentials or remote writes were used.
+
+## Correlated Off completion and controlled selection
+
+Off is now a bounded native operation with its own token and playback context.
+It waits for previously admitted subtitle additions and cycle commands, submits
+one reserved `sid=no` command, waits for that exact command reply, then requests
+a fresh native `sid` value. Only an exact successful query completes Off.
+An old observed Off state is insufficient: an earlier asynchronous subtitle
+addition can still finish and select a track. New additions/cycles/replacements
+are rejected until this barrier settles. Repeated Off coalesces; stop revokes
+its authority while any in-flight native reply is still drained. There is no
+new polling loop or periodic timer.
+
+The shared selector retains the last observed track while downloading, attaching
+or turning it off. Command admission is not displayed as success. Only the
+matching load/token completion releases the Off UI. A matching failure retains
+the observed choice and reports a retryable error; unrelated errors and retired
+loads cannot confirm the request. The selector uses `ConfirmedChoice`, so user
+edits cannot sever later native acknowledgements. Quality replacement retains
+the desired language separately from the new load's actual observed selection.
+
+The focused native-libmpv tests use local synthetic audio/subtitle files and null
+outputs. They cover old-Off/pending-On cancellation, immediate reselection
+rejection, a saturated ordinary command queue, a no-op Off query, exact-path
+reselection, stop/reload invalidation and lease lifetime. These test native
+command semantics, not subtitle appearance or audible playback. Separate pure
+barrier tests cover stale, cancelled and failed replies. The existing guest
+caption diagnostic now requires exact Off completion and UI acknowledgement
+before cached reselection; earlier live results above predate this change.
+
+Off remains valid at a retained keep-open EOF: the UI waits for the same exact
+barrier while the native file still has a playback restart and load identity.
+This exception applies only to Off, not unfinished downloads or On selection.
+Actual unload, stop, replacement and failed loads still retire its authority.
+A local native EOF regression checks that Off completes while the same load
+remains ended/paused; a UI state regression distinguishes retained EOF from
+actual termination.
+
+The final release passed the strengthened five-stage real public guest check
+(`artifacts/captions-barrier-release-v1`, 760×600/light), exiting 0. Selection,
+exact Off completion/UI acknowledgement, cached reselection and paused 720p
+quality reattachment passed with one caption cache file and two media loads.
+The engine reported VideoToolbox H.264, 1280×720 at 59.94 fps and
+Opus/avfoundation output. The inspected capture shows the acknowledged English
+selector/status; its video background is black and obscured by the popup, so it
+does not qualify visible subtitle composition, moving video or perceptual sync.
+The launcher reaped the app and display-awake process and confirmed those owned
+process groups absent. No account was connected. No resource, egress or
+cross-platform qualification follows from this run.
+Release executable SHA256:
+`5a5e9c8c7a238aec2a37bb0cb57919715b9a4cbc91ca2ad06f7c081b8e92b3d8`.
+
+Post-exit inspection of the actual isolated `profile/Serein/captions` directory
+confirmed it exists and retains zero VTT files. An initial inspection omitted
+the `Serein` namespace and was rejected as evidence before this corrected check.

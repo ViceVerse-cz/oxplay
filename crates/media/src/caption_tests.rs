@@ -131,9 +131,10 @@ fn exact_caption_selection_off_race_and_cached_reselection_are_observed() {
     player
         .add_subtitle(&second, "Second", "fr", Arc::new(()))
         .unwrap();
-    player.disable_subtitles().unwrap();
+    let off = player.disable_subtitles().unwrap();
     wait(&player, |s| {
-        s.subtitle_selection_observed
+        s.subtitle_off_reply == Some((off, true))
+            && s.subtitle_selection_observed
             && s.subtitle_id.is_none()
             && player.inner.pending_commands.get() == 0
             && player.inner.subtitle_leases.borrow().is_empty()
@@ -182,9 +183,11 @@ fn attached_caption_lease_survives_off_until_native_end_file() {
         weak.upgrade().is_some(),
         "a parsed caption can still own its demuxer"
     );
-    player.disable_subtitles().unwrap();
+    let off = player.disable_subtitles().unwrap();
     wait(&player, |s| {
-        s.subtitle_selection_observed && s.subtitle_id.is_none()
+        s.subtitle_off_reply == Some((off, true))
+            && s.subtitle_selection_observed
+            && s.subtitle_id.is_none()
     });
     assert!(
         weak.upgrade().is_some(),
@@ -348,4 +351,118 @@ fn rapid_loads_correlate_native_entries_and_stale_command_failure_is_ignored() {
     player.stop().unwrap();
     assert_eq!(player.snapshot().load_request_id, 0);
     assert_eq!(player.snapshot().failed_load_request_id, None);
+}
+
+#[test]
+fn off_barrier_blocks_reselection_until_pending_on_and_fresh_noop_query_finish() {
+    let fixture = fixture();
+    let player = player();
+    let media = fixture.0.join("silent.wav");
+    let first = fixture.0.join("first.vtt");
+    let second = fixture.0.join("second.vtt");
+    player.load_local_at(&media, 0., true).unwrap();
+    wait_for_paused_caption_load(&player);
+    wait(&player, |s| {
+        s.subtitle_selection_observed && s.subtitle_id.is_none()
+    });
+    player
+        .add_subtitle(&first, "First", "en", Arc::new(()))
+        .unwrap();
+    // Deliberately do not drain native replies: observed Off is now stale.
+    let off = player.disable_subtitles().unwrap();
+    assert_eq!(player.disable_subtitles().unwrap(), off);
+    assert_eq!(player.snapshot().subtitle_off_reply, None);
+    assert!(
+        player
+            .add_subtitle(&second, "Second", "fr", Arc::new(()))
+            .is_err()
+    );
+    assert!(player.cycle_subtitles().is_err());
+    assert!(player.load_local_at(&media, 0., true).is_err());
+    wait(&player, |s| s.subtitle_off_reply == Some((off, true)));
+    assert!(player.inner.subtitle_leases.borrow().is_empty());
+    player
+        .add_subtitle(&second, "Second", "fr", Arc::new(()))
+        .unwrap();
+    wait(&player, |s| {
+        s.subtitle_id.is_some() && player.subtitle_matches(&second)
+    });
+    player.cycle_subtitles().unwrap();
+    while player.inner.pending_commands.get() < 64 {
+        player.set_volume(50.).unwrap();
+    }
+    let second_off = player.disable_subtitles().unwrap();
+    assert_eq!(player.inner.pending_commands.get(), 64);
+    wait(&player, |s| {
+        s.subtitle_off_reply == Some((second_off, true))
+    });
+    assert!(player.inner.subtitle_cycle_replies.borrow().is_empty());
+    // A no-op Off needs no sid-change event, but still requires its own fresh query.
+    let noop = player.disable_subtitles().unwrap();
+    assert_ne!(noop, second_off);
+    assert_eq!(player.snapshot().subtitle_off_reply, None);
+    wait(&player, |s| s.subtitle_off_reply == Some((noop, true)));
+    let cancelled = player.disable_subtitles().unwrap();
+    player.stop().unwrap();
+    assert_eq!(player.snapshot().subtitle_off_reply, None);
+    wait(&player, |s| {
+        !s.stop_pending && !player.inner.subtitle_off.borrow().pending()
+    });
+    assert_ne!(
+        player.snapshot().subtitle_off_reply,
+        Some((cancelled, true))
+    );
+    player.load_local_at(&media, 0., true).unwrap();
+    wait(&player, |s| {
+        s.file_loads == 2 && s.playback_restarted && s.paused
+    });
+    assert_eq!(player.snapshot().subtitle_off_reply, None);
+}
+
+#[test]
+fn captions_off_at_keep_open_eof_waits_for_its_exact_barrier_without_reloading() {
+    let fixture = fixture();
+    let player = player();
+    player
+        .load_local_at(&fixture.0.join("silent.wav"), 0., true)
+        .unwrap();
+    wait_for_paused_caption_load(&player);
+    let path = fixture.0.join("first.vtt");
+    player
+        .add_subtitle(&path, "First", "en", Arc::new(()))
+        .unwrap();
+    wait(&player, |s| {
+        s.subtitle_id.is_some()
+            && player.subtitle_matches(&path)
+            && player.inner.subtitle_leases.borrow().is_empty()
+    });
+    let before = player.snapshot();
+    player.set_paused(false).unwrap();
+    wait(&player, |s| {
+        s.state == PlaybackState::Ended
+            && s.paused
+            && player.inner.pause_intent.borrow().settled(s.paused)
+    });
+    let ended = player.snapshot();
+    assert!(
+        ended.playback_restarted,
+        "keep-open EOF retains the active file"
+    );
+    assert_eq!(ended.file_loads, before.file_loads);
+    assert_eq!(ended.load_request_id, before.load_request_id);
+    assert_eq!(ended.active_load_request_id, before.active_load_request_id);
+    let off = player.disable_subtitles().unwrap();
+    assert_eq!(player.snapshot().subtitle_off_reply, None);
+    wait(&player, |s| s.subtitle_off_reply == Some((off, true)));
+    let settled = player.snapshot();
+    assert_eq!(settled.state, PlaybackState::Ended);
+    assert!(settled.paused && settled.playback_restarted);
+    assert_eq!(settled.file_loads, before.file_loads);
+    assert_eq!(settled.load_request_id, before.load_request_id);
+    assert_eq!(
+        settled.active_load_request_id,
+        before.active_load_request_id
+    );
+    assert!(settled.subtitle_selection_observed && settled.subtitle_id.is_none());
+    assert!(!player.inner.subtitle_off.borrow().pending());
 }

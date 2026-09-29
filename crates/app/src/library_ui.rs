@@ -279,6 +279,15 @@ pub fn acknowledged_video_page(state: &UiState) -> Option<Vec<VideoSummary>> {
         .collect()
 }
 impl State {
+    fn desired_preferences(
+        &self,
+        committed: serein_storage::LocalPreferences,
+    ) -> serein_storage::LocalPreferences {
+        self.requested_preferences
+            .get()
+            .map(|write| write.value)
+            .unwrap_or(committed)
+    }
     fn finish_video_save(&self, serial: u64) -> Option<PendingSave> {
         let mut pending = self.pending_save.borrow_mut();
         if pending.as_ref().is_some_and(|save| save.serial == serial) {
@@ -380,10 +389,14 @@ fn finish_name(app: &App, state: &UiState, kind: NameKind) -> Option<NameWrite> 
 pub fn desired_preferences(state: &UiState) -> serein_storage::LocalPreferences {
     state
         .library_ui
-        .requested_preferences
-        .get()
-        .map(|write| write.value)
-        .unwrap_or(state.preferences.get())
+        .desired_preferences(state.preferences.get())
+}
+fn theme_index(theme: serein_storage::Theme) -> i32 {
+    match theme {
+        serein_storage::Theme::System => 0,
+        serein_storage::Theme::Light => 1,
+        serein_storage::Theme::Dark => 2,
+    }
 }
 fn save_preferences(app: &App, state: &UiState, value: serein_storage::LocalPreferences) -> bool {
     if state.caption_cache.active() || !state.playback_preferences.ready() {
@@ -1092,6 +1105,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     if latest {
                         crate::playback_preferences::save_failed(&app, &s, write.value.playback);
                     }
+                    if latest && write.value.theme != s.preferences.get().theme {
+                        app.set_theme(theme_index(desired_preferences(&s).theme));
+                    }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
                     app.global::<LibraryUi>()
                         .set_history_enabled(s.preferences.get().privacy.local_history);
@@ -1104,8 +1120,12 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let prefs = write.value;
                     let history_changed = s.preferences.get().privacy.local_history != prefs.privacy.local_history;
                     let thumbnail_changed = s.preferences.get().thumbnail_cache_mib != prefs.thumbnail_cache_mib;
+                    let theme_changed = s.preferences.get().theme != prefs.theme;
                     s.preferences.set(prefs);
                     app.set_thumbnail_cache_index(thumbnail_cache_index(prefs.thumbnail_cache_mib).unwrap_or(0));
+                    // Keep newer admitted previews; unrelated writes must not
+                    // override a session-only diagnostic appearance.
+                    if theme_changed { app.set_theme(theme_index(desired_preferences(&s).theme)); }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
                     app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
@@ -1642,17 +1662,33 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
+    app.on_theme_changed(move |index| {
+        let Some(app) = weak.upgrade() else { return };
+        let theme = match index {
+            0 => serein_storage::Theme::System,
+            1 => serein_storage::Theme::Light,
+            2 => serein_storage::Theme::Dark,
+            _ => return,
+        };
+        let mut prefs = desired_preferences(&s);
+        if prefs.theme != theme {
+            prefs.theme = theme;
+            save_preferences(&app, &s, prefs);
+        }
+        // Preview only an admitted write; rejected admission retains the prior
+        // accepted choice. Correlated responses above resolve persistence.
+        app.set_theme(theme_index(desired_preferences(&s).theme));
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
     app.on_preferences_changed(move || {
         let Some(app) = weak.upgrade() else { return };
         if s.caption_cache.active() {
             return;
         }
         let mut prefs = desired_preferences(&s);
-        prefs.theme = match app.get_theme() {
-            1 => serein_storage::Theme::Light,
-            2 => serein_storage::Theme::Dark,
-            _ => serein_storage::Theme::System,
-        };
+        // Appearance has its own admission callback. Reading app.theme here
+        // would persist a session-only --ui-theme override during volume save.
         prefs.volume_percent = app.get_volume_level().clamp(0., 100.) as u8;
         save_preferences(&app, &s, prefs);
     });
@@ -2083,6 +2119,42 @@ mod tests {
         assert!(state.finish_preferences(new));
         assert_eq!(state.requested_preferences.get(), None);
         assert!(!state.finish_preferences(new));
+    }
+    #[test]
+    fn theme_preview_keeps_newer_admission_and_rolls_back_only_its_failed_write() {
+        use serein_storage::{LocalPreferences, Theme};
+        let state = State::default();
+        let mut committed = LocalPreferences::default();
+        let light = library::PreferenceWrite {
+            id: 8,
+            value: LocalPreferences {
+                theme: Theme::Light,
+                ..committed
+            },
+        };
+        let dark = library::PreferenceWrite {
+            id: 9,
+            value: LocalPreferences {
+                theme: Theme::Dark,
+                ..committed
+            },
+        };
+        state.requested_preferences.set(Some(dark));
+        assert_eq!(state.desired_preferences(committed).theme, Theme::Dark);
+        // Whether the earlier Light write fails or commits, its completion
+        // cannot end the newer Dark preview.
+        assert!(!state.finish_preferences(light));
+        assert_eq!(state.desired_preferences(committed).theme, Theme::Dark);
+        committed = light.value;
+        assert_eq!(state.desired_preferences(committed).theme, Theme::Dark);
+        // A failed matching Dark write restores the latest actual SQL state.
+        assert!(state.finish_preferences(dark));
+        assert_eq!(state.desired_preferences(committed).theme, Theme::Light);
+        // A later successful write becomes the committed choice.
+        state.requested_preferences.set(Some(dark));
+        assert!(state.finish_preferences(dark));
+        committed = dark.value;
+        assert_eq!(state.desired_preferences(committed).theme, Theme::Dark);
     }
     #[test]
     fn destination_admission_requires_opt_in_and_never_bypasses_a_pending_operation() {

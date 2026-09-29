@@ -32,6 +32,7 @@ pub struct State {
     desired: RefCell<Option<Key>>,
     selected: RefCell<Option<Key>>,
     awaiting: RefCell<Option<(Key, u64)>>,
+    awaiting_off: Cell<Option<(u64, u64)>>,
     reload_after: Cell<Option<u64>>,
     load_baseline: Cell<(u64, u64)>,
 }
@@ -49,6 +50,7 @@ impl State {
             desired: RefCell::new(None),
             selected: RefCell::new(None),
             awaiting: RefCell::new(None),
+            awaiting_off: Cell::new(None),
             reload_after: Cell::new(None),
             load_baseline: Cell::new((0, 0)),
         }
@@ -77,6 +79,10 @@ pub fn metadata(app: &App, state: &UiState, item: &ResolvedPlayback, quality: bo
         .set((snapshot.file_starts, snapshot.load_request_id));
     s.pending.set(None);
     s.awaiting.borrow_mut().take();
+    s.awaiting_off.set(None);
+    // A replacement has no acknowledged caption selection yet. Preserve the
+    // desired language for reattachment, but publish it only after observation.
+    s.selected.borrow_mut().take();
     if !quality || !same {
         s.retired
             .borrow_mut()
@@ -85,7 +91,6 @@ pub fn metadata(app: &App, state: &UiState, item: &ResolvedPlayback, quality: bo
             s.retire_after.set(Some(state.player.snapshot().file_loads));
         }
         s.desired.borrow_mut().take();
-        s.selected.borrow_mut().take();
     }
     // Resolution precedes the native FILE_LOADED event. Prevent sub-add from
     // targeting the previous file while the replacement is still opening.
@@ -137,9 +142,12 @@ fn apply(app: &App, state: &UiState, track: &SubtitleTrack, lease: Arc<caption_f
             ui.set_busy(true);
             ui.set_status("Turning captions on…".into());
         }
-        Err(error) => app
-            .global::<CaptionsUi>()
-            .set_status(error.to_string().into()),
+        Err(error) => {
+            *s.desired.borrow_mut() = s.selected.borrow().clone();
+            let ui = app.global::<CaptionsUi>();
+            ui.set_selected(s.selected_index());
+            ui.set_status(error.to_string().into());
+        }
     }
 }
 pub fn receive(
@@ -192,13 +200,16 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
         s.retire_after.set(None);
         s.retired.borrow_mut().clear();
     }
-    if (s.reload_after.get().is_some()
+    let selection_failed = (s.reload_after.get().is_some()
         || s.awaiting.borrow().is_some()
         || s.pending.get().is_some())
-        && selection_load_failed(s.load_baseline.get(), snapshot)
-    {
+        && selection_load_failed(s.load_baseline.get(), snapshot);
+    let off_failed =
+        s.awaiting_off.get().is_some() && off_load_failed(s.load_baseline.get(), snapshot);
+    if selection_failed || off_failed {
         s.reload_after.set(None);
         s.awaiting.borrow_mut().take();
+        s.awaiting_off.set(None);
         s.desired.borrow_mut().take();
         s.selected.borrow_mut().take();
         if let Some((generation, _)) = s.pending.take()
@@ -228,7 +239,8 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
         )
     {
         s.reload_after.set(None);
-        app.global::<CaptionsUi>().set_busy(false);
+        app.global::<CaptionsUi>()
+            .set_busy(s.awaiting_off.get().is_some());
         let cached = s.desired.borrow().as_ref().and_then(|key| {
             s.cache
                 .borrow()
@@ -239,10 +251,26 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
             apply(app, state, &track, lease);
         }
     }
+    if let Some(request) = s.awaiting_off.get()
+        && let Some(succeeded) = off_completion(request, snapshot)
+    {
+        s.awaiting_off.set(None);
+        let ui = app.global::<CaptionsUi>();
+        ui.set_busy(s.reload_after.get().is_some());
+        if succeeded {
+            s.selected.borrow_mut().take();
+            ui.set_selected(0);
+            ui.set_status("Captions off".into());
+        } else {
+            ui.set_selected(s.selected_index());
+            ui.set_status("Could not turn captions off. Try again.".into());
+        }
+    }
     let pending = s.awaiting.borrow().clone();
     if let Some((identity, previous)) = pending {
         if let Some(error) = &snapshot.error {
             s.awaiting.borrow_mut().take();
+            *s.desired.borrow_mut() = s.selected.borrow().clone();
             let ui = app.global::<CaptionsUi>();
             ui.set_busy(false);
             ui.set_selected(s.selected_index());
@@ -274,6 +302,36 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
         }
     }
 }
+// Only the media barrier can acknowledge Off: it drains older sub-adds,
+// waits for the exact Off command and queries fresh native sid. An earlier
+// observed Off is insufficient, even if the property has not changed.
+fn off_completion(request: (u64, u64), snapshot: &serein_media::Snapshot) -> Option<bool> {
+    let (load, token) = request;
+    if load == 0
+        || snapshot.load_request_id != load
+        || snapshot.active_load_request_id != load
+        || snapshot.stop_pending
+    {
+        return None;
+    }
+    snapshot
+        .subtitle_off_reply
+        .filter(|(reply, _)| *reply == token)
+        .map(|(_, succeeded)| succeeded)
+}
+fn off_load_failed(baseline: (u64, u64), snapshot: &serein_media::Snapshot) -> bool {
+    // keep-open EOF retains the actual native entry and accepts Off. An
+    // END_FILE unload clears playback_restarted; keep that terminal path and
+    // all failed/replaced/stopped loads subject to the ordinary retirement rule.
+    let retained_eof = baseline.1 != 0
+        && snapshot.load_request_id == baseline.1
+        && snapshot.active_load_request_id == baseline.1
+        && snapshot.failed_load_request_id != Some(baseline.1)
+        && !snapshot.stop_pending
+        && snapshot.state == serein_media::PlaybackState::Ended
+        && snapshot.playback_restarted;
+    selection_load_failed(baseline, snapshot) && !retained_eof
+}
 fn selection_load_failed(baseline: (u64, u64), snapshot: &serein_media::Snapshot) -> bool {
     snapshot.failed_load_request_id == Some(baseline.1)
         || snapshot.load_request_id != baseline.1
@@ -296,6 +354,7 @@ pub fn clear_local(app: &App, state: &UiState) {
     let s = &state.caption_ui;
     s.pending.set(None);
     s.awaiting.borrow_mut().take();
+    s.awaiting_off.set(None);
     s.desired.borrow_mut().take();
     s.selected.borrow_mut().take();
     s.reload_after.set(None);
@@ -348,12 +407,19 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 app.set_busy(false);
             }
             s.desired.borrow_mut().take();
-            s.selected.borrow_mut().take();
             s.awaiting.borrow_mut().take();
+            s.awaiting_off.set(None);
             ui.set_busy(s.reload_after.get().is_some());
-            ui.set_selected(0);
+            // Keep the last observed track selected until native Off is known;
+            // queue admission is not acknowledgement. Off still cancels pending
+            // download/sub-add intent even when the native command fails.
             match state.player.disable_subtitles() {
-                Ok(()) => ui.set_status("Captions off requested.".into()),
+                Ok(token) => {
+                    s.awaiting_off
+                        .set(Some((state.player.snapshot().load_request_id, token)));
+                    ui.set_busy(true);
+                    ui.set_status("Turning captions off…".into());
+                }
                 Err(error) => ui.set_status(error.to_string().into()),
             };
             return;
@@ -416,11 +482,13 @@ impl Smoke {
         let verified = Rc::new(Cell::new(false));
         let mut timers = Vec::new();
         let before_quality = Rc::new(Cell::new(0));
+        let off_request = Rc::new(Cell::new(None));
         for stage in [12, 25, 30, 35, 65] {
             let weak = app.as_weak();
             let state = state.clone();
             let verified = verified.clone();
             let before_quality = before_quality.clone();
+            let off_request = off_request.clone();
             let timer = slint::Timer::default();
             timer.start(slint::TimerMode::SingleShot, std::time::Duration::from_secs(stage), move || {
                 let Some(app) = weak.upgrade() else { return };
@@ -440,9 +508,13 @@ impl Smoke {
                         assert!(!ui.get_busy() && ui.get_selected() == 1 && snapshot.subtitle_id.is_some(), "selected caption was not observed");
                         assert_eq!(s.cache.borrow().len(), 1);
                         ui.invoke_select(0);
+                        off_request.set(Some(s.awaiting_off.get().expect("caption Off barrier was not admitted")));
+                        assert!(ui.get_busy() && ui.get_selected() == 1, "Off submission falsely acknowledged a selection change");
                     }
                     30 => {
                         assert!(snapshot.subtitle_selection_observed && snapshot.subtitle_id.is_none(), "caption Off was not observed");
+                        assert!(!ui.get_busy() && ui.get_selected() == 0 && s.awaiting_off.get().is_none(), "caption Off UI acknowledgement did not settle");
+                        assert_eq!(off_completion(off_request.get().expect("caption Off request was not retained"), &snapshot), Some(true), "the exact caption Off barrier did not complete successfully");
                         assert_eq!(s.cache.borrow().len(), 1, "Off discarded reusable file");
                         ui.invoke_select(1);
                         assert!(s.pending.get().is_none(), "cached reselect unexpectedly started a download");
@@ -483,6 +555,84 @@ impl Smoke {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn off_acknowledgement_requires_exact_completed_barrier_not_old_sid() {
+        let mut snapshot = serein_media::Snapshot {
+            load_request_id: 42,
+            active_load_request_id: 42,
+            state: serein_media::PlaybackState::Paused,
+            subtitle_id: None,
+            subtitle_selection_observed: true,
+            subtitle_updates: 9,
+            ..Default::default()
+        };
+        // A pending sub-add can still select a track despite the old observed
+        // Off. Neither it nor another unrelated native error completes Off.
+        assert_eq!(off_completion((42, 7), &snapshot), None);
+        snapshot.error = Some("unrelated command failure".into());
+        assert_eq!(off_completion((42, 7), &snapshot), None);
+        snapshot.subtitle_off_reply = Some((6, true));
+        assert_eq!(off_completion((42, 7), &snapshot), None);
+        snapshot.subtitle_off_reply = Some((7, true));
+        assert_eq!(off_completion((42, 7), &snapshot), Some(true));
+        // A no-op Off still completes via the barrier's fresh query; it need
+        // not increment property-notification counters to release the UI.
+        assert_eq!(snapshot.subtitle_updates, 9);
+        snapshot.subtitle_off_reply = Some((7, false));
+        assert_eq!(off_completion((42, 7), &snapshot), Some(false));
+        snapshot.load_request_id = 43;
+        assert_eq!(off_completion((42, 7), &snapshot), None);
+        assert_eq!(off_completion((43, 7), &snapshot), None);
+        snapshot.active_load_request_id = 43;
+        snapshot.subtitle_off_reply = None;
+        assert_eq!(off_completion((43, 8), &snapshot), None);
+        snapshot.subtitle_off_reply = Some((8, true));
+        assert_eq!(off_completion((43, 8), &snapshot), Some(true));
+        snapshot.stop_pending = true;
+        assert_eq!(off_completion((43, 8), &snapshot), None);
+        snapshot.stop_pending = false;
+        snapshot.load_request_id = 0;
+        snapshot.active_load_request_id = 0;
+        assert_eq!(off_completion((0, 8), &snapshot), None);
+    }
+    #[test]
+    fn only_off_can_finish_at_retained_eof_but_never_after_native_unload() {
+        let baseline = (4, 42);
+        let mut snapshot = serein_media::Snapshot {
+            file_starts: 5,
+            load_request_id: 42,
+            active_load_request_id: 42,
+            state: serein_media::PlaybackState::Ended,
+            playback_restarted: true,
+            ..Default::default()
+        };
+        assert!(
+            selection_load_failed(baseline, &snapshot),
+            "On/startup retains its terminal rule"
+        );
+        assert!(!off_load_failed(baseline, &snapshot));
+        assert_eq!(
+            off_completion((42, 7), &snapshot),
+            None,
+            "EOF cannot fabricate Off completion"
+        );
+        snapshot.subtitle_off_reply = Some((7, true));
+        assert_eq!(off_completion((42, 7), &snapshot), Some(true));
+        snapshot.playback_restarted = false;
+        assert!(
+            off_load_failed(baseline, &snapshot),
+            "END_FILE retires the retained native entry"
+        );
+        snapshot.playback_restarted = true;
+        snapshot.failed_load_request_id = Some(42);
+        assert!(off_load_failed(baseline, &snapshot));
+        snapshot.failed_load_request_id = None;
+        snapshot.stop_pending = true;
+        assert!(off_load_failed(baseline, &snapshot));
+        snapshot.stop_pending = false;
+        snapshot.load_request_id = 43;
+        assert!(off_load_failed(baseline, &snapshot));
+    }
     #[test]
     fn terminal_loading_detection_is_bound_to_the_actual_load_request() {
         let mut snapshot = serein_media::Snapshot {

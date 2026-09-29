@@ -153,3 +153,30 @@ Release executable SHA256:
 `784dae0bed05a158a386b827866dac7c3c41c21bc3fb615ff04f9b35cc1add1e`.
 This is local functional evidence, not platform, account or performance
 qualification. Hosted CI is tracked separately in [CI notes](ci-release.md).
+
+## Restore the original display
+
+PiP now captures the main window's monitor identity as well as its geometry.
+On exit it looks up that identity among freshly enumerated monitors and uses the
+live geometry/scale. Dragging compact PiP to another connected display therefore
+no longer selects that display as the restoration target. If the original is
+disconnected or unknown, restoration falls back to the current display, then the
+primary display; existing frame-aware bounds clamping remains in effect.
+
+The adapter uses the pinned Winit `MonitorHandle` equality and fresh monitor
+queries. A focused regression covers reordered enumeration, connected-original
+selection, disconnect fallback, no monitor, and negative-desktop-coordinate
+geometry. This is algorithm coverage; actual multiple displays, disconnection
+and differing display scales remain unqualified on hardware.
+
+The final release passed the existing nine-stage native exercise and three
+correlated own-PID probes on the available single-display macOS host
+(`artifacts/pip-monitor-release-v1`, dark theme). Owned window 5823 changed from
+900×682/layer 0 to borderless 480×270/layer 3 and restored its original bounds,
+frame and position at layer 0. The inspected 960×540 capture retains the labeled
+moving-video fixture, inline controls and readable local subtitle. Window/load/
+presenter identities stayed unchanged. Exit was 0 and all launcher-owned process
+groups were confirmed absent. This exercises the live original-monitor path,
+not actual monitor movement or disconnection.
+Release executable SHA256:
+`5a5e9c8c7a238aec2a37bb0cb57919715b9a4cbc91ca2ad06f7c081b8e92b3d8`.

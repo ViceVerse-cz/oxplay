@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { ComboBox } from "std-widgets.slint";
-import { Colors, Action, ActionVariant } from "components.slint";
+import { Colors, Action, ActionVariant, ConfirmedChoice } from "components.slint";
 export global CaptionsUi {
     in property <[string]> tracks: ["Off"];
-    in-out property <int> selected;
+    in property <int> selected;
     in property <bool> busy;
     in property <string> status: "Guest captions load only when selected.";
     callback select(int);
@@ -18,7 +17,7 @@ export component CaptionSelector inherits Rectangle {
             Text { text: "Subtitles / captions"; color: Colors.text; font-size: 18px; font-weight: 600; horizontal-stretch: 1; }
             Action { width: 72px; horizontal-stretch: 0; label: "Close"; variant: ActionVariant.secondary; clicked => { root.close(); } }
         }
-        ComboBox { accessible-label: "Subtitle or caption track"; model: CaptionsUi.tracks; current-index: CaptionsUi.selected; enabled: !root.worker-busy && !CaptionsUi.busy; selected(value) => { CaptionsUi.select(self.current-index); } }
+        ConfirmedChoice { accessible-label: "Subtitle or caption track"; model: CaptionsUi.tracks; acknowledged-index: CaptionsUi.selected; enabled: !root.worker-busy && !CaptionsUi.busy; choose(index) => { CaptionsUi.select(index); } }
         Text { text: CaptionsUi.status; color: Colors.muted; wrap: word-wrap; vertical-stretch: 1; }
         Action { label: "Turn captions off / cancel"; variant: ActionVariant.secondary; clicked => { CaptionsUi.select(0); } }
     }

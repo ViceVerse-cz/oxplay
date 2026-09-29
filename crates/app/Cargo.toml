@@ -24,5 +24,8 @@ libc = "0.2"
 [build-dependencies]
 slint-build.workspace = true
 
+[dev-dependencies]
+i-slint-backend-testing.workspace = true
+
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 rfd = { version = "0.17.2", default-features = false, features = ["xdg-portal", "wayland"] }

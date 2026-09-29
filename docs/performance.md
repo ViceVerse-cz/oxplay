@@ -703,3 +703,8 @@ source/layout only; they do not validate this newer layout. Functional window,
 playback and collection-navigation checks do not measure CPU/RAM/energy budgets.
 Resource and usage testing remains deferred at the user's request; no acceptance
 budget or quality target was changed.
+
+The subsequent controlled-selector, caption-command and monitor-restoration
+changes have functional regression coverage only. The headless Slint test backend
+is development-only and performs no rasterization. No new resource samples or
+performance claims accompany these changes; all original budgets remain intact.

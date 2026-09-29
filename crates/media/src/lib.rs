@@ -20,6 +20,7 @@ mod pause_intent;
 mod presenter;
 mod seek_confirmation;
 pub mod streams;
+mod subtitle_off;
 #[cfg(test)]
 mod tls_tests;
 pub use presenter::{GlPresenter, RenderStats};
@@ -125,6 +126,8 @@ pub struct Snapshot {
     pub subtitle_id: Option<i64>,
     pub subtitle_selection_observed: bool,
     pub subtitle_updates: u64,
+    /// Exact Off barrier completion; true includes a fresh native sid=no query.
+    pub subtitle_off_reply: Option<(u64, bool)>,
     pub diagnostic_silent_audio: bool,
     /// Experimental AO clock smoothing; zero is the unchanged production default.
     pub autosync_factor: u32,
@@ -182,6 +185,7 @@ impl Default for Snapshot {
             subtitle_id: None,
             subtitle_selection_observed: false,
             subtitle_updates: 0,
+            subtitle_off_reply: None,
             diagnostic_silent_audio: false,
             autosync_factor: 0,
             audio_sample_rate: 0,
@@ -297,6 +301,7 @@ struct Inner {
     latest_seek: Cell<Option<f64>>,
     streams: Box<streams::Registry>,
     subtitle_leases: RefCell<SubtitleLeases>,
+    subtitle_cycle_replies: RefCell<std::collections::BTreeSet<u64>>,
     playback_subtitle_leases: RefCell<PlaybackSubtitleLeases>,
     next_subtitle_reply: Cell<u64>,
     playback_generation: Cell<u64>,
@@ -304,7 +309,7 @@ struct Inner {
     clock_awaiting_seek_event: Cell<bool>,
     seek_confirmation: RefCell<seek_confirmation::Seeks>,
     seek_timer: slint::Timer,
-    subtitles_off: Cell<bool>,
+    subtitle_off: RefCell<subtitle_off::Barrier>,
     caption_paths: RefCell<std::collections::BTreeSet<String>>,
     selected_caption: RefCell<Option<String>>,
     resume_request: Cell<Option<(u64, u64)>>,
@@ -461,6 +466,7 @@ impl Player {
             latest_seek: Cell::new(None),
             streams: Box::default(),
             subtitle_leases: RefCell::default(),
+            subtitle_cycle_replies: RefCell::default(),
             playback_subtitle_leases: RefCell::default(),
             next_subtitle_reply: Cell::new(1000),
             playback_generation: Cell::new(0),
@@ -468,7 +474,7 @@ impl Player {
             clock_awaiting_seek_event: Cell::new(false),
             seek_confirmation: RefCell::default(),
             seek_timer: slint::Timer::default(),
-            subtitles_off: Cell::new(false),
+            subtitle_off: RefCell::default(),
             caption_paths: RefCell::default(),
             selected_caption: RefCell::default(),
             resume_request: Cell::new(None),
@@ -716,7 +722,10 @@ impl Player {
         }
         // mpv0.41 mp_add_external_file can attach after playback restarts while
         // its asynchronous open runs. Do not replace until its reply is drained.
-        if !self.inner.subtitle_leases.borrow().is_empty() {
+        if !self.inner.subtitle_leases.borrow().is_empty()
+            || !self.inner.subtitle_cycle_replies.borrow().is_empty()
+            || self.inner.subtitle_off.borrow().pending()
+        {
             return Err(MediaError(
                 "A caption change is still pending; retry playback shortly".into(),
             ));
@@ -744,6 +753,7 @@ impl Player {
         self.inner
             .pending_loads
             .set(self.inner.pending_loads.get() + 1);
+        self.inner.subtitle_off.borrow_mut().invalidate();
         self.inner.playback_generation.set(generation);
         self.inner.next_load_request.set(next_request);
         self.inner.active_load_request.set(request);
@@ -1023,6 +1033,11 @@ impl Player {
         language: &str,
         lease: Arc<dyn Send + Sync>,
     ) -> Result<()> {
+        if self.inner.subtitle_off.borrow().pending() {
+            return Err(MediaError(
+                "Wait for captions to turn off before selecting a track".into(),
+            ));
+        }
         let entry = self
             .inner
             .active_playlist_entry
@@ -1075,7 +1090,7 @@ impl Player {
         let reply = self.inner.next_subtitle_reply.get();
         let next = reply
             .checked_add(1)
-            .filter(|value| *value < seek_confirmation::FIRST)
+            .filter(|value| *value < subtitle_off::FIRST)
             .ok_or_else(|| MediaError("Caption command identifiers exhausted".into()))?;
         self.command_with_reply(&["sub-add", path, "cached", title, language], reply)?;
         self.inner.subtitle_leases.borrow_mut().insert(
@@ -1092,7 +1107,6 @@ impl Player {
             .borrow_mut()
             .insert(path.to_owned());
         self.inner.next_subtitle_reply.set(next);
-        self.inner.subtitles_off.set(false);
         Ok(())
     }
     /// Match only a registered local caption path against actual engine state.
@@ -1101,13 +1115,59 @@ impl Player {
         self.inner.selected_caption.borrow().as_deref() == path.to_str()
             && self.inner.selected_caption.borrow().is_some()
     }
-    pub fn disable_subtitles(&self) -> Result<()> {
-        self.command(&["set", "sid", "no"])?;
-        self.inner.subtitles_off.set(true);
-        Ok(())
+    pub fn disable_subtitles(&self) -> Result<u64> {
+        if !self.current_load_is_active() || self.inner.active_playlist_entry.get().is_none() {
+            return Err(MediaError(
+                "Wait for the selected video before changing captions".into(),
+            ));
+        }
+        let token = self
+            .inner
+            .subtitle_off
+            .borrow_mut()
+            .begin(self.subtitle_context())?;
+        self.advance_subtitle_off();
+        Ok(token)
+    }
+    fn subtitle_context(&self) -> subtitle_off::Context {
+        subtitle_off::Context {
+            load: if self.inner.stop_requested.get() {
+                0
+            } else {
+                self.inner.active_load_request.get()
+            },
+            generation: self.inner.playback_generation.get(),
+            entry: self.inner.active_playlist_entry.get(),
+        }
+    }
+    fn advance_subtitle_off(&self) {
+        let token = self.inner.subtitle_off.borrow_mut().command(
+            self.subtitle_context(),
+            !self.inner.subtitle_leases.borrow().is_empty()
+                || !self.inner.subtitle_cycle_replies.borrow().is_empty(),
+        );
+        // One reserved terminal command cannot be starved by ordinary64
+        // command admission. It has separate bounded reply accounting.
+        if let Some(token) = token
+            && self.submit_command(&["set", "sid", "no"], token).is_err()
+        {
+            self.inner.subtitle_off.borrow_mut().fail(token);
+            self.inner.wake.notify();
+        }
     }
     pub fn cycle_subtitles(&self) -> Result<()> {
-        self.command(&["cycle", "sid"])
+        if self.inner.subtitle_off.borrow().pending() {
+            return Err(MediaError("Wait for captions to finish turning off".into()));
+        }
+        let token = self.inner.next_subtitle_reply.get();
+        let next = token
+            .checked_add(1)
+            .filter(|value| *value < subtitle_off::FIRST)
+            .ok_or_else(|| MediaError("Caption command identifiers exhausted".into()))?;
+        self.command_with_reply(&["cycle", "sid"], token)?;
+        self.inner.subtitle_cycle_replies.borrow_mut().insert(token);
+        self.inner.next_subtitle_reply.set(next);
+        Ok(())
     }
     /// Revoke registered streams immediately and request a terminal native stop.
     /// One reserved command bypasses ordinary queue saturation; repeated calls
@@ -1118,6 +1178,7 @@ impl Player {
     /// keeps admission closed until explicit retry; caption leases retain their
     /// separate exact END_FILE boundary.
     pub fn stop(&self) -> Result<()> {
+        self.inner.subtitle_off.borrow_mut().invalidate();
         self.inner.pause_intent.borrow_mut().stop();
         self.cancel_seek_confirmation();
         self.invalidate_audio_probe();
@@ -1400,6 +1461,7 @@ impl Player {
         snapshot.stop_pending = self.inner.stop_requested.get();
         snapshot.resume_position_reply = self.inner.resume_reply.get();
         snapshot.audio_probe_reply = self.inner.audio_probe_reply.get();
+        snapshot.subtitle_off_reply = self.inner.subtitle_off.borrow().reply();
         snapshot
     }
     /// Cheap admission check for UI texture publication, without cloning the
@@ -1482,6 +1544,27 @@ impl Player {
             snapshot.events_received += 1;
             match event.id {
                 3 | 22 => {
+                    if event.id == 3 && subtitle_off::owns(event.userdata) {
+                        let off = if event.error >= 0 && !event.data.is_null() {
+                            let property = unsafe { &*event.data.cast::<ffi::Property>() };
+                            if property.format == 1 && !property.data.is_null() {
+                                let value =
+                                    unsafe { *property.data.cast::<*const std::ffi::c_char>() };
+                                !value.is_null()
+                                    && unsafe { CStr::from_ptr(value) }.to_bytes() == b"no"
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        };
+                        self.inner.subtitle_off.borrow_mut().query_reply(
+                            event.userdata,
+                            off,
+                            self.subtitle_context(),
+                        );
+                        continue;
+                    }
                     if event.id == 3 && event.userdata == 104 {
                         let value = if event.error >= 0 && !event.data.is_null() {
                             let property = unsafe { &*event.data.cast::<ffi::Property>() };
@@ -1664,6 +1747,28 @@ impl Player {
                     }
                 }
                 5 => {
+                    if subtitle_off::owns(event.userdata) {
+                        let query = self.inner.subtitle_off.borrow_mut().command_reply(
+                            event.userdata,
+                            event.error >= 0,
+                            self.subtitle_context(),
+                        );
+                        if let Some(query) = query {
+                            let code = unsafe {
+                                ffi::mpv_get_property_async(
+                                    self.inner.raw,
+                                    query,
+                                    c"sid".as_ptr(),
+                                    1,
+                                )
+                            };
+                            if code < 0 {
+                                self.inner.subtitle_off.borrow_mut().fail(query);
+                            }
+                        }
+                        continue;
+                    }
+
                     if event.userdata == 102 {
                         self.inner.stop_inflight.set(false);
                         if event.error < 0 {
@@ -1694,6 +1799,11 @@ impl Player {
                         }
                         continue;
                     }
+                    let caption_cycle = self
+                        .inner
+                        .subtitle_cycle_replies
+                        .borrow_mut()
+                        .remove(&event.userdata);
                     // sub-add may run on mpv's worker; only its reply or complete
                     // engine destruction ends the callback's file lease.
                     let caption = self
@@ -1730,15 +1840,10 @@ impl Player {
                     } else {
                         true
                     };
-                    // A slow sub-add can finish after the user's Off command.
-                    // Reapply the latest Off intent once its last pending add
-                    // completes; this is event-driven, never a retry timer.
-                    if caption.is_some()
-                        && self.inner.subtitles_off.get()
-                        && self.inner.subtitle_leases.borrow().is_empty()
-                        && let Err(error) = self.command(&["set", "sid", "no"])
-                    {
-                        snapshot.error = Some(error.to_string());
+                    // An Off barrier is advanced only after all pending adds
+                    // return, so async sub-add cannot later override its set.
+                    if caption.is_some() || caption_cycle {
+                        self.advance_subtitle_off();
                     }
                     let load_reply = ((1 << 62)..(1 << 63)).contains(&event.userdata);
                     if load_reply {
@@ -1954,10 +2059,12 @@ impl Player {
                 .as_ref()
                 .is_some_and(|clock| clock.prevents_display_sleep());
         }
+        self.advance_subtitle_off();
         snapshot.wakeups = self.inner.wake.count.load(Ordering::Relaxed);
         snapshot.render_notifications = self.inner.wake.render_count.load(Ordering::Relaxed);
         snapshot.resume_position_reply = self.inner.resume_reply.get();
         snapshot.audio_probe_reply = self.inner.audio_probe_reply.get();
+        snapshot.subtitle_off_reply = self.inner.subtitle_off.borrow().reply();
         snapshot.stop_pending = self.inner.stop_requested.get();
         snapshot.clone()
     }

@@ -11,6 +11,7 @@ rust-version = "1.98"
 [workspace.dependencies]
 slint = { git = "https://github.com/slint-ui/slint", rev = "cf3b07d4917e6759a63b0c03913a2594ec653414", default-features = false, features = ["std", "compat-1-18", "backend-winit", "renderer-femtovg", "accessibility", "unstable-winit-030"] }
 slint-build = { git = "https://github.com/slint-ui/slint", rev = "cf3b07d4917e6759a63b0c03913a2594ec653414", default-features = false, features = ["compat-1-18"] }
+i-slint-backend-testing = { git = "https://github.com/slint-ui/slint", rev = "cf3b07d4917e6759a63b0c03913a2594ec653414", default-features = false }
 
 [profile.release]
 lto = "thin"

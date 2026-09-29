@@ -2021,6 +2021,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "i-slint-backend-testing"
+version = "1.19.0"
+source = "git+https://github.com/slint-ui/slint?rev=cf3b07d4917e6759a63b0c03913a2594ec653414#cf3b07d4917e6759a63b0c03913a2594ec653414"
+dependencies = [
+ "cfg_aliases",
+ "i-slint-common",
+ "i-slint-core",
+ "vtable",
+]
+
+[[package]]
 name = "i-slint-backend-winit"
 version = "1.19.0"
 source = "git+https://github.com/slint-ui/slint?rev=cf3b07d4917e6759a63b0c03913a2594ec653414#cf3b07d4917e6759a63b0c03913a2594ec653414"
@@ -4407,6 +4418,7 @@ dependencies = [
 name = "serein"
 version = "0.1.0"
 dependencies = [
+ "i-slint-backend-testing",
  "image",
  "libc",
  "reqwest",

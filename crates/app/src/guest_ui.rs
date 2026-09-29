@@ -172,6 +172,16 @@ impl State {
         }
     }
 }
+fn filter_admitted(
+    index: i32,
+    scope: i32,
+    expected_scope: i32,
+    busy: bool,
+    native_child: bool,
+    clearing: bool,
+) -> bool {
+    (0..4).contains(&index) && scope == expected_scope && !busy && !native_child && !clearing
+}
 fn kind(index: i32) -> SearchKind {
     match index {
         1 => SearchKind::Videos,
@@ -665,7 +675,16 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_search_kind_changed(move |index| {
         let Some(app) = weak.upgrade() else { return };
-        app.set_search_kind(index);
+        if !filter_admitted(
+            index,
+            app.get_guest_scope(),
+            0,
+            app.get_busy(),
+            app.get_native_video_child(),
+            s.caption_cache.active(),
+        ) {
+            return;
+        }
         let current = s.guest_ui.current.borrow().clone();
         if let Some(Location {
             request: CatalogRequest::Search { query, .. },
@@ -684,12 +703,26 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 },
                 true,
             );
+        } else if current.is_none() {
+            // An empty search surface can choose the next search's filter.
+            // Other retained catalog locations are never relabeled as search.
+            app.set_search_kind(index);
         }
     });
     let weak = app.as_weak();
     let s = state.clone();
     app.on_channel_tab_changed(move |index| {
         let Some(app) = weak.upgrade() else { return };
+        if !filter_admitted(
+            index,
+            app.get_guest_scope(),
+            1,
+            app.get_busy(),
+            app.get_native_video_child(),
+            s.caption_cache.active(),
+        ) {
+            return;
+        }
         let current = s.guest_ui.current.borrow().clone();
         if let Some(Location {
             request: CatalogRequest::Channel { id, .. },
@@ -777,6 +810,26 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn filter_admission_rejects_hidden_routes_and_busy_privacy_transitions() {
+        for scope in [0, 1] {
+            for index in 0..4 {
+                assert!(filter_admitted(index, scope, scope, false, false, false));
+                assert!(!filter_admitted(index, scope, scope, true, false, false));
+                assert!(!filter_admitted(index, scope, scope, false, true, false));
+                assert!(!filter_admitted(index, scope, scope, false, false, true));
+                for hidden in [-1, 2, 3, 4] {
+                    assert!(!filter_admitted(index, hidden, scope, false, false, false));
+                }
+            }
+            for index in [-1, 4, i32::MAX] {
+                assert!(!filter_admitted(index, scope, scope, false, false, false));
+            }
+        }
+        assert!(!filter_admitted(0, 1, 0, false, false, false));
+        assert!(!filter_admitted(0, 0, 1, false, false, false));
+    }
 
     fn artwork_video(index: u8) -> CatalogItem {
         CatalogItem::Video(serein_core::VideoSummary {

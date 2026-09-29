@@ -799,3 +799,9 @@ evidence summary](evidence/2026-09-29-raster-corrected-summary.json) associates 
 six debug/release checks with 125 frozen source inputs and exact binary hashes.
 Earlier first-run keyboard/scroll failures remain retained. No new screenshot,
 perceptual sync, resource, decoder fallback or cross-platform pass is inferred.
+
+The subsequent PiP restoration fix selects the original still-connected monitor
+from current native enumeration before applying saved geometry. It retains the
+same player, window and presentation context. Monitor disconnection and movement
+across displays still need hardware qualification; pure geometry/selection tests
+are not that evidence. See [PiP restoration](picture-in-picture.md#restore-the-original-display).

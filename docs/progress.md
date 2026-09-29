@@ -6,7 +6,31 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and newest native validation
 
-The newest slice moves playback controls inside the video and makes PiP
+The current slice fixes acknowledged state in captions, quality, Appearance and
+catalog filters, and gives the local Save dialog an explicit destination draft.
+It also prevents diagnostic themes leaking into saved preferences through volume
+updates. See [shared controls](controlled-widgets.md). PiP restoration now prefers
+the main window's original connected monitor; actual multiple-monitor behavior
+remains unqualified.
+
+Caption Off now waits for older native subtitle operations, its exact command
+reply and a fresh native sid query. The UI retains its observed track until that
+correlated completion, including at keep-open EOF. Stop and replacement revoke
+stale authority. See [caption ordering](captions.md#correlated-off-completion-and-controlled-selection).
+The final local suite passed 443 Rust tests (four explicit integrations ignored),
+163 Python tooling tests, formatting, strict Clippy and the locked debug build.
+This includes five headless tests of the actual compiled shared controls and
+native null-output caption regressions. The first integrated suite passed 441
+before review added the EOF fix and its two regressions. The final locked release
+build also passed. The release public guest-caption check passed all five stages,
+including exact Off acknowledgement and paused quality reattachment. The release
+PiP check passed nine stages and three correlated native probes on the same
+window, restoring its original frame/position; its inspected capture retains
+inline controls and local subtitles. These do not qualify multiple displays or
+account playback. Owned native test processes were reaped. Hosted CI is pending.
+No performance/usage test was run.
+
+The preceding slice moves playback controls inside the video and makes PiP
 borderless, with a shared drag area and restoration of the original native
 frame. It also fixes created-playlist selection beyond the first 100 through
 bounded bidirectional collection windows. See [PiP](picture-in-picture.md#inline-controls-and-borderless-update)
@@ -501,9 +525,9 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Continue the controlled-widget review for captions, Appearance and catalog filters, then
-cover actual queue saturation and page-navigation rename cancellation with native
-interaction checks. Failed-stream restart and additional PiP monitor/fullscreen
+Cover actual local-library queue saturation and page-navigation rename cancellation
+with native interaction checks. The shared controlled-widget review is implemented;
+its headless checks do not replace OS keyboard, IME or screen-reader qualification. Failed-stream restart and additional PiP monitor/fullscreen
 lifecycle cases remain next. Physical keyboard/IME/screen-reader qualification
 remains open despite the passing injected-key slice.
 Real-account identity, reads, explicitly authorized writes and expiry still need

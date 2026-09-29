@@ -29,6 +29,11 @@ Tests should prove domain/ownership/cancellation behavior or acceptance gates,
 not repeat implementation details. Keep routine CI offline and deterministic;
 label fixtures/demo mode explicitly.
 
+The debug test suite includes [shared control regressions](docs/controlled-widgets.md)
+using the pinned Slint mock backend. It renders no pixels and uses synthetic
+acknowledgements; native media and platform checks remain separate. Release
+builds omit the element metadata and this development-only test target.
+
 Keep changes focused and preserve existing ownership. Explain the user-visible
 problem, resulting behavior, validation and remaining limits in a pull request.
 Record commands and actual results; compilation is not runtime platform,

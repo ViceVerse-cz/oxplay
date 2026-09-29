@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { LineEdit, Slider, ListView, ComboBox, CheckBox, Palette, ScrollView } from "std-widgets.slint";
+import { LineEdit, Slider, ListView, CheckBox, Palette, ScrollView } from "std-widgets.slint";
 import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
 import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
 import { VideoDetailsPanel, CommentsUi, CommentRow } from "comments.slint";
@@ -32,10 +32,16 @@ export component App inherits Window {
     }
     public function show-captions() { root.prepare-native-overlay(); captions-popup.show(); }
     public function show-local-save() -> bool {
-        if SaveUi.begin() { root.prepare-native-overlay(); save-popup.show(); return true; }
+        if SaveUi.begin() {
+            // A destination is a local draft for this frozen dialog snapshot,
+            // not an acknowledged save. Preserve it only for an in-flight save.
+            if !SaveUi.busy { root.save-destination = SaveUi.collections.length > 0 ? 0 : -1; }
+            root.prepare-native-overlay(); save-popup.show(); return true;
+        }
         return false;
     }
     public function close-local-save() { save-popup.close(); }
+    private property <int> save-destination: -1;
     preferred-width: 1320px; preferred-height: 860px; min-width: root.picture-in-picture ? 360px : 760px; min-height: root.picture-in-picture ? 240px : 600px;
     background: Colors.canvas;
     default-font-size: 14px;
@@ -223,6 +229,7 @@ export component App inherits Window {
     callback remove-from-playlist(int);
     callback delete-playlist(int);
     callback preferences-changed();
+    callback theme-changed(int);
     callback default-quality(int);
     callback toggle-pause();
     callback seek(float);
@@ -495,8 +502,13 @@ export component App inherits Window {
                     Text { text: "On this device only. Your YouTube account is unchanged."; color: Colors.muted; wrap: word-wrap; height: 32px; font-size: 12px; }
                     if SaveUi.destinations-paged: Text { text: "Showing the current playlist page. More playlists are available in Local playlists."; color: Colors.muted; wrap: word-wrap; height: 32px; font-size: 12px; }
                     if SaveUi.collections.length > 0: HorizontalLayout { height: 38px; spacing: 8px;
-                        destination := ComboBox { accessible-label: "Local playlist to save into"; model: SaveUi.collections; current-index: 0; enabled: !SaveUi.busy && !SaveUi.saved; horizontal-stretch: 1; }
-                        Action { label: "Save"; variant: ActionVariant.primary; width: 72px; horizontal-stretch: 0; enabled: !SaveUi.busy && !SaveUi.saved && destination.current-index >= 0; clicked => { root.save-to-playlist(destination.current-index); } }
+                        ConfirmedChoice {
+                            accessible-label: "Local playlist to save into"; model: SaveUi.collections;
+                            acknowledged-index: root.save-destination >= 0 && root.save-destination < SaveUi.collections.length ? root.save-destination : -1;
+                            enabled: !SaveUi.busy && !SaveUi.saved; horizontal-stretch: 1;
+                            choose(index) => { if !SaveUi.busy && !SaveUi.saved && index >= 0 && index < SaveUi.collections.length { root.save-destination = index; } }
+                        }
+                        Action { label: "Save"; variant: ActionVariant.primary; width: 72px; horizontal-stretch: 0; enabled: !SaveUi.busy && !SaveUi.saved && root.save-destination >= 0 && root.save-destination < SaveUi.collections.length; clicked => { root.save-to-playlist(root.save-destination); } }
                     }
                     if SaveUi.collections.length == 0: Text { text: "Create your first local playlist"; color: Colors.text; height: 30px; }
                     playlist-name := LineEdit { accessible-label: "New local playlist name"; placeholder-text: "New playlist name"; enabled: !SaveUi.busy && !SaveUi.saved; height: 38px; accepted => { if !SaveUi.busy && !SaveUi.saved { SaveUi.create-and-save(self.text); } } }
@@ -519,7 +531,7 @@ export component App inherits Window {
                     Text { text: "Playback speed"; color: Colors.text; }
                     ConfirmedChoice { accessible-label: "Playback speed"; model: ["0.5×", "1×", "1.5×", "2×"]; acknowledged-index: root.speed-index; enabled: !root.speed-busy; choose(index) => { root.speed((index + 1) * 0.5); } }
                     Text { text: "Maximum video quality"; color: Colors.text; }
-                    ComboBox { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; current-index <=> root.quality-index; enabled: root.remote-video && !root.busy; selected(value) => { root.quality(self.current-index); } }
+                    ConfirmedChoice { accessible-label: "Maximum video quality"; model: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"]; acknowledged-index: root.quality-index; enabled: root.remote-video && !root.busy; choose(index) => { root.quality(index); } }
                     Text { text: root.remote-video ? "Uses the best available stream within this limit." : "Quality selection applies to YouTube videos."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
                 }
                 }
@@ -587,8 +599,8 @@ export component App inherits Window {
             if root.home-active: Action { icon-name: "history"; label: root.home-loading ? "Loading…" : "Refresh"; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
             if root.home-active: Action { icon-name: "list-video"; label: "Local playlists"; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
             if root.guest-can-back: Action { icon-name: "chevron-left"; label: "Back"; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
-            if root.guest-scope == 0: ComboBox { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; current-index: root.search-kind; enabled: !root.native-video-child && !root.busy; selected(value) => { root.search-kind-changed(self.current-index); } }
-            if root.guest-scope == 1: ComboBox { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; current-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; selected(value) => { root.channel-tab-changed(self.current-index); } }
+            if root.guest-scope == 0: ConfirmedChoice { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; acknowledged-index: root.search-kind; enabled: !root.native-video-child && !root.busy; choose(index) => { root.search-kind-changed(index); } }
+            if root.guest-scope == 1: ConfirmedChoice { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; acknowledged-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; choose(index) => { root.channel-tab-changed(index); } }
             if root.guest-can-follow: Action { icon-name: "plus"; label: "Follow locally"; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
             if root.guest-scope == 2: Text { text: "Public YouTube playlist"; color: Colors.muted; vertical-alignment: center; }
             Rectangle { horizontal-stretch: 1; }
@@ -668,7 +680,7 @@ export component App inherits Window {
         VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 20px;
             Text { text: "Settings"; color: Colors.text; font-size: 28px; font-weight: 700; height: 40px; }
             Text { text: "Appearance"; color: Colors.text; font-size: 18px; height: 26px; }
-            ComboBox { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; current-index: root.theme; selected(value) => { root.theme = self.current-index; root.preferences-changed(); } }
+            ConfirmedChoice { accessible-label: "Appearance"; model: ["Follow system", "Light", "Dark"]; acknowledged-index: root.theme; choose(index) => { root.theme-changed(index); } }
             Text { text: "Default maximum quality"; color: Colors.text; font-size: 18px; height: 26px; }
             ConfirmedChoice { accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
             Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }

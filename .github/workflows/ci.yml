@@ -136,6 +136,7 @@ jobs:
       - name: Run automated Rust tests
         # Ignored human-account, network integration and Keychain probes stay ignored.
         # Native media unit tests use null audio/video outputs, not a display session.
+        # Shared-widget tests use the pinned development-only mock Slint backend.
         run: cargo test --workspace --locked
 
       - name: Test packaging and source-audit tools

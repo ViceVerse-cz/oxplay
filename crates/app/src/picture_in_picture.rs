@@ -8,6 +8,7 @@
 use crate::App;
 use slint::winit_030::winit::{
     dpi::{LogicalSize, PhysicalPosition},
+    monitor::MonitorHandle,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     window::{Window, WindowButtons, WindowId},
 };
@@ -18,9 +19,10 @@ const NORMAL_MINIMUM: LogicalSize<f64> = LogicalSize::new(760.0, 600.0);
 const COMPACT_MINIMUM: LogicalSize<f64> = LogicalSize::new(360.0, 240.0);
 const COMPACT_SIZE: LogicalSize<f64> = LogicalSize::new(480.0, 270.0);
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct Saved {
     window: WindowId,
+    monitor: Option<MonitorHandle>,
     size: LogicalSize<f64>,
     position: PhysicalPosition<i32>,
     maximized: bool,
@@ -87,6 +89,7 @@ impl Controller {
                 }
                 Ok(Saved {
                     window: window.id(),
+                    monitor: window.current_monitor(),
                     size,
                     position: window
                         .outer_position()
@@ -114,7 +117,7 @@ impl Controller {
 
         // No RefCell guard spans a Slint callback/property update. Retain the
         // first snapshot throughout minimize/restore and repeated entry requests.
-        *self.saved.borrow_mut() = Some(saved);
+        *self.saved.borrow_mut() = Some(saved.clone());
         // Slint reapplies native decorations from Window.no-frame whenever
         // window properties update; use the shared binding, not only Winit.
         app.set_window_borderless(true);
@@ -155,7 +158,7 @@ impl Controller {
     /// fullscreen=false, then retries after an observed window event confirms
     /// fullscreen has ended. There is no polling timer or implicit retry here.
     pub fn exit(&self, app: &App) -> Result<(), &'static str> {
-        let Some(saved) = *self.saved.borrow() else {
+        let Some(saved) = self.saved.borrow().as_ref().cloned() else {
             return Ok(());
         };
         let (size, position) = app
@@ -167,8 +170,16 @@ impl Controller {
                 if window.fullscreen().is_some() || app.window().is_fullscreen() {
                     return Err("Leave fullscreen before restoring the main window.");
                 }
-                let geometry = window
-                    .current_monitor()
+                // PiP may have been dragged to another display. Restore the
+                // original host there while it exists, using a fresh handle's
+                // current geometry/scale rather than the captured monitor data.
+                let monitor =
+                    restore_monitor(saved.monitor.as_ref(), window.available_monitors(), || {
+                        window
+                            .current_monitor()
+                            .or_else(|| window.primary_monitor())
+                    });
+                let geometry = monitor
                     .map(|monitor| {
                         fit_restore(
                             saved.size,
@@ -204,6 +215,20 @@ impl Controller {
         });
         Ok(())
     }
+}
+
+/// Prefer the original display, not the display to which compact PiP moved.
+/// A disconnected/unknown original display falls back to a current live one.
+/// Kept independent of native handles so disconnect/reorder semantics are tested
+/// without constructing a second native window or involving the media player.
+fn restore_monitor<M: PartialEq>(
+    original: Option<&M>,
+    available: impl IntoIterator<Item = M>,
+    fallback: impl FnOnce() -> Option<M>,
+) -> Option<M> {
+    original
+        .and_then(|original| available.into_iter().find(|monitor| monitor == original))
+        .or_else(fallback)
 }
 
 // Borderless outer-minus-inner is zero, so restore from the captured frame
@@ -264,6 +289,43 @@ fn fit_restore(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn moving_pip_to_another_display_does_not_move_the_restored_main_window() {
+        // Display order can change; identity rather than index selects original.
+        assert_eq!(
+            restore_monitor(Some(&7), [9, 7], || panic!("original is connected")),
+            Some(7)
+        );
+        assert_eq!(restore_monitor(Some(&7), [9], || Some(9)), Some(9));
+        assert_eq!(restore_monitor(None, [9], || Some(9)), Some(9));
+        assert_eq!(restore_monitor(Some(&7), [], || None), None);
+
+        let saved = LogicalSize::new(1000.0, 700.0);
+        let position = PhysicalPosition::new(-2000, 120);
+        // Restoring on the original left-hand monitor preserves the real main
+        // window position, even if the compact window moved to the right one.
+        let original = fit_restore(
+            saved,
+            position,
+            PhysicalPosition::new(-2560, 0),
+            2560,
+            1440,
+            1.0,
+            (0, 28),
+        );
+        assert_eq!(original, (saved, position));
+        let disconnected = fit_restore(
+            saved,
+            position,
+            PhysicalPosition::new(0, 0),
+            1920,
+            1080,
+            1.0,
+            (0, 28),
+        );
+        assert_eq!(disconnected, (saved, PhysicalPosition::new(0, 120)));
+    }
 
     #[test]
     fn borderless_restore_uses_original_frame_extents_at_the_new_scale() {

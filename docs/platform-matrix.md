@@ -163,3 +163,9 @@ builds. Physical pointer dragging, multiple displays, OS keyboard/IME and
 accessibility remain unqualified, as do Windows, Linux/X11 and native Wayland.
 These checks do not change platform support or resource acceptance status. See
 [PiP evidence](picture-in-picture.md#inline-controls-and-borderless-update).
+
+The new headless shared-widget tests check Slint control state with synthetic
+acknowledgements. They render no pixels and do not exercise OS keyboard delivery,
+IME or assistive technologies. The PiP monitor-identity restoration algorithm has
+regressions, but actual multiple-monitor/disconnect behavior is not qualified on
+any platform. No new platform support claim follows from either test category.

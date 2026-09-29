@@ -248,3 +248,24 @@ The pinned Winit adapter reapplies native decoration state from `Window.no-frame
 compact mode therefore binds that property as well as setting the native hint.
 Winit's native inner/outer frame queries support the functional geometry checks.
 No framework revision, Cargo feature, dependency or license route changed.
+
+## Development UI regression backend
+
+The app now has a **dev-only** `i-slint-backend-testing` dependency pinned to the
+same `cf3b07d4917e6759a63b0c03913a2594ec653414` framework revision, with defaults
+disabled and no optional features. Its actual manifest, testing API, mock backend,
+and fluent ComboBox implementation were inspected in the pinned checkout.
+The deliberate offline lock update added only this package; no existing package
+version changed. Subsequent builds/tests use `--locked`.
+
+The tests instantiate the shared compiled `App`, inject Slint keys and observe
+accessible control values with synthetic callback acknowledgements. They use the
+mock backend with no rasterizer, event-loop service, MCP server, network worker
+or runtime UI interpreter. Development builds emit Slint element metadata for
+these tests; release builds omit it, and this specific integration test target is
+restricted to debug-assertion builds. Native release checks remain separate.
+
+`cargo tree -p serein --locked -e normal,build` was inspected after the addition:
+the testing backend is absent, as are Qt, Skia, the software renderer and the
+interpreter. This is selected dependency-graph evidence, not a binary-size or
+resource measurement. Runtime Winit/FemtoVG/accessibility features are unchanged.
