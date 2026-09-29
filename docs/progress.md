@@ -4,9 +4,29 @@ Working native slices exist; this is **not a release-qualified product**. SPEC.m
 is unchanged and remains the contract. No supported platform is declared. All
 application screens use one shared compiled Slint UI and an in-process Rust core.
 
-## Current source and newest native validation
+## Current source and validation
 
-The current slice propagates identity loss during post-write account
+The current feature slice adds automatic inline control visibility: video
+pointer/keyboard activity reveals the transport, and a single three-second
+inactivity timer hides it during playback. Paused, hovered, focused and popup
+interaction keeps controls available; entering Watch or accepting a new native
+load reveals them again. No polling loop or catalog update is introduced.
+Borderless PiP remembers its compact size and position within the session,
+resolving the saved display against currently available monitors. Failed-stream
+guest/account retries now preserve accepted pause intent and recheck the exact
+failed load before replacement, preventing a stale retry from taking over newer
+playback. See [PiP and controls](picture-in-picture.md) and
+[recovery](guest-recovery.md).
+
+This slice follows the requested fast feature workflow. `cargo fmt --all -- --check`,
+`cargo check --workspace --locked`, strict all-target Clippy and the locked debug
+workspace build passed. Initial compilation caught incompatible Slint layout
+constraints; those were corrected before the passing checks. New runtime
+interaction, monitor transitions and recovery qualification remain pending.
+No test suite, native diagnostic, performance/usage benchmark or release build
+was run for these changes. Prior results below apply to their recorded source.
+
+The preceding slice propagates identity loss during post-write account
 reconciliation, clearing stale connected UI and account playback. Unconfirmed
 writes retain a generic in-memory warning across explicit reconnect, without
 replaying requests or transferring private identifiers to another session.
@@ -556,8 +576,9 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Implement remaining failed-stream restart and PiP monitor/fullscreen lifecycle
-cases. Actual UI queue-saturation coverage remains separate from the passing
+Continue production account/library and playback usability improvements. The new
+control visibility, remembered PiP geometry and retry handoff still need runtime
+qualification when functional testing resumes. Actual UI queue-saturation coverage remains separate from the passing
 real-worker test. The shared controlled-widget and video-page Rename checks do
 not replace OS keyboard, IME or screen-reader qualification. Physical keyboard/IME/screen-reader qualification
 remains open despite the passing injected-key slice.

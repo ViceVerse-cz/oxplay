@@ -7,7 +7,7 @@
 //! Native Wayland does not implement that request and is rejected explicitly.
 use crate::App;
 use slint::winit_030::winit::{
-    dpi::{LogicalSize, PhysicalPosition},
+    dpi::{LogicalSize, PhysicalPosition, PhysicalSize},
     monitor::MonitorHandle,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     window::{Window, WindowButtons, WindowId},
@@ -31,9 +31,17 @@ struct Saved {
     decoration: LogicalSize<f64>,
 }
 
+#[derive(Clone)]
+struct CompactGeometry {
+    monitor: Option<MonitorHandle>,
+    size: LogicalSize<f64>,
+    position: PhysicalPosition<i32>,
+}
+
 #[derive(Default)]
 pub struct Controller {
     saved: RefCell<Option<Saved>>,
+    compact: RefCell<Option<CompactGeometry>>,
 }
 
 fn available(window: &Window) -> Result<(), &'static str> {
@@ -76,7 +84,8 @@ impl Controller {
         if app.window().is_fullscreen() {
             return Err("Leave fullscreen before opening picture-in-picture.");
         }
-        let saved = app
+        let compact = self.compact.borrow().clone();
+        let (saved, compact_size, compact_position) = app
             .window()
             .with_winit_window(|window| {
                 available(window)?;
@@ -87,7 +96,7 @@ impl Controller {
                 if !valid_size(size) {
                     return Err("The window size is not ready for picture-in-picture.");
                 }
-                Ok(Saved {
+                let saved = Saved {
                     window: window.id(),
                     monitor: window.current_monitor(),
                     size,
@@ -111,7 +120,39 @@ impl Controller {
                                 .saturating_sub(window.inner_size().height),
                         ) / window.scale_factor(),
                     ),
-                })
+                };
+                // Remember the user's compact placement between toggles, but
+                // resolve monitor identity against today's geometry. A removed
+                // display must not strand the borderless drag/return controls.
+                let monitor = restore_monitor(
+                    compact
+                        .as_ref()
+                        .and_then(|compact| compact.monitor.as_ref()),
+                    window.available_monitors(),
+                    || {
+                        window
+                            .current_monitor()
+                            .or_else(|| window.primary_monitor())
+                    },
+                );
+                let geometry = compact
+                    .as_ref()
+                    .map(|compact| (compact.size, compact.position))
+                    .unwrap_or((COMPACT_SIZE, saved.position));
+                let geometry = monitor
+                    .map(|monitor| {
+                        fit_window(
+                            geometry.0,
+                            geometry.1,
+                            monitor.position(),
+                            monitor.size(),
+                            monitor.scale_factor(),
+                            (0, 0),
+                            COMPACT_MINIMUM,
+                        )
+                    })
+                    .unwrap_or((geometry.0, saved.position));
+                Ok((saved, geometry.0, geometry.1))
             })
             .ok_or("The window is not ready for picture-in-picture.")??;
 
@@ -145,9 +186,11 @@ impl Controller {
             window.set_min_inner_size(Some(COMPACT_MINIMUM));
         });
         app.window().set_size(slint::LogicalSize::new(
-            COMPACT_SIZE.width as f32,
-            COMPACT_SIZE.height as f32,
+            compact_size.width as f32,
+            compact_size.height as f32,
         ));
+        app.window()
+            .with_winit_window(|window| window.set_outer_position(compact_position));
         Ok(())
     }
 
@@ -161,7 +204,7 @@ impl Controller {
         let Some(saved) = self.saved.borrow().as_ref().cloned() else {
             return Ok(());
         };
-        let (size, position) = app
+        let (size, position, compact) = app
             .window()
             .with_winit_window(|window| {
                 if window.id() != saved.window {
@@ -192,11 +235,29 @@ impl Controller {
                         )
                     })
                     .unwrap_or((saved.size, saved.position));
-                Ok(geometry)
+                // A minimized/native-maximized transient is not the compact
+                // rectangle the user chose. Keep the last useful one instead.
+                let compact = if window.is_minimized() == Some(true) || window.is_maximized() {
+                    None
+                } else {
+                    let size = window.inner_size().to_logical::<f64>(window.scale_factor());
+                    valid_size(size)
+                        .then(|| window.outer_position().ok())
+                        .flatten()
+                        .map(|position| CompactGeometry {
+                            monitor: window.current_monitor(),
+                            size,
+                            position,
+                        })
+                };
+                Ok((geometry.0, geometry.1, compact))
             })
             .ok_or("The window is not ready to restore from picture-in-picture.")??;
 
         self.saved.borrow_mut().take();
+        if let Some(compact) = compact {
+            *self.compact.borrow_mut() = Some(compact);
+        }
         app.set_picture_in_picture(false);
         app.set_window_borderless(!saved.decorated);
         app.window().with_winit_window(|window| {
@@ -258,16 +319,35 @@ fn fit_restore(
     scale: f64,
     decoration: (u32, u32),
 ) -> (LogicalSize<f64>, PhysicalPosition<i32>) {
+    fit_window(
+        saved,
+        position,
+        origin,
+        PhysicalSize::new(width, height),
+        scale,
+        decoration,
+        NORMAL_MINIMUM,
+    )
+}
+
+fn fit_window(
+    saved: LogicalSize<f64>,
+    position: PhysicalPosition<i32>,
+    origin: PhysicalPosition<i32>,
+    bounds: PhysicalSize<u32>,
+    scale: f64,
+    decoration: (u32, u32),
+    minimum: LogicalSize<f64>,
+) -> (LogicalSize<f64>, PhysicalPosition<i32>) {
+    let PhysicalSize { width, height } = bounds;
     if !scale.is_finite() || scale <= 0.0 || width == 0 || height == 0 {
         return (saved, position);
     }
-    let max_width =
-        ((f64::from(width) - f64::from(decoration.0)) / scale).max(NORMAL_MINIMUM.width);
-    let max_height =
-        ((f64::from(height) - f64::from(decoration.1)) / scale).max(NORMAL_MINIMUM.height);
+    let max_width = ((f64::from(width) - f64::from(decoration.0)) / scale).max(minimum.width);
+    let max_height = ((f64::from(height) - f64::from(decoration.1)) / scale).max(minimum.height);
     let size = LogicalSize::new(
-        saved.width.clamp(NORMAL_MINIMUM.width, max_width),
-        saved.height.clamp(NORMAL_MINIMUM.height, max_height),
+        saved.width.clamp(minimum.width, max_width),
+        saved.height.clamp(minimum.height, max_height),
     );
     let x_min = f64::from(origin.x);
     let y_min = f64::from(origin.y);

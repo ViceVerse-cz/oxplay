@@ -656,13 +656,34 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
         app.set_status("The protected account media transport is unavailable.".into());
         return;
     };
+    let restarting = matches!(job.kind, Kind::Restart { .. });
+    if let Kind::Restart { load } = job.kind {
+        let snapshot = state.player.snapshot();
+        // Extraction ownership alone cannot authorize replacing a stopped or
+        // newer native file. Retain the exact failed load and live account
+        // lease through the final handoff, just as at retry admission.
+        let expected = RestartScope {
+            load,
+            session: job.session,
+        };
+        if !restart_identity(state, &snapshot)
+            .is_some_and(|(id, scope)| id == job.id && scope == expected)
+        {
+            state.focus_intent.cancel(focus_scope);
+            app.set_status(
+                "Account playback changed while retrying. The old retry was discarded.".into(),
+            );
+            return;
+        }
+    }
+    let paused = restarting && state.player.user_pause_intent();
     if let Err(error) = crate::media_network::load_with_authorization(
         &state.player,
         &playback.playback,
         &playback.authorization,
         config,
         0.,
-        false,
+        paused,
     ) {
         state.focus_intent.cancel(focus_scope);
         app.set_status(error.into());

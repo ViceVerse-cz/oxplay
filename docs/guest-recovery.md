@@ -18,6 +18,17 @@ with session generation zero, and no retained account authorization, including
 an expired authorization. Account and local-file failures do not fall back to
 guest resolution. Volume and speed remain owned by the existing player.
 
+A resolved restart now rechecks the exact failed native load at its final
+handoff. Guest recovery performs this check before clearing any account state,
+so a late guest result cannot revoke a newer account playback lease. Account
+recovery likewise rechecks the live session/lease and failed load before loading.
+Both preserve the latest accepted user pause intent during extraction; a pause
+or navigation action is not undone when resolution completes. Ordinary new
+video selections still begin playing, and terminal recovery still starts at
+zero rather than inventing a trustworthy position from the failed snapshot.
+These changes have source review and compilation/lint validation only in this
+slice; the historical runtime evidence below does not qualify them.
+
 If that fresh resolution fails, repeated transport retries share its existing
 manual delay and attempt count. A nonretryable provider rejection disables
 restart for that exact failed load and preserves its explanation. A stale

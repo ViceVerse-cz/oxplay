@@ -139,6 +139,27 @@ pub fn resolution_failed(
     app.set_can_retry_playback(can_retry(app, state, &snapshot));
 }
 
+fn retry_current(state: &UiState, id: &serein_core::VideoId) -> bool {
+    let Some((generation, load)) = state.guest_playback.retry.borrow().attempt else {
+        return true; // Ordinary initial selection, not recovery.
+    };
+    let snapshot = state.player.snapshot();
+    generation == state.worker.borrow().generation()
+        && snapshot.load_request_id == load
+        && !snapshot.stop_pending
+        && failed_load(&snapshot)
+        && account_playback::authorization(state).is_none()
+        && playback_ui::guest_retry_video(state, load).as_ref() == Some(id)
+}
+
+fn reject_changed_retry(app: &App, state: &UiState) {
+    state.guest_playback.retry.borrow_mut().attempt = None;
+    state.focus_intent.cancel(crate::focus_intent::Scope::Guest(
+        state.worker.borrow().generation(),
+    ));
+    app.set_status("Playback changed while retrying. The old retry was discarded.".into());
+}
+
 struct Pending {
     generation: u64,
     item: Box<ResolvedPlayback>,
@@ -171,6 +192,12 @@ pub fn receive(
             state.worker.borrow().generation(),
         ));
         app.set_status("A non-guest result was rejected by guest playback.".into());
+        return;
+    }
+    // Reject before clearing account authority: an obsolete guest restart
+    // must not stop newer connected playback as a side effect of its handoff.
+    if !retry_current(state, &item.video.id) {
+        reject_changed_retry(app, state);
         return;
     }
     if account_playback::authorization(state).is_some() {
@@ -220,6 +247,13 @@ fn publish(
     quality: serein_core::QualityCeiling,
 ) {
     let focus_scope = crate::focus_intent::Scope::Guest(state.worker.borrow().generation());
+    let restart = state.guest_playback.retry.borrow().attempt;
+    // Extraction generation does not identify the native file it may replace.
+    // Recheck at final publication as well as before account/stop coordination.
+    if !retry_current(state, &item.video.id) {
+        reject_changed_retry(app, state);
+        return;
+    }
     if !state.presentation_ready.get() {
         state.focus_intent.cancel(focus_scope);
         app.set_status(
@@ -228,11 +262,17 @@ fn publish(
         );
         return;
     }
-    if let Err(error) = load_remote(state, &item, 0., false) {
+    // A retry retains the failed video's accepted user pause intent, including
+    // a pause accepted while extraction was running. Ordinary new selections
+    // still start playing. Terminal snapshots are not fresh resume positions,
+    // so explicit recovery continues to restart from zero.
+    let paused = restart.is_some() && state.player.user_pause_intent();
+    if let Err(error) = load_remote(state, &item, 0., paused) {
         state.focus_intent.cancel(focus_scope);
         app.set_status(error.into());
         return;
     }
+    state.guest_playback.retry.borrow_mut().attempt = None;
     account_playback::leave_for_guest(app, state);
     app.set_video_texture(slint::Image::default());
     app.set_rating_known(false);

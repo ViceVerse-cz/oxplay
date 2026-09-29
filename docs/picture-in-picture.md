@@ -16,6 +16,17 @@ change guest/account authority, quality, captions or accepted pause intent.
 Account expiry and disconnection still invalidate authenticated playback.
 
 The initial client size is 480×270 logical pixels, with a 360×240 minimum.
+Resizing or moving PiP now retains that compact size and placement for the next
+entry during the same application session. Re-entry resolves the saved monitor
+against currently connected displays and clamps the borderless window inside
+its bounds; a disconnected display falls back to the current or primary display.
+Minimized or maximized transient geometry does not overwrite the saved compact
+rectangle. This in-memory preference neither writes browsing data nor changes
+the separately retained main-window geometry. The change has not yet received a
+native repeat; the existing finite diagnostic's re-entry expectation now uses
+its previously resized 360×260 rectangle. Historical runs below predate this
+behavior and do not establish its runtime qualification.
+
 The original logical client size, physical desktop position, maximized state
 window-button configuration, decoration state and logical frame extents are retained. Restoration clamps an off-screen
 window to the current monitor while respecting the normal 760×600 UI minimum.
@@ -104,8 +115,10 @@ the video. Dark translucent backing and white Lucide glyphs remain readable in
 both application themes. The bottom 48 logical pixels are left clear for native
 subtitles; arbitrary subtitle sizes/styles still require qualification. The
 metadata/actions below the normal video no longer contain the transport bar.
-Paused and PiP controls stay visible. The existing explicit hide/show control is
-retained; no automatic hiding timer or pointer-driven global model was added.
+Paused controls stay visible. During active playback, watch/fullscreen/PiP controls
+now hide after three seconds without player interaction; the PiP drag strip stays
+available. The existing explicit hide/show control is retained. A single-shot
+inactivity timer controls visibility without a pointer-driven catalog model.
 The settings popup scrolls within compact window bounds. The experimental native
 child surface retains its separate reserved strip because it cannot compose
 Slint over that surface; it remains an opt-in unqualified diagnostic.
@@ -180,3 +193,23 @@ groups were confirmed absent. This exercises the live original-monitor path,
 not actual monitor movement or disconnection.
 Release executable SHA256:
 `5a5e9c8c7a238aec2a37bb0cb57919715b9a4cbc91ca2ad06f7c081b8e92b3d8`.
+
+
+## Event-driven inline control visibility
+
+The shared transport now reveals on video pointer movement/press and keyboard
+activity, then hides after three seconds of inactivity during actual playback.
+One owned Slint single-shot timer is rearmed by interaction; media notifications
+never extend its deadline. The timer stops while paused, hidden, outside the
+watch page, unloaded, failed, or while the transport is hovered/focused or a
+player popup/editor is active. Sliders retain focus during scrubbing, so an
+inactivity deadline cannot dismiss an active scrub. Revealing or hiding the
+transport uses the existing progress-visibility callback to coordinate progress
+requests. No cursor coordinates enter catalog models, and no player is rebuilt.
+
+The borderless PiP drag strip remains visible when the transport hides. Pointer
+activity over the video or keyboard input reveals transport controls again;
+paused PiP remains visible. The diagnostic native-child presenter retains its
+reserved, visible controls strip. Runtime interaction, accessibility, and
+pointer-grab qualification of this new visibility behavior are still pending;
+this update does not claim new native or performance evidence.

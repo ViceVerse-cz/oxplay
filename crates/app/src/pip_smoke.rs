@@ -340,8 +340,8 @@ impl Driver {
                     || decorated
                     || !near(frame.width, 0.)
                     || !near(frame.height, 0.)
-                    || !near(size.width, 480.)
-                    || !near(size.height, 270.)
+                    || !near(size.width, 360.)
+                    || !near(size.height, 260.)
                 {
                     return Ok(false);
                 }

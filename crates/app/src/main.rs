@@ -11,6 +11,7 @@ mod cli;
 mod clock_ui;
 mod collection_window_smoke;
 mod comments_ui;
+mod controls_ui;
 mod decode_warning;
 mod feed_focus;
 mod fixture_quiescence;
@@ -75,6 +76,7 @@ struct UiState {
     presentation_ready: Cell<bool>,
     presentation_retry: Cell<bool>,
     progress: Timer,
+    controls_ui: controls_ui::State,
     clock_ui: clock_ui::State,
     hidden: Cell<bool>,
     model: Rc<CatalogModel<VideoRow>>,
@@ -253,6 +255,14 @@ fn update(app: &App, state: &Rc<UiState>) {
             Duration::from_secs(snapshot.position.max(0.) as u64),
         );
     }
+    controls_ui::observe(
+        app,
+        state,
+        matches!(snapshot.state, serein_media::PlaybackState::Playing)
+            && !snapshot.paused
+            && state.presentation_ready.get(),
+        snapshot.load_request_id,
+    );
     let active = matches!(snapshot.state, serein_media::PlaybackState::Playing)
         && !snapshot.paused
         && app.get_loaded()
@@ -854,6 +864,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         presentation_ready: Cell::new(false),
         presentation_retry: Cell::new(false),
         progress: Timer::default(),
+        controls_ui: controls_ui::State::default(),
         clock_ui: clock_ui::State::new(options.stage_progress),
         hidden: Cell::new(false),
         model: Rc::new(CatalogModel::default()),
@@ -1054,11 +1065,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             app.set_fullscreen_active(false);
         }
     });
+    controls_ui::connect(&app, &state);
     let weak = app.as_weak();
     let s = state.clone();
     app.on_toggle_controls(move || {
         if let Some(app) = weak.upgrade() {
-            app.set_controls_visible(!app.get_controls_visible());
+            controls_ui::toggle(&app, &s);
             update(&app, &s);
         }
     });
