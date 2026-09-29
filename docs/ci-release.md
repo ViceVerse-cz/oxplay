@@ -1,6 +1,15 @@
 # CI and source previews
 
-Latest feature checkpoint: `dd26ab4f89db2bc9ffd1a9481e613c0c46323435`
+Latest feature checkpoint: `6b3729b46e8ff6ac250307084aa5a21a5677e5f9`
+adds channel handles, local playlist search and explicit watch-link sharing.
+Formatting, strict all-target Clippy and the locked debug workspace build passed.
+Four new focused regression tests were compiled, not run. No native diagnostics,
+live provider/account checks, performance measurements, release build or source
+preview ran in this fast feature pass. [CI run 36607352745](https://github.com/ViceVerse-cz/yt/actions/runs/36607352745)
+could not start either job: both annotations cite failed account payments or a
+spending-limit issue. No hosted build/test evidence exists for this source.
+
+Previous feature checkpoint: `dd26ab4f89db2bc9ffd1a9481e613c0c46323435`
 adds automatic inline controls, remembered PiP geometry and retry handoff guards.
 Local formatting, locked workspace compilation, strict all-target Clippy and
 locked debug build passed. Per the requested fast feature workflow, no test

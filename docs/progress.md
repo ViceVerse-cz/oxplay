@@ -20,6 +20,9 @@ error; the popup now uses the supported forward-focus contract and the final
 checks passed. Four focused source regressions were added and compiled, but not
 executed. No test suite, live provider/account check, native diagnostic,
 performance measurement or release build ran for this fast implementation pass.
+Source `6b3729b` is pushed. [CI run 36607352745](https://github.com/ViceVerse-cz/yt/actions/runs/36607352745)
+could not start either job because of the repository account-payment/spending-limit
+blocker. No hosted compilation or test result exists for this source.
 
 The preceding feature slice adds automatic inline control visibility: video
 pointer/keyboard activity reveals the transport, and a single three-second
@@ -594,7 +597,8 @@ Windows, Linux/X11 and native Wayland have no runtime qualification here.
 
 ## Next concrete work
 
-Continue production account/library and playback usability improvements. The new
+Next add a shared keyboard-shortcut reference and explicit local-file opening
+through the existing player. Continue account/library usability work. The new
 control visibility, remembered PiP geometry and retry handoff still need runtime
 qualification when functional testing resumes. Actual UI queue-saturation coverage remains separate from the passing
 real-worker test. The shared controlled-widget and video-page Rename checks do
