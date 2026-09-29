@@ -21,7 +21,8 @@ use std::{cell::Cell, rc::Rc};
 /// Must be installed before App::new. X11 cannot add an alpha visual later.
 /// Pinned Slint's FemtoVG configuration prefers a transparency-capable config.
 /// On macOS Slint overrides transparency from Window.background/no-frame at
-/// creation and whenever they change, keeping the default native frame opaque.
+/// creation and whenever they change. The shared canvas supplies a neutral tint
+/// while the native compositor supplies requested blur where available.
 /// Keep native decorations: AppKit owns traffic lights and rounded frame corners.
 pub fn attributes(attributes: WindowAttributes, integrated: bool) -> WindowAttributes {
     let attributes = attributes
@@ -61,7 +62,7 @@ impl Controller {
                     Some(RawWindowHandle::AppKit(_)) => (
                         true,
                         true,
-                        "Translucency is optional. Native macOS blur is experimental; system settings may affect its appearance.",
+                        "Native macOS blur is experimental; system settings may affect its appearance. Turn off translucency for opaque surfaces.",
                     ),
                     Some(RawWindowHandle::Win32(_)) => (
                         true,

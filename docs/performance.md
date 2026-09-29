@@ -1,5 +1,13 @@
 # Performance qualification
 
+The latest mini-player/settings/appearance corrections add no resource or energy
+measurements. A retained guest-related snapshot is bounded to 20 records; hidden
+surface image references are dropped and the existing thumbnail worker/cache is
+shared with generation invalidation. No decoder, media timer or frame-copy path
+is added. Translucency/blur changes can affect compositor cost and remain
+unmeasured. All SPEC targets/ceilings and previous source-scoped results remain
+unchanged. Performance/usage testing is deferred at the user's explicit request.
+
 The immediate-watch/header slice adds no measurements. Source inspection found
 an image-publication loop that could consume successive batches in one UI
 callback; publication is now capped at two results per coalesced callback.

@@ -26,6 +26,7 @@ fn focused(app: &App, state: &UiState, expected: usize) -> Result<(), &'static s
         || app.get_related_parking_active()
         || !app.get_related_focused_visible()
         || state
+            .watch_context
             .model
             .row_data(expected)
             .is_none_or(|row| row.id.as_str() != format!("f{expected:010}"))
@@ -43,6 +44,7 @@ impl Checks {
             || app.get_busy()
             || state.player.snapshot().file_loads != 1
             || state.model.row_count() != 30
+            || state.watch_context.model.row_count() != 30
             || app.get_account_connected()
             || state.thumbnails.borrow().statistics().remote_started != 0
         {
@@ -192,6 +194,17 @@ pub struct Smoke {
 }
 impl Smoke {
     pub fn start(app: &App, state: &Rc<UiState>) -> Self {
+        // Explicit diagnostic mode seeds both independent surfaces. Thirty
+        // synthetic rows exercise off-screen focus beyond the production
+        // related-page cap; they contain no provider/account data or URLs.
+        state.watch_context.model.replace(
+            (0..state.model.row_count())
+                .filter_map(|index| state.model.row_data(index))
+                .collect(),
+        );
+        state.thumbnails.borrow_mut().replace(Vec::new());
+        state.thumbnail_attempted.borrow_mut().clear();
+        state.thumbnail_range.set((usize::MAX, usize::MAX));
         // A fresh profile plus exact copied fixture is admitted before startup.
         // Block explicit online callbacks too; this does not claim an OS egress sandbox.
         macro_rules! block {
@@ -201,6 +214,8 @@ impl Smoke {
         }
         block!(on_search, (query));
         block!(on_select_video, (index));
+        block!(on_select_related, (index));
+        block!(on_open_watch_channel, ());
         block!(on_guest_back, ());
         block!(on_more, ());
         block!(on_guest_previous, ());

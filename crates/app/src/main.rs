@@ -53,6 +53,7 @@ mod save_smoke;
 mod share_ui;
 mod soak_smoke;
 mod thumbnails;
+mod watch_context;
 mod watch_loading;
 mod window_chrome;
 use catalog::{Response, Worker};
@@ -70,6 +71,7 @@ slint::include_modules!();
 struct UiState {
     window_chrome: Rc<window_chrome::Controller>,
     watch_loading: watch_loading::State,
+    watch_context: watch_context::State,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -107,6 +109,7 @@ struct UiState {
     playback_ui: playback_ui::State,
     thumbnails: RefCell<thumbnails::Worker>,
     thumbnail_range: Cell<(usize, usize)>,
+    thumbnail_surface: Cell<i32>,
     thumbnail_attempted: RefCell<std::collections::HashSet<usize>>,
     library: library::Worker,
     library_ui: library_ui::State,
@@ -316,7 +319,7 @@ fn update(app: &App, state: &Rc<UiState>) {
     let active = matches!(snapshot.state, serein_media::PlaybackState::Playing)
         && !snapshot.paused
         && app.get_loaded()
-        && app.get_page() == 2
+        && app.get_video_visible()
         && app.get_progress_visible()
         && !state.hidden.get();
     if active && !state.progress.running() {
@@ -493,11 +496,42 @@ fn video_row(video: &serein_core::VideoSummary) -> VideoRow {
         ..VideoRow::default()
     }
 }
-fn viewport(state: &UiState, first: usize, end: usize, visible: Option<(usize, usize)>) {
+fn viewport(app: &App, state: &UiState, first: usize, end: usize, visible: Option<(usize, usize)>) {
     if state.caption_cache.active() {
         return;
     }
-    let len = state.model.row_count();
+    let surface = if app.get_page() == 2 { 1 } else { 0 };
+    if state.thumbnail_surface.replace(surface) != surface {
+        state.thumbnails.borrow_mut().replace(Vec::new());
+        state.thumbnail_attempted.borrow_mut().clear();
+        state.thumbnail_range.set((usize::MAX, usize::MAX));
+        // Keep typed watch/browse metadata, but release image references held
+        // by the now-hidden surface. The worker's bounded cache can serve them
+        // again; preserving navigation does not retain two decoded viewports.
+        let hidden_model = if surface == 1 {
+            &state.model
+        } else {
+            &state.watch_context.model
+        };
+        for index in 0..hidden_model.row_count() {
+            if let Some(mut row) = hidden_model.row_data(index)
+                && row.thumbnail_ready
+            {
+                row.thumbnail = slint::Image::default();
+                row.thumbnail_ready = false;
+                hidden_model.set_row_data(index, row.clone());
+                if surface == 1 {
+                    state.groups.update(index, row);
+                }
+            }
+        }
+    }
+    let model = if surface == 1 {
+        &state.watch_context.model
+    } else {
+        &state.model
+    };
+    let len = model.row_count();
     let (first, end) = groups::thumbnail_window(len, (first, end), visible);
     if state.thumbnail_range.replace((first, end)) == (first, end) {
         return;
@@ -508,19 +542,21 @@ fn viewport(state: &UiState, first: usize, end: usize, visible: Option<(usize, u
         .retain(|row| (first..end).contains(row));
     for row in 0..len {
         if !(first..end).contains(&row)
-            && let Some(mut item) = state.model.row_data(row)
+            && let Some(mut item) = model.row_data(row)
             && item.thumbnail_ready
         {
             item.thumbnail = slint::Image::default();
             item.thumbnail_ready = false;
-            state.model.set_row_data(row, item.clone());
-            state.groups.update(row, item);
+            model.set_row_data(row, item.clone());
+            if surface == 0 {
+                state.groups.update(row, item);
+            }
         }
     }
     let requests = (first..end)
         .filter_map(|row| {
             if state.thumbnail_attempted.borrow().contains(&row)
-                || state.model.row_data(row)?.thumbnail_ready
+                || model.row_data(row)?.thumbnail_ready
             {
                 return None;
             }
@@ -532,7 +568,11 @@ fn viewport(state: &UiState, first: usize, end: usize, visible: Option<(usize, u
                         index: row % library_fixture::THUMBNAILS,
                     }
                 } else {
-                    state.guest_ui.thumbnail_source(row)?
+                    if surface == 1 {
+                        state.watch_context.thumbnail_source(row)?
+                    } else {
+                        state.guest_ui.thumbnail_source(row)?
+                    }
                 },
             })
         })
@@ -549,10 +589,18 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
         }
     });
     let s = state.clone();
+    let weak = app.as_weak();
     app.on_visible_range(move |first, end, visible_first, visible_end| {
+        let Some(app) = weak.upgrade() else { return };
         let visible = (visible_first >= 0 && visible_end >= 0)
             .then_some((visible_first.max(0) as usize, visible_end.max(0) as usize));
-        viewport(&s, first.max(0) as usize, end.max(0) as usize, visible)
+        viewport(
+            &app,
+            &s,
+            first.max(0) as usize,
+            end.max(0) as usize,
+            visible,
+        )
     });
     let s = state.clone();
     let weak = app.as_weak();
@@ -576,7 +624,13 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
             if s.caption_cache.active() {
                 continue;
             }
-            let Some(mut row) = s.model.row_data(ready.row) else {
+            let surface = s.thumbnail_surface.get();
+            let model = if surface == 1 {
+                &s.watch_context.model
+            } else {
+                &s.model
+            };
+            let Some(mut row) = model.row_data(ready.row) else {
                 continue;
             };
             if ready
@@ -595,8 +649,10 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
             );
             row.thumbnail = slint::Image::from_rgba8(buffer);
             row.thumbnail_ready = true;
-            s.model.set_row_data(ready.row, row.clone());
-            s.groups.update(ready.row, row);
+            model.set_row_data(ready.row, row.clone());
+            if surface == 0 {
+                s.groups.update(ready.row, row);
+            }
             s.thumbnails
                 .borrow()
                 .record_publication(pixels.as_raw().len());
@@ -637,7 +693,7 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
         }
         s.worker.borrow_mut().cancel();
         app.set_busy(false);
-        if page != 2 {
+        if s.native_child.enabled && page != 2 {
             let _ = s.player.set_paused(true);
         }
         app.set_page(page);
@@ -655,7 +711,9 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
         }
         s.worker.borrow_mut().cancel();
         app.set_busy(false);
-        let _ = s.player.set_paused(true);
+        if s.native_child.enabled {
+            let _ = s.player.set_paused(true);
+        }
         s.thumbnail_range.set((usize::MAX, usize::MAX));
         app.invoke_refresh_visible();
         update(&app, &s);
@@ -913,6 +971,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = Rc::new(UiState {
         window_chrome,
         watch_loading: watch_loading::State::default(),
+        watch_context: watch_context::State::default(),
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -950,6 +1009,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         playback_ui: playback_ui::State::default(),
         thumbnails: RefCell::new(thumbnails),
         thumbnail_range: Cell::new((usize::MAX, usize::MAX)),
+        thumbnail_surface: Cell::new(-1),
         thumbnail_attempted: RefCell::new(std::collections::HashSet::new()),
         library,
         library_ui: library_ui::State::default(),
@@ -969,6 +1029,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         geometry_events: options.diagnostics.then(|| Cell::new(0)),
     });
     app.set_videos(slint::ModelRc::from(state.model.clone()));
+    app.set_watch_videos(slint::ModelRc::from(state.watch_context.model.clone()));
     app.set_groups(slint::ModelRc::from(state.groups.model.clone()));
     bind_browsing(&app, &state);
     account_ui::bind(&app, &state);
@@ -1169,13 +1230,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return;
         }
         if !app.get_loaded()
-            || app.get_page() != 2
+            || !app.get_video_visible()
             || app.get_playback_overlay_open()
             || app.get_fullscreen_active()
             || s.native_child.enabled
         {
             return;
         }
+        // Global compact mode still uses this window, with its watch scene.
+        // Return restores the full watch page rather than a hidden mini-player.
+        app.set_page(2);
         match s.pip.enter(&app) {
             Ok(()) => {
                 app.invoke_focus_video_mode();
@@ -1618,20 +1682,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     if smoke || demo_related {
-        state.model.replace(
-            (0..30)
-                .map(|i| VideoRow {
-                    title: format!("TEST FIXTURE — catalog row {i}").into(),
-                    channel: "Synthetic content; lifecycle test only".into(),
-                    id: if options.related_focus_check {
-                        format!("f{i:010}").into()
-                    } else {
-                        "".into()
-                    },
-                    ..VideoRow::default()
-                })
-                .collect(),
-        );
+        let fixture_rows: Vec<_> = (0..30)
+            .map(|i| VideoRow {
+                title: format!("TEST FIXTURE — catalog row {i}").into(),
+                channel: "Synthetic content; lifecycle test only".into(),
+                id: if options.related_focus_check {
+                    format!("f{i:010}").into()
+                } else {
+                    "".into()
+                },
+                ..VideoRow::default()
+            })
+            .collect();
+        state.model.replace(fixture_rows.clone());
+        state.watch_context.model.replace(fixture_rows);
         state.groups.replace(&state.model);
         app.set_status("TEST FIXTURE MODE — synthetic catalog rows for invalidation checks".into());
     }

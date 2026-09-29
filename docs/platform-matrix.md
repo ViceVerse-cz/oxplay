@@ -1,14 +1,18 @@
 # Platform qualification
 
-macOS now integrates its real native traffic lights into the shared custom
+macOS integrates its real native traffic lights into the shared 48px custom
 header through a transparent titlebar/full-size content view. Windows/Linux
 retain native-frame fallback; their integrated-header adapters are unvalidated.
 PiP temporarily removes decorations. Theatre mode and watch/library/loading
-layouts remain shared Slint UI. Optional
-translucency is retained. Blur is
-exposed only as an experimental macOS request; Windows/X11/native Wayland blur
-remains unavailable in this implementation. These API paths have no new native
-qualification. See [appearance capabilities](window-appearance.md).
+layouts remain shared Slint UI. At the user's explicit request, whole-window
+translucency and blur are requested by default, gated by backend capabilities
+and with session-local opt-out. The canvas/shared surfaces use neutral alpha;
+decoded video stays opaque. Blur is exposed only as an experimental macOS
+request through Winit's private CGS API, with no success/active-state getter;
+Windows/X11/native Wayland blur remains unavailable. These changes have no new
+native visual qualification. Historical capture attempts encountered native
+display-clock error `-6661`; older results below retain their exact source scope.
+See [appearance capabilities](window-appearance.md).
 
 The latest local-file picker, playlist organization, timestamp links, chapter
 navigation and Jump to time additions have source/compile validation only. No

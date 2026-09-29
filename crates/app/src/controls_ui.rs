@@ -17,7 +17,7 @@ pub struct State {
 fn may_hide(app: &App, state: &UiState) -> bool {
     state.controls_ui.playing.get()
         && app.get_loaded()
-        && app.get_page() == 2
+        && app.get_video_visible()
         && !app.get_paused()
         && !state.player.user_pause_intent()
         && !app.get_playback_failed()
@@ -35,7 +35,7 @@ fn show(app: &App) {
 fn sync(app: &App, state: &Rc<UiState>) {
     if !may_hide(app, state) {
         state.controls_ui.timer.stop();
-        if app.get_page() == 2 && !state.hidden.get() {
+        if app.get_video_visible() && !state.hidden.get() {
             show(app);
         }
         return;
@@ -67,7 +67,7 @@ fn sync(app: &App, state: &Rc<UiState>) {
 }
 
 fn activity(app: &App, state: &Rc<UiState>) {
-    if app.get_page() != 2 || state.hidden.get() {
+    if !app.get_video_visible() || state.hidden.get() {
         return;
     }
     show(app);
@@ -84,7 +84,7 @@ pub fn observe(app: &App, state: &Rc<UiState>, playing: bool, load: u64) {
         // New selections and stream replacement can keep the same watch page.
         // Give their controls a fresh grace period without following the clock.
         state.controls_ui.timer.stop();
-        if app.get_page() == 2 {
+        if app.get_video_visible() {
             show(app);
         }
     }

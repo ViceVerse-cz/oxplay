@@ -167,7 +167,7 @@ impl Controller {
         app.on_pip_drag(move || {
             let Some(app) = weak.upgrade() else { return };
             if app.get_picture_in_picture() {
-                // Invoked synchronously by the shared TouchArea's left press.
+                // Invoked synchronously after the video-background drag threshold.
                 // macOS can consume release: no pressed-state latch is kept.
                 let result = app
                     .window()

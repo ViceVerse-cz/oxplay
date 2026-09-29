@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Slider } from "std-widgets.slint";
+import { Colors, Action } from "components.slint";
+
+// Keep all choices inside the owning popup. A ComboBox's separate popup can
+// dismiss its parent on pointer interaction before the selection is delivered.
+export component PlayerSettingsPanel inherits Rectangle {
+    in property <float> volume-level: 100;
+    in property <int> speed-index: 1;
+    in property <int> quality-index;
+    in property <bool> speed-busy;
+    in property <bool> quality-busy;
+    in property <bool> remote-video;
+    in property <bool> subtitle-available;
+    callback volume(float);
+    callback speed(int);
+    callback quality(int);
+    callback subtitle();
+    callback close();
+    private property <int> section;
+    private property <[string]> speeds: ["0.5×", "Normal", "1.5×", "2×"];
+    private property <[string]> qualities: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"];
+    private property <string> current-speed: root.speed-index >= 0 && root.speed-index < root.speeds.length ? root.speeds[root.speed-index] : "Unknown";
+    private property <string> current-quality: root.quality-index >= 0 && root.quality-index < root.qualities.length ? root.qualities[root.quality-index] : "Unknown";
+    preferred-height: root.section == 2 ? 336px : root.section == 1 ? 256px : root.remote-video ? 296px : 336px;
+    background: Colors.surface;
+    border-width: 1px; border-color: Colors.border; border-radius: 12px;
+    forward-focus: header-action;
+    function back() { if root.section != 0 { root.section = 0; header-action.focus(); } else { root.close(); } }
+
+    navigation := FocusScope {
+        width: parent.width; height: parent.height;
+        focus-on-tab-navigation: false; focus-on-click: false;
+        capture-key-pressed(event) => {
+            if event.text == Key.Escape { root.back(); return accept; }
+            return reject;
+        }
+        header-action := Action {
+            x: 8px; y: 8px; width: parent.width - 16px; height: 40px;
+            icon-name: root.section == 0 ? "x" : "chevron-left";
+            label: root.section == 1 ? "Playback speed" : root.section == 2 ? "Video quality" : "Playback settings";
+            accessible-label: root.section == 0 ? "Close playback settings" : "Back to playback settings";
+            clicked => { root.back(); }
+        }
+        Rectangle { x: 12px; y: 56px; width: parent.width - 24px; height: 1px; background: Colors.border; }
+
+        if root.section == 0: Rectangle {
+            x: 8px; y: 64px; width: parent.width - 16px; height: parent.height - self.y - 8px;
+            background: transparent;
+            Text { x: 12px; y: 0px; width: parent.width - 24px; height: 24px; text: "Volume"; color: Colors.text; }
+            Slider {
+                x: 12px; y: 28px; width: parent.width - 24px; height: 32px;
+                accessible-label: "Volume percent"; minimum: 0; maximum: 100;
+                value: root.volume-level;
+                changed(value) => { root.volume(value); }
+            }
+            Action {
+                x: 0px; y: 72px; width: parent.width; height: 44px;
+                label: "Playback speed"; accessible-label: "Playback speed: " + root.current-speed;
+                clicked => { root.section = 1; header-action.focus(); }
+                Text { x: parent.width - 118px; y: 0px; width: 106px; height: parent.height; text: root.speed-busy ? "Applying…" : root.current-speed; color: Colors.muted; horizontal-alignment: right; vertical-alignment: center; }
+            }
+            Action {
+                x: 0px; y: 120px; width: parent.width; height: 44px;
+                label: "Video quality"; accessible-label: "Maximum video quality: " + root.current-quality;
+                enabled: root.remote-video;
+                clicked => { root.section = 2; header-action.focus(); }
+                Text { x: parent.width - 118px; y: 0px; width: 106px; height: parent.height; text: root.quality-busy ? "Loading…" : root.remote-video ? root.current-quality : "Local file"; color: Colors.muted; horizontal-alignment: right; vertical-alignment: center; opacity: root.remote-video ? 1 : 0.4; }
+            }
+            if !root.remote-video: Action {
+                x: 0px; y: 168px; width: parent.width; height: 40px;
+                label: "Load subtitle file…"; icon-name: "captions"; enabled: root.subtitle-available;
+                clicked => { root.subtitle(); }
+            }
+            Text {
+                x: 12px; y: root.remote-video ? 176px : 212px; width: parent.width - 24px; height: 36px;
+                text: root.remote-video ? "Quality uses the best available stream within your selected limit." : "Quality selection applies to YouTube videos.";
+                color: Colors.muted; font-size: 12px; wrap: word-wrap;
+            }
+        }
+        if root.section == 1: VerticalLayout {
+            x: 8px; y: 64px; width: parent.width - 16px; height: 176px;
+            spacing: 4px;
+            for item[index] in root.speeds: Action {
+                height: 40px; label: item; selectable: true;
+                selected: index == root.speed-index; enabled: !root.speed-busy;
+                accessible-label: "Playback speed " + item;
+                clicked => { root.speed(index); }
+            }
+        }
+        if root.section == 2: VerticalLayout {
+            x: 8px; y: 64px; width: parent.width - 16px; height: 256px;
+            spacing: 4px;
+            for item[index] in root.qualities: Action {
+                height: 40px; label: item; selectable: true;
+                selected: index == root.quality-index; enabled: root.remote-video && !root.quality-busy;
+                accessible-label: "Maximum quality " + item;
+                clicked => { root.quality(index); }
+            }
+        }
+    }
+}

@@ -150,33 +150,45 @@ impl State {
         Some(entry.location)
     }
     pub fn thumbnail_source(&self, row: usize) -> Option<crate::thumbnails::Source> {
-        let items = self.items.borrow();
-        let item = items.get(row)?;
-        if self.local_home.get() {
-            // Even unexpected stored URLs cannot promote a local lookup to HTTP.
-            return match item {
-                CatalogItem::Video(video) => {
-                    Some(crate::thumbnails::Source::CachedVideo(video.id.clone()))
-                }
-                _ => None,
-            };
-        }
-        match item {
-            CatalogItem::Video(video) => Some(crate::thumbnails::Source::RemoteGuestVideo {
-                id: video.id.clone(),
-                url: video.thumbnail_url.clone()?,
-            }),
-            CatalogItem::Channel(channel) => channel
-                .thumbnail_url
-                .clone()
-                .map(crate::thumbnails::Source::Remote),
-            CatalogItem::Playlist(playlist) => playlist
-                .thumbnail_url
-                .clone()
-                .map(crate::thumbnails::Source::Remote),
-        }
+        thumbnail_source(self.items.borrow().get(row)?, self.local_home.get())
+    }
+    pub fn watch_snapshot(&self) -> (Vec<CatalogItem>, bool) {
+        (
+            self.items.borrow().iter().take(20).cloned().collect(),
+            self.local_home.get(),
+        )
     }
 }
+
+pub(crate) fn thumbnail_source(
+    item: &CatalogItem,
+    local_only: bool,
+) -> Option<crate::thumbnails::Source> {
+    if local_only {
+        // Stored URLs cannot promote explicitly local artwork to HTTP.
+        return match item {
+            CatalogItem::Video(video) => {
+                Some(crate::thumbnails::Source::CachedVideo(video.id.clone()))
+            }
+            _ => None,
+        };
+    }
+    match item {
+        CatalogItem::Video(video) => Some(crate::thumbnails::Source::RemoteGuestVideo {
+            id: video.id.clone(),
+            url: video.thumbnail_url.clone()?,
+        }),
+        CatalogItem::Channel(channel) => channel
+            .thumbnail_url
+            .clone()
+            .map(crate::thumbnails::Source::Remote),
+        CatalogItem::Playlist(playlist) => playlist
+            .thumbnail_url
+            .clone()
+            .map(crate::thumbnails::Source::Remote),
+    }
+}
+
 pub fn video_summary(
     state: &UiState,
     id: &serein_core::VideoId,
@@ -190,6 +202,7 @@ pub fn video_summary(
             CatalogItem::Video(video) if &video.id == id => Some(video.clone()),
             _ => None,
         })
+        .or_else(|| state.watch_context.video_summary(id))
 }
 fn filter_admitted(
     index: i32,
@@ -263,7 +276,7 @@ fn input_channel_tab(input: &str) -> ChannelTab {
         _ => ChannelTab::Videos,
     }
 }
-fn row(item: &CatalogItem) -> VideoRow {
+pub(crate) fn row(item: &CatalogItem) -> VideoRow {
     match item {
         CatalogItem::Video(video) => {
             let mut row = crate::video_row(video);
@@ -357,7 +370,6 @@ fn load(app: &App, s: &UiState, location: Location, remember: bool) {
     app.set_has_previous(!s.guest_ui.previous.borrow().is_empty());
     app.set_guest_can_back(!s.guest_ui.navigation.borrow().is_empty());
     app.set_page(0);
-    let _ = s.player.set_paused(true);
     app.set_busy(true);
     app.set_status("Contacting YouTube in guest mode…".into());
     app.invoke_refresh_visible();
@@ -608,7 +620,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             let Some(kind) = RequestKind::from_request(request) else {
                 return;
             };
-            state.guest_ui.local_home.set(false);
+            if kind != RequestKind::Video {
+                state.guest_ui.local_home.set(false);
+            }
             crate::home_ui::cancel(&app, &state);
             let visible = state
                 .guest_ui
@@ -821,53 +835,107 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_select_video(move |index| {
         let Some(app) = weak.upgrade() else { return };
-        if app.get_busy() && !app.get_watch_loading() {
-            return;
-        }
-        if !crate::playback_preferences::admit_search(&app, &s) {
-            return;
-        }
-        let item = s.guest_ui.items.borrow().get(index as usize).cloned();
-        match item {
-            Some(CatalogItem::Video(video)) => {
-                crate::watch_loading::prepare_guest(&app, &s);
-                let quality = crate::library_ui::desired_preferences(&s).playback.quality;
-                s.worker
-                    .borrow_mut()
-                    .submit(Request::Resolve(video.id.clone(), quality));
-                let generation = s.worker.borrow().generation();
-                crate::watch_loading::guest_begin(&app, &s, generation, &video.id);
-                s.focus_intent.arm(
-                    crate::focus_intent::Scope::Guest(s.worker.borrow().generation()),
-                    app.get_search_active(),
-                );
-                app.set_busy(true);
-                app.set_status("Resolving selected content stream…".into());
-            }
-            Some(CatalogItem::Channel(channel)) => load(
-                &app,
-                &s,
-                Location {
-                    request: CatalogRequest::Channel {
-                        id: channel.id,
-                        tab: ChannelTab::Videos,
-                    },
-                    cursor: None,
-                },
-                true,
-            ),
-            Some(CatalogItem::Playlist(playlist)) => load(
-                &app,
-                &s,
-                Location {
-                    request: CatalogRequest::Playlist { id: playlist.id },
-                    cursor: None,
-                },
-                true,
-            ),
-            None => {}
-        }
+        let item = usize::try_from(index)
+            .ok()
+            .and_then(|index| s.guest_ui.items.borrow().get(index).cloned());
+        select_item(&app, &s, item);
     });
+    let weak = app.as_weak();
+    let s = Rc::downgrade(state);
+    app.on_select_related(move |index| {
+        let (Some(app), Some(s)) = (weak.upgrade(), s.upgrade()) else {
+            return;
+        };
+        if app.get_page() != 2 {
+            return;
+        }
+        let item = usize::try_from(index)
+            .ok()
+            .and_then(|index| s.watch_context.item(index));
+        select_item(&app, &s, item);
+    });
+    let weak = app.as_weak();
+    let s = Rc::downgrade(state);
+    app.on_open_watch_channel(move || {
+        let (Some(app), Some(s)) = (weak.upgrade(), s.upgrade()) else {
+            return;
+        };
+        if !app.get_watch_channel_available()
+            || app.get_watch_loading()
+            || s.caption_cache.active()
+            || app.get_native_video_child()
+        {
+            return;
+        }
+        let channel = s
+            .current_video
+            .borrow()
+            .as_ref()
+            .and_then(|video| video.channel_id.clone());
+        let Some(id) = channel else { return };
+        // A deliberate creator click opens its public channel. Credentials and
+        // account-derived video metadata never enter the guest catalog/model.
+        load(
+            &app,
+            &s,
+            Location {
+                request: CatalogRequest::Channel {
+                    id,
+                    tab: ChannelTab::Videos,
+                },
+                cursor: None,
+            },
+            true,
+        );
+    });
+}
+
+fn select_item(app: &App, s: &Rc<UiState>, item: Option<CatalogItem>) {
+    if app.get_busy() && !app.get_watch_loading() {
+        return;
+    }
+    if !crate::playback_preferences::admit_search(app, s) {
+        return;
+    }
+    match item {
+        Some(CatalogItem::Video(video)) => {
+            crate::watch_loading::prepare_guest(app, s);
+            let quality = crate::library_ui::desired_preferences(s).playback.quality;
+            s.worker
+                .borrow_mut()
+                .submit(Request::Resolve(video.id.clone(), quality));
+            let generation = s.worker.borrow().generation();
+            crate::watch_loading::guest_begin(app, s, generation, &video.id);
+            s.focus_intent.arm(
+                crate::focus_intent::Scope::Guest(generation),
+                app.get_search_active(),
+            );
+            app.set_busy(true);
+            app.set_status("Resolving selected content stream…".into());
+        }
+        Some(CatalogItem::Channel(channel)) => load(
+            app,
+            s,
+            Location {
+                request: CatalogRequest::Channel {
+                    id: channel.id,
+                    tab: ChannelTab::Videos,
+                },
+                cursor: None,
+            },
+            true,
+        ),
+        Some(CatalogItem::Playlist(playlist)) => load(
+            app,
+            s,
+            Location {
+                request: CatalogRequest::Playlist { id: playlist.id },
+                cursor: None,
+            },
+            true,
+        ),
+        None => {}
+    }
 }
 #[cfg(test)]
 mod tests {

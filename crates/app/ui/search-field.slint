@@ -9,7 +9,7 @@ export component SearchField inherits Rectangle {
     callback edited();
     forward-focus: input;
     height: 42px;
-    border-radius: 21px;
+    border-radius: self.height / 2;
     border-width: input.has-focus ? 2px : 1px;
     border-color: input.has-focus ? Colors.accent : Colors.border;
     background: Colors.surface;

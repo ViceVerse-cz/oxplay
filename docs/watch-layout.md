@@ -1,5 +1,18 @@
 # Watch layout corrections
 
+The latest correction removes the routine playback-status line below the creator
+and the permanent bottom status strip. Real failures stay on the player, with
+connection/playback details accessible from Settings. Creator avatar/name is one
+keyboard-accessible channel action; only an acknowledged typed channel enables
+it. No anonymous metadata request for a private video is made by that action.
+Descriptions/comments remain inline and retain their accepted state when browsing.
+Related cards use an independent bounded guest model, with their own typed
+selection and focus indices. Empty related data no longer reserves a wide blank
+column. The persistent host becomes the [corner mini-player](mini-player.md)
+while browsing. Settings choices now stay inside their one popup; inside pointer
+clicks no longer dismiss it. These changes have headless shared-UI checks, with
+native appearance/media timing still unqualified.
+
 The media slider explicitly anchors its filled rectangle at the track origin.
 Slint otherwise centers a child whose width is smaller than its parent, which
 made the red fill disagree with the seek thumb. Volume uses the same correction.

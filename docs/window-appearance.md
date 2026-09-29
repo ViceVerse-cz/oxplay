@@ -1,6 +1,6 @@
 # Window chrome and appearance
 
-The macOS application places its shared 56px Slint header inside the native
+The macOS application places its shared 48px Slint header inside the native
 window's titlebar area. The title is hidden, the titlebar is transparent, and
 `FullSizeContentView` lets search and application controls use the top of the
 window without a separate default title row. The leading 88px is reserved for
@@ -28,15 +28,24 @@ zoom/maximize, close and the macOS green-button fullscreen behavior remain owned
 by AppKit. The existing Slint close-request handler still handles shutdown and
 PiP restoration. The native-child media diagnostic retains its ordinary frame.
 
-Translucency is an explicit session-local option, initially off. It applies to
-the shell background and sidebar; the main browsing surface and video remain
-opaque. Blur is a separate opt-in native effect, enabled only with translucency. It is suspended
-in fullscreen/PiP and restored on leaving that mode. Appearance changes preserve
-the native window, media player, graphics context, and borrowed-texture ownership.
+At the user's explicit request, translucency and blur are requested by default
+for this feature batch, overriding SPEC's original opaque/no-glass design
+direction. Both remain session-local settings with an immediate opaque opt-out.
+Actual alpha styling is gated by the backend's translucency capability. The
+whole canvas and shared surface tokens use restrained neutral alpha; text and
+accents stay opaque. The header is 48 logical pixels high with a 38px rounded
+search field. Decoded video retains its opaque black-backed rectangle; native
+blur is not simulated by image textures or CPU video copies.
+
+Blur is a separate native request, applied only where exposed and only with
+translucency enabled. It is suspended in fullscreen/global PiP and restored on
+leaving those modes. The native-child diagnostic disables both appearance
+effects. Changes preserve the native window, media player, graphics context,
+and borrowed-texture ownership.
 
 | Backend | Translucency request | Native blur |
 | --- | --- | --- |
-| macOS | Alpha-capable FemtoVG configuration and native transparent window | Experimental Winit request, off initially |
+| macOS | Alpha-capable FemtoVG configuration and native transparent window; requested by default | Experimental Winit request, requested by default when available |
 | Windows | Requested; graphics/compositor behavior unqualified | Unavailable through selected Winit API |
 | Linux/X11 | Alpha visual requested at window creation; requires compositor | Unavailable through selected Winit API |
 | Native Wayland | Requested; compositor behavior unqualified | Disabled: selected API cannot confirm KWin blur-protocol availability |
@@ -47,7 +56,7 @@ successful blur activation. The macOS implementation in Winit 0.30.13 uses the
 private `CGSSetWindowBackgroundBlurRadius` function, rather than an AppKit public
 visual-effect material. This is an experimental compatibility limitation and
 must be reviewed before distribution/OS-support claims. System accessibility
-and compositor settings can affect the appearance; an opaque default and an
+and compositor settings can affect the appearance; an opaque option and an
 immediate opt-out remain available.
 
 Source reviewed for this implementation:
@@ -75,12 +84,20 @@ Source reviewed for this implementation:
 attributes hook before component creation, because X11 cannot add a transparent
 visual afterward. Shared Slint bindings own alpha and decoration properties. On
 macOS the pinned backend derives native transparency from `Window.background` and `no-frame`,
-overriding the creation hook. Keeping the normal background opaque therefore
-preserves the opaque shell and rounded native frame while the titlebar itself
-is transparent over the shared header. Opting into translucency changes the
-underlying shell alpha; this is not a promise of an AppKit vibrancy material.
+overriding the creation hook. With translucency enabled the Window background
+is transparent and the shared canvas provides one neutral tint, while the
+native frame/rounding remains owned by AppKit. Turning translucency off restores
+opaque shared tokens and the opaque Window background; this is not a promise
+of an AppKit vibrancy material.
 Native blur writes are cached and updated only by user actions or observed
 window/mode changes. No appearance polling loop is introduced.
+
+The previous 56px integrated-header checkpoint is source
+`c75af56c87145c37769c46e9266f3cf6257029d8`; its formatting, strict Clippy and
+locked workspace build passed. The current 48px header and whole-window alpha
+changes have not been visually qualified on a native display. Earlier layout
+capture attempts were blocked by native display-clock setup error `-6661`, and
+no fresh native capture or resource measurement is claimed for this batch.
 
 Source review alone does not qualify native appearance, accessibility, compositor,
 energy, or performance behavior. Remaining qualification includes resize/drag,

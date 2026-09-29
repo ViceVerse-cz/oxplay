@@ -803,6 +803,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     state.quality_index.set(quality.index() as usize);
     crate::share_ui::clear(app, state);
     crate::channel_avatar::clear(app, state);
+    app.set_watch_channel_available(item.video.channel_id.is_some());
     *state.current_video.borrow_mut() = Some(item.video.clone());
     crate::playback_ui::selected(app, state, &item);
     app.set_page(2);

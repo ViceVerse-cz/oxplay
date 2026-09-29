@@ -107,6 +107,7 @@ pub fn guest_begin(app: &App, state: &Rc<UiState>, generation: u64, id: &VideoId
     {
         return;
     }
+    crate::watch_context::capture_guest(app, state, id);
     let video = crate::guest_ui::video_summary(state, id);
     begin(
         app,
@@ -118,6 +119,7 @@ pub fn guest_begin(app: &App, state: &Rc<UiState>, generation: u64, id: &VideoId
 }
 
 pub fn account_begin(app: &App, state: &Rc<UiState>, id: &VideoId) {
+    crate::watch_context::clear(app, state);
     let selection = crate::account_playback::generation(state);
     let session = state.account_ui.session_generation();
     let title = state.account_ui.video_title(id).unwrap_or_default();

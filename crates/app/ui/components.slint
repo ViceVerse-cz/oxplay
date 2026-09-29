@@ -36,14 +36,17 @@ export component ConfirmedToggle inherits CheckBox {
 }
 export global Colors {
     in-out property <bool> dark: true;
-    out property <color> canvas: dark ? #0f0f0f : #ffffff;
-    out property <color> surface: dark ? #181818 : #f5f5f5;
-    out property <color> raised: dark ? #282828 : #eeeeee;
-    out property <color> border: dark ? #3a3a3a : #dedede;
+    // One canvas tint sits over native compositor blur. Shared surfaces inherit
+    // alpha; text, accents and decoded video remain fully opaque.
+    in-out property <bool> translucent;
+    out property <color> canvas: dark ? (translucent ? #0f0f0fb8 : #0f0f0f) : (translucent ? #ffffffc7 : #ffffff);
+    out property <color> surface: dark ? (translucent ? #181818a8 : #181818) : (translucent ? #f5f5f5b8 : #f5f5f5);
+    out property <color> raised: dark ? (translucent ? #282828c7 : #282828) : (translucent ? #eeeeeed1 : #eeeeee);
+    out property <color> border: dark ? (translucent ? #ffffff24 : #3a3a3a) : (translucent ? #00000020 : #dedede);
     out property <color> text: dark ? #f1f1f1 : #0f0f0f;
     out property <color> muted: dark ? #aaaaaa : #606060;
     out property <color> accent: dark ? #ff0033 : #d9002b;
-    out property <color> selected: dark ? #282828 : #eeeeee;
+    out property <color> selected: raised;
     // Filled actions keep white text above 4.5:1 in both themes.
     out property <color> primary: #d9002b;
     out property <color> primary-hover: #c50027;

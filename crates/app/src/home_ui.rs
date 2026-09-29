@@ -94,7 +94,9 @@ pub fn open(app: &App, state: &UiState) {
     state.worker.borrow_mut().cancel();
     app.set_busy(false);
     crate::native_child::hide(state);
-    let _ = state.player.set_paused(true);
+    if state.native_child.enabled {
+        let _ = state.player.set_paused(true);
+    }
     cancel(app, state);
     let same = app.get_home_active() && state.home_ui.pages.borrow().current.is_none();
     if !same {

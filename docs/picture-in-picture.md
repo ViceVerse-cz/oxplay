@@ -1,5 +1,18 @@
 # Picture in picture
 
+The current global PiP has no drag/title strip or footer. Drag the video background
+anywhere outside the controls: crossing a five-logical-pixel threshold starts the
+native window move and suppresses pause for that gesture. A normal video click
+pauses/resumes. Transport buttons and sliders retain their input. Headless
+pointer checks cover drag-vs-click separation; native AppKit dragging after the
+threshold needs a live-display check. Routine paused/playing messages are hidden;
+actual failures and decoder/diagnostic qualifications remain visible.
+
+Browsing also has a separate [in-app mini-player](mini-player.md), positioned in
+the bottom-right of the normal application window. It does not use always-on-top
+or remove the app's frame. Choosing global PiP from it enters this existing
+floating mode, with the watch page restored on exit.
+
 The latest controls styling follows the supplied YouTube reference: a bottom-edge
 fade, thin red seek rail, white volume rail, 24px existing Lucide icons and left/
 right control groups. Compact mode hides the volume rail and total-time suffix,
@@ -12,8 +25,8 @@ native subtitles while controls are visible still needs visual qualification.
 
 The player’s picture-in-picture button or **P** turns the existing Serein window
 into a compact borderless floating player. Play/pause, seek, elapsed time, mute,
-captions and playback settings remain available inside the video. The small
-shared drag area invokes the native window manager directly on left press. **P**, **Escape**, the return button or closing the compact window
+captions and playback settings remain available inside the video. The video
+background invokes the native window manager after a left-drag threshold. **P**, **Escape**, the return button or closing the compact window
 restores the main window. Closing the restored main window exits normally.
 Fullscreen and PiP are mutually exclusive; F in PiP returns to the main player.
 Shortcuts remain inactive while editing text.

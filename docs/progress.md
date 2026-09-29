@@ -6,7 +6,41 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current correction integrates the custom 56px shared header with the real
+The latest correction keeps playback running while browsing and moves the same
+video host to a bottom-right in-app mini-player. This is separate from global
+floating PiP; both use the existing window/player/context. Accepted title,
+creator, description/comments and a bounded guest-related snapshot survive
+navigation. Hidden thumbnail references are released independently from that
+retained metadata. Creator name/avatar opens its typed public channel explicitly.
+Account/private video metadata never enters the guest related model.
+
+Video background clicks toggle pause; PiP background drags use a five-pixel
+threshold so a drag cannot also pause, while transport buttons retain input.
+The drag top bar, routine paused/playing text and permanent bottom status strip
+are removed. Errors remain inline or accessible from Settings. The shared header
+is 48px, with a 38px rounded search field. Whole-window neutral translucency and
+native blur are requested by default where available, per the user's preference;
+video remains opaque, and native blur remains an experimental request. See
+[in-app mini-player](mini-player.md), [PiP](picture-in-picture.md) and
+[appearance](window-appearance.md).
+
+Pointer regression tests found Slint's default `PopupWindow` policy closes on
+inside clicks. All app panels now explicitly close on outside clicks. Speed and
+quality choices stay inline in one settings popup and retain authoritative state
+until acknowledgement. The focused compiled-UI tests cover inside mouse clicks,
+busy/rollback, keyboard Back/Escape, video/control hit separation, PiP dragging,
+mini-player geometry/data retention and both creator hit targets. These are
+headless shared-UI tests, not native rendering, decoder or live-account evidence.
+Validation on macOS: `cargo test -p serein --test controlled_widgets --locked`
+passed 10 focused tests (0 failures); `cargo fmt --all -- --check`,
+`cargo clippy --workspace --all-targets --locked -- -D warnings`, and
+`cargo build --workspace --locked` passed. `git diff --check` passed.
+No performance/resource run, full test suite or new native capture was performed.
+Current native blur/drag/layout and uninterrupted media timing still need native
+functional qualification; the historical macOS display-clock `-6661` failure was
+not re-tested. All production/platform/account/resource gates remain open.
+
+The preceding correction integrates the custom 56px shared header with the real
 macOS traffic lights through a transparent, hidden native titlebar and full-size
 content view. The system frame/corners remain native; PiP restoration reapplies
 the content-view style. Windows/Linux retain their native-frame fallback until

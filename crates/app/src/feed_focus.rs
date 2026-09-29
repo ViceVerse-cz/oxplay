@@ -30,7 +30,9 @@ impl Surface {
         }
         match app.get_page() {
             0 => Some(Self::Feed),
-            2 if !app.get_fullscreen_active() => Some(Self::Related),
+            2 if !app.get_fullscreen_active() && !app.get_picture_in_picture() => {
+                Some(Self::Related)
+            }
             _ => None,
         }
     }
@@ -174,9 +176,14 @@ fn destination(
     };
     Some(target.min(count - 1))
 }
+fn surface_model(state: &UiState, surface: Surface) -> &crate::model::CatalogModel<VideoRow> {
+    match surface {
+        Surface::Feed => &state.model,
+        Surface::Related => &state.watch_context.model,
+    }
+}
 fn identity(state: &UiState, surface: Surface, index: usize) -> Option<Identity> {
-    state
-        .model
+    surface_model(state, surface)
         .row_data(index)
         .map(|row| Identity::from_row(row, surface))
 }
@@ -205,7 +212,7 @@ fn park(app: &App, state: &UiState, surface: Surface, index: usize) -> bool {
     if Surface::active(app) != Some(surface)
         || app.get_busy()
         || state.hidden.get()
-        || index >= state.model.row_count()
+        || index >= surface_model(state, surface).row_count()
         || !app
             .window()
             .with_winit_window(|window| window.has_focus())
@@ -340,7 +347,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(target) = destination(
             index as usize,
             command,
-            state_key.model.row_count(),
+            surface_model(&state_key, surface).row_count(),
             if surface == Surface::Feed {
                 app.get_columns() as usize
             } else {

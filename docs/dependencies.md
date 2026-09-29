@@ -296,3 +296,11 @@ NSResponder, NSView, NSWindow). Public AppKit methods restore full-size content
 styling after Winit restores PiP decorations. The lockfile adds these two edges
 to the application; no package version, Slint revision or renderer feature moves.
 No native titlebar subview hierarchy is retained or rewritten.
+
+The subsequent 48px header/whole-window translucency change adds no dependency,
+Cargo feature, framework revision or lockfile update. It reuses the same locked
+Slint/Winit and limited macOS AppKit integration. Winit 0.30.13's macOS native
+blur request calls private `CGSSetWindowBackgroundBlurRadius` with radius 80
+when enabled; it exposes no success/active-state getter. Default requests and
+alpha shared tokens are capability-gated appearance choices, not new runtime
+qualification. See [window appearance](window-appearance.md).

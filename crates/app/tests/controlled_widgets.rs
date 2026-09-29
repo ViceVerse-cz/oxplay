@@ -166,7 +166,7 @@ fn appearance_rejects_unadmitted_changes_and_tracks_later_rollback() {
 }
 
 #[test]
-fn quality_does_not_change_the_acknowledged_stream_on_callback_rejection() {
+fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
     let app = app();
     app.set_page(2);
     app.set_remote_video(true);
@@ -176,15 +176,98 @@ fn quality_does_not_change_the_acknowledged_stream_on_callback_rejection() {
     app.on_quality(move |index| output.set(Some(index)));
     settle();
     element(&app, "Playback settings").invoke_accessible_default_action();
-    value(&app, "Maximum video quality", "Up to 1080p");
-    down(&app, "Maximum video quality");
+    settle();
+    element(&app, "Maximum video quality: Up to 1080p")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    element(&app, "Maximum quality Up to 720p")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
     assert_eq!(attempted.get(), Some(1));
     assert_eq!(app.get_quality_index(), 0);
-    value(&app, "Maximum video quality", "Up to 1080p");
+    assert_eq!(
+        element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
+        Some(true)
+    );
+    assert_eq!(
+        element(&app, "Maximum quality Up to 720p").accessible_item_selected(),
+        Some(false)
+    );
+    app.set_busy(true);
+    settle();
+    assert_eq!(
+        element(&app, "Maximum quality Up to 480p").accessible_enabled(),
+        Some(false)
+    );
     app.set_quality_index(1);
-    value(&app, "Maximum video quality", "Up to 720p");
+    app.set_busy(false);
+    settle();
+    assert_eq!(
+        element(&app, "Maximum quality Up to 720p").accessible_item_selected(),
+        Some(true)
+    );
     app.set_quality_index(0);
-    value(&app, "Maximum video quality", "Up to 1080p");
+    settle();
+    assert_eq!(
+        element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
+        Some(true)
+    );
+    key(&app, Key::Escape);
+    settle();
+    // Escape returns from the inline submenu; it does not dismiss its parent.
+    element(&app, "Maximum video quality: Up to 1080p");
+    key(&app, Key::Escape);
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Close playback settings")
+            .next()
+            .is_none()
+    );
+    element(&app, "Playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Maximum video quality: Up to 1080p");
+}
+
+#[test]
+fn settings_speed_pointer_selection_keeps_authoritative_state_and_keyboard_back() {
+    let app = app();
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    let attempted = Rc::new(Cell::new(None));
+    let output = attempted.clone();
+    app.on_speed(move |speed| output.set(Some(speed)));
+    settle();
+    element(&app, "Playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Playback speed: Normal")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    element(&app, "Playback speed 1.5×")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(attempted.get(), Some(1.5));
+    assert_eq!(app.get_speed_index(), 1);
+    assert_eq!(
+        element(&app, "Playback speed Normal").accessible_item_selected(),
+        Some(true)
+    );
+    app.set_speed_busy(true);
+    settle();
+    assert_eq!(
+        element(&app, "Playback speed 2×").accessible_enabled(),
+        Some(false)
+    );
+    app.set_speed_index(2);
+    app.set_speed_busy(false);
+    settle();
+    assert_eq!(
+        element(&app, "Playback speed 1.5×").accessible_item_selected(),
+        Some(true)
+    );
+    key(&app, Key::Escape);
+    settle();
+    element(&app, "Playback speed: 1.5×");
 }
 
 #[test]
@@ -222,4 +305,166 @@ fn local_save_destination_is_a_dialog_draft_and_resets_for_a_new_dialog() {
     ui.set_busy(false);
     assert!(app.invoke_show_local_save());
     value(&app, "Local playlist to save into", "TEST FIXTURE first");
+}
+
+#[test]
+fn navigation_keeps_the_same_watch_data_and_places_the_mini_player_above_browsing() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    app.set_video_title("TEST FIXTURE retained title".into());
+    app.set_video_channel("TEST FIXTURE retained creator".into());
+    app.global::<CommentsUi>()
+        .set_description("TEST FIXTURE retained description".into());
+    let related = Rc::new(slint::VecModel::from(vec![VideoRow {
+        id: "fixtureWatch".into(),
+        title: "TEST FIXTURE retained related video".into(),
+        ..VideoRow::default()
+    }]));
+    app.set_watch_videos(related.clone().into());
+    settle();
+    assert!(!app.get_mini_player_active());
+    let large_width = app.get_video_width();
+    for page in [0, 1, 3, 4] {
+        app.set_page(page);
+        app.set_videos(
+            Rc::new(slint::VecModel::from(vec![VideoRow {
+                id: "fixtureBrowse".into(),
+                title: "TEST FIXTURE different browsing page".into(),
+                ..VideoRow::default()
+            }]))
+            .into(),
+        );
+        settle();
+        assert!(app.get_mini_player_active());
+        assert!(app.get_video_visible());
+        assert!(app.get_progress_visible());
+        assert!((app.get_video_width() - 380.).abs() < 1.);
+        assert!((app.get_video_height() - 213.75).abs() < 1.);
+        assert!((app.get_video_window_x() + app.get_video_width() - 980.).abs() < 1.);
+        assert!((app.get_video_window_y() + app.get_video_height() - 780.).abs() < 1.);
+        assert_eq!(app.get_watch_offset(), 0.);
+        assert_eq!(app.get_video_channel(), "TEST FIXTURE retained creator");
+        assert_eq!(
+            app.get_watch_videos().row_data(0).unwrap().id,
+            "fixtureWatch"
+        );
+    }
+    app.set_page(2);
+    settle();
+    assert!(!app.get_mini_player_active());
+    assert_eq!(app.get_video_width(), large_width);
+    assert_eq!(app.get_video_title(), "TEST FIXTURE retained title");
+    assert_eq!(
+        app.global::<CommentsUi>().get_description(),
+        "TEST FIXTURE retained description"
+    );
+    assert_eq!(related.row_count(), 1);
+}
+
+#[test]
+fn video_background_and_transport_click_each_activate_pause_once_in_watch_and_mini() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_paused(false);
+    let pauses = Rc::new(Cell::new(0));
+    let output = pauses.clone();
+    app.on_toggle_pause(move || output.set(output.get() + 1));
+    for page in [2, 0, 3] {
+        app.set_page(page);
+        settle();
+        ElementHandle::find_by_element_id(&app, "App::video-touch")
+            .next()
+            .unwrap()
+            .mock_single_click(slint::platform::PointerEventButton::Left);
+        settle();
+        let after_background = pauses.get();
+        assert!(after_background > 0);
+        element(&app, "Pause").mock_single_click(slint::platform::PointerEventButton::Left);
+        settle();
+        assert_eq!(pauses.get(), after_background + 1);
+    }
+    assert_eq!(pauses.get(), 6);
+}
+
+#[test]
+fn pip_video_drag_threshold_does_not_pause_or_capture_transport_buttons() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_paused(false);
+    app.set_picture_in_picture(true);
+    app.window().set_size(slint::LogicalSize::new(480., 270.));
+    let drags = Rc::new(Cell::new(0));
+    let output = drags.clone();
+    app.on_pip_drag(move || output.set(output.get() + 1));
+    let pauses = Rc::new(Cell::new(0));
+    let output = pauses.clone();
+    app.on_toggle_pause(move || output.set(output.get() + 1));
+    settle();
+    let origin = slint::LogicalPosition::new(240., 70.);
+    let moved = slint::LogicalPosition::new(250., 70.);
+    for event in [
+        WindowEvent::PointerMoved { position: origin },
+        WindowEvent::PointerPressed {
+            position: origin,
+            button: slint::platform::PointerEventButton::Left,
+        },
+        WindowEvent::PointerMoved { position: moved },
+        WindowEvent::PointerReleased {
+            position: moved,
+            button: slint::platform::PointerEventButton::Left,
+        },
+    ] {
+        app.window().dispatch_event(event);
+    }
+    settle();
+    assert_eq!(drags.get(), 1);
+    assert_eq!(pauses.get(), 0);
+    element(&app, "Pause").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(pauses.get(), 1);
+    assert_eq!(drags.get(), 1);
+}
+
+#[test]
+fn creator_avatar_and_name_share_one_keyboard_accessible_channel_action() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    app.set_video_channel("TEST FIXTURE creator".into());
+    app.set_watch_channel_available(true);
+    let opens = Rc::new(Cell::new(0));
+    let output = opens.clone();
+    app.on_open_watch_channel(move || output.set(output.get() + 1));
+    settle();
+    let channel = element(&app, "Open TEST FIXTURE creator channel");
+    channel.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(opens.get(), 1);
+    // Hit the image itself, rather than the middle of the creator action.
+    let position = channel.absolute_position();
+    let avatar_center = slint::LogicalPosition::new(position.x + 22., position.y + 22.);
+    app.window().dispatch_event(WindowEvent::PointerMoved {
+        position: avatar_center,
+    });
+    app.window().dispatch_event(WindowEvent::PointerPressed {
+        position: avatar_center,
+        button: slint::platform::PointerEventButton::Left,
+    });
+    app.window().dispatch_event(WindowEvent::PointerReleased {
+        position: avatar_center,
+        button: slint::platform::PointerEventButton::Left,
+    });
+    settle();
+    assert_eq!(opens.get(), 2);
+    app.set_watch_channel_available(false);
+    settle();
+    element(&app, "Open TEST FIXTURE creator channel")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(opens.get(), 2, "Unavailable creator must not navigate");
 }

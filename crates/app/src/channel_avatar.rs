@@ -150,6 +150,7 @@ fn reset_image(app: &App) {
 }
 
 pub fn clear(app: &App, state: &UiState) {
+    app.set_watch_channel_available(false);
     state.channel_avatar.cancel();
     state.channel_avatar.selection.borrow_mut().take();
     state.channel_avatar.attempted.set(false);
@@ -159,6 +160,7 @@ pub fn clear(app: &App, state: &UiState) {
 /// Only the acknowledged guest playback path may admit metadata here.
 pub fn selected_guest(app: &App, state: &UiState, video: &VideoSummary) {
     clear(app, state);
+    app.set_watch_channel_available(video.channel_id.is_some());
     *state.channel_avatar.selection.borrow_mut() =
         video.channel_id.clone().map(|channel| Selection {
             video: video.id.clone(),
@@ -188,9 +190,11 @@ fn relevant(app: &App, state: &UiState) -> bool {
 pub fn observe(app: &App, state: &UiState) {
     let avatar = &state.channel_avatar;
     if !relevant(app, state) {
-        if avatar.attempted.replace(false) {
+        // Navigation and compact playback hide the creator row but do not
+        // change its identity. Retain the one accepted avatar; cancel only an
+        // unfinished request so invisible navigation cannot initiate work.
+        if !app.get_watch_channel_avatar_ready() && avatar.attempted.replace(false) {
             avatar.cancel();
-            reset_image(app);
         }
         return;
     }

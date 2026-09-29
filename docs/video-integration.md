@@ -1,5 +1,17 @@
 # Video integration — experimental macOS path
 
+The current navigation slice moves this same video host into an in-app corner
+mini-player while the shared browsing screens remain interactive. It creates no
+second window, decoder, presenter or borrowed-texture consumer. Host-size changes
+use the existing persistent-target resize path. Ordinary browsing no longer
+submits a pause command; event-driven control/progress admission follows actual
+video visibility, including the mini-player. Stream refresh can remain admitted
+while it is visible. Account expiry/disconnection retain their stop/invalidation
+rules. The window canvas/shared panels can be translucent; the video remains
+opaque. Headless pointer/geometry checks do not qualify native media timing or
+transfers. No new performance, hardware-decoder or native lifecycle result is
+claimed. See [mini-player ownership](mini-player.md).
+
 The immediate-watch slice clears the previous picture before publishing a new
 selection and awaits the existing exact native stop barrier before installing
 resolved guest/account media. Account initial responses now have a single
@@ -9,8 +21,8 @@ shared header with native traffic lights; fullscreen/PiP restoration requires
 renewed functional qualification. See [watch loading](watch-loading.md).
 
 The preceding shell revision moves description/comments into the outer watch-page
-scroll and retains the persistent video host. Custom chrome and optional alpha/
-blur reuse the same window and presenter; main content/video stay opaque. These
+scroll and retains the persistent video host. Custom chrome and alpha/
+blur reuse the same window and presenter; decoded video stays opaque. These
 appearance changes need separate native composition/lifecycle qualification.
 
 The latest [control styling](picture-in-picture.md) changes only shared UI and

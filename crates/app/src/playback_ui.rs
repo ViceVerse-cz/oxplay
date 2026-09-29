@@ -236,7 +236,7 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
         &snapshot,
         s.current_load.get(),
         app.get_loaded(),
-        app.get_page() == 2,
+        app.get_video_visible(),
         state.presentation_ready.get(),
         state.player.user_pause_intent(),
     ) {

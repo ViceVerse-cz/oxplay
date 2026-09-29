@@ -317,11 +317,17 @@ impl Driver {
                     .map_err(|_| "local soak resume failed")?;
             }
             35 => {
+                // Keep this diagnostic's settled-pause checkpoint explicit;
+                // ordinary navigation now continues playback in the mini-player.
+                state
+                    .player
+                    .set_paused(true)
+                    .map_err(|_| "local soak browsing pause failed")?;
                 app.invoke_navigate(0);
             }
             38 => {
                 if app.get_page() != 0 || !snapshot.paused || state.progress.running() {
-                    return Err("local soak navigation did not pause offscreen playback");
+                    return Err("local soak explicit browsing pause did not settle");
                 }
                 app.invoke_navigate(2);
                 state
