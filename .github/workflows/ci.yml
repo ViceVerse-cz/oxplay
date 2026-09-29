@@ -49,7 +49,16 @@ jobs:
       - name: Select Python for packaging and audit tools
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: '3.12'
+          python-version: '3.14.7'
+
+      - name: Verify Python process supervision support
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          print(sys.version)
+          assert all(hasattr(os, name) for name in ('waitid', 'WNOWAIT', 'WEXITED', 'P_PID')), \
+              'Tooling requires an unreaped-leader wait primitive (Python >=3.13 on macOS)'
+          PY
 
       - name: Install macOS native dependencies
         if: runner.os == 'macOS'
@@ -69,7 +78,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y \
             build-essential ca-certificates curl pkg-config meson ninja-build \
             libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev \
-            libswresample-dev libswscale-dev libass-dev libplacebo-dev \
+            libswresample-dev libswscale-dev libass-dev libplacebo-dev libluajit-5.1-dev \
             libegl1-mesa-dev libgl1-mesa-dev libwayland-dev wayland-protocols \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxss-dev \
             libxext-dev libxpresent-dev libxrandr-dev libxi-dev libxcursor-dev \
@@ -116,6 +125,7 @@ jobs:
         with:
           key: production-${{ matrix.runner }}-${{ steps.native.outputs.hash }}-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          cache-on-failure: true
 
       - name: Check formatting
         run: cargo fmt --all -- --check

@@ -9,7 +9,10 @@ The matrix checks macOS ARM64 (`macos-26`) and Linux (`ubuntu-24.04`). Each job
 checks formatting, strict Clippy, automated Rust tests, Python tooling tests and
 a locked release workspace build. Ignored human-account, Keychain and external
 network tests stay ignored. Python tooling runs under an explicitly selected
-Python 3.12, including the source archive job.
+Python 3.14.7, including the source archive job. CI checks the required process
+supervision primitives before building. The initial run caught that Python 3.12
+on macOS lacks `os.waitid`; it became available there in
+[Python 3.13](https://docs.python.org/3.13/library/os.html#os.waitid).
 Jobs do not launch GUI, performance or usage tests.
 No account credentials, signing identities or external service secrets are needed.
 
@@ -21,6 +24,16 @@ Meson build options and native dependency inventory. Native cache keys include
 the installer and actual installed package versions; Rust caches also include
 those native inputs. Dependencies installed through the OS package managers
 can advance; their exact inventory is printed in each run.
+
+The Linux build includes LuaJIT because mpv 0.41 defines `ytdl`, `osc` and its
+built-in script controls only when Lua support is compiled in
+([upstream option definitions](https://github.com/mpv-player/mpv/blob/v0.41.0/options/options.c)).
+The application explicitly sets those controls to `no`, along with inherited
+script loading. The first Linux CI run built libmpv with Lua disabled and caught
+20 native media initialization failures from unavailable options; it passed
+168 app tests, 10 core tests and 37 other media tests before stopping (one media
+test explicitly ignored). The corrected native build preserves the application's
+privacy settings and test coverage; a follow-up CI run must verify it.
 
 Compilation with both Linux backends is not an X11 or native Wayland runtime
 qualification. Neither CI job establishes working hardware decoding, account
