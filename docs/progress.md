@@ -29,6 +29,9 @@ passed. See [inline comments](comments.md) and [window appearance](window-appear
 account operation or resource measurement is part of this pass. Native layout,
 volume alignment, text/IME/accessibility, window controls, translucency/blur and
 composition behavior still require runtime qualification on every target.
+Source `57a6be1` is pushed. [CI run 36612353509](https://github.com/ViceVerse-cz/yt/actions/runs/36612353509)
+could not start either job because of the repository account-payment/spending-limit
+restriction; it provides no hosted build or test result.
 
 The preceding visual slice follows the user's YouTube player reference: shared
 controls sit at the video's bottom edge over a restrained dark fade, with a
