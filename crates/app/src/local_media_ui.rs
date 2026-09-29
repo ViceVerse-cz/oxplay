@@ -365,6 +365,7 @@ fn selected_video(app: &App, state: &Rc<UiState>, path: PathBuf) {
     crate::account_playback::clear(app, state);
     crate::playback_ui::clear_local(state);
     crate::share_ui::clear(app, state);
+    crate::channel_avatar::clear(app, state);
     crate::caption_ui::clear_local(app, state);
     crate::comments_ui::clear_local(app, state);
     crate::chapters_ui::clear(app, state);

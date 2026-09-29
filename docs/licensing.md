@@ -319,3 +319,8 @@ The custom-titlebar slice adds four unchanged Lucide icons (`minus`, `square`,
 `copy`, `x`) from the existing pinned official revision. Their source/license
 record and checksums are retained beside the assets. Shared titlebar/search/
 inline-comments code retains GPL-3.0-or-later; no runtime dependency is added.
+
+The watch-layout correction adds unchanged `rectangle-horizontal.svg` from the
+same pinned official Lucide source. Existing ISC/MIT attribution and the updated
+asset checksum manifest accompany it. New avatar/provider/seek integration
+retains GPL-3.0-or-later headers; no media/helper build or license route changes.

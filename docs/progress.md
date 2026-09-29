@@ -6,32 +6,39 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
-The current watch/window slice places descriptions and bounded real comment
-pages directly below the player title/actions in the outer watch scroll. Long
-descriptions expand inline; successful comment paging reveals the new page's
-heading without taking focus. Already-resolved account descriptions remain
-visible while account comments stay unavailable, with no guest fallback request.
-The volume slider now uses the same 40px row height as the player buttons, and
-the search field is a shared pill-shaped native text input with IME support.
+The current UI correction fixes the timeline/volume fill origin, removes the
+large seek focus rectangle, and holds accepted absolute seek intent until the
+existing native confirmation settles. Observed elapsed time remains separate.
+The creator avatar/name and Share/Save actions now share a vertically centered
+row; the control-visibility ellipsis is removed. Genuine public channel avatars
+use verified channel metadata through a bounded, cancellable background worker;
+account/local/unavailable artwork uses the attributed Lucide fallback.
 
-Normal windows use shared custom titlebar controls and native move/resize/state
-operations. Settings expose opt-in session-local chrome translucency and a
-separate experimental macOS blur request; main content and video remain opaque.
-Fullscreen/PiP suspend blur and hide the normal titlebar. Other platform blur
-paths are explicitly unavailable. The adapter uses the existing locked Slint/
-Winit APIs and retains the existing close/PiP lifecycle. Four unchanged icons
-were added from the pinned official Lucide revision; all icon/license checksums
-passed. See [inline comments](comments.md) and [window appearance](window-appearance.md).
+Theatre mode (T, or the rectangular player control) expands the same player,
+hides navigation, and puts related videos below inline description/comments.
+It retains the window, presenter and playback session. Normal windows now use
+native system frames: macOS supplies traffic lights and system-rounded corners.
+PiP still temporarily removes decorations and restores the original frame.
+Optional translucency/experimental blur remain available. History, local
+subscriptions and playlists use compact top-aligned content; playlist editing
+and bulk import/export/backup/clear actions sit behind explicit disclosures.
 
-`cargo fmt --all -- --check`, strict all-target
-`cargo clippy --workspace --all-targets --locked -- -D warnings`, and
-`cargo build --workspace --locked` passed. No new dependency/feature/lockfile change, test suite, native UI run,
-account operation or resource measurement is part of this pass. Native layout,
-volume alignment, text/IME/accessibility, window controls, translucency/blur and
-composition behavior still require runtime qualification on every target.
-Source `57a6be1` is pushed. [CI run 36612353509](https://github.com/ViceVerse-cz/yt/actions/runs/36612353509)
+See [watch layout](watch-layout.md), [avatars](channel-avatars.md),
+[local library](local-library-ui.md), and [window appearance](window-appearance.md).
+Formatting, strict all-target Clippy and the locked workspace build passed.
+Short offline capture attempts were blocked by macOS display-clock creation
+error `-6661`; they do not validate the changed layout. Detailed scope is
+recorded in watch-layout.md. No dependency,
+feature or lockfile change is required; the theatre icon is unchanged from the
+existing pinned official Lucide revision. Performance/usage tests are skipped
+at the user's request, and release/platform qualification remains outstanding.
+
+The preceding inline-description/search/window slice passed formatting, strict
+all-target Clippy and a locked workspace build. Source `57a6be1` is pushed.
+[CI run 36612353509](https://github.com/ViceVerse-cz/yt/actions/runs/36612353509)
 could not start either job because of the repository account-payment/spending-limit
-restriction; it provides no hosted build or test result.
+restriction; it provides no hosted build or test result. Its custom titlebar has
+been replaced by native decorations in the current correction.
 
 The preceding visual slice follows the user's YouTube player reference: shared
 controls sit at the video's bottom edge over a restrained dark fade, with a

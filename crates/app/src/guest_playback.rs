@@ -292,6 +292,7 @@ fn publish(
     playback_ui::selected(app, state, &item);
     app.set_page(2);
     app.set_loaded(true);
+    crate::channel_avatar::selected_guest(app, state, &item.video);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Guest playback · Ad filtering is experimental and may miss some ads".into());
 }

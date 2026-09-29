@@ -1,6 +1,8 @@
 # Platform qualification
 
-Shared custom chrome and optional translucency are now implemented. Blur is
+Normal windows now use native system decorations; PiP temporarily removes them.
+Theatre mode and compact watch/library layouts remain shared Slint UI. Optional
+translucency is retained. Blur is
 exposed only as an experimental macOS request; Windows/X11/native Wayland blur
 remains unavailable in this implementation. These API paths have no new native
 qualification. See [appearance capabilities](window-appearance.md).

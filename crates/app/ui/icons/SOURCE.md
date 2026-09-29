@@ -12,6 +12,4 @@ The mute-state action includes the unchanged `icons/volume-x.svg` from this same
 
 The picture-in-picture control uses the unchanged `icons/picture-in-picture-2.svg` from this same revision. Its checksum is included alongside the existing icons.
 
-The custom titlebar uses unchanged `minus.svg`, `square.svg`, `copy.svg`, and
-`x.svg` from the same pinned revision. Their SHA-256 entries are included; the
-existing upstream license covers them. No window-control glyphs were redrawn.
+The retained `minus.svg`, `square.svg`, `copy.svg`, and `x.svg` also originate from this revision. Normal windows now use native system decorations. Theatre mode uses the unchanged `rectangle-horizontal.svg` from the same revision.

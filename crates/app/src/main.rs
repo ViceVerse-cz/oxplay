@@ -6,6 +6,7 @@ mod caption_cache;
 mod caption_files;
 mod caption_ui;
 mod catalog;
+mod channel_avatar;
 mod chapters_ui;
 mod clear_smoke;
 mod cli;
@@ -71,6 +72,7 @@ struct UiState {
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
     account_ui: account_ui::State,
+    channel_avatar: channel_avatar::State,
     account_playback: account_playback::State,
     guest_playback: guest_playback::State,
     guest_recovery: guest_recovery::State,
@@ -151,7 +153,15 @@ fn apply_clock(app: &App, state: &UiState, values: clock_ui::Values) {
 }
 fn update(app: &App, state: &Rc<UiState>) {
     account_playback::observe(app, state);
+    channel_avatar::observe(app, state);
     let snapshot = state.player.drain_events();
+    let pending_seek = state
+        .player
+        .pending_seek_target()
+        .map_or(-1., |value| value as f32);
+    if app.get_pending_seek_position() != pending_seek {
+        app.set_pending_seek_position(pending_seek);
+    }
     share_ui::observe(app, state, &snapshot);
     jump_ui::observe(app, state, &snapshot);
     playback_preferences::observe(app, state, &snapshot);
@@ -831,8 +841,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let app = App::new()?;
     app.set_native_video_child(options.native_video_child);
-    app.set_custom_chrome(!options.native_video_child);
-    app.set_window_borderless(!options.native_video_child);
+    app.set_window_borderless(false);
     let window_chrome = window_chrome::bind(&app);
     app.set_cache_chrome(options.ui_cache);
     app.set_cache_search(options.search_cache);
@@ -870,6 +879,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let library = library::Worker::new(library_path, move || {
         let _ = weak.upgrade_in_event_loop(|app| app.invoke_library_wake());
     });
+    let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
     let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
     let state = Rc::new(UiState {
         window_chrome,
@@ -877,6 +887,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
         account_ui,
+        channel_avatar,
         account_playback: account_playback::State::default(),
         guest_playback: guest_playback::State::default(),
         guest_recovery: guest_recovery::State::default(),
@@ -957,6 +968,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.on_seek(move |position| {
         if let Some(app) = weak.upgrade() {
             report(&app, s.player.seek(position as f64));
+            app.set_pending_seek_position(
+                s.player
+                    .pending_seek_target()
+                    .map_or(-1., |value| value as f32),
+            );
             let _ = s.player.request_progress();
         }
     });
@@ -1175,6 +1191,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     comments_ui::bind(&app, &state);
     caption_ui::bind(&app, &state);
     caption_cache::bind(&app, &state);
+    channel_avatar::bind(&app, &state);
+    let weak = app.as_weak();
+    let s = Rc::downgrade(&state);
+    app.on_channel_avatar_context_changed(move || {
+        if let (Some(app), Some(s)) = (weak.upgrade(), s.upgrade()) {
+            channel_avatar::observe(&app, &s);
+        }
+    });
     playback_ui::bind(&app, &state);
     focus_intent::bind(&app, &state);
     guest_recovery::bind(&app, &state);

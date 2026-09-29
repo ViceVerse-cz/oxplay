@@ -1,8 +1,10 @@
 //! Guest YouTube catalog and resolution. Invoke blocking methods on a worker thread.
 //! No account import or authenticated capabilities are implied by this adapter.
 pub mod account;
+mod activity;
 pub mod captions;
 pub mod catalog;
+mod channel_avatar;
 mod chapters;
 pub mod comments;
 mod supervisor;
@@ -89,7 +91,7 @@ impl RateLimit {
 pub struct YtDlp {
     binary: PathBuf,
     deno: Option<PathBuf>,
-    active: Mutex<()>,
+    active: activity::Gate,
     cooldown: Mutex<Option<RateLimit>>,
     timeout: Duration,
     resolution: ResolutionPolicy,
@@ -102,7 +104,7 @@ impl YtDlp {
         Ok(Self {
             binary: binary.as_ref().to_owned(),
             deno: None,
-            active: Mutex::new(()),
+            active: activity::Gate::default(),
             cooldown: Mutex::new(None),
             timeout: Duration::from_secs(45),
             resolution: ResolutionPolicy::default(),
@@ -133,6 +135,15 @@ impl YtDlp {
         operation: &OperationContext,
         cancelled: &dyn Fn() -> bool,
     ) -> Result<Value, ProviderError> {
+        self.run_with_priority(extra, operation, cancelled, false)
+    }
+    fn run_with_priority(
+        &self,
+        extra: &[String],
+        operation: &OperationContext,
+        cancelled: &dyn Fn() -> bool,
+        background: bool,
+    ) -> Result<Value, ProviderError> {
         if operation.cancel.is_cancelled() || cancelled() {
             return Err(ProviderError::Cancelled);
         }
@@ -144,7 +155,20 @@ impl YtDlp {
         {
             return Err(ProviderError::RateLimited);
         }
-        let _active = self.active.try_lock().map_err(|_| ProviderError::Busy)?;
+        let _active = self.active.acquire(&operation.cancel, background)?;
+        if operation.cancel.is_cancelled() || cancelled() {
+            return Err(ProviderError::Cancelled);
+        }
+        // A preempted background operation may establish cooldown while the
+        // foreground worker waits for its supervised teardown.
+        if self
+            .cooldown
+            .lock()
+            .map_err(|_| ProviderError::ExtractorFailed)?
+            .is_some_and(RateLimit::active)
+        {
+            return Err(ProviderError::RateLimited);
+        }
         let mut args: Vec<String> = [
             "--ignore-config",
             "--no-config-locations",

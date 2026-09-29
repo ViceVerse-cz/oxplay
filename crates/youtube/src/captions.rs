@@ -114,7 +114,15 @@ impl YtDlp {
         {
             return Err(ProviderError::RateLimited);
         }
-        let _active = self.active.try_lock().map_err(|_| ProviderError::Busy)?;
+        let _active = self.active.acquire(&operation.cancel, false)?;
+        if self
+            .cooldown
+            .lock()
+            .map_err(|_| ProviderError::ExtractorFailed)?
+            .is_some_and(RateLimit::active)
+        {
+            return Err(ProviderError::RateLimited);
+        }
         let client = reqwest::Client::builder()
             .https_only(true)
             .redirect(reqwest::redirect::Policy::none())

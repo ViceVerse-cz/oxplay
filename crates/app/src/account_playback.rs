@@ -210,6 +210,7 @@ pub fn clear(app: &App, state: &Rc<UiState>) {
     if !was_active {
         return;
     }
+    crate::channel_avatar::clear(app, state);
     state.clock_ui.invalidate();
     if let Err(error) = state.player.stop() {
         app.set_status(error.to_string().into());
@@ -724,6 +725,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     app.set_quality_index(quality.index());
     state.quality_index.set(quality.index() as usize);
     crate::share_ui::clear(app, state);
+    crate::channel_avatar::clear(app, state);
     *state.current_video.borrow_mut() = Some(item.video.clone());
     crate::playback_ui::selected(app, state, &item);
     app.set_page(2);

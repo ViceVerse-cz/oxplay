@@ -2,6 +2,24 @@
 
 The shared `ui/library.slint` page and `src/library_ui.rs` adapter expose the SQLite worker's local collection, follow, and history operations. These are device-local features. They do not perform YouTube account mutations.
 
+The library layout now stays aligned to the top of its scrollable viewport.
+Tabs, page controls and selectors have bounded widths; short lists use only the
+height their rows need. **New playlist / Edit playlists** reveals the persistent
+name editor and duplication action. **Manage library** reveals Import, Export,
+Backup and Clear local data; destructive actions still open the existing explicit
+confirmation and restore focus on cancellation. Hidden editors/actions are disabled
+for keyboard navigation. Recording opt-in and retention remain directly visible
+on History, and the empty state distinguishes enabled history from history being
+off. Local-versus-account ownership remains visible once at the top.
+
+This layout change retains the same typed identities, transactional operations,
+bounded backing models and virtualized rows; it adds no storage or network work.
+The native name-editor diagnostic now tabs to and keyboard-activates the actual
+editing disclosure each time it reopens the page, and checks that the name editor
+receives focus. This revised diagnostic has not been rerun; its historical results
+below do not qualify the visual arrangement. Native keyboard, resizing and
+screen-reader checks remain open.
+
 - Collection and video pages contain at most 100 records. Previous-page navigation retains at most 1,024 opaque cursors; each displayed page replaces the preceding page rather than accumulating the entire database. The shared Slint ListView virtualizes visible rows. Collection rename, deletion, video removal, and saving the current resolved video use typed IDs.
 - **Search this playlist** filters saved video titles and channel names with
   Apply/Enter and Clear. It searches the selected local playlist on the SQLite

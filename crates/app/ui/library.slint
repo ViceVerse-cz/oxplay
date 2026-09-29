@@ -73,6 +73,9 @@ export global LibraryUi {
 }
 export component LibraryPage inherits Rectangle {
     private property <bool> narrow: root.width < 720px;
+    private property <bool> manage-open;
+    private property <bool> playlist-tools;
+    private property <bool> actions-enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
     private property <length> confirmation-scroll-y;
     private property <bool> collection-visible: LibraryUi.tab == 0 && (LibraryUi.collections.length > 0 || LibraryUi.collections-previous || LibraryUi.collections-next);
     changed collection-visible => {
@@ -124,18 +127,21 @@ export component LibraryPage inherits Rectangle {
     scroll := ScrollView {
       width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
       content := VerticalLayout {
-        width: parent.visible-width; spacing: 12px;
+        width: parent.visible-width; spacing: 12px; alignment: start;
+        // ScrollView can offer more height than the rows need. Keep every
+        // section at its intrinsic/fixed height instead of distributing it.
+        vertical-stretch: 0;
         Text { text: LibraryUi.tab == 1 ? "Local subscriptions" : LibraryUi.tab == 2 ? "Watch history" : "Local playlists"; color: Colors.text; font-size: 26px; font-weight: 700; height: 36px; }
-        Text { text: "Saved on this device. Separate from your YouTube account."; color: Colors.muted; wrap: word-wrap; min-height: 24px; }
+        Text { text: "On this device · separate from your YouTube account"; color: Colors.muted; wrap: word-wrap; min-height: 24px; vertical-stretch: 0; }
         HorizontalLayout { height: 40px; spacing: 10px;
-            Action { label: "Playlists"; selectable: true; selected: LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(0); } }
-            Action { label: "Subscriptions"; selectable: true; selected: LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(1); } }
-            if LibraryUi.history-enabled: Action { label: "Watch history"; selectable: true; selected: LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(2); } }
+            Action { width: 100px; horizontal-stretch: 0; label: "Playlists"; selectable: true; selected: LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(0); } }
+            Action { width: 138px; horizontal-stretch: 0; label: "Subscriptions"; selectable: true; selected: LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(1); } }
+            if LibraryUi.history-enabled: Action { width: 138px; horizontal-stretch: 0; label: "Watch history"; selectable: true; selected: LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.change-tab(2); } }
             Rectangle { horizontal-stretch: 1; }
         }
-        if root.collection-visible: HorizontalLayout { height: 38px; spacing: 8px;
+        if root.collection-visible: HorizontalLayout { height: 38px; spacing: 8px; alignment: start;
             ConfirmedChoice {
-                horizontal-stretch: 1; accessible-label: "Local playlist";
+                width: min(420px, parent.width - (LibraryUi.collections-previous || LibraryUi.collections-next ? 96px : 0px)); horizontal-stretch: 0; accessible-label: "Local playlist";
                 model: LibraryUi.collections;
                 acknowledged-index: LibraryUi.selected;
                 enabled: LibraryUi.collections.length > 0 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
@@ -154,10 +160,35 @@ export component LibraryPage inherits Rectangle {
             if LibraryUi.collections-previous || LibraryUi.collections-next: Action { width: 40px; horizontal-stretch: 0; compact: true; accessible-label: "Previous playlist page"; label: "Previous playlists"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.collections-previous; clicked => { LibraryUi.collection-page(false); } }
             if LibraryUi.collections-previous || LibraryUi.collections-next: Action { width: 40px; horizontal-stretch: 0; compact: true; accessible-label: "Next playlist page"; label: "Next playlists"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.collections-next; clicked => { LibraryUi.collection-page(true); } }
         }
+        if LibraryUi.tab == 0: HorizontalLayout { height: 38px; spacing: 8px;
+            Action {
+                width: 156px; horizontal-stretch: 0;
+                label: root.playlist-tools ? "Done editing" : LibraryUi.collections.length == 0 ? "New playlist" : "Edit playlists";
+                icon-name: root.playlist-tools ? "x" : "plus";
+                checkable: true; selected: root.playlist-tools; enabled: root.actions-enabled;
+                clicked => {
+                    if root.playlist-tools {
+                        page-focus.focus();
+                        LibraryUi.cancel-name();
+                        root.playlist-tools = false;
+                    } else { root.playlist-tools = true; editor.focus-name(); }
+                }
+                changed has-focus => {
+                    if self.has-focus { LibraryUi.name-focus-target = 8; }
+                    else if LibraryUi.name-focus-target == 8 { LibraryUi.name-focus-target = 0; }
+                }
+            }
+            if root.playlist-tools && LibraryUi.selected >= 0: Action {
+                width: 172px; horizontal-stretch: 0; label: "Duplicate playlist…";
+                enabled: root.actions-enabled; clicked => { root.organize(true, -1); }
+            }
+            Rectangle { horizontal-stretch: 1; }
+        }
         // Resize these same controls instead of rebuilding an alternate toolbar.
         editor := Rectangle {
-            visible: LibraryUi.tab == 0;
-            height: LibraryUi.tab == 0 ? (root.narrow ? 82px : 38px) : 0px;
+            visible: LibraryUi.tab == 0 && root.playlist-tools;
+            height: self.visible ? (root.narrow ? 82px : 38px) : 0px;
+            function focus-name() { name.focus(); }
             function submit-name() {
                 if LibraryUi.busy || LibraryUi.confirmation != 0 || LibraryUi.tab != 0 || LibraryUi.organization != 0 { return; }
                 // Retain the real TextInput across asynchronous writes/reads.
@@ -180,7 +211,7 @@ export component LibraryPage inherits Rectangle {
                 accessible-label: LibraryUi.renaming ? "New name for selected playlist" : "New playlist name";
                 placeholder-text: LibraryUi.renaming ? "New playlist name" : "Playlist name";
                 text <=> LibraryUi.name-draft;
-                enabled: LibraryUi.tab == 0 && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
+                enabled: editor.visible && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
                 read-only: LibraryUi.busy;
                 accepted => { editor.submit-name(); }
                 key-pressed(event) => {
@@ -200,7 +231,7 @@ export component LibraryPage inherits Rectangle {
                 label: LibraryUi.renaming ? "Save" : "Create";
                 accessible-label: LibraryUi.renaming ? "Save playlist name" : "Create playlist";
                 variant: ActionVariant.primary;
-                enabled: LibraryUi.tab == 0 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
+                enabled: editor.visible && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
                 clicked => { editor.submit-name(); }
                 changed has-focus => {
                     if self.has-focus { LibraryUi.name-focus-target = 2; }
@@ -210,7 +241,7 @@ export component LibraryPage inherits Rectangle {
             Action {
                 x: root.narrow ? 96px : parent.width - 200px; y: root.narrow ? 44px : 0px; width: 96px; height: 38px;
                 label: LibraryUi.renaming ? "Cancel" : "Rename"; variant: ActionVariant.secondary;
-                enabled: LibraryUi.tab == 0 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.selected >= 0;
+                enabled: editor.visible && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.selected >= 0;
                 clicked => {
                     if LibraryUi.renaming { editor.cancel-name(); }
                     else if LibraryUi.begin-rename() { name.focus(); name.select-all(); }
@@ -223,7 +254,7 @@ export component LibraryPage inherits Rectangle {
             delete-name := Action {
                 x: root.narrow ? 200px : parent.width - 96px; y: root.narrow ? 44px : 0px; width: 96px; height: 38px;
                 label: "Delete"; variant: ActionVariant.destructive;
-                enabled: LibraryUi.tab == 0 && !LibraryUi.busy && !LibraryUi.renaming && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.selected >= 0;
+                enabled: editor.visible && !LibraryUi.busy && !LibraryUi.renaming && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.selected >= 0;
                 clicked => { root.open-confirmation(1); }
                 changed has-focus => {
                     if self.has-focus { LibraryUi.name-focus-target = 4; }
@@ -231,14 +262,7 @@ export component LibraryPage inherits Rectangle {
                 }
             }
         }
-        if LibraryUi.tab == 0 && LibraryUi.name-status != "": Text { text: LibraryUi.name-status; color: Colors.muted; wrap: word-wrap; min-height: 26px; }
-        if LibraryUi.tab == 0 && LibraryUi.selected >= 0: HorizontalLayout { height: 38px;
-            Action { label: "Duplicate playlist…"; variant: ActionVariant.secondary; horizontal-stretch: 0;
-                enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0;
-                clicked => { root.organize(true, -1); }
-            }
-            Rectangle { horizontal-stretch: 1; }
-        }
+        if editor.visible && LibraryUi.name-status != "": Text { text: LibraryUi.name-status; color: Colors.muted; wrap: word-wrap; min-height: 26px; }
         playlist-search := Rectangle {
             visible: LibraryUi.tab == 0 && LibraryUi.selected >= 0;
             height: self.visible ? 38px : 0px;
@@ -287,7 +311,7 @@ export component LibraryPage inherits Rectangle {
                 focus-on-tab-navigation: false; focus-on-click: false;
                 enabled: organizer.visible;
                 key-pressed(event) => { if event.text == Key.Escape { organizer.cancel(); return accept; } return reject; }
-                organizer-layout := VerticalLayout { spacing: 8px;
+                organizer-layout := VerticalLayout { spacing: 8px; alignment: start;
                     Text { text: LibraryUi.organization == 1 ? "Duplicate “" + LibraryUi.organization-source + "”" : "Copy or move “" + LibraryUi.organization-video + "”"; color: Colors.text; wrap: word-wrap; min-height: 28px; font-weight: 600; }
                     Text { text: LibraryUi.organization == 1 ? "Creates a separate local playlist containing the same saved entries. The original stays unchanged." : "From local playlist “" + LibraryUi.organization-source + "”. Choose another local playlist below."; color: Colors.muted; wrap: word-wrap; min-height: 36px; }
                     duplicate-name := LineEdit {
@@ -303,18 +327,18 @@ export component LibraryPage inherits Rectangle {
                         choose(index) => { LibraryUi.choose-destination(index); }
                     }
                     if LibraryUi.organization == 2: HorizontalLayout { height: 38px; spacing: 8px;
-                        Action { label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.destination-previous; clicked => { LibraryUi.destination-page(1); } }
-                        Action { label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.destination-next; clicked => { LibraryUi.destination-page(2); } }
-                        Action { label: "Reload"; enabled: !LibraryUi.busy; clicked => { LibraryUi.destination-page(0); } }
+                        Action { width: 120px; horizontal-stretch: 0; label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.destination-previous; clicked => { LibraryUi.destination-page(1); } }
+                        Action { width: 100px; horizontal-stretch: 0; label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.destination-next; clicked => { LibraryUi.destination-page(2); } }
+                        Action { width: 84px; horizontal-stretch: 0; label: "Reload"; enabled: !LibraryUi.busy; clicked => { LibraryUi.destination-page(0); } }
                         Rectangle { horizontal-stretch: 1; }
                     }
                     if LibraryUi.organization == 2 && LibraryUi.destinations.length == 0 && !LibraryUi.busy: Text { text: "No other playlists on this page. Check another page, or cancel and create a destination playlist."; color: Colors.muted; wrap: word-wrap; min-height: 36px; }
                     if LibraryUi.organization == 2 && LibraryUi.destination-index >= 0: Text { text: "Destination: “" + LibraryUi.destinations[LibraryUi.destination-index] + "”. Move removes the entry from “" + LibraryUi.organization-source + "” after saving it there."; color: Colors.text; wrap: word-wrap; min-height: 40px; }
                     HorizontalLayout { height: 38px; spacing: 8px;
-                        cancel-organization := Action { label: "Cancel"; enabled: organizer.visible && !LibraryUi.busy; clicked => { organizer.cancel(); } }
-                        if LibraryUi.organization == 1: Action { label: "Duplicate"; variant: ActionVariant.primary; enabled: !LibraryUi.busy; clicked => { LibraryUi.duplicate(LibraryUi.organization-name); } }
-                        if LibraryUi.organization == 2: Action { label: "Copy"; variant: ActionVariant.primary; enabled: !LibraryUi.busy && LibraryUi.destination-index >= 0; clicked => { LibraryUi.transfer-item(false); } }
-                        if LibraryUi.organization == 2: Action { label: "Move"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.destination-index >= 0; clicked => { LibraryUi.transfer-item(true); } }
+                        cancel-organization := Action { width: 90px; horizontal-stretch: 0; label: "Cancel"; enabled: organizer.visible && !LibraryUi.busy; clicked => { organizer.cancel(); } }
+                        if LibraryUi.organization == 1: Action { width: 114px; horizontal-stretch: 0; label: "Duplicate"; variant: ActionVariant.primary; enabled: !LibraryUi.busy; clicked => { LibraryUi.duplicate(LibraryUi.organization-name); } }
+                        if LibraryUi.organization == 2: Action { width: 80px; horizontal-stretch: 0; label: "Copy"; variant: ActionVariant.primary; enabled: !LibraryUi.busy && LibraryUi.destination-index >= 0; clicked => { LibraryUi.transfer-item(false); } }
+                        if LibraryUi.organization == 2: Action { width: 80px; horizontal-stretch: 0; label: "Move"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.destination-index >= 0; clicked => { LibraryUi.transfer-item(true); } }
                         Rectangle { horizontal-stretch: 1; }
                     }
                     Text { text: LibraryUi.organization-status; color: Colors.muted; wrap: word-wrap; min-height: 32px; }
@@ -322,23 +346,23 @@ export component LibraryPage inherits Rectangle {
             }
         }
         if LibraryUi.tab == 1: Rectangle { height: root.narrow ? 82px : 40px;
-            Text { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 244px; text: "Local follows do not subscribe on YouTube."; color: Colors.muted; wrap: word-wrap; vertical-alignment: center; }
-            Action { x: root.narrow ? 0px : parent.width - 236px; y: root.narrow ? 44px : 0px; height: 38px; width: 236px; label: "Follow playing channel locally"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.follow-current(); } }
+            Text { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 244px; text: "Follow channels here without subscribing on YouTube."; color: Colors.muted; wrap: word-wrap; vertical-alignment: center; }
+            Action { x: root.narrow ? 0px : parent.width - 236px; y: root.narrow ? 44px : 0px; height: 38px; width: 236px; label: "Follow playing channel"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.follow-current(); } }
         }
         Rectangle { visible: LibraryUi.tab == 2; height: LibraryUi.tab == 2 ? (root.narrow ? 82px : 38px) : 0px;
             ConfirmedToggle { x: 0; y: 0; height: 38px; width: root.narrow ? parent.width : parent.width - 280px; text: "Keep local watch history"; acknowledged-checked: LibraryUi.history-enabled; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; choose(checked) => { LibraryUi.history(checked); } }
             ConfirmedChoice { x: root.narrow ? 0px : parent.width - 272px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; accessible-label: "Local history retention"; model: ["7 days", "30 days", "90 days"]; acknowledged-index: LibraryUi.retention == 7 ? 0 : LibraryUi.retention == 90 ? 2 : 1; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; choose(index) => { LibraryUi.set-retention(index == 0 ? 7 : index == 2 ? 90 : 30); } }
             history-clear := Action { x: root.narrow ? 140px : parent.width - 132px; y: root.narrow ? 44px : 0px; height: 38px; width: 132px; label: "Clear history"; variant: ActionVariant.destructive; enabled: LibraryUi.tab == 2 && !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.open-confirmation(2); } }
         }
-        list := ListView { visible: LibraryUi.rows.length > 0; height: LibraryUi.rows.length == 0 ? 0px : max(180px, root.height - (root.narrow ? 430px : 386px)); horizontal-scrollbar-policy: always-off;
-            for item[index] in LibraryUi.rows: Rectangle { height: LibraryUi.tab == 0 ? 108px : 78px;
-                Action { x: 0; y: 0; height: 44px; width: parent.width - 130px; label: item.title; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.open(index); } }
-                Text { x: 12px; y: 46px; height: 22px; width: parent.width - 142px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
-                Action { x: parent.width - 120px; y: 16px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.remove(index); } }
-                if LibraryUi.tab == 0: Action { x: parent.width - 144px; y: 60px; width: 144px; height: 38px; label: "Copy / Move…"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.organize(false, index); } }
+        list := ListView { visible: LibraryUi.rows.length > 0; height: LibraryUi.rows.length == 0 ? 0px : min(LibraryUi.rows.length * (LibraryUi.tab == 0 ? 92px : LibraryUi.tab == 1 ? 56px : 78px), max(180px, root.height - (root.narrow ? 400px : 300px))); horizontal-scrollbar-policy: always-off;
+            for item[index] in LibraryUi.rows: Rectangle { height: LibraryUi.tab == 0 ? 92px : LibraryUi.tab == 1 ? 56px : 78px;
+                Action { x: 0; y: LibraryUi.tab == 1 ? 6px : 0px; height: 44px; width: parent.width - 130px; label: item.title; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.open(index); } }
+                if LibraryUi.tab != 1: Text { x: 12px; y: 46px; height: 22px; width: parent.width - 166px; text: item.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+                Action { x: parent.width - 120px; y: LibraryUi.tab == 1 ? 8px : 2px; width: 120px; label: item.action; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.remove(index); } }
+                if LibraryUi.tab == 0: Action { x: parent.width - 144px; y: 52px; width: 144px; height: 34px; label: "Copy / Move…"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.organize(false, index); } }
             }
         }
-        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? "No local history on this page. Recording starts only after you enable it." : LibraryUi.tab == 1 ? "No local subscriptions on this page. Follow a public channel to keep it here." : LibraryUi.active-filter != "" ? "No matching saved videos on this page. Change or clear the playlist search." : LibraryUi.collections.length == 0 ? (LibraryUi.collections-previous || LibraryUi.collections-next ? "No playlists on this page. Use the playlist page controls above." : "Create a playlist to keep videos on this device.") : "No saved videos on this page. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
+        if LibraryUi.rows.length == 0: Text { text: LibraryUi.busy ? "Loading local data…" : LibraryUi.tab == 2 ? (LibraryUi.history-enabled ? (LibraryUi.previous || LibraryUi.next ? "No history on this page." : "Videos you watch will appear here.") : "History is off. Enable it above to remember videos on this device.") : LibraryUi.tab == 1 ? (LibraryUi.previous || LibraryUi.next ? "No channels on this page." : "Channels you follow locally will appear here.") : LibraryUi.active-filter != "" ? "No matching videos. Try another search or clear the filter." : LibraryUi.collections.length == 0 ? (LibraryUi.collections-previous || LibraryUi.collections-next ? "No playlists on this page. Try the previous page." : "Create a playlist, then save videos from the player.") : LibraryUi.previous || LibraryUi.next ? "No saved videos on this page." : "This playlist is empty. Save a video from the player."; color: Colors.muted; wrap: word-wrap; min-height: 46px; }
         if LibraryUi.previous || LibraryUi.next: HorizontalLayout { height: 38px; spacing: 8px;
             Action { width: 126px; horizontal-stretch: 0; label: "Previous"; icon-name: "chevron-left"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.previous; clicked => { LibraryUi.page(false); } }
             Action { width: 106px; horizontal-stretch: 0; label: "Next"; icon-name: "chevron-right"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0 && LibraryUi.next; clicked => { LibraryUi.page(true); } }
@@ -356,7 +380,7 @@ export component LibraryPage inherits Rectangle {
                     if event.text == Key.Escape { root.cancel-confirmation(); return accept; }
                     return reject;
                 }
-                confirm-layout := VerticalLayout { spacing: 8px;
+                confirm-layout := VerticalLayout { spacing: 8px; alignment: start;
                     Text { text: LibraryUi.confirmation == 1 ? "Delete “" + LibraryUi.collections[LibraryUi.selected] + "” and its saved entries?" : LibraryUi.confirmation == 2 ? "Delete all local watch history?" : "Stop playback and delete the local library, history, preferences, cached artwork and captions? Your YouTube account stays connected."; color: Colors.text; wrap: word-wrap; min-height: 44px; }
                     HorizontalLayout { height: 38px; spacing: 8px;
                         confirmation-cancel := Action {
@@ -382,13 +406,23 @@ export component LibraryPage inherits Rectangle {
                 }
             }
         }
-        HorizontalLayout { height: 38px; spacing: 8px;
-            Action { label: "Import…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.transfer(0); } }
-            Action { label: "Export…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.transfer(1); } }
-            Action { label: "Backup…"; variant: ActionVariant.secondary; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { LibraryUi.transfer(2); } }
-            clear-local := Action { label: "Clear local data…"; variant: ActionVariant.destructive; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0 && LibraryUi.organization == 0; clicked => { root.open-confirmation(3); } }
+        HorizontalLayout { height: 38px;
+            Action {
+                width: 180px; horizontal-stretch: 0; label: "Manage library"; icon-name: "settings";
+                checkable: true; selected: root.manage-open; enabled: root.actions-enabled;
+                clicked => { root.manage-open = !root.manage-open; }
+            }
+            Rectangle { horizontal-stretch: 1; }
         }
-        Text { text: LibraryUi.status; color: Colors.muted; wrap: word-wrap; min-height: 38px; }
+        management := Rectangle {
+            visible: root.manage-open;
+            height: self.visible ? (root.narrow ? 86px : 38px) : 0px;
+            Action { x: 0; width: 100px; height: 38px; label: "Import…"; variant: ActionVariant.secondary; enabled: management.visible && root.actions-enabled; clicked => { LibraryUi.transfer(0); } }
+            Action { x: 108px; width: 100px; height: 38px; label: "Export…"; variant: ActionVariant.secondary; enabled: management.visible && root.actions-enabled; clicked => { LibraryUi.transfer(1); } }
+            Action { x: 216px; width: 104px; height: 38px; label: "Backup…"; variant: ActionVariant.secondary; enabled: management.visible && root.actions-enabled; clicked => { LibraryUi.transfer(2); } }
+            clear-local := Action { x: root.narrow ? 0px : 336px; y: root.narrow ? 48px : 0px; width: 170px; height: 38px; label: "Clear local data…"; variant: ActionVariant.destructive; enabled: management.visible && root.actions-enabled; clicked => { root.open-confirmation(3); } }
+        }
+        if LibraryUi.status != "" && LibraryUi.status != "Collections, follows and optional history stay on this device.": Text { text: LibraryUi.status; color: Colors.muted; wrap: word-wrap; min-height: 28px; vertical-stretch: 0; }
     }
     }
 }

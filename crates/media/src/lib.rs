@@ -298,6 +298,7 @@ struct Inner {
     stop_probe_pending: Cell<bool>,
     stop_probe_again: Cell<bool>,
     seek_pending: Cell<bool>,
+    absolute_seek_target: Cell<Option<f64>>,
     latest_seek: Cell<Option<f64>>,
     streams: Box<streams::Registry>,
     subtitle_leases: RefCell<SubtitleLeases>,
@@ -463,6 +464,7 @@ impl Player {
             stop_probe_pending: Cell::new(false),
             stop_probe_again: Cell::new(false),
             seek_pending: Cell::new(false),
+            absolute_seek_target: Cell::new(None),
             latest_seek: Cell::new(None),
             streams: Box::default(),
             subtitle_leases: RefCell::default(),
@@ -895,6 +897,20 @@ impl Player {
         }
         self.submit_absolute_seek(seconds.max(0.))
     }
+    /// Latest accepted absolute seek intent for the current active load only.
+    /// A UI may hold its timeline at this target until exact native seek
+    /// confirmation settles. This is not an observed playback position and
+    /// must not replace the elapsed-time clock or a persisted resume position.
+    /// Relative seeks deliberately have no predicted absolute display target.
+    pub fn pending_seek_target(&self) -> Option<f64> {
+        if !self.inner.seek_pending.get() || !self.current_load_is_active() {
+            return None;
+        }
+        self.inner
+            .latest_seek
+            .get()
+            .or(self.inner.absolute_seek_target.get())
+    }
     // Called after a previous seek fully confirms, including from drain_events.
     // This must not borrow Snapshot because the caller may own its mutable guard.
     fn submit_absolute_seek(&self, seconds: f64) -> Result<()> {
@@ -909,6 +925,7 @@ impl Player {
             self.cancel_seek_confirmation();
             return Err(error);
         }
+        self.inner.absolute_seek_target.set(Some(seconds));
         self.inner.seek_pending.set(true);
         self.inner.pause_intent.borrow_mut().invalidate_eof();
         self.inner.clock_awaiting_seek_event.set(true);
@@ -972,6 +989,7 @@ impl Player {
         self.inner.seek_confirmation.borrow_mut().cancel();
         self.inner.clock_awaiting_seek_event.set(false);
         self.inner.seek_pending.set(false);
+        self.inner.absolute_seek_target.set(None);
         self.inner.latest_seek.set(None);
     }
     fn finish_seek_confirmation(&self, decision: seek_confirmation::Decision) -> Result<()> {
@@ -982,6 +1000,7 @@ impl Player {
             self.inner.seek_timer.stop();
             self.inner.clock_awaiting_seek_event.set(false);
             self.inner.seek_pending.set(false);
+            self.inner.absolute_seek_target.set(None);
             if let Some(position) = self.inner.latest_seek.take() {
                 self.submit_absolute_seek(position)?;
             }

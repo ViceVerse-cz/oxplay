@@ -1,25 +1,26 @@
 # Window chrome and appearance
 
-The normal application uses a shared Slint titlebar with native drag, minimize,
-maximize/restore, and close actions. The titlebar is part of the same compiled
-component library on each platform. It does not create another application
-window or video presenter. The native-child media diagnostic retains native
-decorations. Fullscreen and picture-in-picture hide the normal titlebar.
+The normal application uses the operating system's native window frame and
+controls. On macOS this means AppKit traffic lights and system-rounded frame
+corners, rather than shared minimize/maximize/close glyphs inside a square
+borderless window. Windows and Linux use their native desktop decoration policy;
+rounded corners are not promised on desktops that do not provide them. The
+browsing UI, search, sidebar and player remain one compiled Slint component
+library. Native decorations do not create another player, window or presenter.
 
-The titlebar's close action dispatches Slint's `CloseRequested` event, preserving
-the existing host close handler and PiP restoration behavior. Maximize and
-minimize update Slint's window state, rather than writing a competing native
-property. The shared titlebar uses Slint's built-in `WindowMoveArea` for native
-drag, without a drag timer or global cursor model. Pinned Slint implements
-frameless edge resize hit testing on other desktop backends. macOS uses its
-native outer resize border: Winit retains `NSWindowStyleMask::Resizable` for a
-borderless window. Its `drag_resize_window` method is unsupported on macOS, so
-the Slint inner resize strip is disabled there. Native window-manager behavior
-still needs platform qualification.
+Slint's `Window.no-frame` remains the source of truth for decorations. It is false
+at normal startup. Picture-in-picture snapshots the existing native frame,
+sets `no-frame` true, then restores the saved decoration state and geometry on
+exit. Fullscreen follows the native window manager; Winit restores the normal
+frame when fullscreen ends. The main app no longer reserves a shared custom
+titlebar row or draws substitute system buttons. Drag, edge resize, minimize,
+zoom/maximize, close and the macOS green-button fullscreen behavior belong to
+the native frame. The existing Slint close-request handler still handles
+shutdown and PiP restoration.
 
 Translucency is an explicit session-local option, initially off. It applies to
-the shell chrome; the main browsing surface and video remain opaque. Blur is a
-separate opt-in native effect, enabled only with translucency. It is suspended
+the shell background and sidebar; the main browsing surface and video remain
+opaque. Blur is a separate opt-in native effect, enabled only with translucency. It is suspended
 in fullscreen/PiP and restored on leaving that mode. Appearance changes preserve
 the native window, media player, graphics context, and borrowed-texture ownership.
 
@@ -56,12 +57,17 @@ Source reviewed for this implementation:
 
 `window_chrome.rs` owns the native adapter. `BackendSelector` installs its window
 attributes hook before component creation, because X11 cannot add a transparent
-visual afterward. Shared Slint bindings own alpha and decoration properties.
+visual afterward. Shared Slint bindings own alpha and decoration properties. On
+macOS the pinned backend derives native transparency from `Window.background` and `no-frame`,
+overriding the creation hook. Keeping the normal background opaque therefore
+preserves the native titlebar paint and rounded frame. Opting into translucency
+can also make the native titlebar transparent; this is the selected upstream
+behavior, not a promise of an AppKit vibrancy material.
 Native blur writes are cached and updated only by user actions or observed
 window/mode changes. No appearance polling loop is introduced.
 
-This feature pass does not run native, screenshot, accessibility, compositor,
-energy, or performance checks. Remaining qualification includes resize/drag,
+Source review alone does not qualify native appearance, accessibility, compositor,
+energy, or performance behavior. Remaining qualification includes resize/drag,
 maximize/minimize, close/PiP restoration, multi-monitor scale changes, fullscreen,
 screen-reader names/focus, opaque video composition, and system reduced-
 transparency behavior on each target.

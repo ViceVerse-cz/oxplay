@@ -283,3 +283,9 @@ The custom-window-chrome slice uses existing locked Slint/Winit APIs, including
 WindowMoveArea, resize-border-width, window attributes and the Winit blur request.
 No Cargo dependency, feature, revision or lockfile changes. The exact source
 contracts and platform restrictions are recorded in [window appearance](window-appearance.md).
+
+The watch-layout correction keeps the same locked framework/runtime revision and
+features. Native system decorations replace the custom titlebar. Theatre mode
+adds unchanged `rectangle-horizontal.svg` from the already-pinned Lucide
+revision, with its checksum and existing license retained. Channel artwork uses
+the existing yt-dlp/HTTP/image dependencies; no dependency or lockfile update.

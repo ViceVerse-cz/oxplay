@@ -121,6 +121,16 @@ fn focus(app: &App, target: i32) -> Result<(), &'static str> {
     }
     Err("The playlist form control was not keyboard reachable")
 }
+/// Each fresh Library page starts with its editing tools collapsed. Activate
+/// the real disclosure through its keyboard path before testing the name form.
+fn open_editor(app: &App) -> Result<(), &'static str> {
+    focus(app, 8)?;
+    key(app, " ")?;
+    check(
+        app.global::<LibraryUi>().get_name_focus_target() == 1,
+        "The playlist editing disclosure did not reveal and focus the name editor",
+    )
+}
 fn check(condition: bool, error: &'static str) -> Result<(), &'static str> {
     condition.then_some(()).ok_or(error)
 }
@@ -211,6 +221,7 @@ fn stage(
         }
         1 => {
             settled(app)?;
+            open_editor(app)?;
             focus(app, 1)?;
             key(app, Key::Return)?;
             check(
@@ -358,6 +369,7 @@ fn stage(
                     .is_some_and(|(id, name)| Some(id) == progress.playlist.get() && name == AWAY),
                 "Accepted rename was lost after navigation",
             )?;
+            open_editor(app)?;
             focus(app, 1)?;
             replace_text(app, "")?;
             key(app, Key::Return)?;
@@ -509,6 +521,7 @@ fn stage(
                 saved_page(state, 0, 100) && ui.get_next() && !ui.get_previous(),
                 "The worker did not publish the exact first 100 saved videos",
             )?;
+            open_editor(app)?;
             focus(app, 1)?;
             replace_text(app, PAGE_DRAFT)?;
             focus(app, 3)?;

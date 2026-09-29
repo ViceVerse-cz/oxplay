@@ -531,7 +531,7 @@ fn allowed(url: &str) -> bool {
             )
         )
 }
-async fn fetch(client: &reqwest::Client, url: &str) -> Option<image::RgbaImage> {
+pub(crate) async fn fetch(client: &reqwest::Client, url: &str) -> Option<image::RgbaImage> {
     if !allowed(url) {
         return None;
     }

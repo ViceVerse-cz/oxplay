@@ -16,22 +16,14 @@ export component App inherits Window {
     no-frame: root.window-borderless;
     in-out property <bool> window-borderless;
     callback pip-drag();
-    in property <bool> custom-chrome;
-    in property <bool> window-maximized;
-    in property <bool> window-native-resize;
     in property <bool> window-translucency-available;
     in property <bool> window-blur-available;
     in-out property <bool> window-translucent;
     in-out property <bool> window-blur-enabled;
     in property <string> window-appearance-status;
-    callback window-minimize();
-    callback window-toggle-maximize();
-    callback window-close();
     callback window-appearance-changed();
-    private property <bool> chrome-translucent: root.window-translucent && root.custom-chrome && !root.video-only;
+    private property <bool> chrome-translucent: root.window-translucent && root.window-translucency-available && !root.video-only;
     private property <brush> chrome-background: root.chrome-translucent ? Colors.canvas.with-alpha(0.84) : Colors.canvas;
-    private property <length> title-height: root.custom-chrome && !root.video-only ? 32px : 0px;
-    resize-border-width: root.window-native-resize || !root.custom-chrome || root.video-only || root.window-maximized ? 0px : 6px;
     changed window-translucent => { root.window-appearance-changed(); }
     changed window-blur-enabled => { root.window-appearance-changed(); }
     in property <bool> local-file-busy;
@@ -162,6 +154,10 @@ export component App inherits Window {
     in property <string> status: "Guest mode · Local history off · Autoplay off";
     in property <string> video-title;
     in property <string> video-channel;
+    in property <image> watch-channel-avatar;
+    in property <bool> watch-channel-avatar-ready;
+    callback channel-avatar-wake();
+    callback channel-avatar-context-changed();
     in property <string> technical;
     in property <string> playback-status;
     in property <bool> can-retry-playback;
@@ -180,6 +176,7 @@ export component App inherits Window {
     in property <string> total-time: "0:00";
     in property <string> remaining: "0:00";
     in property <float> position;
+    in property <float> pending-seek-position: -1;
     in property <float> duration: 1;
     in property <bool> paused: true;
     in property <bool> busy;
@@ -209,6 +206,7 @@ export component App inherits Window {
     out property <bool> controls-held: transport-hover.has-hover || seek-control.has-focus || seek-control.interacting || volume-control.interacting
         || play-control.has-focus || elapsed-control.has-focus || mute-control.has-focus || (volume-control.visible && volume-control.has-focus)
         || captions-control.has-focus || settings-control.has-focus || pip-control.has-focus
+        || (theatre-control.visible && theatre-control.has-focus)
         || (fullscreen-control.visible && fullscreen-control.has-focus) || native-overlay-open || TextInputInterface.text-input-focused;
     callback controls-activity();
     callback controls-state-changed();
@@ -216,6 +214,17 @@ export component App inherits Window {
     changed controls-visible => { root.controls-state-changed(); }
     in-out property <bool> show-info: false;
     in-out property <bool> expanded-sidebar: true;
+    in-out property <bool> theatre-mode;
+    private property <bool> theatre-active: root.theatre-mode && root.watching && !root.video-only && !root.native-video-child;
+    private property <bool> wide-related: root.width >= 1240px && !root.theatre-active;
+    function toggle-theatre() {
+        if !root.video-only && !root.native-video-child {
+            focus.focus();
+            root.theatre-mode = !root.theatre-mode;
+            root.saved-watch-offset = 0px; watch.content-y = 0px;
+            root.controls-activity();
+        }
+    }
     in-out property <bool> fullscreen-active;
     in-out property <bool> picture-in-picture;
     in property <bool> pip-available;
@@ -258,8 +267,8 @@ export component App inherits Window {
     out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
     out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
-    private property <length> sidebar-width: video-only ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
-    private property <length> top-height: video-only ? 0px : 56px + root.title-height;
+    private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 232px : 72px;
+    private property <length> top-height: video-only ? 0px : 56px;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
     private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
     private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
@@ -322,8 +331,9 @@ export component App inherits Window {
     changed feed-thumbnail-end => { root.refresh-visible(); }
     changed related-first => { root.refresh-visible(); }
     changed related-last => { root.refresh-visible(); }
-    changed page => { root.controls-state-changed(); if root.watching { root.controls-activity(); } if root.page != 0 { root.home-leave(); } if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
+    changed page => { root.channel-avatar-context-changed(); root.controls-state-changed(); if root.watching { root.controls-activity(); } if root.page != 0 { root.home-leave(); } if root.picture-in-picture && root.page != 2 { root.exit-picture-in-picture(); } root.prepare-native-overlay(); if root.page != 1 { LibraryUi.confirmation = 0; } root.feed-focus-cancel(); root.refresh-visible(); }
     changed video-only => {
+        root.channel-avatar-context-changed();
         root.window-appearance-changed();
         if root.video-only {
             // Retire parking before the related surface disappears.
@@ -423,8 +433,9 @@ export component App inherits Window {
             if event.text == Key.DownArrow { root.volume(max(0, root.volume-level - 5)); return accept; }
             if event.text == "m" { root.mute(); return accept; }
             if event.text == "f" { root.fullscreen(); return accept; }
+            if event.text == "t" { root.toggle-theatre(); return accept; }
             if event.text == "p" { root.picture-in-picture-toggle(); return accept; }
-            if event.text == Key.Escape { root.exit-fullscreen(); return accept; }
+            if event.text == Key.Escape { if root.theatre-active { root.toggle-theatre(); } else { root.exit-fullscreen(); } return accept; }
         }
         return reject;
     }
@@ -438,7 +449,7 @@ export component App inherits Window {
         horizontal-scrollbar-policy: always-off;
         vertical-scrollbar-policy: root.video-only ? always-off : as-needed;
         content-width: self.visible-width;
-        content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 16px, related.y + related.height + (root.width >= 1240px ? 0px : 16px)));
+        content-height: root.video-only ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 16px, related.y + related.height + (root.wide-related ? 0px : 16px)));
         changed content-y => {
             if root.video-only && self.content-y != 0px { self.content-y = 0px; }
         }
@@ -451,8 +462,8 @@ export component App inherits Window {
         video := Rectangle {
             x: 0px;
             y: 0px;
-            width: root.video-only ? watch.visible-width : watch.visible-width - (root.width >= 1240px ? 368px : 0px);
-            height: root.video-only ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : self.width * 9 / 16;
+            width: root.video-only ? watch.visible-width : watch.visible-width - (root.wide-related ? 368px : 0px);
+            height: root.video-only ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : root.theatre-active ? min(self.width * 9 / 16, max(240px, watch.visible-height * 0.82)) : self.width * 9 / 16;
             visible: root.watching;
             background: #000000;
             focus := FocusScope {
@@ -483,7 +494,7 @@ export component App inherits Window {
             // slider's pointer grab or a button's activation.
             transport-hover := TouchArea {
                 width: parent.width; height: parent.height;
-                seek-control := MediaSlider { x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.position; changed(value) => { root.seek(value); } }
+                seek-control := MediaSlider { x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.loaded && root.pending-seek-position >= 0 ? root.pending-seek-position : root.position; changed(value) => { root.seek(value); } }
                 HorizontalLayout {
                     x: 8px; y: parent.height - 48px; width: parent.width - 16px; height: 40px; spacing: 2px;
                     play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
@@ -502,6 +513,7 @@ export component App inherits Window {
                     captions-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
                     settings-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
                     pip-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
+                    theatre-control := Action { visible: !root.video-only && !root.native-video-child; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "rectangle-horizontal"; label: root.theatre-mode ? "Exit theatre mode (T)" : "Theatre mode (T)"; checkable: true; selected: root.theatre-mode; clicked => { root.toggle-theatre(); } }
                     fullscreen-control := Action { visible: !root.picture-in-picture; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Toggle fullscreen"; clicked => { root.fullscreen(); } }
                 }
             }
@@ -527,23 +539,26 @@ export component App inherits Window {
         }
         watch-controls := Rectangle {
             x: video.x; y: video.y + video.height + (root.native-video-child ? 86px : 12px);
-            width: video.width; height: 160px;
+            width: video.width; height: root.playback-status != "" ? 136px : 108px;
             visible: root.watching && !root.video-only;
             background: Colors.canvas;
             if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; wrap: word-wrap; color: Colors.text; font-size: 21px; font-weight: 600; overflow: elide; }
-            if !root.video-only: Text { x: 0; y: 62px; height: 22px; width: parent.width; text: root.video-channel; overflow: elide; color: Colors.muted; font-size: 14px; }
             if !root.video-only: HorizontalLayout {
-                y: 100px; height: 36px; spacing: 8px;
-                Rectangle { horizontal-stretch: 1; }
-                if root.account-connected: Action { label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
-                share-button := Action { width: 72px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
-                Action { width: 96px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
-                Action { width: 40px; horizontal-stretch: 0; compact: true; icon-name: "ellipsis"; label: "Show or hide controls"; clicked => { root.toggle-controls(); } }
+                x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
+                Rectangle {
+                    width: 40px; height: 40px; horizontal-stretch: 0; border-radius: 20px; clip: true; background: Colors.surface;
+                    if root.watch-channel-avatar-ready: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; source: root.watch-channel-avatar; image-fit: cover; }
+                    if !root.watch-channel-avatar-ready: Image { x: 5px; y: 5px; width: 30px; height: 30px; source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted; }
+                }
+                Text { text: root.video-channel; color: Colors.text; font-weight: 600; font-size: 14px; horizontal-stretch: 1; min-width: 0px; overflow: elide; vertical-alignment: center; }
+                if root.account-connected: Action { width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
+                share-button := Action { width: 72px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
+                Action { width: 88px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
+                Action { width: 40px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
             }
             if root.playback-status != "": Text {
-                x: 0px; y: 140px; width: parent.width; height: 20px;
+                x: 0px; y: 114px; width: parent.width; height: 20px;
                 text: root.can-retry-playback ? "Playback failed · Retry starts from the beginning" : root.playback-status;
                 color: Colors.muted; font-size: 12px; overflow: elide;
                 accessible-label: "Playback status: " + self.text;
@@ -578,10 +593,10 @@ export component App inherits Window {
             Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.accent; background: transparent; }
         }
         related := ListView {
-            x: root.width >= 1240px ? video.x + video.width + 24px : video.x;
-            y: root.width >= 1240px ? 0px : watch-details.y + watch-details.height + 20px;
-            width: root.width >= 1240px ? watch.visible-width - self.x : video.width;
-            height: root.width >= 1240px ? watch.visible-height : max(318px, watch.visible-height * 0.65);
+            x: root.wide-related ? video.x + video.width + 24px : video.x;
+            y: root.wide-related ? 0px : watch-details.y + watch-details.height + 20px;
+            width: root.wide-related ? watch.visible-width - self.x : video.width;
+            height: root.wide-related ? watch.visible-height : max(318px, watch.visible-height * 0.65);
             visible: root.watching && !root.video-only;
             horizontal-scrollbar-policy: always-off;
             // Opt-in experiment: cache each virtualized related card independently.
@@ -672,13 +687,13 @@ export component App inherits Window {
             }
         }
     Rectangle {
-        x: 0; y: root.title-height;
+        x: 0; y: 0px;
         // Cache stable chrome in a GPU layer during video.
         // Focus, hover, edits and theme changes still invalidate this subtree.
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only;
         width: parent.width; height: 56px; background: root.chrome-background;
-        Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: "Toggle sidebar"; clicked => { root.expanded-sidebar = !root.expanded-sidebar; } }
+        Action { x: 16px; y: 8px; width: 40px; compact: true; icon-name: "menu"; label: root.theatre-active ? "Exit theatre mode and show sidebar" : "Toggle sidebar"; clicked => { if root.theatre-active { root.toggle-theatre(); } else { root.expanded-sidebar = !root.expanded-sidebar; } } }
         Rectangle { x: 72px; y: 13px; width: 30px; height: 30px; border-radius: 9px; background: Colors.accent;
             Image { x: 5px; y: 5px; width: 20px; height: 20px; source: @image-url("icons/clapperboard.svg"); colorize: Colors.canvas; }
         }
@@ -697,7 +712,7 @@ export component App inherits Window {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
         background: root.chrome-background;
         cache-rendering-hint: root.cache-chrome;
-        visible: !root.video-only;
+        visible: !root.video-only && !root.theatre-active;
         VerticalLayout {
             padding-left: 12px; padding-right: 12px; padding-top: 18px; padding-bottom: 20px; spacing: 6px;
             Action { icon-name: "house"; label: "Home"; compact: root.sidebar-width < 100px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
@@ -785,24 +800,6 @@ export component App inherits Window {
             Action { icon-name: "chevron-left"; label: "Previous page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
             Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; width: 170px; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
             Rectangle { horizontal-stretch: 1; }
-        }
-    }
-    Rectangle {
-        x: 0px; y: 0px; width: root.width; height: root.title-height;
-        visible: root.custom-chrome && !root.video-only;
-        background: root.chrome-background;
-        accessible-role: window-title-bar;
-        accessible-label: "Serein window";
-        WindowMoveArea {
-            width: parent.width - 140px; height: parent.height;
-            Text { x: 18px; height: parent.height; text: "Serein"; color: Colors.muted; font-size: 12px; vertical-alignment: center; }
-            TouchArea { double-clicked => { root.window-toggle-maximize(); } }
-        }
-        HorizontalLayout {
-            x: parent.width - 138px; y: 2px; width: 132px; height: 28px; spacing: 0px;
-            Action { height: 28px; compact: true; icon-size: 16px; icon-name: "minus"; label: "Minimize window"; clicked => { root.window-minimize(); } }
-            Action { height: 28px; compact: true; icon-size: 14px; icon-name: root.window-maximized ? "copy" : "square"; label: root.window-maximized ? "Restore window" : "Maximize window"; clicked => { root.window-toggle-maximize(); } }
-            Action { height: 28px; compact: true; icon-size: 17px; icon-name: "x"; label: "Close window"; clicked => { root.window-close(); } }
         }
     }
     chapters-popup := PopupWindow {
