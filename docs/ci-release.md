@@ -1,5 +1,15 @@
 # CI and source previews
 
+Latest feature checkpoint: `dd26ab4f89db2bc9ffd1a9481e613c0c46323435`
+adds automatic inline controls, remembered PiP geometry and retry handoff guards.
+Local formatting, locked workspace compilation, strict all-target Clippy and
+locked debug build passed. Per the requested fast feature workflow, no test
+suite, native diagnostic, performance measurement, release build or source
+preview was run for this checkpoint. Historical evidence below remains scoped
+to its recorded source. [CI run 36605325904](https://github.com/ViceVerse-cz/yt/actions/runs/36605325904)
+failed before any step; both annotations report failed account payments or a
+spending-limit issue. No hosted build/test result exists for this checkpoint.
+
 [CI](../.github/workflows/ci.yml) runs on pushes to `main`, pull requests, manual
 dispatch and calls from the release workflow. It uses `rust-toolchain.toml`
 (Rust 1.98.1 with rustfmt and Clippy), the committed `Cargo.lock` and the selected

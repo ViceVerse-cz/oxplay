@@ -25,6 +25,9 @@ constraints; those were corrected before the passing checks. New runtime
 interaction, monitor transitions and recovery qualification remain pending.
 No test suite, native diagnostic, performance/usage benchmark or release build
 was run for these changes. Prior results below apply to their recorded source.
+Source `dd26ab4` is pushed. [CI run 36605325904](https://github.com/ViceVerse-cz/yt/actions/runs/36605325904)
+ran zero steps: both jobs were denied by GitHub's account-payment/spending-limit
+check. Local checks above are the only build/lint evidence for this slice.
 
 The preceding slice propagates identity loss during post-write account
 reconciliation, clearing stale connected UI and account playback. Unconfirmed
