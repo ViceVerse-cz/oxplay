@@ -307,7 +307,13 @@ export component App inherits Window {
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
     out property <int> visible-related-count: max(0, related-last - related-first);
-    out property <bool> progress-visible: video-visible && transport.visible && transport.y + watch.content-y < watch.visible-height && transport.y + watch.content-y + transport.height > 0px;
+    // A clipped transport background does not need clock updates. Check the
+    // actual seek control and time text, including their offsets in the overlay.
+    private property <length> progress-seek-top: transport.y + seek-control.y + watch.content-y;
+    private property <length> progress-time-top: transport.y + transport-buttons.y + elapsed-control.y + elapsed-text.y + watch.content-y;
+    out property <bool> progress-visible: video-visible && transport.visible && (
+        (progress-seek-top < watch.visible-height && progress-seek-top + seek-control.height > 0px)
+        || (progress-time-top < watch.visible-height && progress-time-top + elapsed-text.height > 0px));
     out property <int> columns: min(6, max(1, floor((browse.width + 20px) / 270px)));
     in property <int> feed-focus-target: -1;
     in property <int> feed-focus-surface: -1;
@@ -1077,7 +1083,7 @@ export component App inherits Window {
             transport-hover := TouchArea {
                 width: parent.width; height: parent.height;
                 seek-control := MediaSlider { preview-time: true; x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.loaded && root.pending-seek-position >= 0 ? root.pending-seek-position : root.position; changed(value) => { root.seek(value); } }
-                HorizontalLayout {
+                transport-buttons := HorizontalLayout {
                     x: 8px; y: parent.height - 48px; width: parent.width - 16px; height: 40px; spacing: 2px;
                     play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.user-toggle-pause(); } }
 
@@ -1089,7 +1095,7 @@ export component App inherits Window {
                         label: "Jump to time · Elapsed " + root.elapsed + ", remaining " + root.remaining;
                         width: transport.width < 500px ? 50px : 122px; horizontal-stretch: 0;
                         opacity: 1; enabled: JumpUi.available; clicked => { root.show-jump(); }
-                        Text { text: transport.width < 500px ? root.elapsed : root.elapsed + " / " + root.total-time; color: #ffffff; width: parent.width; height: parent.height; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
+                        elapsed-text := Text { text: transport.width < 500px ? root.elapsed : root.elapsed + " / " + root.total-time; color: #ffffff; width: parent.width; height: self.preferred-height; y: (parent.height - self.height) / 2; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     Rectangle { horizontal-stretch: 1; }
                     captions-control := Action { visible: !root.mini-player-active; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }

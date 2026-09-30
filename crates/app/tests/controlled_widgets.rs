@@ -893,3 +893,32 @@ fn paginated_grid_keeps_end_and_rapid_navigation_inside_the_thumbnail_viewport()
         );
     }
 }
+
+#[test]
+fn clipped_transport_background_does_not_keep_offscreen_clock_controls_active() {
+    let app = app();
+    app.window().set_size(slint::LogicalSize::new(1000., 600.));
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_controls_visible(true);
+    app.set_watch_videos(Rc::new(slint::VecModel::from(vec![VideoRow::default(); 30])).into());
+    settle();
+    assert!(app.get_progress_visible());
+    app.window().dispatch_event(WindowEvent::PointerScrolled {
+        position: slint::LogicalPosition::new(
+            app.get_video_window_x() + 50.,
+            app.get_video_window_y() + 50.,
+        ),
+        delta_x: 0.,
+        delta_y: -800.,
+    });
+    mock_elapsed_time(Duration::from_millis(500));
+    settle();
+    assert!(app.get_visible_related_count() > 0);
+    assert!(app.get_watch_offset() < 0.);
+    assert!(app.get_video_window_y() + app.get_video_height() > 0.);
+    assert!(!app.get_progress_visible());
+    app.invoke_focus_player();
+    settle();
+    assert!(app.get_progress_visible());
+}
