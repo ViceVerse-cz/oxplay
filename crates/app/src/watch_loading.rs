@@ -107,6 +107,7 @@ pub fn guest_begin(app: &App, state: &Rc<UiState>, generation: u64, id: &VideoId
     {
         return;
     }
+    crate::watch_tabs::selected(app, state, id);
     crate::watch_context::capture_guest(app, state, id);
     // The native watch page (related, metadata, chapters, first comments
     // continuation) is read on its own worker while the extractor resolves.
@@ -122,6 +123,7 @@ pub fn guest_begin(app: &App, state: &Rc<UiState>, generation: u64, id: &VideoId
 }
 
 pub fn account_begin(app: &App, state: &Rc<UiState>, id: &VideoId) {
+    crate::watch_tabs::detach(app, state);
     crate::watch_context::clear(app, state);
     let selection = crate::account_playback::generation(state);
     let session = state.account_ui.session_generation();

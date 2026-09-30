@@ -360,6 +360,7 @@ fn deadline(app: &App, state: &Rc<UiState>) {
 }
 fn selected_video(app: &App, state: &Rc<UiState>, path: PathBuf) {
     // Revoke remote work before publishing any local metadata or media.
+    crate::watch_tabs::detach(app, state);
     crate::guest_playback::cancel(app, state);
     state.worker.borrow_mut().cancel();
     crate::account_playback::clear(app, state);

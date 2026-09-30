@@ -188,6 +188,10 @@ impl State {
     pub fn account_home(&self) -> bool {
         self.origin.get() == Origin::AccountHome
     }
+    /// The typed item behind a visible feed/results card (select-video index).
+    pub fn item(&self, row: usize) -> Option<CatalogItem> {
+        self.items.borrow().get(row).cloned()
+    }
 }
 
 pub(crate) fn thumbnail_source(
