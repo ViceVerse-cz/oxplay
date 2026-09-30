@@ -365,11 +365,16 @@ def arch_package(workdir: Path, stage: Path, version: str) -> Path:
     extracted.mkdir()
     runnable = executables("usr")
     with tarfile.open(archive) as contents:
-        metadata = contents.extractfile(".PKGINFO").read().decode()
-        for item in ["pkgname = oxplay", f"pkgver = {package_version}-1", f"arch = {platform.machine()}",
-                     *(f"depend = {dependency}" for dependency in depends)]:
-            if item not in metadata.splitlines():
+        metadata = contents.extractfile(".PKGINFO").read().decode().splitlines()
+        for item in ["pkgname = oxplay", f"pkgver = {package_version}-1", f"arch = {platform.machine()}"]:
+            if item not in metadata:
                 raise ValueError(f"Missing Arch metadata: {item}")
+        # makepkg's autodeps may add or version library dependencies (libz.so=1-64).
+        declared = {re.split(r"[<>=]", line.removeprefix("depend = "), maxsplit=1)[0]
+                    for line in metadata if line.startswith("depend = ")}
+        missing = {re.split(r"[<>=]", item, maxsplit=1)[0] for item in depends} - declared
+        if missing:
+            raise ValueError(f"Missing Arch dependencies: {', '.join(sorted(missing))}")
         for member in contents:
             path = Path(member.name)
             if (path.is_absolute() or ".." in path.parts or not (member.isfile() or member.isdir())

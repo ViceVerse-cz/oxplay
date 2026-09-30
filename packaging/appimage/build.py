@@ -68,9 +68,14 @@ def bundle_libraries(appdir: Path, mpv_prefix: Path) -> list[str]:
     missing = [name for name, path in libraries.items() if path is None]
     if missing or "libmpv.so.2" not in libraries:
         raise ValueError(f"Unresolved build-host libraries: {', '.join(missing) or 'libmpv.so.2'}")
+    # A library that a host-provided library also needs (libffi for libwayland,
+    # for example) must come from the host too: the loader shares one copy per soname.
+    host = {name for name in libraries if EXCLUDED.match(name)}
+    for name in sorted(host):
+        host |= set(ldd(Path(libraries[name]), None))
     bundled = []
     for name, source in sorted(libraries.items()):
-        if EXCLUDED.match(name):
+        if name in host:
             continue
         destination = appdir / "usr/lib" / name
         shutil.copyfile(Path(source).resolve(strict=True), destination)
