@@ -207,7 +207,8 @@ jobs:
         # Same scope as the Unix jobs: ignored account/network/credential-store
         # probes stay ignored and media unit tests use null outputs. The media
         # build script places libmpv-2.dll on the Cargo test/run PATH.
-        run: cargo test --workspace --locked
+        # Report every failing test binary, not just the first.
+        run: cargo test --workspace --locked --no-fail-fast
 
       - name: Build locked production workspace
         run: cargo build --workspace --release --locked
