@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+// Windows release builds are GUI applications without a console window.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 mod account;
 mod account_playback;
 mod account_ui;
@@ -65,6 +67,8 @@ mod watch_loading;
 mod watch_meta;
 mod watch_tabs;
 mod window_chrome;
+#[cfg(windows)]
+mod windows_console;
 use catalog::{Response, Worker};
 use model::CatalogModel;
 use oxplay_media::{GlPresenter, Player};
@@ -966,6 +970,17 @@ fn load_remote(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    windows_console::attach_parent_console();
+    let result = run();
+    #[cfg(windows)]
+    if let Err(error) = &result {
+        windows_console::report_startup_error(error.as_ref());
+    }
+    result
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     let options = cli::Options::parse(std::env::args_os().skip(1))?;
     if options.help {
         println!("{}", cli::HELP);

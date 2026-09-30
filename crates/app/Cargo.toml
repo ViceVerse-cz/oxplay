@@ -25,6 +25,9 @@ libc = "0.2"
 objc2 = "=0.6.4"
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "NSResponder", "NSView", "NSWindow", "NSButton", "NSControl"] }
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
 [build-dependencies]
 slint-build.workspace = true
 
