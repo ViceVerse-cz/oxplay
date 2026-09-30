@@ -1,4 +1,5 @@
-//! Resolve explicit helpers or the owning application bundle. Never search PATH.
+//! Resolve explicit helpers or the owning application bundle. Never search PATH,
+//! except the Windows development fallback documented in `windows` below.
 use std::path::{Path, PathBuf};
 
 pub struct HelperPaths {
@@ -55,6 +56,11 @@ impl HelperPaths {
                     )
                 })
             });
+        #[cfg(windows)]
+        let (yt_dlp, deno) = (
+            yt_dlp.or_else(|| windows::helper(executable, "yt-dlp.exe")),
+            deno.or_else(|| windows::helper(executable, "deno.exe")),
+        );
         let directory = bundled.unwrap_or_else(|| {
             if cfg!(target_os = "macos") {
                 PathBuf::from("/opt/homebrew/bin")
@@ -143,10 +149,75 @@ impl HelperPaths {
     }
 }
 
+/// Windows has no application bundle. A portable/installed Oxplay ships its
+/// helpers beside `oxplay.exe`; that sibling always wins. Only when it is
+/// absent (development checkouts) is one absolute `PATH` entry accepted, e.g.
+/// a winget/scoop/pip `yt-dlp.exe`. Relative `PATH` entries are ignored so the
+/// working directory can never supply a helper. If neither exists, the sibling
+/// path is kept and the worker reports the helper as unavailable.
+#[cfg(windows)]
+mod windows {
+    use std::path::{Path, PathBuf};
+
+    pub(super) fn helper(executable: &Path, name: &str) -> Option<PathBuf> {
+        let sibling = executable.parent()?.join(name);
+        if sibling.is_file() {
+            return Some(sibling);
+        }
+        search(std::env::var_os("PATH").as_deref(), name).or(Some(sibling))
+    }
+
+    pub(super) fn search(path: Option<&std::ffi::OsStr>, name: &str) -> Option<PathBuf> {
+        std::env::split_paths(path?)
+            .filter(|directory| directory.is_absolute())
+            .map(|directory| directory.join(name))
+            .find(|candidate| candidate.is_file())
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn sibling_helper_wins_and_path_search_ignores_relative_entries() {
+            let root = std::env::temp_dir().join(format!(
+                "oxplay-windows-helper-test-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            let application = root.join("Oxplay");
+            let tools = root.join("tools");
+            std::fs::create_dir_all(&application).unwrap();
+            std::fs::create_dir_all(&tools).unwrap();
+            let executable = application.join("oxplay.exe");
+            std::fs::write(tools.join("yt-dlp.exe"), b"not executed").unwrap();
+            let path = std::env::join_paths([PathBuf::from("relative"), tools.clone()]).unwrap();
+            assert_eq!(
+                search(Some(&path), "yt-dlp.exe"),
+                Some(tools.join("yt-dlp.exe"))
+            );
+            let relative_only = std::env::join_paths([PathBuf::from("tools")]).unwrap();
+            assert_eq!(search(Some(&relative_only), "yt-dlp.exe"), None);
+            assert_eq!(search(Some(&path), "deno.exe"), None);
+            std::fs::write(application.join("yt-dlp.exe"), b"not executed").unwrap();
+            assert_eq!(
+                helper(&executable, "yt-dlp.exe"),
+                Some(application.join("yt-dlp.exe"))
+            );
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    // Unix-rooted synthetic paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn missing_bundle_helpers_never_fall_back_to_host() {
         let paths = HelperPaths::discover(
@@ -182,6 +253,8 @@ mod tests {
         }
     }
 
+    // Unix-rooted synthetic paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn explicit_paths_override_only_the_selected_helper_and_must_be_absolute() {
         let executable = Path::new("/Oxplay.app/Contents/MacOS/oxplay");
