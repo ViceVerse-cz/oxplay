@@ -5,6 +5,10 @@ use crate::{ProviderError, VideoId, parse_url};
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct VideoStart(u32);
 impl VideoStart {
+    /// A remembered in-app resume point, such as a background watch tab.
+    pub fn from_seconds(seconds: u32) -> Self {
+        Self(seconds)
+    }
     pub fn seconds(self) -> u32 {
         self.0
     }

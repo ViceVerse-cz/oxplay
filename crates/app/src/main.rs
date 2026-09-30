@@ -60,6 +60,7 @@ mod thumbnails;
 mod watch_context;
 mod watch_loading;
 mod watch_meta;
+mod watch_tabs;
 mod window_chrome;
 use catalog::{Response, Worker};
 use model::CatalogModel;
@@ -78,6 +79,7 @@ struct UiState {
     watch_loading: watch_loading::State,
     watch_context: watch_context::State,
     watch_meta: watch_meta::State,
+    watch_tabs: watch_tabs::State,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -208,6 +210,7 @@ fn update(app: &App, state: &Rc<UiState>) {
     playback_preferences::observe(app, state, &snapshot);
     caption_ui::observe(app, state, &snapshot);
     playback_ui::observe(app, state, &snapshot);
+    watch_tabs::observe(app, state, &snapshot);
     guest_playback::observe(app, state, &snapshot);
     local_media_ui::observe(app, state, &snapshot);
     let playback_status = playback_ui::status(
@@ -418,6 +421,7 @@ fn request_windowed(app: &App) {
 /// Explicit "close player" from the mini-player: stop the one media load and
 /// retire every watch-scoped presentation, leaving browsing untouched.
 fn close_player(app: &App, state: &Rc<UiState>) {
+    watch_tabs::player_closed(app, state);
     if app.get_account_playback_active() {
         // Owns lease teardown, the stop command and its watch-scoped state.
         account_playback::clear(app, state);
@@ -1161,6 +1165,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         watch_loading: watch_loading::State::default(),
         watch_context: watch_context::State::default(),
         watch_meta,
+        watch_tabs: watch_tabs::State::default(),
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -1495,6 +1500,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     caption_cache::bind(&app, &state);
     channel_avatar::bind(&app, &state);
     watch_meta::bind(&app, &state);
+    watch_tabs::bind(&app, &state);
     let weak = app.as_weak();
     let s = Rc::downgrade(&state);
     app.on_channel_avatar_context_changed(move || {

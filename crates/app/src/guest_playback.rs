@@ -306,6 +306,7 @@ fn publish(
     caption_ui::metadata(app, state, &item, false);
     crate::share_ui::clear(app, state);
     *state.current_video.borrow_mut() = Some(item.video.clone());
+    crate::watch_tabs::accepted(app, state, &item.video);
     playback_ui::selected(app, state, &item);
     app.set_page(2);
     app.set_loaded(true);

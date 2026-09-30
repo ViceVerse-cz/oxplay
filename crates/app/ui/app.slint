@@ -12,6 +12,8 @@ import { SearchSuggestions, SearchSuggestionsUi, SearchSuggestion } from "search
 export { SearchSuggestionsUi, SearchSuggestion }
 import { MediaSlider, Spinner } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
+import { TabStrip, TabsUi, WatchTab } from "tabs.slint";
+export { TabsUi, WatchTab }
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 // Guide section chrome: a hairline divider and a compact section title.
 component GuideDivider inherits Rectangle {
@@ -30,7 +32,7 @@ export component App inherits Window {
     in-out property <bool> window-borderless;
     in property <bool> native-header-integrated;
     callback window-header-drag();
-    out property <length> native-header-height: root.top-height;
+    out property <length> native-header-height: root.header-height;
     private property <length> header-leading-inset: root.native-header-integrated && !root.video-only ? 88px : 0px;
     callback pip-drag();
     in property <bool> window-translucency-available;
@@ -337,7 +339,10 @@ export component App inherits Window {
     private property <bool> watching: page == 2;
     private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 200px : 56px;
     private property <bool> guide-compact: root.sidebar-width < 100px;
-    private property <length> top-height: video-only ? 0px : 48px;
+    private property <length> header-height: video-only ? 0px : 48px;
+    // Watch tabs extend the header with one slim strip only when useful.
+    private property <length> tab-strip-height: !video-only && TabsUi.strip-visible ? 36px : 0px;
+    private property <length> top-height: root.header-height + root.tab-strip-height;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
     private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
     private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
@@ -497,6 +502,16 @@ export component App inherits Window {
         // keys (including Escape). Do not turn their bubbling events into media
         // commands while any editor/IME owns focus. Popup default handling stays
         // in Slint because rejected events continue through its normal path.
+        // Watch tabs: Ctrl+Tab / Ctrl+Shift+Tab cycle, Cmd/Ctrl+W closes. These
+        // chords are unused by editors, so they also work while typing.
+        if (event.modifiers.control || event.modifiers.meta) && !event.modifiers.alt && (event.text == Key.Tab || event.text == Key.Backtab) {
+            if TabsUi.tabs.length == 0 || root.video-only { return reject; }
+            TabsUi.cycle(!event.modifiers.shift && event.text != Key.Backtab); return accept;
+        }
+        if (event.modifiers.control || event.modifiers.meta) && !event.modifiers.alt && !event.modifiers.shift && event.text == "w" {
+            if TabsUi.active-index < 0 || root.video-only { return reject; }
+            TabsUi.close-active(); return accept;
+        }
         if TextInputInterface.text-input-focused { return reject; }
         if (event.modifiers.control || event.modifiers.meta) && !event.modifiers.alt && event.text == "o" {
             if !root.native-video-child && !root.local-file-busy { root.open-video-file(); }
@@ -551,7 +566,7 @@ export component App inherits Window {
                 }
                 HorizontalLayout { spacing: 24px;
                     for column in [
-                        [["Space / K", "Play or pause"], ["J / L", "Back or forward 10 s"], ["← / →", "Back or forward 5 s"], ["0 – 9", "Jump to 0–90 %"], ["G", "Jump to a time"], ["Shift + < / >", "Slower or faster"]],
+                        [["Space / K", "Play or pause"], ["J / L", "Back or forward 10 s"], ["← / →", "Back or forward 5 s"], ["0 – 9", "Jump to 0–90 %"], ["G", "Jump to a time"], ["Shift + < / >", "Slower or faster"], ["Ctrl + Tab", "Next tab (Shift: previous)"], ["Ctrl/Cmd + W", "Close tab"]],
                         [["↑ / ↓", "Volume"], ["M", "Mute"], ["F", "Fullscreen"], ["T", "Theatre mode"], ["P", "Picture in picture"], ["/", "Search"], ["?", "This list"]],
                     ]: VerticalLayout { spacing: 10px; horizontal-stretch: 1; alignment: start;
                         for row in column: HorizontalLayout { height: 28px; spacing: 12px;
@@ -650,7 +665,7 @@ export component App inherits Window {
         // Focus, hover, edits and theme changes still invalidate this subtree.
         cache-rendering-hint: root.cache-chrome;
         visible: !root.video-only;
-        width: parent.width; height: root.top-height; background: root.chrome-background;
+        width: parent.width; height: root.header-height; background: root.chrome-background;
         TouchArea {
             width: parent.width; height: parent.height;
             enabled: root.native-header-integrated;
@@ -671,6 +686,14 @@ export component App inherits Window {
             accepted(text) => { suggestions.close(); root.search(text); }
         }
         header-account := Action { enabled: !root.native-video-child; x: parent.width - self.width - 20px; y: (parent.height - self.height) / 2; width: 144px; height: 32px; variant: ActionVariant.secondary; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
+    }
+    if root.tab-strip-height > 0px: TabStrip {
+        x: 0px; y: root.header-height; width: root.width; height: root.tab-strip-height;
+        background: root.chrome-background;
+        leading: 16px;
+        presenting: root.loaded && !root.watch-loading;
+        draggable: root.native-header-integrated;
+        drag => { root.window-header-drag(); }
     }
     Rectangle {
         x: 0; y: root.top-height; width: root.sidebar-width; height: root.height - root.top-height;
@@ -778,6 +801,7 @@ export component App inherits Window {
                         claim-focus(serial) => { return root.feed-focus-claim(0, group.start + index, item.kind, item.id, serial); }
                         focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                         clicked => { root.select-video(group.start + index); }
+                        open-in-new-tab => { TabsUi.open(0, group.start + index); }
                     }
                     if group.items.length < root.columns: Rectangle { horizontal-stretch: root.columns - group.items.length; }
                 }
@@ -874,7 +898,7 @@ export component App inherits Window {
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            Text { text: "Ctrl / Cmd + O  Open video file\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Ctrl / Cmd + O  Open video file\nCtrl + Tab / Ctrl + Shift + Tab  Next / previous video tab\nCtrl / Cmd + W  Close the video tab\nMiddle-click, Cmd/Ctrl + click or right-click a video  Open in a new tab\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
@@ -1205,6 +1229,7 @@ export component App inherits Window {
                 claim-focus(serial) => { return root.feed-focus-claim(1, index, item.kind, item.id, serial); }
                 focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                 clicked => { root.select-related(index); }
+                open-in-new-tab => { TabsUi.open(1, index); }
             }
         }
     }

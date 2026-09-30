@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Colors } from "components.slint";
+
+// Session-only watch tabs. Rust owns the bounded tab model and every switch;
+// only one tab is ever presented by the single player.
+export struct WatchTab { title: string, channel: string, active: bool }
+export global TabsUi {
+    in property <[WatchTab]> tabs;
+    in property <int> active-index: -1;
+    // Two or more tabs, or a background tab that the player is not showing.
+    in property <bool> strip-visible;
+    // Short feedback such as the tab limit; cleared by Rust.
+    in property <string> notice;
+    callback activate(int);
+    callback close(int);
+    callback cycle(bool);
+    callback close-active();
+    // Background opens from a card surface: 0 feed/results, 1 related.
+    callback open(int, int);
+}
+
+component TabChip inherits Rectangle {
+    in property <WatchTab> tab;
+    in property <int> index;
+    in property <int> count;
+    in property <bool> presenting;
+    callback activate();
+    callback close();
+    private property <bool> hovered: touch.has-hover || close-touch.has-hover;
+    private property <string> title: root.tab.title != "" ? root.tab.title : "YouTube video";
+    private property <bool> live: root.tab.active && root.presenting;
+    private property <string> label: root.title + (root.tab.channel != "" ? ", " + root.tab.channel : "");
+    height: 28px;
+    border-radius: 8px;
+    background: root.tab.active ? Colors.raised : touch.pressed ? Colors.pressed : root.hovered ? Colors.hover : transparent;
+    border-width: root.tab.active ? 1px : 0px;
+    border-color: Colors.border;
+    accessible-role: AccessibleRole.tab;
+    accessible-enabled: true;
+    accessible-label: root.label;
+    accessible-item-selectable: true;
+    accessible-item-selected: root.tab.active;
+    accessible-item-index: root.index;
+    accessible-item-count: root.count;
+    accessible-action-default => { root.activate(); }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.activate(); }
+        // Browser convention: a middle click closes the tab.
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.up && event.button == PointerEventButton.middle && self.has-hover { root.close(); }
+        }
+    }
+    if root.live: Image {
+        x: 10px; y: (parent.height - self.height) / 2; width: 10px; height: 10px;
+        source: @image-url("icons/play.svg"); colorize: Colors.accent;
+    }
+    Text {
+        x: root.live ? 26px : 12px; width: max(0px, parent.width - self.x - 30px); height: parent.height;
+        text: root.title; color: root.tab.active ? Colors.text : Colors.muted;
+        font-size: 12px; font-weight: root.tab.active ? 600 : 400;
+        vertical-alignment: center; overflow: elide;
+    }
+    Rectangle {
+        x: parent.width - self.width - 4px; y: (parent.height - self.height) / 2; width: 20px; height: 20px;
+        border-radius: 10px;
+        background: close-touch.pressed ? Colors.strong : close-touch.has-hover ? Colors.pressed : transparent;
+        opacity: root.tab.active || root.hovered ? 1 : 0.6;
+        accessible-role: button;
+        accessible-enabled: true;
+        accessible-label: "Close tab: " + root.title;
+        accessible-action-default => { root.close(); }
+        Image { x: 4px; y: 4px; width: 12px; height: 12px; source: @image-url("icons/x.svg"); colorize: Colors.muted; }
+        close-touch := TouchArea { mouse-cursor: pointer; clicked => { root.close(); } }
+    }
+    Tooltip {
+        Rectangle {
+            width: min(420px, tip.preferred-width + 16px); height: 30px;
+            background: #3a3a3aef; border-radius: 6px;
+            tip := Text { text: root.label; color: #ffffff; x: 8px; width: parent.width - 16px; height: parent.height; vertical-alignment: center; font-size: 12px; overflow: elide; }
+        }
+    }
+}
+
+// A slim strip below the header. Chips shrink to fit, then scroll sideways.
+export component TabStrip inherits Rectangle {
+    in property <bool> presenting;
+    in property <bool> draggable;
+    in property <length> leading: 16px;
+    callback drag();
+    private property <int> count: TabsUi.tabs.length;
+    private property <length> gap: 4px;
+    private property <length> notice-width: TabsUi.notice != "" ? min(280px, root.width * 0.4) : 0px;
+    private property <length> available: max(0px, root.width - root.leading - 16px - root.notice-width);
+    private property <length> chip-width: root.count > 0 ? clamp((root.available - (root.count - 1) * root.gap) / root.count, 96px, 220px) : 0px;
+    accessible-role: AccessibleRole.tab-list;
+    accessible-label: "Video tabs";
+    // Empty strip space moves the window like the header it extends.
+    TouchArea {
+        enabled: root.draggable;
+        pointer-event(event) => { if event.kind == PointerEventKind.down && event.button == PointerEventButton.left { root.drag(); } }
+    }
+    strip := Flickable {
+        x: root.leading; width: root.available; height: parent.height;
+        content-width: max(self.width, root.count * (root.chip-width + root.gap) - root.gap);
+        for tab[index] in TabsUi.tabs: TabChip {
+            x: index * (root.chip-width + root.gap); y: (parent.height - self.height) / 2;
+            width: root.chip-width;
+            tab: tab; index: index; count: root.count; presenting: root.presenting;
+            activate => { TabsUi.activate(index); }
+            close => { TabsUi.close(index); }
+        }
+    }
+    // Keep the active chip in view when the strip overflows.
+    changed chip-width => { root.reveal-active(); }
+    function reveal-active() {
+        if TabsUi.active-index < 0 { return; }
+        let left = TabsUi.active-index * (root.chip-width + root.gap);
+        if left + strip.content-x < 0px { strip.content-x = -left; }
+        if left + root.chip-width + strip.content-x > strip.width { strip.content-x = min(0px, strip.width - left - root.chip-width); }
+    }
+    private property <int> revealed: TabsUi.active-index;
+    changed revealed => { root.reveal-active(); }
+    notice-text := Text {
+        x: root.width - self.width - 16px; width: max(0px, root.notice-width - 16px); height: parent.height;
+        visible: TabsUi.notice != "";
+        text: TabsUi.notice; color: Colors.muted; font-size: 12px;
+        horizontal-alignment: right; vertical-alignment: center; overflow: elide;
+    }
+}

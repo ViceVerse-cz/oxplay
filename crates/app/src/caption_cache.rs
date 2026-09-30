@@ -102,6 +102,7 @@ pub fn begin(app: &App, state: &Rc<UiState>) {
     // pending commands until reply. Dropping UI caches cannot delete live files.
     caption_ui::clear_local(app, state);
     crate::watch_context::clear(app, state);
+    crate::watch_tabs::clear(app, state);
     state.current_video.borrow_mut().take();
     state.progress.stop();
     app.set_loaded(false);

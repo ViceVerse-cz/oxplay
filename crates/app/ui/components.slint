@@ -331,6 +331,10 @@ export component VideoCard inherits Rectangle {
     changed focus-request => { if root.focus-request > 0 { root.focus-ready(root.focus-request); } }
     changed focus-delivery => { root.try-requested-focus(); }
     callback clicked;
+    // Keep this video ready in a background watch tab (videos only).
+    callback open-in-new-tab;
+    private property <bool> tabbable: root.enabled && root.item.kind == "Video";
+    private property <bool> new-tab-click;
     private property <bool> channel: root.item.kind == "Channel";
     border-radius: root.compact ? 10px : 14px;
     background: transparent;
@@ -349,6 +353,10 @@ export component VideoCard inherits Rectangle {
         key-pressed(event) => {
             let command = CatalogKeys.command(event);
             if command >= 0 && root.keyboard-move(command) { return accept; }
+            if event.text == Key.Return && (event.modifiers.control || event.modifiers.meta) {
+                if root.tabbable { root.open-in-new-tab(); }
+                return accept;
+            }
             if event.text == " " || event.text == Key.Return { root.clicked(); return accept; }
             return reject;
         }
@@ -407,5 +415,22 @@ export component VideoCard inherits Rectangle {
         text: root.item.meta; color: Colors.muted; font-size: root.compact ? 12px : 13px;
         overflow: elide;
     }
-    touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
+    touch := TouchArea {
+        enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default;
+        // Middle click or Cmd/Ctrl+click opens in a background tab, like a browser link.
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down && event.button == PointerEventButton.left {
+                root.new-tab-click = root.tabbable && (event.modifiers.control || event.modifiers.meta);
+            }
+            if event.kind == PointerEventKind.up && event.button == PointerEventButton.middle && self.has-hover && root.tabbable { root.open-in-new-tab(); }
+        }
+        clicked => {
+            if root.new-tab-click { root.new-tab-click = false; root.open-in-new-tab(); }
+            else { root.pointer-focus = true; focus.focus(); root.clicked(); }
+        }
+    }
+    if root.tabbable: ContextMenuArea {
+        width: root.width; height: root.height;
+        Menu { MenuItem { title: "Open in new tab"; activated => { root.open-in-new-tab(); } } }
+    }
 }

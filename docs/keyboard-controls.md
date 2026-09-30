@@ -4,6 +4,10 @@ The shared Slint player handles Space/K, J/L, arrows, M, F and Escape after
 focused child widgets have had the first opportunity to consume a key. `/`
 focuses search. Modifier combinations remain available to widgets and the host.
 Sliders handle their own arrow/Home/End keys; buttons handle Space/Return.
+[Watch tabs](watch-tabs.md) add Ctrl+Tab / Ctrl+Shift+Tab (cycle) and Cmd/Ctrl+W
+(close the active tab). Those chords are checked before the editor guard below,
+because editors do not consume them, and are inactive in fullscreen/PiP.
+Cmd/Ctrl+Return on a focused video card opens it in a background tab.
 
 Ignored child keys can still bubble. In the pinned Slint revision
 [`cf3b07d4917e6759a63b0c03913a2594ec653414`](https://github.com/slint-ui/slint/tree/cf3b07d4917e6759a63b0c03913a2594ec653414),
