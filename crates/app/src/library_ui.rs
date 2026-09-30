@@ -84,15 +84,24 @@ impl Reads {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SaveOrigin {
+    /// The watch page's Save: pinned to this native guest load request.
+    Playback(u64),
+    /// A video card's explicit "Add to local playlist": the captured public
+    /// summary itself is the target, independent of playback.
+    Card,
+}
 #[derive(Clone)]
 struct SaveTarget {
     video: VideoSummary,
-    load: u64,
+    origin: SaveOrigin,
     collections: Vec<oxplay_storage::LocalPlaylist>,
 }
 impl SaveTarget {
     fn matches(&self, video: &VideoSummary, snapshot: &oxplay_media::Snapshot) -> bool {
-        self.video.id == video.id && self.load == snapshot.load_request_id && savable_load(snapshot)
+        matches!(self.origin, SaveOrigin::Playback(load)
+            if self.video.id == video.id && load == snapshot.load_request_id && savable_load(snapshot))
     }
 }
 struct PendingSave {
@@ -631,6 +640,43 @@ fn begin_save(app: &App, state: &UiState) -> bool {
         );
         return false;
     };
+    open_save_target(
+        app,
+        state,
+        video,
+        SaveOrigin::Playback(snapshot.load_request_id),
+    );
+    true
+}
+
+/// Card saves never depend on playback, but keep the same local-only guards.
+fn card_save_available(app: &App, state: &UiState) -> bool {
+    !app.get_native_video_child()
+        && !state.caption_cache.active()
+        && state.library_fixture.is_none()
+}
+
+/// Prepares the shared Save dialog for a public video chosen from a card menu.
+/// `Ok` means the dialog may open (possibly showing an in-flight save).
+pub(crate) fn begin_card_save(
+    app: &App,
+    state: &UiState,
+    video: VideoSummary,
+) -> Result<(), &'static str> {
+    if state.library_ui.pending_save.borrow().is_some() {
+        return Ok(());
+    }
+    if state.library_ui.pending.get() {
+        return Err("The local library is busy. Try again shortly.");
+    }
+    if !card_save_available(app, state) {
+        return Err("Saving to a local playlist isn't available right now.");
+    }
+    open_save_target(app, state, video, SaveOrigin::Card);
+    Ok(())
+}
+
+fn open_save_target(app: &App, state: &UiState, video: VideoSummary, origin: SaveOrigin) {
     let collections = state.playlists.borrow().clone();
     let ui = app.global::<SaveUi>();
     ui.set_collections(slint::ModelRc::new(slint::VecModel::from(
@@ -649,10 +695,9 @@ fn begin_save(app: &App, state: &UiState) -> bool {
     ui.set_status("Choose a playlist or create one below.".into());
     *state.library_ui.save_target.borrow_mut() = Some(SaveTarget {
         video,
-        load: snapshot.load_request_id,
+        origin,
         collections,
     });
-    true
 }
 
 fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: Option<String>) {
@@ -660,17 +705,34 @@ fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: O
         return;
     }
     let target = state.library_ui.save_target.borrow().clone();
-    let current = current_savable_video(app, state);
-    let Some((target, (_, snapshot))) = target
-        .zip(current)
-        .filter(|(target, (video, snapshot))| target.matches(video, snapshot))
-    else {
+    let Some(target) = target else {
         save_status(
             app,
             "Playback changed or is unavailable. Close this dialog and choose Save again.",
         );
         return;
     };
+    // Watch-page saves recheck the pinned native load; card saves recheck
+    // only the local-only guards because playback is not their target.
+    let admitted = match target.origin {
+        SaveOrigin::Playback(_) => current_savable_video(app, state)
+            .is_some_and(|(video, snapshot)| target.matches(&video, &snapshot)),
+        SaveOrigin::Card => card_save_available(app, state),
+    };
+    if !admitted {
+        save_status(
+            app,
+            match target.origin {
+                SaveOrigin::Playback(_) => {
+                    "Playback changed or is unavailable. Close this dialog and choose Save again."
+                }
+                SaveOrigin::Card => {
+                    "Saving is unavailable right now. Close this dialog and try again."
+                }
+            },
+        );
+        return;
+    }
     // The popup owns this bounded destination snapshot. A refreshed library
     // model must not redirect its selected index to a different collection.
     let (destination, collection_name) = if let Some(index) = existing {
@@ -705,7 +767,6 @@ fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: O
     // The native identity above is checked immediately before this bounded
     // worker admission. Once accepted, the explicit write completes even if
     // playback changes or the popup closes; its response retains this serial.
-    debug_assert_eq!(target.load, snapshot.load_request_id);
     if submit(
         app,
         state,
@@ -2371,7 +2432,7 @@ mod tests {
         };
         let target = SaveTarget {
             video: video.clone(),
-            load: 42,
+            origin: SaveOrigin::Playback(42),
             collections: Vec::new(),
         };
         let snapshot = oxplay_media::Snapshot {
@@ -2382,6 +2443,13 @@ mod tests {
             ..Default::default()
         };
         assert!(target.matches(&video, &snapshot));
+        // A card-menu target is never admitted through the playback check,
+        // even for the same video and an identical started load.
+        let card = SaveTarget {
+            origin: SaveOrigin::Card,
+            ..target.clone()
+        };
+        assert!(!card.matches(&video, &snapshot));
         let mut renamed = video.clone();
         renamed.title = "Updated actual metadata".into();
         assert!(target.matches(&renamed, &snapshot));
