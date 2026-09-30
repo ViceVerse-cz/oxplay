@@ -588,6 +588,7 @@ mod tests {
     }
     fn video(index: u32) -> VideoSummary {
         VideoSummary {
+            metadata: None,
             id: VideoId::new(&format!("{index:011}")).unwrap(),
             title: format!("Synthetic fixture {index}"),
             channel: "Synthetic local channel".into(),

@@ -168,6 +168,7 @@ mod tests {
 
     fn video(n: u8) -> CatalogItem {
         CatalogItem::Video(VideoSummary {
+            metadata: None,
             id: VideoId::new(&format!("{n:011}")).unwrap(),
             title: format!("video {n}"),
             channel: "Creator".into(),

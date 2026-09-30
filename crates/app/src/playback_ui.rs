@@ -862,6 +862,7 @@ mod tests {
     fn synthetic_playback() -> ResolvedPlayback {
         ResolvedPlayback {
             video: VideoSummary {
+                metadata: None,
                 id: VideoId::new("aaaaaaaaaaa").unwrap(),
                 title: "Synthetic private title".into(),
                 channel: "Synthetic channel".into(),

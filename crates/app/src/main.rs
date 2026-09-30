@@ -551,12 +551,19 @@ fn video_row(video: &serein_core::VideoSummary) -> VideoRow {
         title: video.title.clone().into(),
         channel: video.channel.clone().into(),
         id: video.id.as_str().into(),
-        duration: video
-            .duration
-            .map(|d| format!("{}:{:02}", d.as_secs() / 60, d.as_secs() % 60))
-            .unwrap_or_default()
-            .into(),
+        duration: video.duration.map(clock_text).unwrap_or_default().into(),
+        meta: video.metadata.clone().unwrap_or_default().into(),
         ..VideoRow::default()
+    }
+}
+/// YouTube-style badge text: `M:SS` below an hour, `H:MM:SS` from an hour.
+fn clock_text(duration: Duration) -> String {
+    let seconds = duration.as_secs();
+    let (hours, minutes, seconds) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{seconds:02}")
+    } else {
+        format!("{minutes}:{seconds:02}")
     }
 }
 fn switch_thumbnail_surface(state: &UiState, surface: i32) {
@@ -2506,4 +2513,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("local smoke ended before observed mute/unmute assertions completed".into());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn duration_badges_use_hours_from_one_hour() {
+        assert_eq!(clock_text(Duration::from_secs(65)), "1:05");
+        assert_eq!(clock_text(Duration::from_secs(3599)), "59:59");
+        assert_eq!(clock_text(Duration::from_secs(4502)), "1:15:02");
+    }
 }

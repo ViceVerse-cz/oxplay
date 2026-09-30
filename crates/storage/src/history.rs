@@ -132,6 +132,7 @@ impl LocalStore {
                 },
                 HistoryEntry {
                     video: VideoSummary {
+                        metadata: None,
                         id: VideoId::new(&id).map_err(|_| StorageError::CorruptData)?,
                         title: row.get(1)?,
                         channel: row.get(2)?,

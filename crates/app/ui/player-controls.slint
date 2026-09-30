@@ -6,6 +6,8 @@ export component MediaSlider inherits Rectangle {
     in property <float> step: 5;
     in property <bool> enabled: true;
     in property <bool> volume;
+    // Seek bars preview the time under the pointer, like YouTube's.
+    in property <bool> preview-time;
     out property <bool> has-focus: focus.has-focus;
     out property <bool> interacting: dragging;
     private property <bool> dragging;
@@ -37,10 +39,14 @@ export component MediaSlider inherits Rectangle {
         }
     }
     function seek-pointer() { root.request((touch.mouse-x - root.inset) / root.extent * root.maximum); }
+    private property <float> hover-fraction: clamp((touch.mouse-x - root.inset) / root.extent, 0, 1);
+    private property <int> hover-seconds: floor(root.hover-fraction * root.maximum);
+    private property <bool> previewing: root.preview-time && touch.has-hover && root.enabled && root.maximum > 0;
     rail := Rectangle {
         x: root.inset; y: (root.height - self.height) / 2;
         width: root.extent; height: root.volume ? 3px : root.emphasized ? 5px : 3px;
         background: #ffffff45; border-radius: 2px;
+        if root.previewing: Rectangle { x: 0px; y: 0px; width: parent.width * root.hover-fraction; height: parent.height; border-radius: 2px; background: #ffffff40; }
         Rectangle { x: 0px; y: 0px; width: parent.width * root.fraction; height: parent.height; border-radius: 2px; background: root.volume ? #ffffff : #ff0033; }
     }
     if root.enabled && (root.emphasized || root.volume): Rectangle {
@@ -50,6 +56,19 @@ export component MediaSlider inherits Rectangle {
         border-radius: self.width / 2;
         background: root.volume ? #ffffff : #ff0033;
         border-width: focus.has-focus ? 2px : 0px; border-color: #ffffff;
+    }
+    if root.previewing: Rectangle {
+        private property <int> hours: floor(root.hover-seconds / 3600);
+        private property <int> minutes: mod(floor(root.hover-seconds / 60), 60);
+        private property <int> seconds: mod(root.hover-seconds, 60);
+        private property <string> label: self.hours > 0
+            ? self.hours + ":" + (self.minutes < 10 ? "0" : "") + self.minutes + ":" + (self.seconds < 10 ? "0" : "") + self.seconds
+            : floor(root.hover-seconds / 60) + ":" + (self.seconds < 10 ? "0" : "") + self.seconds;
+        width: preview-text.preferred-width + 14px; height: 24px;
+        x: clamp(root.inset + root.extent * root.hover-fraction - self.width / 2, 0px, max(0px, root.width - self.width));
+        y: -self.height - 6px;
+        border-radius: 6px; background: #000000cc;
+        preview-text := Text { x: 7px; height: parent.height; text: parent.label; color: #ffffff; font-size: 12px; font-weight: 600; vertical-alignment: center; }
     }
     focus := FocusScope {
         enabled: root.enabled && root.maximum > 0;

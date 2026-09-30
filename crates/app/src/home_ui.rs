@@ -700,6 +700,7 @@ mod tests {
     fn videos(range: std::ops::Range<usize>) -> Vec<VideoSummary> {
         range
             .map(|index| VideoSummary {
+                metadata: None,
                 id: serein_core::VideoId::new(&format!("{index:011}")).unwrap(),
                 title: "Synthetic recommendation".into(),
                 channel: "Synthetic channel".into(),

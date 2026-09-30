@@ -2143,6 +2143,7 @@ mod tests {
     fn history_rows_format_long_positions_without_raw_ids_or_timestamps() {
         let entry = HistoryEntry {
             video: VideoSummary {
+                metadata: None,
                 id: serein_core::VideoId::new("abcdefghijk").unwrap(),
                 title: "Synthetic title".into(),
                 channel: "Synthetic creator".into(),
@@ -2354,6 +2355,7 @@ mod tests {
     #[test]
     fn save_target_rejects_replacement_failed_and_stopped_loads() {
         let video = VideoSummary {
+            metadata: None,
             id: serein_core::VideoId::new("abcdefghijk").unwrap(),
             title: "Synthetic title".into(),
             channel: "Synthetic channel".into(),

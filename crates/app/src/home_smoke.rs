@@ -103,6 +103,7 @@ pub fn prepare_root(root: &Path) -> io::Result<Fixture> {
 
 fn video(index: usize) -> VideoSummary {
     VideoSummary {
+        metadata: None,
         id: VideoId::new(&format!("h{index:010}")).expect("fixed valid fixture identifier"),
         title: format!("TEST FIXTURE — saved Home video {index:03}"),
         channel: "TEST FIXTURE — offline local collection".into(),

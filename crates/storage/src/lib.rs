@@ -590,6 +590,7 @@ fn local_video_from_row(row: &rusqlite::Row<'_>) -> Result<VideoSummary> {
         .map(|seconds| u64::try_from(seconds).map_err(|_| StorageError::CorruptData))
         .transpose()?;
     Ok(VideoSummary {
+        metadata: None,
         id: VideoId::new(&video_id).map_err(|_| StorageError::CorruptData)?,
         title: row.get(2)?,
         channel: row.get(3)?,

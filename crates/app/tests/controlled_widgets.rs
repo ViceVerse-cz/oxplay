@@ -818,3 +818,37 @@ fn close_player_exists_only_in_the_mini_player_and_requests_a_stop() {
     settle();
     assert_eq!(closes.get(), 1);
 }
+
+#[test]
+fn question_mark_opens_the_shortcut_sheet_and_number_keys_seek_by_tenths() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_duration(200.);
+    let seeks = Rc::new(std::cell::RefCell::new(Vec::new()));
+    let output = seeks.clone();
+    app.on_seek(move |value| output.borrow_mut().push(value));
+    app.invoke_focus_browse();
+    settle();
+    key_text(&app, "3");
+    settle();
+    assert_eq!(seeks.borrow().as_slice(), &[60.]);
+    key_text(&app, "?");
+    settle();
+    element(&app, "Close keyboard shortcuts")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Close keyboard shortcuts")
+            .all(|element| element.accessible_enabled().is_none())
+    );
+}
+fn key_text(app: &App, text: &str) {
+    let text: SharedString = text.into();
+    app.window()
+        .dispatch_event_with_result(WindowEvent::KeyPressed { text: text.clone() })
+        .unwrap();
+    app.window()
+        .dispatch_event_with_result(WindowEvent::KeyReleased { text })
+        .unwrap();
+}

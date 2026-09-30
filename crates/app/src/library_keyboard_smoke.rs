@@ -26,6 +26,7 @@ const SAVE_BATCH: usize = 20;
 
 fn fixture_video(index: usize) -> serein_core::VideoSummary {
     serein_core::VideoSummary {
+        metadata: None,
         id: serein_core::VideoId::new(&format!("k{index:010}")).unwrap(),
         title: format!("TEST FIXTURE keyboard pagination video {index:03}"),
         channel: "TEST FIXTURE offline local channel".into(),

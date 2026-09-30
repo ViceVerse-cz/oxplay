@@ -506,3 +506,17 @@ New icons are unchanged Lucide files from the pinned revision (see
 (225 + 13). Native captures of guest search (dark), settings (dark; light at
 1000×760 with the mini-guide) were inspected; the open drop-down list, skeleton
 grid and keyboard-vs-pointer focus were not captured natively.
+
+### QoL pass (2026-09-30)
+
+- Cards show a provider metadata line ("10M views · 7 years ago"; related rows
+  "72K views · 4h ago") from native `videoRenderer`/`lockupViewModel` fields,
+  kept as bounded display text (`VideoSummary::metadata`) and never parsed back.
+- Duration badges use `H:MM:SS` from one hour (previously `75:02`).
+- The seek bar previews the time under the pointer and highlights the hovered
+  span.
+- Keyboard: 0–9 jump to 0–90 %, Shift+< / > step speed, and seek/volume/mute/
+  speed keys show a short on-video badge. `?` opens a keyboard-shortcut sheet.
+- Validation: `cargo test` (including new compiled-Slint tests for `?` and
+  number-key seeking) and native captures of search and the watch related list
+  in both themes. Hover preview and badges were not captured natively.

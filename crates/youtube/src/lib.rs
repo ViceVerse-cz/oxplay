@@ -372,6 +372,7 @@ fn summary(value: &Value) -> Result<VideoSummary, ProviderError> {
         })
         .and_then(safe_thumbnail);
     Ok(VideoSummary {
+        metadata: None,
         id,
         title,
         channel,

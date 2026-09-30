@@ -294,6 +294,7 @@ mod tests {
     fn resolved(video: VideoId, guest: bool) -> ResolvedPlayback {
         ResolvedPlayback {
             video: VideoSummary {
+                metadata: None,
                 id: video,
                 title: "Synthetic".into(),
                 channel: "Synthetic channel".into(),

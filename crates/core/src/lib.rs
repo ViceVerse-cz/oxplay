@@ -357,6 +357,9 @@ pub struct VideoSummary {
     pub channel_id: Option<ChannelId>,
     pub duration: Option<Duration>,
     pub thumbnail_url: Option<String>,
+    /// Bounded provider display text such as "1.2M views · 3 years ago".
+    /// Presentation only: never parsed back into counts or dates.
+    pub metadata: Option<String>,
 }
 
 /// Short-lived media address. Explicit access is required to pass it to a media engine.
@@ -803,6 +806,7 @@ mod tests {
         let mut item = ResolvedPlayback {
             details: VideoDetails::default(),
             video: VideoSummary {
+                metadata: None,
                 id: VideoId::new("abcdefghijk").unwrap(),
                 title: String::new(),
                 channel: String::new(),

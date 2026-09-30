@@ -263,6 +263,7 @@ fn recently_saved_corrupt_id_is_an_error_not_a_catalog_entry() {
 fn creating_a_playlist_with_its_first_video_commits_or_rolls_back_together() {
     let mut store = LocalStore::in_memory().unwrap();
     let video = VideoSummary {
+        metadata: None,
         id: VideoId::new("abcdefghijk").unwrap(),
         title: "Synthetic first video".into(),
         channel: "Synthetic channel".into(),
@@ -306,6 +307,7 @@ fn creating_a_playlist_with_its_first_video_commits_or_rolls_back_together() {
 fn invalid_first_video_and_name_leave_no_empty_collection() {
     let mut store = LocalStore::in_memory().unwrap();
     let mut video = VideoSummary {
+        metadata: None,
         id: VideoId::new("abcdefghijk").unwrap(),
         title: "Synthetic video".into(),
         channel: "Synthetic channel".into(),
@@ -460,6 +462,7 @@ fn failed_v4_migration_preserves_v3_and_rolls_back_the_first_added_column() {
 
 fn video(index: u32) -> VideoSummary {
     VideoSummary {
+        metadata: None,
         id: VideoId::new(&format!("{index:011}")).unwrap(),
         title: format!("Synthetic test video {index}"),
         channel: "Synthetic fixture channel".into(),

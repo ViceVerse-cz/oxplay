@@ -295,7 +295,7 @@ export component Action inherits Rectangle {
     }
 }
 export struct AccountRow { title: string, detail: string, action: string, can-account-play: bool }
-export struct VideoRow { kind: string, title: string, channel: string, id: string, duration: string, thumbnail: image, thumbnail-ready: bool }
+export struct VideoRow { kind: string, title: string, channel: string, id: string, duration: string, thumbnail: image, thumbnail-ready: bool, meta: string }
 export struct VideoGroup { items: [VideoRow], start: int }
 export global CatalogKeys {
     public pure function command(event: KeyEvent) -> int {
@@ -401,11 +401,19 @@ export component VideoCard inherits Rectangle {
         horizontal-alignment: root.channel && !root.compact ? center : left;
         wrap: word-wrap; overflow: elide;
     }
-    if root.show-channel: Text {
+    channel-line := Text {
+        visible: root.show-channel;
         x: title.x; y: title.y + title.height + (root.compact ? 4px : 6px);
-        width: title.width; height: 18px;
+        width: title.width; height: self.visible ? 18px : 0px;
         text: root.item.channel; color: Colors.muted; font-size: root.compact ? 12px : 13px;
         horizontal-alignment: root.channel && !root.compact ? center : left; overflow: elide;
+    }
+    // Views and age, when the provider supplied them.
+    if root.item.meta != "": Text {
+        x: title.x; y: channel-line.y + channel-line.height + 1px;
+        width: title.width; height: 18px;
+        text: root.item.meta; color: Colors.muted; font-size: root.compact ? 12px : 13px;
+        overflow: elide;
     }
     touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
 }

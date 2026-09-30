@@ -122,7 +122,7 @@ export component App inherits Window {
     out property <length> native-clip-y: watch.y;
     out property <length> native-clip-width: watch.visible-width;
     out property <length> native-clip-height: watch.visible-height;
-    private property <bool> native-overlay-open: jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || status-popup.is-open;
+    private property <bool> native-overlay-open: shortcuts-popup.is-open || jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || playback-settings.is-open || captions-popup.is-open || status-popup.is-open;
     out property <bool> native-child-visible: native-video-child && watching && loaded && (!show-info || fullscreen-active) && !native-overlay-open;
     callback native-child-hide();
     function prepare-native-overlay() { if root.native-video-child { root.native-child-hide(); } }
@@ -216,6 +216,9 @@ export component App inherits Window {
     in property <bool> paused: true;
     // Started playback stalled on the network (cache refill or seek).
     in property <bool> buffering;
+    // Short on-video confirmation of keyboard seek/volume/speed changes.
+    private property <string> osd-text;
+    function show-osd(text: string) { root.osd-text = text; osd-timer.running = false; osd-timer.running = true; }
     callback close-player();
     // Brief centre acknowledgement of a user play/pause, like YouTube's.
     private property <bool> flash-on;
@@ -462,6 +465,10 @@ export component App inherits Window {
         width: root.width - self.x; height: root.height - self.y;
         background: Colors.canvas;
     }
+    osd-timer := Timer {
+        interval: 900ms; running: false;
+        triggered => { root.osd-text = ""; self.running = false; }
+    }
     flash-timer := Timer {
         interval: 80ms; running: false;
         triggered => { root.flash-on = false; self.running = false; }
@@ -491,22 +498,69 @@ export component App inherits Window {
         }
         if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
         if event.text == "/" { if !root.picture-in-picture && !root.native-video-child { search.focus(); } return accept; }
+        if event.text == "?" { root.prepare-native-overlay(); shortcuts-popup.show(); return accept; }
         if root.watching || (root.mini-player-active && focus.has-focus) {
             if event.text == " " || event.text == "k" { root.user-toggle-pause(); return accept; }
             if event.text == "g" { root.show-jump(); return accept; }
-            if event.text == "j" { root.relative-seek(-10); return accept; }
-            if event.text == "l" { root.relative-seek(10); return accept; }
-            if event.text == Key.LeftArrow { root.relative-seek(-5); return accept; }
-            if event.text == Key.RightArrow { root.relative-seek(5); return accept; }
-            if event.text == Key.UpArrow { root.volume(min(100, root.volume-level + 5)); return accept; }
-            if event.text == Key.DownArrow { root.volume(max(0, root.volume-level - 5)); return accept; }
-            if event.text == "m" { root.mute(); return accept; }
+            if event.text == "j" { root.relative-seek(-10); root.show-osd("− 10 s"); return accept; }
+            if event.text == "l" { root.relative-seek(10); root.show-osd("+ 10 s"); return accept; }
+            if event.text == Key.LeftArrow { root.relative-seek(-5); root.show-osd("− 5 s"); return accept; }
+            if event.text == Key.RightArrow { root.relative-seek(5); root.show-osd("+ 5 s"); return accept; }
+            if event.text == Key.UpArrow { root.volume(min(100, root.volume-level + 5)); root.show-osd("Volume " + round(min(100, root.volume-level + 5)) + "%"); return accept; }
+            if event.text == Key.DownArrow { root.volume(max(0, root.volume-level - 5)); root.show-osd("Volume " + round(max(0, root.volume-level - 5)) + "%"); return accept; }
+            if event.text == "m" { if root.mute-known { root.show-osd(root.muted ? "Sound on" : "Muted"); } root.mute(); return accept; }
+            // YouTube keys: 0–9 jump to 0–90 %, Shift+. / Shift+, change speed.
+            if event.text.is-float() && root.loaded && root.duration > 0 {
+                let tenth = event.text.to-float();
+                if tenth >= 0 && tenth <= 9 && floor(tenth) == tenth {
+                    root.seek(root.duration * tenth / 10);
+                    root.show-osd(round(tenth * 10) + "%");
+                    return accept;
+                }
+            }
+            if (event.text == ">" || event.text == "<") && root.remote-video && !root.speed-busy {
+                let next = clamp(root.speed-index + (event.text == ">" ? 1 : -1), 0, 3);
+                root.speed((next + 1) * 0.5);
+                root.show-osd(next == 1 ? "Normal speed" : ((next + 1) * 0.5) + "×");
+                return accept;
+            }
             if event.text == "f" { if root.mini-player-active { root.navigate(2); } root.fullscreen(); return accept; }
             if event.text == "t" { root.toggle-theatre(); return accept; }
             if event.text == "p" { root.picture-in-picture-toggle(); return accept; }
             if event.text == Key.Escape { if root.theatre-active { root.toggle-theatre(); } else { root.exit-fullscreen(); } return accept; }
         }
         return reject;
+    }
+    shortcuts-popup := PopupWindow {
+        close-policy: close-on-click-outside;
+        x: (root.width - self.width) / 2; y: (root.height - self.height) / 2;
+        width: min(560px, root.width - 48px); height: min(470px, root.height - 48px);
+        forward-focus: shortcuts-close;
+        Rectangle {
+            background: Colors.dialog; border-radius: 16px; border-width: 1px; border-color: Colors.border;
+            VerticalLayout { padding: 20px; spacing: 14px;
+                HorizontalLayout { height: 36px;
+                    Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 20px; font-weight: 700; vertical-alignment: center; horizontal-stretch: 1; }
+                    shortcuts-close := Action { width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "x"; label: "Close keyboard shortcuts"; clicked => { shortcuts-popup.close(); } }
+                }
+                HorizontalLayout { spacing: 24px;
+                    for column in [
+                        [["Space / K", "Play or pause"], ["J / L", "Back or forward 10 s"], ["← / →", "Back or forward 5 s"], ["0 – 9", "Jump to 0–90 %"], ["G", "Jump to a time"], ["Shift + < / >", "Slower or faster"]],
+                        [["↑ / ↓", "Volume"], ["M", "Mute"], ["F", "Fullscreen"], ["T", "Theatre mode"], ["P", "Picture in picture"], ["/", "Search"], ["?", "This list"]],
+                    ]: VerticalLayout { spacing: 10px; horizontal-stretch: 1; alignment: start;
+                        for row in column: HorizontalLayout { height: 28px; spacing: 12px;
+                            Rectangle { width: 108px; horizontal-stretch: 0;
+                                Rectangle { x: 0px; width: min(parent.width, key-text.preferred-width + 16px); height: 26px; y: 1px; border-radius: 6px; background: Colors.hover;
+                                    key-text := Text { x: 8px; height: parent.height; text: row[0]; color: Colors.text; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+                                }
+                            }
+                            Text { text: row[1]; color: Colors.muted; font-size: 13px; vertical-alignment: center; overflow: elide; }
+                        }
+                    }
+                }
+                Text { text: "Playback keys work while the player is showing. They pause while you type."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+            }
+        }
     }
     jump-popup := PopupWindow {
         close-policy: close-on-click-outside;
@@ -811,7 +865,7 @@ export component App inherits Window {
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            Text { text: "Ctrl / Cmd + O  Open video file\n/  Focus search\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Ctrl / Cmd + O  Open video file\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
@@ -964,6 +1018,12 @@ export component App inherits Window {
                 width: root.compact-video && !root.video-only ? 40px : 56px; height: self.width;
                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
             }
+            if root.osd-text != "": Rectangle {
+                x: (parent.width - self.width) / 2; y: min(48px, parent.height * 0.12);
+                width: osd-label.preferred-width + 28px; height: 34px; border-radius: 17px;
+                background: #000000b3;
+                osd-label := Text { x: 14px; height: parent.height; text: root.osd-text; color: #ffffff; font-size: 14px; font-weight: 600; vertical-alignment: center; }
+            }
             // The in-app mini-player can be dismissed, stopping playback.
             if root.mini-player-active: Rectangle {
                 x: parent.width - self.width - 8px; y: 8px; width: 32px; height: 32px;
@@ -1014,7 +1074,7 @@ export component App inherits Window {
             // slider's pointer grab or a button's activation.
             transport-hover := TouchArea {
                 width: parent.width; height: parent.height;
-                seek-control := MediaSlider { x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.loaded && root.pending-seek-position >= 0 ? root.pending-seek-position : root.position; changed(value) => { root.seek(value); } }
+                seek-control := MediaSlider { preview-time: true; x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.loaded && root.pending-seek-position >= 0 ? root.pending-seek-position : root.position; changed(value) => { root.seek(value); } }
                 HorizontalLayout {
                     x: 8px; y: parent.height - 48px; width: parent.width - 16px; height: 40px; spacing: 2px;
                     play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.user-toggle-pause(); } }
@@ -1154,7 +1214,7 @@ export component App inherits Window {
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.
-    if jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || status-popup.is-open: Rectangle {
+    if shortcuts-popup.is-open || jump-popup.is-open || chapters-popup.is-open || share-popup.is-open || save-popup.is-open || status-popup.is-open: Rectangle {
         x: 0px; y: 0px; width: root.width; height: root.height;
         background: #00000070;
     }

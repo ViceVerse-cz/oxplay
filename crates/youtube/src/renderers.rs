@@ -222,7 +222,35 @@ pub(crate) fn video_renderer(video: &Value) -> Parsed<VideoSummary> {
             .and_then(|endpoint| browse_channel(Some(endpoint))),
         duration: duration_text(&text(video.get("lengthText"))),
         thumbnail_url: thumbnail(video.pointer("/thumbnail/thumbnails")),
+        metadata: display_metadata(
+            [
+                text(
+                    video
+                        .get("shortViewCountText")
+                        .or_else(|| video.get("viewCountText")),
+                ),
+                text(video.get("publishedTimeText")),
+            ]
+            .into_iter(),
+        ),
     })
+}
+
+/// Joins short display parts ("733K", "4d ago") into one bounded line; a bare
+/// abbreviated count gains " views" so related rows read like search results.
+pub(crate) fn display_metadata(parts: impl Iterator<Item = String>) -> Option<String> {
+    let parts: Vec<String> = parts
+        .map(|part| part.trim().to_owned())
+        .filter(|part| !part.is_empty() && part.chars().count() <= 40)
+        .map(|part| {
+            let bare = part
+                .trim_end_matches(['K', 'M', 'B'])
+                .chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == ',');
+            if bare { format!("{part} views") } else { part }
+        })
+        .collect();
+    (!parts.is_empty()).then(|| parts.join(" · "))
 }
 
 fn first_metadata_part(metadata: Option<&Value>) -> Option<&Value> {
@@ -293,6 +321,18 @@ pub(crate) fn video_lockup(lockup: &Value) -> Parsed<VideoSummary> {
             .or_else(|| metadata_channel(byline)),
         duration,
         thumbnail_url: thumbnail(lockup.pointer("/contentImage/thumbnailViewModel/image/sources")),
+        // Row 0 is the byline; row 1 carries views and age.
+        metadata: display_metadata(
+            metadata
+                .and_then(|m| {
+                    m.pointer("/metadata/contentMetadataViewModel/metadataRows/1/metadataParts")
+                })
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .take(3)
+                .map(|part| text(part.get("text"))),
+        ),
     })
 }
 
@@ -321,6 +361,7 @@ pub(crate) fn short(value: &Value, legacy: bool) -> Parsed<VideoSummary> {
         return Parsed::Unsupported;
     };
     Parsed::Item(VideoSummary {
+        metadata: None,
         id,
         title: title_or_default(text(title)),
         channel: channel_or_default(String::new()),
@@ -468,6 +509,27 @@ pub(crate) fn playlist_renderer(value: &Value) -> Parsed<PlaylistSummary> {
     })
 }
 
+#[cfg(test)]
+mod metadata_tests {
+    use super::display_metadata;
+    #[test]
+    fn metadata_joins_bounded_parts_and_labels_bare_counts() {
+        let join = |parts: &[&str]| display_metadata(parts.iter().map(|p| p.to_string()));
+        assert_eq!(
+            join(&["733K", "4d ago"]).as_deref(),
+            Some("733K views · 4d ago")
+        );
+        assert_eq!(
+            join(&["10M views", "7 years ago"]).as_deref(),
+            Some("10M views · 7 years ago")
+        );
+        assert_eq!(join(&["", "  "]), None);
+        assert_eq!(
+            join(&[&"x".repeat(41), "1h ago"]).as_deref(),
+            Some("1h ago")
+        );
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -27,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         store.save_video(
             playlist,
             &VideoSummary {
+                metadata: None,
                 id: VideoId::new(&format!("f{index:010}"))?,
                 title: format!("TEST FIXTURE — synthetic library item {index:05}"),
                 channel: "TEST FIXTURE — no online metadata or media".into(),

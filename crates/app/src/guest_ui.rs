@@ -1102,6 +1102,7 @@ mod tests {
 
     fn artwork_video(index: u8) -> CatalogItem {
         CatalogItem::Video(serein_core::VideoSummary {
+            metadata: None,
             id: VideoId::new(&format!("{index:011}")).unwrap(),
             title: "Synthetic artwork fixture".into(),
             channel: "Synthetic channel".into(),
