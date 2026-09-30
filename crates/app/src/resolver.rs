@@ -2,7 +2,7 @@
 //! One lazily constructed guest/account extractor, including its concurrency and
 //! rate-limit state. Construction and cloning perform no filesystem or network I/O.
 use serein_core::ProviderError;
-use serein_youtube::YtDlp;
+use serein_youtube::{YtDlp, innertube::GuestTransport};
 use std::{
     path::PathBuf,
     sync::{Arc, OnceLock},
@@ -13,6 +13,9 @@ pub struct SharedResolver {
     helper: Arc<PathBuf>,
     deno: Arc<PathBuf>,
     initialized: Arc<OnceLock<Result<Arc<YtDlp>, ProviderError>>>,
+    /// One anonymous InnerTube transport shared by guest workers, so its 429
+    /// cooldown applies to every native watch-page/comment read.
+    native: Arc<OnceLock<Result<Arc<GuestTransport>, ProviderError>>>,
 }
 impl SharedResolver {
     pub fn new(helper: PathBuf, deno: PathBuf) -> Self {
@@ -20,7 +23,16 @@ impl SharedResolver {
             helper: Arc::new(helper),
             deno: Arc::new(deno),
             initialized: Arc::new(OnceLock::new()),
+            native: Arc::new(OnceLock::new()),
         }
+    }
+
+    /// Worker-only, like [`Self::get_on_worker`]: builds the HTTP client and its
+    /// runtime lazily. Never call from a thread that is driving a Tokio runtime.
+    pub fn native_on_worker(&self) -> Result<Arc<GuestTransport>, ProviderError> {
+        self.native
+            .get_or_init(|| GuestTransport::new().map(Arc::new))
+            .clone()
     }
 
     /// Call only from an owned worker: helper validation and any future provider

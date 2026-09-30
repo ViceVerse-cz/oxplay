@@ -98,6 +98,22 @@ fn set_details(
         }
         .into(),
     );
+    present(app, details);
+    if guest_comments {
+        schedule_auto(app, state);
+    }
+}
+/// Late native watch-page details for the same accepted guest video: update the
+/// description/metadata presentation only. Comment rows, cursors, pending work
+/// and the reader's expanded/collapsed choice are left untouched.
+pub fn refresh_details(app: &App, state: &UiState, video: &VideoId, details: &VideoDetails) {
+    if state.comments_ui.video.borrow().as_ref() != Some(video) {
+        return;
+    }
+    present(app, details);
+}
+fn present(app: &App, details: &VideoDetails) {
+    let ui = app.global::<CommentsUi>();
     let description = details
         .description
         .as_deref()
@@ -132,9 +148,6 @@ fn set_details(
             .unwrap_or_default()
             .into(),
     );
-    if guest_comments {
-        schedule_auto(app, state);
-    }
 }
 /// Settings are admitted/persisted through the existing library worker.
 pub fn sync_preferences(app: &App, state: &UiState) {
@@ -252,6 +265,10 @@ fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
     if state.comments_ui.video.borrow().as_ref() != Some(&video) {
         return;
     }
+    // The first page reuses the native watch page's comments continuation when
+    // it already arrived, saving one `next` request. It is the page-one cursor
+    // that Previous returns to.
+    let cursor = cursor.or_else(|| crate::watch_meta::comment_start(state, &video));
     *state.comments_ui.cursor.borrow_mut() = cursor.clone();
     state
         .worker

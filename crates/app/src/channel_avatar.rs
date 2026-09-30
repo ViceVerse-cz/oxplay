@@ -26,10 +26,19 @@ impl Selection {
         }
     }
 }
+/// Public creator portrait/subscriber count already read from the native watch
+/// page for the same channel. With a portrait URL, the extractor's channel
+/// metadata run is skipped; without one, that run remains the fallback.
+#[derive(Clone)]
+pub struct NativeProfile {
+    pub avatar_url: Option<String>,
+    pub subscriber_count: Option<u64>,
+}
 #[derive(Clone)]
 struct Job {
     generation: u64,
     selection: Selection,
+    hint: Option<NativeProfile>,
     cancel: CancellationToken,
     cancelled: watch::Receiver<bool>,
 }
@@ -42,6 +51,7 @@ struct Ready {
 
 pub struct State {
     selection: RefCell<Option<Selection>>,
+    watch_hint: RefCell<Option<NativeProfile>>,
     profile: RefCell<Option<ChannelId>>,
     attempted: Cell<bool>,
     profile_attempted: Cell<bool>,
@@ -88,16 +98,21 @@ impl State {
                 if op.cancel.is_cancelled() {
                     continue;
                 }
-                let profile = resolver.get_on_worker().ok().and_then(|provider| {
-                    provider.channel_profile(job.selection.channel(), &op).ok()
-                });
-                let subscribers = profile
-                    .as_ref()
-                    .and_then(|profile| profile.subscriber_count);
-                let pixels = match profile
-                    .and_then(|profile| profile.avatar_url)
-                    .filter(|_| !op.cancel.is_cancelled())
-                {
+                let (avatar_url, subscribers) = match job.hint.take() {
+                    Some(hint) if hint.avatar_url.is_some() => {
+                        (hint.avatar_url, hint.subscriber_count)
+                    }
+                    _ => resolver
+                        .get_on_worker()
+                        .ok()
+                        .and_then(|provider| {
+                            provider.channel_profile(job.selection.channel(), &op).ok()
+                        })
+                        .map_or((None, None), |profile| {
+                            (profile.avatar_url, profile.subscriber_count)
+                        }),
+                };
+                let pixels = match avatar_url.filter(|_| !op.cancel.is_cancelled()) {
                     Some(url) => runtime.block_on(async {
                         tokio::select! {
                             biased;
@@ -121,6 +136,7 @@ impl State {
         });
         Self {
             selection: RefCell::new(None),
+            watch_hint: RefCell::new(None),
             profile: RefCell::new(None),
             attempted: Cell::new(false),
             profile_attempted: Cell::new(false),
@@ -150,10 +166,15 @@ impl State {
         let (sender, cancelled) = watch::channel(false);
         *self.cancellation.borrow_mut() = Some((cancel.clone(), sender));
         *self.active.borrow_mut() = Some(selection.clone());
+        let hint = match selection {
+            Selection::Watch { .. } => self.watch_hint.borrow().clone(),
+            Selection::Profile(..) => None,
+        };
         if let Some(command) = &self.command {
             command.send_replace(Some(Job {
                 generation: self.generation.get(),
                 selection,
+                hint,
                 cancel,
                 cancelled,
             }));
@@ -179,6 +200,7 @@ pub fn clear(app: &App, state: &UiState) {
         state.channel_avatar.cancel();
     }
     state.channel_avatar.selection.borrow_mut().take();
+    state.channel_avatar.watch_hint.borrow_mut().take();
     state.channel_avatar.attempted.set(false);
     app.set_watch_channel_avatar_ready(false);
     app.set_watch_channel_avatar(slint::Image::default());
@@ -216,9 +238,16 @@ pub fn selected_profile(app: &App, state: &UiState, channel: &ChannelSummary) {
     observe(app, state);
 }
 
-/// Only acknowledged guest playback may admit public metadata here.
-pub fn selected_guest(app: &App, state: &UiState, video: &VideoSummary) {
+/// Only acknowledged guest playback may admit public metadata here. A native
+/// watch-page hint must already be scoped to this video's resolved channel.
+pub fn selected_guest(
+    app: &App,
+    state: &UiState,
+    video: &VideoSummary,
+    hint: Option<NativeProfile>,
+) {
     clear(app, state);
+    *state.channel_avatar.watch_hint.borrow_mut() = hint;
     app.set_watch_channel_available(video.channel_id.is_some());
     *state.channel_avatar.selection.borrow_mut() =
         video.channel_id.clone().map(|channel| Selection::Watch {

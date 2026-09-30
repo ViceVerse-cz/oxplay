@@ -181,6 +181,8 @@ export component App inherits Window {
     in property <string> channel-profile-subscribers;
     callback open-watch-channel();
     callback channel-avatar-wake();
+    // Coalesced native watch-page (InnerTube next) worker handoff.
+    callback watch-meta-wake();
     callback channel-avatar-context-changed();
     in property <string> technical;
     in property <string> playback-status;

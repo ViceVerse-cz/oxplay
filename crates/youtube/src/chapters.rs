@@ -34,19 +34,45 @@ pub(crate) fn parse(value: &Value) -> Result<Vec<VideoChapter>, ProviderError> {
         }
         let title = match entry.get("title").filter(|title| !title.is_null()) {
             None => None,
-            Some(title) => {
-                let title = title.as_str().ok_or(ProviderError::MalformedOutput)?;
-                if title.len() > 1024
-                    || title.chars().count() > 256
-                    || title.chars().any(char::is_control)
-                {
-                    return Err(ProviderError::MalformedOutput);
-                }
-                (!title.trim().is_empty()).then(|| title.trim().to_owned())
-            }
+            Some(title) => chapter_title(title.as_str().ok_or(ProviderError::MalformedOutput)?)?,
         };
         chapters.push(VideoChapter { title, start, end });
         previous_end = end;
+    }
+    Ok(chapters)
+}
+fn chapter_title(title: &str) -> Result<Option<String>, ProviderError> {
+    if title.len() > 1024 || title.chars().count() > 256 || title.chars().any(char::is_control) {
+        return Err(ProviderError::MalformedOutput);
+    }
+    Ok((!title.trim().is_empty()).then(|| title.trim().to_owned()))
+}
+/// Native watch-page markers carry only start offsets. Each range ends at the
+/// next start and the final range at the resolved duration; without a duration
+/// the set cannot be closed and is not published. The same bounds apply.
+pub(crate) fn from_starts(
+    starts: &[(Option<String>, Duration)],
+    duration: Option<Duration>,
+) -> Result<Vec<VideoChapter>, ProviderError> {
+    if starts.len() > MAX_VIDEO_CHAPTERS {
+        return Err(ProviderError::OutputTooLarge);
+    }
+    let duration = duration.ok_or(ProviderError::Unavailable)?;
+    let mut chapters = Vec::with_capacity(starts.len());
+    for (index, (title, start)) in starts.iter().enumerate() {
+        let end = starts.get(index + 1).map_or(duration, |(_, next)| *next);
+        if *start >= end || end > duration {
+            return Err(ProviderError::MalformedOutput);
+        }
+        let title = match title {
+            Some(title) => chapter_title(title)?,
+            None => None,
+        };
+        chapters.push(VideoChapter {
+            title,
+            start: *start,
+            end,
+        });
     }
     Ok(chapters)
 }
@@ -85,5 +111,28 @@ mod tests {
         }
         assert!(seconds(&Value::Null).is_err());
         assert!(seconds(&json!(f64::MAX)).is_err());
+    }
+    #[test]
+    fn start_only_markers_close_at_the_next_start_and_resolved_duration() {
+        let s = Duration::from_secs;
+        let starts = [(Some("Intro".to_owned()), s(0)), (None, s(30))];
+        let chapters = from_starts(&starts, Some(s(90))).unwrap();
+        assert_eq!(chapters.len(), 2);
+        assert_eq!(chapters[0].end, s(30));
+        assert_eq!(chapters[1].end, s(90));
+        assert_eq!(chapters[1].title, None);
+        assert!(
+            from_starts(&starts, None).is_err(),
+            "no duration, no ranges"
+        );
+        assert!(
+            from_starts(&starts, Some(s(30))).is_err(),
+            "start beyond end"
+        );
+        let unordered = [(None, s(10)), (None, s(10))];
+        assert!(from_starts(&unordered, Some(s(90))).is_err());
+        let control = [(Some("a\u{0007}".to_owned()), s(0))];
+        assert!(from_starts(&control, Some(s(90))).is_err());
+        assert!(from_starts(&[], Some(s(90))).unwrap().is_empty());
     }
 }

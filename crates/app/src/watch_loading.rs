@@ -108,6 +108,9 @@ pub fn guest_begin(app: &App, state: &Rc<UiState>, generation: u64, id: &VideoId
         return;
     }
     crate::watch_context::capture_guest(app, state, id);
+    // The native watch page (related, metadata, chapters, first comments
+    // continuation) is read on its own worker while the extractor resolves.
+    crate::watch_meta::request(state, id);
     let video = crate::guest_ui::video_summary(state, id);
     begin(
         app,

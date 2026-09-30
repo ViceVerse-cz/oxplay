@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! One bounded guest-only related page with ownership independent of browsing.
+//! The real watch-next list from the native `next` response replaces the
+//! captured browsing snapshot when it arrives; the snapshot is the fallback.
 //! Account/private metadata never enters this model; the selected video's other
 //! fields remain owned by the existing playback/details adapters.
 use crate::{App, UiState, VideoRow, model::CatalogModel};
@@ -10,7 +12,7 @@ use std::{
     rc::Rc,
 };
 
-const MAX_RELATED_ROWS: usize = 20;
+const MAX_RELATED_ROWS: usize = serein_youtube::watch::MAX_RELATED;
 #[derive(Default)]
 pub struct State {
     pub model: Rc<CatalogModel<VideoRow>>,
@@ -68,6 +70,60 @@ pub fn capture_guest(app: &App, state: &UiState, selected: &VideoId) {
     state.watch_context.model.replace(rows);
     state.thumbnail_range.set((usize::MAX, usize::MAX));
 }
+/// Publish the native watch-next list for the accepted guest selection. Row
+/// indices are positions in this list (what select-related and feed focus
+/// resolve); focus resets as for any explicit catalog replacement. Decoded
+/// images already shown for the same item are kept. Thumbnail jobs are retired
+/// only when the related surface currently owns the shared thumbnail worker.
+pub fn replace_native(app: &App, state: &UiState, related: &[CatalogItem]) {
+    let items = native_items(related);
+    if items.is_empty() {
+        return;
+    }
+    let previous = &state.watch_context.model;
+    let previous: Vec<VideoRow> = (0..previous.row_count())
+        .filter_map(|row| previous.row_data(row))
+        .collect();
+    let rows = native_rows(&previous, &items);
+    let owns_thumbnails = state.thumbnail_surface.get() == 1;
+    if owns_thumbnails {
+        state.thumbnails.borrow_mut().replace(Vec::new());
+        state.thumbnail_attempted.borrow_mut().clear();
+    }
+    *state.watch_context.items.borrow_mut() = items;
+    state.watch_context.local_only.set(false);
+    crate::feed_focus::reset(app, state);
+    state.watch_context.model.replace(rows);
+    if owns_thumbnails {
+        state.thumbnail_range.set((usize::MAX, usize::MAX));
+        app.invoke_refresh_visible();
+    }
+}
+fn native_items(related: &[CatalogItem]) -> Vec<CatalogItem> {
+    related_candidates(related.to_vec())
+        .into_iter()
+        .map(|(_, item)| item)
+        .take(MAX_RELATED_ROWS)
+        .collect()
+}
+/// One row per item, in item order; a decoded image already shown for the same
+/// item identity is reused instead of being fetched again.
+fn native_rows(previous: &[VideoRow], items: &[CatalogItem]) -> Vec<VideoRow> {
+    items
+        .iter()
+        .map(|item| {
+            let mut fresh = crate::guest_ui::row(item);
+            if let Some(shown) = previous
+                .iter()
+                .find(|row| row.thumbnail_ready && row.kind == fresh.kind && row.id == fresh.id)
+            {
+                fresh.thumbnail = shown.thumbnail.clone();
+                fresh.thumbnail_ready = true;
+            }
+            fresh
+        })
+        .collect()
+}
 /// The watch page recommends videos and playlists. Channel rows (including the
 /// creator's own channel, which already has a dedicated action beside the title)
 /// never enter the related list. The returned pairs keep each item's index in
@@ -90,6 +146,7 @@ fn item_id(item: &CatalogItem) -> &str {
 /// Use for account/local selections and explicit local-data clearing. No account
 /// teardown is required here because authenticated results are never captured.
 pub fn clear(app: &App, state: &UiState) {
+    crate::watch_meta::clear(state);
     if app.get_page() == 2 {
         state.thumbnails.borrow_mut().replace(Vec::new());
         state.thumbnail_attempted.borrow_mut().clear();
@@ -169,5 +226,32 @@ mod tests {
         assert!(matches!(state.item(3), Some(CatalogItem::Video(v)) if v.title == "video 3"));
         assert!(state.item(4).is_none());
         assert_eq!(item_id(&state.item(0).unwrap()), "00000000001");
+    }
+
+    #[test]
+    fn native_related_rows_match_item_indices_and_keep_only_same_identity_images() {
+        // TEST FIXTURE: synthetic watch-next list (a stray channel row included).
+        let mut related: Vec<CatalogItem> = (0..40).map(video).collect();
+        related.insert(3, channel());
+        let items = native_items(&related);
+        assert_eq!(items.len(), MAX_RELATED_ROWS);
+        assert!(
+            items
+                .iter()
+                .all(|item| matches!(item, CatalogItem::Video(_)))
+        );
+        // A previously shown row for the same video keeps its decoded image;
+        // a row whose ID differs never lends its image to another item.
+        let mut shown = crate::guest_ui::row(&video(2));
+        shown.thumbnail_ready = true;
+        let mut other = crate::guest_ui::row(&video(99));
+        other.thumbnail_ready = true;
+        let rows = native_rows(&[other, shown], &items);
+        assert_eq!(rows.len(), items.len());
+        for (row, item) in rows.iter().zip(&items) {
+            assert_eq!(row.id.as_str(), item_id(item), "row index names its item");
+        }
+        assert!(rows[2].thumbnail_ready);
+        assert_eq!(rows.iter().filter(|row| row.thumbnail_ready).count(), 1);
     }
 }
