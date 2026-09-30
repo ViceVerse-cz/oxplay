@@ -43,13 +43,19 @@ const SATURATION: f32 = 1.3;
 const TIME_CONSTANT: f32 = 0.3;
 /// Largest step applied at once, so resuming after a pause still eases.
 const MAX_STEP: Duration = Duration::from_millis(100);
-/// Image regeneration cap (~24 Hz) even for high-frame-rate video.
-const MIN_IMAGE_INTERVAL: Duration = Duration::from_millis(40);
+/// Image regeneration cap (~15 Hz) even for high-frame-rate video. Each
+/// publish uploads a fresh texture; with the 0.3 s time constant and a
+/// pre-blurred image, finer steps are not visible.
+const MIN_IMAGE_INTERVAL: Duration = Duration::from_millis(66);
 /// Matches `animate opacity` on the glow in app.slint: a replaced video's
 /// colours fade out completely before the new video's colours fade in.
 const FADE: Duration = Duration::from_millis(600);
 /// Below this per-channel difference the transition is complete.
-const SETTLED: f32 = 0.5 / 255.;
+const SETTLED: f32 = 1. / 255.;
+/// Samples differing from the current target by less than this in every
+/// channel are sampling noise, not a scene change; ignoring them lets moving
+/// video settle instead of re-rendering the glow for the whole playback.
+const DEAD_BAND: f32 = 2. / 255.;
 
 pub type Grid = [[f32; 3]; AMBIENT_CELLS];
 
@@ -105,7 +111,7 @@ impl Smoother {
     pub fn retarget(&mut self, grid: Grid) {
         if !self.has_colours {
             self.snap(grid);
-        } else if grid != self.target {
+        } else if max_difference(&grid, &self.target) >= DEAD_BAND {
             self.target = grid;
             self.settled = false;
         }
@@ -132,6 +138,13 @@ impl Smoother {
     }
 }
 
+fn max_difference(a: &Grid, b: &Grid) -> f32 {
+    a.iter()
+        .flatten()
+        .zip(b.iter().flatten())
+        .fold(0., |max, (x, y)| max.max((x - y).abs()))
+}
+
 /// Precomputed separable Gaussian weights and edge falloff. Rendering a grid
 /// costs ~45k multiply-adds and allocates one 14.6 KB pixel buffer.
 pub struct GlowRenderer {
@@ -140,6 +153,8 @@ pub struct GlowRenderer {
     wx: Vec<[f32; AMBIENT_COLUMNS]>,
     wy: Vec<[f32; AMBIENT_ROWS]>,
     alpha: Vec<u8>,
+    /// Horizontal-pass scratch, reused across renders.
+    rows: Vec<[f32; 3]>,
 }
 fn weights<const N: usize>(margin: usize, texels: usize) -> Vec<[f32; N]> {
     let sigma = margin as f32 * SIGMA_PER_MARGIN;
@@ -192,12 +207,14 @@ impl GlowRenderer {
             wx: weights(margin, width),
             wy: weights(margin, height),
             alpha,
+            rows: vec![[0.; 3]; AMBIENT_ROWS * width],
         }
     }
-    pub fn render(&self, grid: &Grid) -> SharedPixelBuffer<Rgba8Pixel> {
+    pub fn render(&mut self, grid: &Grid) -> SharedPixelBuffer<Rgba8Pixel> {
         let width = self.width;
         // Horizontal pass: sample rows -> glow columns.
-        let mut rows = vec![[0f32; 3]; AMBIENT_ROWS * width];
+        let rows = &mut self.rows;
+        rows.fill([0.; 3]);
         for (out, cells) in rows
             .chunks_exact_mut(width)
             .zip(grid.as_chunks::<AMBIENT_COLUMNS>().0)
@@ -387,6 +404,21 @@ mod tests {
     }
 
     #[test]
+    fn sampling_noise_does_not_restart_a_settled_glow() {
+        let mut s = Smoother::default();
+        s.retarget(uniform([0.5; 3]));
+        assert!(s.settled());
+        // One step in one channel of one cell is below the dead band.
+        let mut noisy = uniform([0.5; 3]);
+        noisy[7][1] += 1. / 255.;
+        s.retarget(noisy);
+        assert!(s.settled() && !s.step(Duration::from_millis(50)));
+        // A real change still eases toward the new colours.
+        s.retarget(uniform([0.6; 3]));
+        assert!(!s.settled() && s.step(Duration::from_millis(50)));
+    }
+
+    #[test]
     fn summary_normalises_and_lifts_saturation_without_changing_greys() {
         let mut pixels = [[128, 128, 128, 255]; AMBIENT_CELLS];
         pixels[0] = [200, 100, 50, 255];
@@ -529,7 +561,7 @@ mod tests {
         let mut smoother = Smoother::default();
         smoother.snap(grid_from_sample(&[[0; 4]; AMBIENT_CELLS]));
         for size in GlowSize::ALL {
-            let renderer = GlowRenderer::new(size);
+            let mut renderer = GlowRenderer::new(size);
             let mut medians = Vec::new();
             for _ in 0..21 {
                 let start = Instant::now();

@@ -1112,7 +1112,10 @@ export component App inherits Window {
             }
             Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; visible: root.loaded && !root.watch-loading; }
             // Fades and grows out after a user play/pause; invisible at rest.
+            // Opacity below 1 on an element with children takes an offscreen
+            // layer even at 0, so hide it outright once the fade has finished.
             Rectangle {
+                visible: root.flash-on || self.opacity > 0.001;
                 width: root.compact-video && !root.video-only ? 52px : 68px; height: self.width;
                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
                 border-radius: self.width / 2; background: #000000a6;

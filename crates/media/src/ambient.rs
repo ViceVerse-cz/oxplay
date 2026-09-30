@@ -94,6 +94,8 @@ pub(crate) struct AmbientSampler {
     pbo: Option<glow::NativeBuffer>,
     pending: Option<Pending>,
     last: Option<(Instant, u64)>,
+    /// Sample on the next enabled frame regardless of the interval.
+    rearmed: bool,
     ready: Option<AmbientSample>,
     stats: AmbientStats,
     measure: bool,
@@ -106,6 +108,7 @@ impl AmbientSampler {
             pbo: None,
             pending: None,
             last: None,
+            rearmed: false,
             ready: None,
             stats: AmbientStats::default(),
             measure,
@@ -121,12 +124,16 @@ impl AmbientSampler {
         self.pending.is_some()
     }
     pub(crate) fn due(&self, now: Instant, load: u64) -> bool {
-        !self.stats.failed && sample_due(self.last, now, load, self.pending.is_some())
+        !self.stats.failed
+            && ((self.rearmed && self.pending.is_none())
+                || sample_due(self.last, now, load, self.pending.is_some()))
     }
-    /// Forget timing so the next enabled frame samples at once (e.g. after the
-    /// glow was hidden and shown again).
+    /// Sample on the next enabled frame (e.g. after the glow was hidden and
+    /// shown again). The load is remembered, so a re-show of the same load
+    /// reads asynchronously: the host still holds its colours, and only the
+    /// first sample of a load justifies a synchronous pipeline drain.
     pub(crate) fn rearm(&mut self) {
-        self.last = None;
+        self.rearmed = true;
     }
 
     unsafe fn allocate(&mut self, gl: &glow::Context) -> Result<()> {
@@ -173,6 +180,7 @@ impl AmbientSampler {
         }
         let result = unsafe { self.sample_inner(gl, source, rect, load, first_of_load) };
         self.last = Some((now, load));
+        self.rearmed = false;
         if result.is_err() {
             self.stats.failed = true;
             unsafe { self.delete(gl) };

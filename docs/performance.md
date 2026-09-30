@@ -27,8 +27,8 @@ Performance testing was deferred for that feature batch.
 [Ambient mode](ambient-mode.md) is on by default and adds work to watch-page
 playback: at most 4 Hz, four small GPU blits of the rendered target and a
 fenced 576-byte readback (one synchronous read per load), plus a CPU glow
-update of 52 µs median (release microbenchmark, M1) at most ~24 Hz while
-colours are changing. It adds no timer, no frame copy and no redraws beyond
+update of 52 µs median (release microbenchmark, M1) at most ~15 Hz while
+colours are changing (sub-2/255 sample noise is ignored, so it settles). It adds no timer, no frame copy and no redraws beyond
 two 600 ms fades per video change. No whole-app resource sample includes it
 yet; playback CPU/RSS results above predate it, and new playback samples
 should record whether ambient mode was on. No budget was changed.

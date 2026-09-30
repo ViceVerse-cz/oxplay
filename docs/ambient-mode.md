@@ -35,9 +35,11 @@ and only for frames that are published (never private startup frames), it:
 3. on a later BeforeRendering, collects the bytes with a zero-timeout fence
    check, so the UI thread never waits for the GPU.
 
-The first sample of each load (and after the glow is shown again) is read
-synchronously instead, because a video paused on its first frame renders no
-later frame to collect on. That is one bounded pipeline stall per load. All
+The first sample of each load is read synchronously instead, because a video
+paused on its first frame renders no later frame to collect on. That is one
+bounded pipeline stall per load. Showing the glow again for the same load
+(scrolling back, leaving fullscreen, PiP or the mini-player) samples at once
+but asynchronously: the smoother still holds that load's colours. All
 work happens inside the presenter's existing saved/reset GL state; the pack
 pixel-store values it changes are saved and restored around the read. No full
 frame is copied to the CPU and no screenshot command is sent to mpv. Paused
@@ -100,8 +102,10 @@ stream refresh is a new native load, so it also fades the glow out and in.
 Measured with the original 76×48 glow (release, reference M1 host,
 `ambient_ui::tests::update_cost`): one glow update — summary conversion,
 smoothing step, render and `slint::Image` creation — had a median of 52 µs
-(21 batches of 200). At the 24 Hz cap that is about 1.25 ms per second (~0.13%
-of one core), and updates stop once colours settle. It excludes FemtoVG's
+(21 batches of 200). At the ~15 Hz cap that is under 1 ms per second (~0.08%
+of one core). Summaries within 2/255 of the current target in every channel
+are treated as sampling noise, so moving video settles between scene changes
+instead of re-rendering (and re-uploading) the image for the whole playback. It excludes FemtoVG's
 texture upload of the image. The benchmark now prints one median per glow size;
 rendering cost grows with the pixel count, so the default 84×56 image is
 roughly 1.3× and the largest 100×72 roughly 2× that figure (expected from the
