@@ -1,4 +1,7 @@
+// The Windows supervisor keeps its own imports in `supervisor/windows.rs`.
+#[cfg(any(test, not(windows)))]
 use oxplay_core::{OperationContext, ProviderError};
+#[cfg(any(test, not(windows)))]
 use std::{path::Path, time::Duration};
 pub(crate) struct Output {
     pub success: bool,
@@ -26,7 +29,7 @@ pub(crate) fn run(
     )
 }
 
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 pub(crate) fn run_guarded(
     _: &Path,
     _: &[String],
@@ -36,9 +39,14 @@ pub(crate) fn run_guarded(
     _: usize,
     _: &dyn Fn() -> bool,
 ) -> Result<Output, ProviderError> {
-    // Fail closed until a Windows job-object supervisor is implemented and tested.
+    // Fail closed where no reviewed process-tree supervisor exists.
     Err(ProviderError::UnsupportedPlatform)
 }
+
+#[cfg(windows)]
+mod windows;
+#[cfg(windows)]
+pub(crate) use windows::run_guarded;
 
 #[cfg(unix)]
 #[allow(clippy::too_many_arguments)]
