@@ -13,7 +13,7 @@ use oxplay_core::{OperationContext, ProviderError};
 use std::{
     ffi::OsString,
     io::{ErrorKind, Read},
-    os::windows::{io::AsRawHandle, process::CommandExt},
+    os::windows::{fs::MetadataExt, io::AsRawHandle, process::CommandExt},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     time::{Duration, Instant},
@@ -26,8 +26,9 @@ use windows_sys::Win32::{
         },
         JobObjects::{
             AssignProcessToJobObject, CreateJobObjectW, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
-            JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation,
-            SetInformationJobObject, TerminateJobObject,
+            JOBOBJECT_BASIC_ACCOUNTING_INFORMATION, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+            JobObjectBasicAccountingInformation, JobObjectExtendedLimitInformation,
+            QueryInformationJobObject, SetInformationJobObject, TerminateJobObject,
         },
         Pipes::PeekNamedPipe,
         Threading::{
@@ -62,6 +63,23 @@ impl Job {
         }
     }
 }
+impl Job {
+    /// Processes still alive in the job; `None` if the query failed.
+    fn active_processes(&self) -> Option<u32> {
+        // SAFETY: the owned handle is valid; the struct is plain data.
+        unsafe {
+            let mut info: JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = std::mem::zeroed();
+            (QueryInformationJobObject(
+                self.0,
+                JobObjectBasicAccountingInformation,
+                std::ptr::from_mut(&mut info).cast(),
+                size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32,
+                std::ptr::null_mut(),
+            ) != 0)
+                .then_some(info.ActiveProcesses)
+        }
+    }
+}
 impl Drop for Job {
     fn drop(&mut self) {
         // SAFETY: the handle is owned and closed exactly once.
@@ -73,10 +91,12 @@ impl Drop for Job {
 }
 
 /// Terminates the complete job before reaping the direct child, whether the
-/// run succeeded, failed, timed out or was cancelled.
+/// run succeeded, failed, timed out or was cancelled. Fields drop in order:
+/// the job handle closes, then the run's private TEMP directory is removed.
 struct OwnedProcess {
     child: Child,
     job: Job,
+    _temporary: tempfile::TempDir,
 }
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
@@ -87,7 +107,37 @@ impl Drop for OwnedProcess {
         // Covers a direct child that never entered the job (assignment failure).
         let _ = self.child.kill();
         let _ = self.child.wait();
+        // Termination is asynchronous for descendants. Wait, bounded, until
+        // the job is empty so no helper still holds files in its TEMP.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while self.job.active_processes().is_some_and(|count| count > 0)
+            && Instant::now() < deadline
+        {
+            std::thread::sleep(Duration::from_millis(5));
+        }
     }
+}
+
+/// A fresh per-run TEMP below the user's temporary directory. PyInstaller
+/// one-file helpers (the standalone yt-dlp.exe) unpack into TEMP and only
+/// clean up when their bootloader exits normally; a terminated run would
+/// otherwise leak its `_MEI*` directory into the user's TEMP.
+fn run_temporary() -> Result<tempfile::TempDir, ProviderError> {
+    let root = std::env::temp_dir().join("oxplay-helpers");
+    match std::fs::create_dir(&root) {
+        Ok(()) => {}
+        Err(error) if error.kind() == ErrorKind::AlreadyExists => {}
+        Err(_) => return Err(ProviderError::ExtractorFailed),
+    }
+    let metadata = std::fs::symlink_metadata(&root).map_err(|_| ProviderError::ExtractorFailed)?;
+    // FILE_ATTRIBUTE_REPARSE_POINT: never follow a planted link or junction.
+    if !metadata.is_dir() || metadata.file_attributes() & 0x400 != 0 {
+        return Err(ProviderError::ExtractorFailed);
+    }
+    tempfile::Builder::new()
+        .prefix("run-")
+        .tempdir_in(&root)
+        .map_err(|_| ProviderError::ExtractorFailed)
 }
 
 /// Resume the initial thread of a process created with `CREATE_SUSPENDED`.
@@ -205,8 +255,8 @@ pub(crate) fn run_guarded(
     command
         .args(args)
         .env_clear()
-        // Win32/CRT/Python initialization requires the system root; PyInstaller
-        // one-file helpers such as yt-dlp.exe unpack into the user's TEMP.
+        // Win32/CRT/Python initialization requires the system root. TEMP/TMP
+        // name a private per-run directory, removed after the job is empty.
         .env("SystemRoot", &root)
         .env("windir", &root)
         .env("PATH", path)
@@ -217,11 +267,10 @@ pub(crate) fn run_guarded(
         // Deno 2.9.7 cli/tools/upgrade.rs checks this exact variable before
         // spawning its background version-check task, including non-TTY runs.
         .env("DENO_NO_UPDATE_CHECK", "1");
-    for name in ["TEMP", "TMP"] {
-        if let Some(value) = std::env::var_os(name) {
-            command.env(name, value);
-        }
-    }
+    let temporary = run_temporary()?;
+    command
+        .env("TEMP", temporary.path())
+        .env("TMP", temporary.path());
     let job = Job::new()?;
     let child = command
         .current_dir(&root)
@@ -233,7 +282,11 @@ pub(crate) fn run_guarded(
         .creation_flags(CREATE_SUSPENDED | CREATE_NO_WINDOW)
         .spawn()
         .map_err(|_| ProviderError::HelperUnavailable)?;
-    let mut process = OwnedProcess { child, job };
+    let mut process = OwnedProcess {
+        child,
+        job,
+        _temporary: temporary,
+    };
     // SAFETY: both handles are owned and alive.
     if unsafe { AssignProcessToJobObject(process.job.0, process.child.as_raw_handle()) } == 0 {
         return Err(ProviderError::ExtractorFailed);
@@ -434,6 +487,19 @@ mod tests {
         let escaped = marker.exists();
         let _ = std::fs::remove_file(&marker);
         assert!(!escaped, "background helper survived job termination");
+    }
+
+    #[test]
+    fn private_run_temp_is_removed_with_its_contents() {
+        let script = Script::new(
+            "temporary",
+            "@echo off\r\necho x> \"%TEMP%\\left-behind.txt\"\r\n<nul set /p =%TEMP%\r\nexit /b 0\r\n",
+        );
+        let result = script.run(&op(), Duration::from_secs(10), 4096).unwrap();
+        assert!(result.success);
+        let temporary = PathBuf::from(String::from_utf8(result.stdout).unwrap().trim());
+        assert!(temporary.starts_with(std::env::temp_dir().join("oxplay-helpers")));
+        assert!(!temporary.exists(), "per-run TEMP survived its run");
     }
 
     #[test]
