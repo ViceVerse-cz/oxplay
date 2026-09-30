@@ -48,6 +48,56 @@ pub struct CommentPage {
     pub comments: Vec<CommentSummary>,
     pub next: Option<CommentCursor>,
     pub limit_reached: bool,
+    /// Native reply-thread continuations keyed by published comment ID. Always
+    /// empty for extractor pages, which expose no reply continuation.
+    pub replies: HashMap<String, ReplyCursor>,
+}
+/// Replies browsable in one thread; later pages end with an explicit limit.
+pub const MAX_REPLIES: usize = 100;
+/// Replies published from one reply continuation page.
+pub const REPLY_PAGE_SIZE: usize = 50;
+/// Opaque native continuation of one top-level comment's reply thread.
+#[derive(Clone)]
+pub struct ReplyCursor {
+    video: VideoId,
+    generation: u64,
+    parent: Arc<str>,
+    offset: usize,
+    /// Reply IDs already published in this thread, used to drop repeats.
+    seen: Arc<[String]>,
+    token: Arc<str>,
+}
+impl ReplyCursor {
+    pub fn video(&self) -> &VideoId {
+        &self.video
+    }
+    /// The top-level comment whose replies this continues.
+    pub fn parent(&self) -> &str {
+        &self.parent
+    }
+    /// TEST FIXTURE support for downstream ownership tests, which cannot parse
+    /// a provider page. The token passes the same opaque-token policy and is
+    /// only ever sent back to the public `next` endpoint.
+    #[doc(hidden)]
+    pub fn synthetic(video: VideoId, parent: &str, token: &str) -> Option<Self> {
+        let value = Value::from(token);
+        let token = watch::token(&value)?;
+        valid_id(parent).then(|| Self {
+            video,
+            generation: 0,
+            parent: parent.into(),
+            offset: 0,
+            seen: Arc::from([]),
+            token: token.into(),
+        })
+    }
+}
+pub struct ReplyPage {
+    pub video: VideoId,
+    pub parent: String,
+    pub replies: Vec<CommentSummary>,
+    pub next: Option<ReplyCursor>,
+    pub limit_reached: bool,
 }
 fn text(value: &Value, key: &str, limit: usize) -> Option<String> {
     value
@@ -146,6 +196,7 @@ fn parse_comment(value: &Value) -> Result<CommentSummary, ProviderError> {
             .get("author_thumbnail")
             .and_then(Value::as_str)
             .and_then(crate::channel_avatar::safe_avatar),
+        reply_count: None,
     })
 }
 fn parse_page(
@@ -209,6 +260,7 @@ fn parse_page(
         comments,
         next,
         limit_reached: more && end >= MAX_COMMENTS,
+        replies: HashMap::new(),
     })
 }
 fn valid_id(id: &str) -> bool {
@@ -286,16 +338,48 @@ pub fn native_comments(
     parse_native_page(&value, video, offset, &seen, operation.session_generation)
 }
 
+/// One page of a top-level comment's replies through its native thread
+/// continuation (the same `next` endpoint). There is no extractor fallback:
+/// extractor pages carry no reply cursors, so no reply request is ever made
+/// for them.
+pub fn native_replies(
+    transport: &GuestTransport,
+    video: &VideoId,
+    cursor: &ReplyCursor,
+    operation: &OperationContext,
+) -> Result<ReplyPage, ProviderError> {
+    if cursor.video != *video
+        || cursor.generation != operation.session_generation
+        || cursor.offset >= MAX_REPLIES
+    {
+        return Err(ProviderError::InvalidInput);
+    }
+    let value = transport.post("next", json!({"continuation": &*cursor.token}), operation)?;
+    if operation.cancel.is_cancelled() {
+        return Err(ProviderError::Cancelled);
+    }
+    parse_reply_page(&value, cursor)
+}
+
 const MAX_CONTINUATION_ITEMS: usize = 100;
 const MAX_MUTATIONS: usize = 2_000;
 
-fn parse_native_page(
+/// Comments of one native continuation response, before page bounds apply.
+struct NativeItems {
+    comments: Vec<CommentSummary>,
+    /// Reply-thread continuation tokens by comment ID (top-level pages only).
+    reply_tokens: HashMap<String, String>,
+    token: Option<String>,
+}
+
+/// Shared continuation parsing. Top-level pages accept only `replyLevel` 0;
+/// reply pages only replies (`replyLevel` > 0).
+fn parse_native_items(
     value: &Value,
-    video: &VideoId,
+    replies: bool,
     offset: usize,
-    seen: &Arc<[String]>,
-    generation: u64,
-) -> Result<CommentPage, ProviderError> {
+    seen: &[String],
+) -> Result<NativeItems, ProviderError> {
     let endpoints = value
         .get("onResponseReceivedEndpoints")
         .and_then(Value::as_array)
@@ -336,33 +420,31 @@ fn parse_native_page(
         }
     }
     let mut comments: Vec<CommentSummary> = Vec::new();
+    let mut reply_tokens = HashMap::new();
     let mut tokens = std::collections::HashSet::new();
     let (mut recognized, mut threads, mut disabled) = (false, 0usize, false);
     for item in &items {
+        let mut thread_replies = None;
         let parsed = if let Some(thread) = item.get("commentThreadRenderer") {
             threads += 1;
+            thread_replies = thread.pointer("/replies/commentRepliesRenderer");
             thread
                 .pointer("/commentViewModel/commentViewModel")
-                .map(|model| view_model_comment(model, &entities))
+                .map(|model| view_model_comment(model, &entities, replies))
                 .or_else(|| {
                     thread
                         .pointer("/comment/commentRenderer")
-                        .map(legacy_comment)
+                        .map(|renderer| legacy_comment(renderer, replies))
                 })
         } else if let Some(model) = item.get("commentViewModel") {
             threads += 1;
-            Some(view_model_comment(model, &entities))
+            Some(view_model_comment(model, &entities, replies))
         } else if let Some(renderer) = item.get("commentRenderer") {
             threads += 1;
-            Some(legacy_comment(renderer))
+            Some(legacy_comment(renderer, replies))
         } else if let Some(next) = item.get("continuationItemRenderer") {
             recognized = true;
-            let raw = next
-                .pointer("/continuationEndpoint/continuationCommand/token")
-                .or_else(|| {
-                    next.pointer("/button/buttonRenderer/command/continuationCommand/token")
-                })
-                .ok_or(ProviderError::MalformedOutput)?;
+            let raw = continuation_token(next).ok_or(ProviderError::MalformedOutput)?;
             tokens.insert(watch::token(raw).ok_or(ProviderError::MalformedOutput)?);
             None
         } else if item.get("commentsHeaderRenderer").is_some() {
@@ -376,10 +458,24 @@ fn parse_native_page(
             None // Unknown rows are skipped; an all-unknown page is rejected below.
         };
         // A thread whose entity is missing or malformed is skipped, not invented.
-        if let Some(Ok(comment)) = parsed
+        if let Some(Ok(mut comment)) = parsed
             && !seen.contains(&comment.id)
             && comments.iter().all(|c| c.id != comment.id)
         {
+            // Replies are only offered for top-level threads with a genuine
+            // continuation; a malformed one just means "no toggle".
+            if let Some(renderer) = thread_replies.filter(|_| !replies) {
+                if comment.reply_count.is_none() {
+                    comment.reply_count = renderer
+                        .pointer("/viewReplies/buttonRenderer/text")
+                        .and_then(crate::innertube::text)
+                        .as_deref()
+                        .and_then(watch::count);
+                }
+                if let Some(token) = reply_token(renderer) {
+                    reply_tokens.insert(comment.id.clone(), token.to_owned());
+                }
+            }
             comments.push(comment);
         }
     }
@@ -390,13 +486,13 @@ fn parse_native_page(
         return Err(ProviderError::MalformedOutput);
     }
     if !recognized && threads == 0 {
-        if items.is_empty() && offset > 0 {
-            // A finished continuation may legitimately return nothing.
-            return Ok(CommentPage {
-                video: video.clone(),
-                comments: Vec::new(),
-                next: None,
-                limit_reached: false,
+        if items.is_empty() && (offset > 0 || replies) {
+            // A finished continuation (or a thread whose replies were all
+            // removed) may legitimately return nothing.
+            return Ok(NativeItems {
+                comments,
+                reply_tokens,
+                token: None,
             });
         }
         return Err(ProviderError::MalformedOutput);
@@ -404,11 +500,48 @@ fn parse_native_page(
     if disabled && threads == 0 && offset == 0 {
         return Err(ProviderError::Unavailable);
     }
+    Ok(NativeItems {
+        comments,
+        reply_tokens,
+        token: tokens.into_iter().next().map(str::to_owned),
+    })
+}
+
+/// `continuationEndpoint` (comment pages, first reply page) or the
+/// "Show more replies" button command (later reply pages).
+fn continuation_token(renderer: &Value) -> Option<&Value> {
+    renderer
+        .pointer("/continuationEndpoint/continuationCommand/token")
+        .or_else(|| renderer.pointer("/button/buttonRenderer/command/continuationCommand/token"))
+}
+
+/// First reply page of `commentThreadRenderer.replies.commentRepliesRenderer`:
+/// its `contents` (or newer `subThreads`) end with a `continuationItemRenderer`.
+fn reply_token(renderer: &Value) -> Option<&str> {
+    ["contents", "subThreads"]
+        .iter()
+        .filter_map(|key| renderer.get(*key)?.as_array())
+        .flat_map(|list| list.iter().take(16))
+        .find_map(|item| continuation_token(item.get("continuationItemRenderer")?))
+        .and_then(watch::token)
+}
+
+fn parse_native_page(
+    value: &Value,
+    video: &VideoId,
+    offset: usize,
+    seen: &Arc<[String]>,
+    generation: u64,
+) -> Result<CommentPage, ProviderError> {
+    let NativeItems {
+        mut comments,
+        mut reply_tokens,
+        token,
+    } = parse_native_items(value, false, offset, seen)?;
     // YouTube serves 20 top-level threads per continuation; the published page
     // stays within the existing 20-row contract.
     comments.truncate(PAGE_SIZE);
     let end = offset + comments.len();
-    let token = tokens.into_iter().next();
     // A page consisting only of already-published comments means the remote
     // stream is looping; stop rather than follow it indefinitely.
     let more = token.is_some() && !comments.is_empty();
@@ -426,11 +559,71 @@ fn parse_native_page(
         }),
         _ => None,
     };
+    let replies = comments
+        .iter()
+        .filter_map(|comment| {
+            let token = reply_tokens.remove(&comment.id)?;
+            Some((
+                comment.id.clone(),
+                ReplyCursor {
+                    video: video.clone(),
+                    generation,
+                    parent: comment.id.as_str().into(),
+                    offset: 0,
+                    seen: Arc::from([]),
+                    token: token.into(),
+                },
+            ))
+        })
+        .collect();
     Ok(CommentPage {
         video: video.clone(),
         comments,
         next,
         limit_reached: more && end >= MAX_COMMENTS,
+        replies,
+    })
+}
+
+fn parse_reply_page(value: &Value, cursor: &ReplyCursor) -> Result<ReplyPage, ProviderError> {
+    let NativeItems {
+        comments: mut replies,
+        token,
+        ..
+    } = parse_native_items(value, true, cursor.offset, &cursor.seen)?;
+    // YouTube serves 10 replies first, then pages of about 40-50 (observed
+    // 2026-09-30). A continuation cannot resume mid-page, so replies past the
+    // page or thread bound are never skipped silently: browsing ends there
+    // with the explicit limit instead.
+    let room = REPLY_PAGE_SIZE.min(MAX_REPLIES.saturating_sub(cursor.offset));
+    let truncated = replies.len() > room;
+    replies.truncate(room);
+    let end = cursor.offset + replies.len();
+    // Only already-published replies means the thread is looping; stop.
+    let more = (token.is_some() || truncated) && !replies.is_empty();
+    let limit_reached = more && (truncated || end >= MAX_REPLIES);
+    let next = match token {
+        Some(token) if more && !limit_reached => Some(ReplyCursor {
+            video: cursor.video.clone(),
+            generation: cursor.generation,
+            parent: cursor.parent.clone(),
+            offset: end,
+            seen: cursor
+                .seen
+                .iter()
+                .cloned()
+                .chain(replies.iter().map(|reply| reply.id.clone()))
+                .collect(),
+            token: token.into(),
+        }),
+        _ => None,
+    };
+    Ok(ReplyPage {
+        video: cursor.video.clone(),
+        parent: cursor.parent.to_string(),
+        replies,
+        next,
+        limit_reached,
     })
 }
 
@@ -440,9 +633,11 @@ fn bounded(value: Option<&str>, limit: usize) -> Option<String> {
 
 /// Modern shape: the thread's `commentViewModel` names entity keys whose
 /// `commentEntityPayload` (and optional toolbar state) carry the comment.
+/// `reply` selects which `replyLevel` is admitted: 0, or a reply (> 0).
 fn view_model_comment(
     model: &Value,
     entities: &HashMap<&str, &Value>,
+    reply: bool,
 ) -> Result<CommentSummary, ProviderError> {
     let payload = model
         .get("commentKey")
@@ -462,11 +657,12 @@ fn view_model_comment(
         .get("commentId")
         .and_then(Value::as_str)
         .is_some_and(|model_id| model_id != id)
-        || properties
+        || (properties
             .get("replyLevel")
             .and_then(Value::as_u64)
             .unwrap_or(0)
-            != 0
+            > 0)
+            != reply
     {
         return Err(ProviderError::MalformedOutput);
     }
@@ -509,11 +705,17 @@ fn view_model_comment(
             .or_else(|| payload.pointer("/avatar/image/sources/0/url"))
             .and_then(Value::as_str)
             .and_then(crate::channel_avatar::safe_avatar),
+        // `toolbar.replyCount` is "" when a comment has no replies.
+        reply_count: toolbar
+            .and_then(|t| t.get("replyCount"))
+            .and_then(Value::as_str)
+            .and_then(watch::count)
+            .filter(|_| !reply),
     })
 }
 
 /// Legacy `commentRenderer` shape (still accepted when no entities are sent).
-fn legacy_comment(renderer: &Value) -> Result<CommentSummary, ProviderError> {
+fn legacy_comment(renderer: &Value, reply: bool) -> Result<CommentSummary, ProviderError> {
     let id = renderer
         .get("commentId")
         .and_then(Value::as_str)
@@ -542,6 +744,10 @@ fn legacy_comment(renderer: &Value) -> Result<CommentSummary, ProviderError> {
             .and_then(|list| list.iter().take(16).next_back())
             .and_then(|thumbnail| thumbnail.get("url")?.as_str())
             .and_then(crate::channel_avatar::safe_avatar),
+        reply_count: renderer
+            .get("replyCount")
+            .and_then(Value::as_u64)
+            .filter(|_| !reply),
     })
 }
 
@@ -1064,5 +1270,264 @@ mod tests {
             guest_comments(Some(&transport), Some(&extractor), &id, None, &cancelled).err(),
             Some(ProviderError::Cancelled)
         );
+    }
+
+    // TEST FIXTURE: synthetic reply threads in the shapes observed live on
+    // 2026-09-30 (`commentRepliesRenderer.contents` continuation, toolbar
+    // `replyCount`, bare reply `commentViewModel` rows, "Show more replies"
+    // button continuation). No real comments, authors or tokens.
+    fn with_replies(page: &mut Value, index: usize, count: &str, replies: Value) {
+        page["onResponseReceivedEndpoints"][0]["appendContinuationItemsAction"]["continuationItems"]
+            [index]["commentThreadRenderer"]["replies"] =
+            json!({"commentRepliesRenderer": replies});
+        page["frameworkUpdates"]["entityBatchUpdate"]["mutations"][index * 2]["payload"]["commentEntityPayload"]
+            ["toolbar"]["replyCount"] = json!(count);
+    }
+    fn replies_renderer(token: &str, label: &str) -> Value {
+        json!({"contents": [{"continuationItemRenderer": {"continuationEndpoint": {
+                "continuationCommand": {"token": token}}}}],
+            "viewReplies": {"buttonRenderer": {"text": {"runs": [{"text": label}]}}}})
+    }
+    fn reply_page(parent: &str, ids: std::ops::Range<usize>, more: Option<&str>) -> Value {
+        let names: Vec<String> = ids.map(|i| format!("{parent}.Reply{i}")).collect();
+        let mut items: Vec<Value> = names
+            .iter()
+            .map(|id| json!({"commentViewModel": {"commentId": id, "commentKey": format!("key-{id}")}}))
+            .collect();
+        if let Some(token) = more {
+            items.push(
+                json!({"continuationItemRenderer": {"button": {"buttonRenderer": {
+                "text": {"runs": [{"text": "Show more replies"}]},
+                "command": {"continuationCommand": {"token": token}}}}}}),
+            );
+        }
+        let mutations: Vec<Value> = names
+            .iter()
+            .map(|id| {
+                let mut reply = entity(id, 1);
+                let payload = &mut reply["payload"]["commentEntityPayload"];
+                payload["properties"]["replyLevel"] = json!(1);
+                payload["toolbar"]["replyCount"] = json!("");
+                reply
+            })
+            .collect();
+        json!({"onResponseReceivedEndpoints": [{"appendContinuationItemsAction": {
+                "continuationItems": items, "targetId": format!("comment-replies-item-{parent}")}}],
+            "frameworkUpdates": {"entityBatchUpdate": {"mutations": mutations}}})
+    }
+
+    #[test]
+    fn native_threads_expose_reply_counts_and_their_reply_continuations() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let none: Arc<[String]> = Arc::from([]);
+        let mut value = native(0..5, Some("NEXT"), false);
+        // Toolbar count plus the first-page continuation.
+        with_replies(
+            &mut value,
+            0,
+            "12",
+            replies_renderer("REPLIES0", "12 replies"),
+        );
+        // Empty toolbar count: the view-replies button label supplies it.
+        with_replies(&mut value, 1, "", replies_renderer("REPLIES1", "1 reply"));
+        // Newer `subThreads` placement of the continuation, compact count.
+        with_replies(
+            &mut value,
+            2,
+            "1.2K",
+            json!({"subThreads": [{"continuationItemRenderer": {"continuationEndpoint": {
+                "continuationCommand": {"token": "REPLIES2"}}}}]}),
+        );
+        // A malformed reply continuation only means "no toggle".
+        with_replies(
+            &mut value,
+            3,
+            "3",
+            replies_renderer("bad token", "3 replies"),
+        );
+        let page = parse_native_page(&value, &id, 0, &none, 0).unwrap();
+        assert_eq!(page.comments.len(), 5);
+        let counts: Vec<_> = page.comments.iter().map(|c| c.reply_count).collect();
+        assert_eq!(counts, [Some(12), Some(1), Some(1_200), Some(3), None]);
+        assert_eq!(page.replies.len(), 3);
+        for (n, token) in [(0, "REPLIES0"), (1, "REPLIES1"), (2, "REPLIES2")] {
+            let cursor = &page.replies[&format!("UgNative{n}")];
+            assert_eq!(cursor.parent(), format!("UgNative{n}"));
+            assert_eq!(cursor.video(), &id);
+            assert_eq!(&*cursor.token, token);
+            assert_eq!(cursor.offset, 0);
+        }
+        assert!(!page.replies.contains_key("UgNative3"));
+        assert!(!page.replies.contains_key("UgNative4"));
+        // Only published comments keep reply cursors.
+        let mut long = native(0..21, None, false);
+        with_replies(&mut long, 20, "4", replies_renderer("DROPPED", "4 replies"));
+        let page = parse_native_page(&long, &id, 0, &none, 0).unwrap();
+        assert_eq!(page.comments.len(), 20);
+        assert!(page.replies.is_empty());
+        // Extractor pages expose no reply continuation at all.
+        let fallback = parse_page(&fixture(3), &id, None, 0).unwrap();
+        assert!(fallback.replies.is_empty());
+        assert!(fallback.comments.iter().all(|c| c.reply_count.is_none()));
+    }
+
+    #[test]
+    fn reply_pages_follow_show_more_continuations_and_stay_bounded() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let mut value = native(0..1, None, false);
+        with_replies(
+            &mut value,
+            0,
+            "25",
+            replies_renderer("REPLIES0", "25 replies"),
+        );
+        let top = parse_native_page(&value, &id, 0, &Arc::from([]), 0).unwrap();
+        let first_cursor = top.replies["UgNative0"].clone();
+        let transport = GuestTransport::with_fixture(vec![
+            Ok(reply_page("UgNative0", 0..10, Some("MORE1"))),
+            // The next page repeats the last published reply.
+            Ok(reply_page("UgNative0", 9..25, Some("MORE2"))),
+            // Only repeats: the thread is looping, so paging stops.
+            Ok(reply_page("UgNative0", 0..5, Some("MORE3"))),
+        ]);
+        let first = native_replies(&transport, &id, &first_cursor, &op()).unwrap();
+        assert_eq!(first.parent, "UgNative0");
+        assert_eq!(first.video, id);
+        assert_eq!(first.replies.len(), 10);
+        let reply = &first.replies[0];
+        assert_eq!(reply.id, "UgNative0.Reply0");
+        assert_eq!(reply.text, "Synthetic comment 1\nline");
+        assert_eq!(reply.author.as_deref(), Some("@synthetic"));
+        assert_eq!(
+            reply.published_text.as_deref(),
+            Some("7 hours ago (edited)")
+        );
+        assert_eq!(reply.like_count, Some(12));
+        assert_eq!(reply.reply_count, None);
+        assert_eq!(
+            reply.author_thumbnail_url.as_deref(),
+            Some("https://yt3.ggpht.com/synthetic=s88-c-k")
+        );
+        let next = first.next.clone().expect("show more replies");
+        assert_eq!((next.offset, next.seen.len()), (10, 10));
+        assert_eq!(next.parent(), "UgNative0");
+        let second = native_replies(&transport, &id, &next, &op()).unwrap();
+        assert_eq!(second.replies.len(), 15);
+        assert_eq!(second.replies[0].id, "UgNative0.Reply10");
+        let looping =
+            native_replies(&transport, &id, second.next.as_ref().unwrap(), &op()).unwrap();
+        assert!(looping.replies.is_empty() && looping.next.is_none() && !looping.limit_reached);
+        {
+            let calls = transport.fixture.as_ref().unwrap().calls.lock().unwrap();
+            let tokens: Vec<_> = calls
+                .iter()
+                .map(|(_, body)| &body["continuation"])
+                .collect();
+            assert_eq!(tokens, ["REPLIES0", "MORE1", "MORE2"]);
+            assert!(calls.iter().all(|(endpoint, _)| endpoint == "next"));
+        }
+        // The per-thread ceiling truncates the page and ends browsing explicitly.
+        let near = ReplyCursor {
+            offset: MAX_REPLIES - 5,
+            ..first_cursor.clone()
+        };
+        let transport =
+            GuestTransport::with_fixture(vec![Ok(reply_page("UgNative0", 50..70, Some("MORE")))]);
+        let last = native_replies(&transport, &id, &near, &op()).unwrap();
+        assert_eq!(last.replies.len(), 5);
+        assert!(last.next.is_none() && last.limit_reached);
+        // An oversized page is never silently skipped past: it ends browsing.
+        let transport =
+            GuestTransport::with_fixture(vec![Ok(reply_page("UgNative0", 0..60, Some("MORE")))]);
+        let large = native_replies(&transport, &id, &first_cursor, &op()).unwrap();
+        assert_eq!(large.replies.len(), REPLY_PAGE_SIZE);
+        assert!(large.next.is_none() && large.limit_reached);
+        // Cursors stay scoped to their video, session generation and ceiling.
+        let foreign = VideoId::new("zyxwvutsrqp").unwrap();
+        let transport = GuestTransport::with_fixture(vec![]);
+        assert_eq!(
+            native_replies(&transport, &foreign, &first_cursor, &op()).err(),
+            Some(ProviderError::InvalidInput)
+        );
+        let stale = OperationContext {
+            session_generation: 1,
+            ..op()
+        };
+        assert_eq!(
+            native_replies(&transport, &id, &first_cursor, &stale).err(),
+            Some(ProviderError::InvalidInput)
+        );
+        let exhausted = ReplyCursor {
+            offset: MAX_REPLIES,
+            ..first_cursor.clone()
+        };
+        assert_eq!(
+            native_replies(&transport, &id, &exhausted, &op()).err(),
+            Some(ProviderError::InvalidInput)
+        );
+        let cancelled = op();
+        cancelled.cancel.cancel();
+        assert_eq!(
+            native_replies(&transport, &id, &first_cursor, &cancelled).err(),
+            Some(ProviderError::Cancelled)
+        );
+    }
+
+    #[test]
+    fn malformed_reply_pages_never_look_like_successful_replies() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let mut value = native(0..1, None, false);
+        with_replies(
+            &mut value,
+            0,
+            "2",
+            replies_renderer("REPLIES0", "2 replies"),
+        );
+        let cursor = parse_native_page(&value, &id, 0, &Arc::from([]), 0)
+            .unwrap()
+            .replies
+            .remove("UgNative0")
+            .unwrap();
+        // A top-level (`replyLevel` 0) row is never accepted as a reply.
+        let mut top_level = reply_page("UgNative0", 0..2, None);
+        for n in 0..2 {
+            top_level["frameworkUpdates"]["entityBatchUpdate"]["mutations"][n]["payload"]["commentEntityPayload"]
+                ["properties"]["replyLevel"] = json!(0);
+        }
+        let mut orphan = reply_page("UgNative0", 0..2, None);
+        orphan["frameworkUpdates"]["entityBatchUpdate"]["mutations"] = json!([]);
+        let mut two_tokens = reply_page("UgNative0", 0..2, Some("A"));
+        two_tokens["onResponseReceivedEndpoints"][0]["appendContinuationItemsAction"]
+            ["continuationItems"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "B"}}}}));
+        for value in [
+            json!({}),
+            json!({"onResponseReceivedEndpoints": [{"appendContinuationItemsAction": {"continuationItems": [{"futureRenderer": {}}]}}]}),
+            top_level,
+            orphan,
+            two_tokens,
+        ] {
+            assert_eq!(
+                parse_reply_page(&value, &cursor).err(),
+                Some(ProviderError::MalformedOutput)
+            );
+        }
+        assert_eq!(
+            parse_reply_page(&reply_page("UgNative0", 0..101, None), &cursor).err(),
+            Some(ProviderError::OutputTooLarge)
+        );
+        // Replies removed since the count was reported: a genuine empty page.
+        let empty = json!({"onResponseReceivedEndpoints": [{"appendContinuationItemsAction": {"continuationItems": []}}]});
+        let page = parse_reply_page(&empty, &cursor).unwrap();
+        assert!(page.replies.is_empty() && page.next.is_none() && !page.limit_reached);
+        // Reply bodies are bounded plain text like top-level comments.
+        let mut long = reply_page("UgNative0", 0..1, None);
+        long["frameworkUpdates"]["entityBatchUpdate"]["mutations"][0]["payload"]["commentEntityPayload"]
+            ["properties"]["content"]["content"] = json!("é\u{0000}".repeat(20_000));
+        let page = parse_reply_page(&long, &cursor).unwrap();
+        assert_eq!(page.replies[0].text.chars().count(), 10_000);
+        assert!(!page.replies[0].text.contains('\0'));
     }
 }

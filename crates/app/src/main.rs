@@ -14,6 +14,7 @@ mod cli;
 mod clock_ui;
 mod collection_window_smoke;
 mod comment_avatars;
+mod comment_replies;
 mod comments_ui;
 mod controls_ui;
 mod decode_warning;
@@ -1167,6 +1168,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
     let watch_meta = watch_meta::State::new(app.as_weak(), resolver.clone());
+    let comments_ui = comments_ui::State::new(app.as_weak(), resolver.clone());
     let account_ui =
         account_ui::State::new(app.as_weak(), account_directory, resolver, restore_account);
     let state = Rc::new(UiState {
@@ -1207,7 +1209,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         feed_focus: feed_focus::State::default(),
         focus_intent: focus_intent::State::default(),
         playback_preferences: playback_preferences::State::default(),
-        comments_ui: comments_ui::State::default(),
+        comments_ui,
         caption_ui: caption_ui::State::new(caption_cleanup.client()),
         caption_cache: caption_cache::State::default(),
         playback_ui: playback_ui::State::default(),

@@ -66,6 +66,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .count(),
             first.next.is_some()
         );
+        println!(
+            "native reply threads on page 1: with_count={} with_continuation={}",
+            first
+                .comments
+                .iter()
+                .filter(|c| c.reply_count.is_some())
+                .count(),
+            first.replies.len()
+        );
+        if let Some(comment) = first
+            .comments
+            .iter()
+            .find(|c| first.replies.contains_key(&c.id))
+        {
+            let started = Instant::now();
+            let replies =
+                comments::native_replies(&transport, id, &first.replies[&comment.id], &op)?;
+            println!(
+                "native replies page 1: {} ms · reported={:?} rows={} with_avatar={} next={}",
+                started.elapsed().as_millis(),
+                comment.reply_count,
+                replies.replies.len(),
+                replies
+                    .replies
+                    .iter()
+                    .filter(|r| r.author_thumbnail_url.is_some())
+                    .count(),
+                replies.next.is_some()
+            );
+            if let Some(cursor) = &replies.next {
+                let started = Instant::now();
+                let more = comments::native_replies(&transport, id, cursor, &op)?;
+                let overlap = more
+                    .replies
+                    .iter()
+                    .filter(|r| replies.replies.iter().any(|f| f.id == r.id))
+                    .count();
+                println!(
+                    "native replies page 2: {} ms · rows={} overlap_with_page1={} next={}",
+                    started.elapsed().as_millis(),
+                    more.replies.len(),
+                    overlap,
+                    more.next.is_some()
+                );
+            }
+        }
         if let Some(cursor) = &first.next {
             let started = Instant::now();
             let second = comments::native_comments(&transport, id, Some(cursor), &op)?;

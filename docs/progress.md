@@ -37,8 +37,9 @@ Comments automatically fetch the first public guest page after accepted selectio
 using a generation-checked single-shot handoff. The persisted schema-7 setting
 can cancel/hide them. Comment loading has section-local pending state and does
 not disable unrelated navigation/player controls. Rows use compact author/date,
-selectable body, optional genuine creator badge and likes; Copy/reply clutter is
-removed. History uses dated compact video rows, watched progress and existing
+selectable body, optional genuine creator badge and likes; Copy clutter is
+removed and native pages offer YouTube-style reply threads
+([comments](comments.md#reply-threads)). History uses dated compact video rows, watched progress and existing
 cached thumbnails. It makes no artwork network request, retains bounded typed
 rows and releases images on viewport/surface changes. Play/Remove targets are
 separate and keyboard accessible.
