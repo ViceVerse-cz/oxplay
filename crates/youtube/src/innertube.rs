@@ -18,7 +18,10 @@ const CLIENT_NAME: &str = "WEB";
 const CLIENT_ID: &str = "1";
 const CLIENT_VERSION: &str = "2.20260623.01.00";
 /// Read-only public endpoints. `player` is deliberately absent.
-const ENDPOINTS: &[&str] = &["search", "browse", "next"];
+/// `navigation/resolve_url` maps a public `@handle` address to its canonical
+/// `UC…` channel ID (read-only, anonymous, same fixed origin); the handle is
+/// never followed afterwards.
+const ENDPOINTS: &[&str] = &["search", "browse", "next", "navigation/resolve_url"];
 
 #[cfg(test)]
 #[derive(Default)]
@@ -248,6 +251,16 @@ mod tests {
             transport.post("search", json!("text"), &operation()),
             Err(ProviderError::InvalidInput)
         );
+        for endpoint in [
+            "navigation",
+            "navigation/resolve_url/../player",
+            "search?x=1",
+        ] {
+            assert_eq!(
+                transport.post(endpoint, json!({}), &operation()),
+                Err(ProviderError::InvalidInput)
+            );
+        }
         let payload =
             json!({"query": "TEST FIXTURE", "context": {"client": {"clientName": "ANDROID"}}});
         transport.post("search", payload, &operation()).unwrap();

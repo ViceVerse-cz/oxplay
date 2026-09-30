@@ -10,13 +10,24 @@ pub struct ChannelProfile {
 }
 
 impl YtDlp {
-    /// Metadata-only extraction through the existing isolated, supervised guest
-    /// runner. `playlist-items=0` avoids enumerating a channel's uploads.
+    /// Public channel header metadata from the native guest InnerTube reader;
+    /// one metadata-only extraction through the isolated, supervised guest
+    /// runner only for `catalog::falls_back` errors. `playlist-items=0` avoids
+    /// enumerating a channel's uploads.
     pub fn channel_profile(
         &self,
         id: &ChannelId,
         operation: &OperationContext,
     ) -> Result<ChannelProfile, ProviderError> {
+        if let Some(transport) = self.guest() {
+            match crate::guest_catalog::channel_profile(transport, id, operation) {
+                Err(error) if crate::catalog::falls_back(error) => {}
+                result => return result,
+            }
+        }
+        if operation.cancel.is_cancelled() {
+            return Err(ProviderError::Cancelled);
+        }
         let value = self.run_with_priority(
             &[
                 "--flat-playlist".into(),
