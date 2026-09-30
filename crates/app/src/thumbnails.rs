@@ -573,6 +573,15 @@ fn allowed(url: &str) -> bool {
         )
 }
 pub(crate) async fn fetch(client: &reqwest::Client, url: &str) -> Option<image::RgbaImage> {
+    fetch_sized(client, url, 320, 180).await
+}
+/// Decode directly to the consumer's bounds, with the same fetch/decode policy.
+pub(crate) async fn fetch_sized(
+    client: &reqwest::Client,
+    url: &str,
+    width: u32,
+    height: u32,
+) -> Option<image::RgbaImage> {
     if !allowed(url) {
         return None;
     }
@@ -593,9 +602,15 @@ pub(crate) async fn fetch(client: &reqwest::Client, url: &str) -> Option<image::
     }
     // The dedicated worker owns decoding too. Small, bounded input avoids an
     // unbounded blocking-pool queue; cancellation is checked before publication.
-    decode(&bytes)
+    decode_sized(&bytes, width, height)
 }
 fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
+    decode_sized(bytes, 320, 180)
+}
+fn decode_sized(bytes: &[u8], width: u32, height: u32) -> Option<image::RgbaImage> {
+    if width == 0 || height == 0 {
+        return None;
+    }
     let mut reader = image::ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()
         .ok()?;
@@ -604,8 +619,18 @@ fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
     limits.max_image_height = Some(4096);
     limits.max_alloc = Some(16 * 1024 * 1024);
     reader.limits(limits);
-    Some(reader.decode().ok()?.thumbnail(320, 180).into_rgba8())
+    let decoded = reader.decode().ok()?;
+    // Image::thumbnail also enlarges small inputs. Preserve those pixels and
+    // avoid resampling already-normalized cache images on every cache hit.
+    Some(if decoded.width() <= width && decoded.height() <= height {
+        decoded.into_rgba8()
+    } else {
+        decoded.thumbnail(width, height).into_rgba8()
+    })
 }
+#[cfg(test)]
+#[path = "image_performance.rs"]
+mod performance;
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -656,6 +681,26 @@ mod tests {
         let result = decode(png.get_ref()).unwrap();
         assert_eq!(result.dimensions(), (320, 180));
         assert!(decode(b"not an image").is_none());
+    }
+    #[test]
+    fn decode_preserves_small_pixels_and_resizes_portraits_in_one_pass() {
+        for (size, bounds, expected) in [
+            ((48, 48), (88, 88), (48, 48)),
+            ((180, 180), (88, 88), (88, 88)),
+            ((1280, 720), (88, 88), (88, 50)),
+            ((320, 180), (320, 180), (320, 180)),
+        ] {
+            let pixels =
+                image::RgbaImage::from_pixel(size.0, size.1, image::Rgba([17, 31, 63, 255]));
+            let mut png = Cursor::new(Vec::new());
+            pixels.write_to(&mut png, image::ImageFormat::Png).unwrap();
+            let decoded = decode_sized(png.get_ref(), bounds.0, bounds.1).unwrap();
+            assert_eq!(decoded.dimensions(), expected);
+            if size == expected {
+                assert_eq!(decoded, pixels);
+            }
+            assert!(decode_sized(png.get_ref(), 0, 88).is_none());
+        }
     }
     #[test]
     fn offscreen_and_replaced_page_completions_cannot_repopulate_new_rows() {
@@ -796,10 +841,7 @@ mod tests {
             .set_limit(CacheLimit::Mib32)
             .unwrap();
         store(&cache, &id, &image::RgbaImage::new(16, 9), &metrics);
-        assert_eq!(
-            cached(&cache, &id, &metrics).unwrap().dimensions(),
-            (320, 180)
-        );
+        assert_eq!(cached(&cache, &id, &metrics).unwrap().dimensions(), (16, 9));
         assert_eq!(metrics.snapshot().cache_errors, 0);
         drop(cache);
         std::fs::remove_dir_all(path).unwrap();
@@ -881,7 +923,7 @@ mod tests {
         };
         assert_eq!(first.row, 3);
         assert!(first.video_id == Some(id.clone()));
-        assert_eq!(first.pixels.unwrap().dimensions(), (320, 180));
+        assert_eq!(first.pixels.unwrap().dimensions(), (16, 9));
         let purge = worker.begin_purge().unwrap();
         assert!(worker.begin_purge().is_err());
         worker.replace(request()); // suppressed while purge owns admission

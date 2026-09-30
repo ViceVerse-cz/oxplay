@@ -6,7 +6,7 @@
 //! decode). One job owns the whole page: at most four requests run at once, every
 //! result is resized to at most 88x88 before it reaches Slint, and a new page,
 //! video, disabled setting or clear supersedes the job and drops late results.
-use crate::thumbnails::fetch;
+use crate::thumbnails::fetch_sized;
 use std::{
     cell::{Cell, RefCell},
     sync::{Arc, Mutex},
@@ -38,16 +38,6 @@ fn drain_current(results: &mut Vec<Ready>, generation: u64) -> Vec<Ready> {
         .filter(|ready| ready.generation == generation)
         .collect()
 }
-/// Small square-ish portrait for a 40px circular clip at up to 2x scale.
-fn resize(pixels: image::RgbaImage) -> image::RgbaImage {
-    if pixels.width() <= MAX_EDGE && pixels.height() <= MAX_EDGE {
-        return pixels;
-    }
-    image::DynamicImage::ImageRgba8(pixels)
-        .thumbnail(MAX_EDGE, MAX_EDGE)
-        .into_rgba8()
-}
-
 pub struct Avatars {
     generation: Cell<u64>,
     command: Option<watch::Sender<Option<Job>>>,
@@ -93,7 +83,9 @@ impl Avatars {
                             && let Some((row, url)) = urls.next()
                         {
                             let client = client.clone();
-                            set.spawn(async move { (row, fetch(&client, &url).await) });
+                            set.spawn(async move {
+                                (row, fetch_sized(&client, &url, MAX_EDGE, MAX_EDGE).await)
+                            });
                         }
                         if set.is_empty() {
                             break;
@@ -111,7 +103,7 @@ impl Avatars {
                                     out.lock().unwrap().push(Ready {
                                         generation: job.generation,
                                         row,
-                                        pixels: resize(pixels),
+                                        pixels,
                                     });
                                     wake();
                                 }
@@ -194,15 +186,6 @@ mod tests {
         let current = drain_current(&mut results, 4);
         assert_eq!(current.iter().map(|r| r.row).collect::<Vec<_>>(), [1, 3]);
         assert!(results.is_empty(), "stale results are discarded, not kept");
-    }
-
-    #[test]
-    fn portraits_are_resized_small_before_slint_but_small_ones_are_untouched() {
-        let large = resize(image::RgbaImage::new(180, 180));
-        assert_eq!(large.dimensions(), (88, 88));
-        let wide = resize(image::RgbaImage::new(320, 180));
-        assert!(wide.width() <= 88 && wide.height() <= 88);
-        assert_eq!(resize(image::RgbaImage::new(48, 48)).dimensions(), (48, 48));
     }
 
     #[test]
