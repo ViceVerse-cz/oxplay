@@ -98,44 +98,50 @@ Actions use verified full commit IDs. Workflow tokens default to read-only
 repository access; only the final release job can write repository contents.
 Checkout does not retain Git credentials. Tests and compilation run before
 that job, with no write token. The other Serein application's workflow informed
-the manual dispatch and platform matrix structure; its unrelated dependencies
-and packaging pipeline are not used here.
+the release job structure; its unrelated dependencies and signing/packaging
+pipeline are not used here.
 
-## Create a source preview
+## Create a preview release
 
-Run **Source release (manual)** on `main`, with a new tag such as
-`v0.1.0-dev.1`. Allowed suffixes are `dev`, `alpha`, `beta` and `rc`, followed by
-a numeric component. The base version must match `[workspace.package].version`
-in the committed `Cargo.toml`. Stable tags are intentionally rejected while
-release qualification is incomplete. This workflow does not change versions;
-make any version update in a reviewed commit first.
+Run **Release (manual)** on `main`. Leave the tag empty to use the next unused
+`v<version>-dev.N`, or supply one such as `v0.1.0-dev.2`. Allowed suffixes are
+`dev`, `alpha`, `beta` and `rc`, followed by a numeric component. The base version
+must match `[workspace.package].version` in the committed `Cargo.toml`. Stable tags
+are intentionally rejected while release qualification is incomplete. The workflow
+does not change versions; make any version update in a reviewed commit first.
 
-The workflow archives its exact checked-out commit, runs the same CI checks,
-then creates a new tag and a **draft prerelease**, never a public/latest release.
-It uploads only:
+Jobs, following the structure of the other Serein application's release pipeline
+(plan, build matrix, publish):
 
-- A source tarball from `git archive`, including the lockfile, workflows,
-  toolchain declaration and tracked license files.
-- `release.json` associating the tag with the exact source revision/toolchain.
-- `RELEASE_NOTES.md` describing its experimental scope.
-- `SHA256SUMS` covering those three assets.
+1. **source** resolves the tag and archives the exact checked-out commit.
+2. **checks** runs the same CI workflow in parallel with the builds.
+3. **macos** (`macos-26`, ARM64) installs Homebrew mpv and yt-dlp, runs
+   `scripts/package_macos.py bundle --build --bundle-helpers`, audits the result with
+   `scripts/verify_package.py` and zips it with `ditto`.
+4. **linux** (`ubuntu-24.04`, x86_64) builds the locked release binary against the
+   isolated mpv 0.41.0 and `scripts/ci/package-linux.sh` tars it with that libmpv.
+5. **publish** runs only when every job passed. It verifies the source checksums,
+   regenerates `SHA256SUMS` across all assets, creates the tag and a **prerelease**
+   (never `latest`). It is a draft unless **publish** was ticked.
 
-The helper reads manifests from the archived commit. Untracked local files,
-credentials, `target`, artifacts and the local upstream checkout are excluded.
-It does not bundle downloaded dependency source or claim to provide complete
-corresponding source for any separately distributed binary. Draft assets expire
-from Actions storage after 14 days; the attached release assets remain.
+Assets: `serein-<tag>-source.tar.gz`, `serein-<tag>-macOS-ARM64.zip` with its
+`.inventory.json`, `serein-<tag>-Linux-X64.tar.gz`, `release.json`,
+`RELEASE_NOTES.md` and `SHA256SUMS`. Unlike the other application, no Apple
+secrets are required because nothing is Developer ID signed or notarized: the macOS
+bundle is ad-hoc signed and quarantined on download (`xattr -dr com.apple.quarantine
+Serein.app`). The pipeline adds no conventional-commit versioning, nightly channel,
+Windows build or package repositories. Draft assets expire from Actions storage
+after 14 days; the attached release assets remain.
 
 The tag creation fails if a tag already exists; no existing tag or release is
-overwritten. If tagging succeeds but release creation fails, inspect that run
-and the tag before recovery. Use a fresh prerelease number for another dispatch;
-the workflow never silently reassigns the existing tag. A non-main dispatch
-skips release work. A failed CI job prevents tag and draft creation.
+overwritten. If tagging succeeds but release creation fails, inspect that run and
+the tag before recovery. A non-main dispatch skips all release work, and a failed
+CI or build job prevents tag and release creation.
 
-For a local preview from a committed checkout:
+For a local source preview from a committed checkout:
 
 ```sh
-python3 scripts/release_source.py --tag v0.1.0-dev.1 --output /tmp/serein-source-preview
+python3 scripts/release_source.py --output /tmp/serein-source-preview
 cd /tmp/serein-source-preview
 shasum -a 256 -c SHA256SUMS
 ```
@@ -146,12 +152,12 @@ normal pushes never publish release assets.
 
 ## Binary release blockers
 
-The developer macOS bundle is not uploaded by CI or release workflows. Signing,
-notarization, clean-machine portability, complete native/helper notices and
-corresponding-source coverage remain incomplete. Linux/X11, native Wayland and
-Windows need independent runtime validation. See [packaging](packaging.md),
-[licensing](licensing.md) and [source coverage](source-coverage.md). This workflow
-does not convert those open gates into release approval.
+The uploaded binaries are development builds, not release approval. Developer ID
+signing, notarization, clean-machine portability, complete native/helper notices and
+corresponding-source coverage remain incomplete. The Linux tarball is experimental
+and depends on system FFmpeg and yt-dlp. Linux/X11, native Wayland and Windows need
+independent runtime validation. See [packaging](packaging.md),
+[licensing](licensing.md) and [source coverage](source-coverage.md).
 
 ## Initial repository snapshot
 

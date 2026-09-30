@@ -163,6 +163,7 @@ ISC and retained Feather MIT notices. The current [developer macOS bundle](docs/
 is not a portable, signed release: helper packaging, source association and notices
 remain release work.
 
-[CI and manual source previews](docs/ci-release.md) describe the macOS/Linux
-build matrix and draft-only source-release workflow. Binary publishing remains
-blocked on the documented platform, packaging and licensing gates.
+[CI and manual preview releases (source and binaries)](docs/ci-release.md) describe the macOS/Linux
+build matrix and the manual prerelease workflow, which attaches unsigned macOS
+ARM64 and experimental Linux x86_64 builds. Signing, portability and licensing
+gates remain open.

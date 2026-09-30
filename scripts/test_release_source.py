@@ -58,6 +58,18 @@ class SourceReleaseTests(unittest.TestCase):
             with self.subTest(tag=tag), self.assertRaises(release.ReleaseError):
                 release.validate_tag(tag, "0.1.0")
 
+    def test_next_tag_is_the_first_unused_prerelease_number(self):
+        self.assertEqual(release.next_tag("0.1.0", []), "v0.1.0-dev.1")
+        self.assertEqual(release.next_tag("0.1.0", ["v0.1.0-dev.1", "v0.1.0-dev.4", "v0.1.0-beta.9",
+                                                    "v0.0.9-dev.7", "v0.1.0-dev.x"]), "v0.1.0-dev.5")
+        with self.assertRaises(release.ReleaseError):
+            release.next_tag("0.1.0-rc", [])
+
+    def test_omitted_tag_continues_the_existing_numbering(self):
+        self.git("tag", "v0.1.0-dev.1")
+        metadata = release.release(self.repo, None, self.base / "auto")
+        self.assertEqual(metadata["tag"], "v0.1.0-dev.2")
+
     def test_exact_commit_includes_dotfiles_not_untracked_or_worktree_changes(self):
         revision = self.git("rev-parse", "HEAD").decode().strip()
         (self.repo / "secrets").mkdir()

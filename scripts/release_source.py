@@ -51,6 +51,14 @@ def validate_tag(tag: str, version: str) -> None:
             "Tag must match the workspace version and use dev, alpha, beta or rc with a numeric suffix")
 
 
+def next_tag(version: str, tags: list[str], channel: str = "dev") -> str:
+    """First unused prerelease number for this version, never reusing a tag."""
+    validate_tag(f"v{version}-{channel}.1", version)
+    pattern = re.compile(rf"v{re.escape(version)}-{channel}\.([1-9][0-9]*)")
+    used = [int(match[1]) for tag in tags if (match := pattern.fullmatch(tag))]
+    return f"v{version}-{channel}.{max(used, default=0) + 1}"
+
+
 def tracked_files(repo: Path, revision: str) -> dict[str, tuple[str, str]]:
     entries = {}
     for record in git(repo, "ls-tree", "-r", "-z", revision).split(b"\0"):
@@ -119,12 +127,14 @@ def digest(path: Path) -> str:
     return checksum.hexdigest()
 
 
-def release(repo: Path, tag: str, output: Path) -> dict:
+def release(repo: Path, tag: str | None, output: Path) -> dict:
     revision = git(repo, "rev-parse", "--verify", "HEAD^{commit}").decode("ascii").strip()
     require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision) is not None, "Invalid source revision")
     manifest = tomllib.loads(git(repo, "show", f"{revision}:Cargo.toml").decode("utf-8"))
     version = manifest["workspace"]["package"]["version"]
     require(isinstance(version, str), "Workspace version is missing")
+    if tag is None:
+        tag = next_tag(version, git(repo, "tag", "--list").decode("utf-8").split())
     validate_tag(tag, version)
     toolchain = tomllib.loads(git(repo, "show", f"{revision}:rust-toolchain.toml").decode("utf-8"))["toolchain"]
     require(isinstance(toolchain, dict) and isinstance(toolchain.get("channel"), str),
@@ -157,19 +167,25 @@ def release(repo: Path, tag: str, output: Path) -> dict:
         "complete_corresponding_source": False,
         "archive": archive_name, "archive_sha256": digest(output / archive_name),
         "tracked_files": len(entries),
-        "scope": "Exact tracked application repository at the recorded commit; excludes untracked working files and separately fetched dependency/native/helper builds",
+        "scope": "Describes the source archive only. Exact tracked application repository at the recorded commit; excludes untracked working files and separately fetched dependency/native/helper builds",
     }
     (output / "release.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    notes = f"""# Serein {tag} — source preview
+    notes = f"""# Serein {tag} — preview
 
-This is a source-only prerelease from commit `{revision}`, workspace version
+This is a prerelease from commit `{revision}`, workspace version
 `{version}`, with the committed Rust toolchain recorded in `release.json`.
 It is not a production release or a platform-qualified application download.
 
-No application binaries, native media libraries, extractor runtimes or compiled
-helpers are bundled. Build prerequisites and current limitations are documented
-in `README.md`, `docs/dependencies.md` and `docs/platform-matrix.md` in the source.
-Windows, Linux/X11 and native Wayland support are not established by this release.
+The source archive contains no binaries. The release also carries development
+builds compiled by CI from this exact commit: an Apple Silicon macOS app bundle
+(`serein-{tag}-macOS-ARM64.zip`) and an experimental Linux x86_64 tarball
+(`serein-{tag}-Linux-X64.tar.gz`). They are unsigned (the macOS bundle is ad-hoc
+signed only, not notarized), not clean-machine qualified, and macOS will quarantine
+the download: run `xattr -dr com.apple.quarantine Serein.app` after unzipping.
+The Linux build needs system FFmpeg/GL libraries and `yt-dlp`; native X11 and
+Wayland playback are unvalidated, and Windows is not built. Build prerequisites and
+current limitations are documented in `README.md`, `docs/dependencies.md` and
+`docs/platform-matrix.md` in the source.
 The archive contains the exact tracked repository, including its lockfile,
 workflow/toolchain files and retained license notices. Untracked local files,
 credentials and separately downloaded build inputs are not included.
@@ -180,7 +196,7 @@ preview does not clear native/helper redistribution, complete dependency
 corresponding-source obligations, signing/notarization or product acceptance
 gates. See `docs/licensing.md` and `docs/packaging.md` for the recorded gaps.
 
-`SHA256SUMS` covers the source archive, release metadata and these notes.
+`SHA256SUMS` covers every asset attached to this release.
 Checksums provide integrity only when obtained through a trusted channel; they
 are not a code signature or evidence that the software passed runtime testing.
 """
@@ -200,7 +216,7 @@ def github_output(path: Path, metadata: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", required=True)
+    parser.add_argument("--tag", help="Prerelease tag; defaults to the next unused v<version>-dev.N")
     parser.add_argument("--output", required=True, type=Path, help="Fresh directory; never overwritten")
     parser.add_argument("--github-output", type=Path)
     args = parser.parse_args()
