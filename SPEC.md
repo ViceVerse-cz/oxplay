@@ -1,7 +1,7 @@
 # Native YouTube Client — Product and Engineering Specification
 
 **Document version:** 2.0 — Slint edition  
-**Updated:** September 28, 2026  
+**Updated:** October 1, 2026 (explicit-download amendment)  
 **Status:** Implementation contract; no implementation or benchmark results are claimed.  
 **Audience:** Maintainers, contributors, and the implementing AI agent.  
 **Working title:** Native YouTube Client. Final naming and brand clearance are separate tasks.
@@ -9,6 +9,8 @@
 ## Revision scope
 
 This revision supersedes the GPUI-specific frontend and dependency requirements in version 1.0. The chosen architecture is **one shared, compiled Slint UI + an in-process Rust core + replaceable media/presentation adapters**. It preserves the account, advertisement-suppression, privacy, clean YouTube-inspired design, and resource-budget requirements. It adds explicit rendering/invalidation tests, a low-copy video gate, Slint-specific model/lifetime rules, and a revised licensing decision. No application implementation or measured performance is implied by this document.
+
+The October 1, 2026 amendment records a project-owner decision: explicit, user-initiated downloads of guest-accessible public videos are now in scope under the constraints of Section 11.1. Playback buffering remains transient; everything else in this revision is unchanged.
 
 ## 1. Product definition
 
@@ -30,7 +32,7 @@ A first stable release may support one validated platform. Other platforms must 
 
 ### 1.3 Non-goals for version 1
 
-Do not implement a new video decoder, a general-purpose browser, a cloud backend, an advertising business, uploads, live chat, downloads/offline media storage, casting, or a plugin marketplace. DRM bypass, access to content without authorization, account challenge bypass, and defeating age or purchase requirements are not product features. Creator-embedded sponsorship skipping is separate from YouTube ad suppression and may be considered later.
+Do not implement a new video decoder, a general-purpose browser, a cloud backend, an advertising business, uploads, live chat, casting, or a plugin marketplace. Explicit user-initiated downloads are in scope only as constrained by Section 11.1; background, bulk, or account-authorized downloading is not. DRM bypass, access to content without authorization, account challenge bypass, and defeating age or purchase requirements are not product features. Creator-embedded sponsorship skipping is separate from YouTube ad suppression and may be considered later.
 
 ## 2. Non-negotiable technology decisions
 
@@ -103,6 +105,7 @@ Start with a thin, auditable libmpv binding or wrapper. Do not choose a wrapper 
 | YouTube-served ad suppression | Yes, for supported playback paths | Tested; limitations disclosed |
 | Local watch history | Optional and disabled initially | Opt-in, clearable, retention setting |
 | Live streams, 4K, HDR, picture-in-picture | Experimental | Not required unless advertised as supported |
+| Explicit downloads of public videos | Optional | Explicit per-video action, guest access only, visible progress/cancel/delete (Section 11.1) |
 
 Never show synthetic content as live YouTube results. Fixture/demo mode must be labeled and must not be enabled in normal builds.
 
@@ -218,7 +221,7 @@ Run the Slint event loop and component access on the supported UI thread. Use th
 
 Keep network, extraction, image decoding, and blocking database work off the UI thread. A Rust async runtime may serve those operations, but it must have clear ownership, a bounded blocking pool, and no competing UI loop. Callbacks must not block waiting for a result that needs the UI or rendering context to progress.
 
-Initial concurrency limits: four metadata requests, eight thumbnail requests, and one extraction job, with a tested maximum of two extractor jobs. Bound queues, response sizes, and retained results. Cancel irrelevant work and prioritize selected-video playback over speculative content.
+Initial concurrency limits: four metadata requests, eight thumbnail requests, and one extraction job, with a tested maximum of two extractor jobs. Explicit downloads (Section 11.1) use their own pool of at most two supervised helper jobs so a long download never holds the playback extraction slot. Bound queues, response sizes, and retained results. Cancel irrelevant work and prioritize selected-video playback over speculative content.
 
 Use coalescing or latest-value delivery for replaceable progress/frame-ready notifications. Do not use an unbounded event queue merely because an upstream example does. Preserve reliable delivery for terminal states, errors, and account-operation outcomes.
 
@@ -455,9 +458,24 @@ For Slint, use a virtualized `ListView` of responsive thumbnail rows, or an equi
 
 Keep row identity, focus, selection, and scroll position stable as pages arrive or a row updates. Recalculate column grouping only when available width changes the column count, not on playback progress. Use small bounded overscan. Cancelling off-screen thumbnail work must prevent stale completions from repopulating evicted views. Account for retained Slint image references and renderer-side texture caches when verifying that eviction actually releases memory.
 
-Do not persist signed media URLs or complete authenticated provider responses. Media buffering is transient, not a hidden downloader. Start with a bounded forward buffer around 32–64 MiB for ordinary 1080p playback; larger formats may use an explicitly measured higher cap.
+Do not persist signed media URLs or complete authenticated provider responses. Playback buffering is transient, not a hidden downloader: the player never writes its stream buffer to disk, and only the explicit download feature in Section 11.1 stores media files. Start with a bounded forward buffer around 32–64 MiB for ordinary 1080p playback; larger formats may use an explicitly measured higher cap.
 
 When local history is enabled, use a clear retention default such as 30 days and provide delete-all and per-item deletion. Deletion must also remove relevant search/index entries and derived local recommendations. Do not promise forensic removal of previously written filesystem blocks.
+
+### 11.1 Explicit downloads
+
+The application MAY save a public video for offline viewing when the user explicitly asks for that one video. When the feature is present it MUST follow these rules:
+
+- **Explicit only.** Each download starts from a deliberate per-video command (for example a video card's context menu or the watch page). No background, speculative, scheduled, or automatic downloading; no bulk download of playlists, channels, subscriptions, or feeds; playback, hover, and prefetching never create download jobs.
+- **Guest-accessible public content only.** Downloads use the anonymous guest extraction path. Never attach account cookies or session material. Private, members-only, purchased/rental, sign-in-required, DRM-protected, and in-progress live content is unsupported and fails with an explicit message; this is not permission to bypass any access, age, or purchase restriction.
+- **Supervised helpers.** Use the same helper contract as stream resolution (Section 7.2): explicit binary paths, argument arrays, isolated configuration, bounded output, finite inactivity and overall timeouts, the shared rate-limit cooldown, and killing/reaping the owned process tree on cancellation, deletion, and application exit. A media merger such as FFmpeg is used only from an explicit, reviewed path. When it is unavailable, fall back to a single-file format and tell the user that quality is limited; never silently claim the requested quality.
+- **Bounded concurrency.** At most two download jobs run at once; later requests wait in a visible queue. Download helpers are separate from the playback extraction slot, count toward whole-process-tree resource measurements, and do not run when no download is queued.
+- **Quality.** Respect the user's default maximum-quality ceiling, and record the quality actually obtained.
+- **App-owned storage.** Files live in a private `downloads` directory inside the application data directory. Keep a small, versioned index with atomic replacement that tolerates missing, externally deleted, or unindexed files. Do not store signed media URLs, cookies, or provider responses. Partial files are removed after cancellation or failure.
+- **User control.** Show queued and running jobs with progress (and speed/remaining time when known) and a cancel action, and completed downloads with their metadata. Deletion requires confirmation and removes the media file, its artwork, and its index entry. Offer a way to reveal the file in the platform file manager.
+- **Offline playback.** Playing a download uses the local-file playback path with its stored metadata and makes no YouTube request.
+
+Downloaded files and their titles can reveal viewing interests. They are user files kept until the user deletes them; privacy documentation must state how they relate to the clear-local-data action.
 
 ## 12. Performance budgets and measurement
 
@@ -570,6 +588,7 @@ Manual platform tests cover accessibility, IME, DPI changes, keyboard focus, ful
 | AC-21 | Decoder, transfer stages, renderer work, and baseline comparisons are documented; unavailable evidence is explicit |
 | AC-22 | Texture/context lifecycle survives resize, fullscreen, repeated playback, and teardown without leaks or stale handles |
 | AC-23 | The selected Slint/framework/media license route and redistribution obligations are recorded before release |
+| AC-24 | If downloads are offered: only explicit guest downloads run, at most two at once; cancellation and exit terminate their helpers and remove partial files; deletion removes file and index entry; downloads play offline through the local-file path |
 
 No release may claim an untested operating system, hardware decoder, account feature, or proxy guarantee as supported.
 
