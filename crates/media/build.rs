@@ -1,6 +1,13 @@
+use std::path::{Path, PathBuf};
+
+/// libmpv client API 2.5 (mpv 0.41) is the minimum: frame timing depends on it.
+const MIN_CLIENT_API: (u32, u32) = (2, 5);
+
 fn main() {
     println!("cargo:rerun-if-changed=src/native_child.m");
-    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
+    println!("cargo:rerun-if-env-changed=MPV_DIR");
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    if target_os == "macos" {
         cc::Build::new()
             .file("src/native_child.m")
             .flag("-fobjc-arc")
@@ -10,8 +17,90 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=QuartzCore");
         println!("cargo:rustc-link-lib=framework=OpenGL");
     }
+    if target_os == "windows"
+        && let Some(directory) = std::env::var_os("MPV_DIR").filter(|value| !value.is_empty())
+    {
+        link_windows_mpv_dir(Path::new(&directory));
+        return;
+    }
     pkg_config::Config::new()
         .atleast_version("2.5")
         .probe("mpv")
-        .expect("libmpv development files required (macOS: brew install mpv; Linux: libmpv-dev)");
+        .expect(
+            "libmpv development files required (macOS: brew install mpv; Linux: libmpv-dev; \
+             Windows: set MPV_DIR to an extracted mpv-dev archive, see README)",
+        );
+}
+
+/// Windows: `MPV_DIR` names an extracted libmpv development archive such as
+/// shinchiro's `mpv-dev-x86_64-*.7z`: `include/mpv/client.h`, the runtime
+/// `libmpv-2.dll`, and an import library. An MSVC `mpv.lib` is preferred when
+/// present; otherwise the archive's `libmpv.dll.a` is linked verbatim. Its
+/// members are COFF short-import records that MSVC `link.exe` and `lld-link`
+/// accept directly, so no import library needs to be regenerated.
+fn link_windows_mpv_dir(directory: &Path) {
+    let directory = directory
+        .canonicalize()
+        .unwrap_or_else(|_| panic!("MPV_DIR {} does not exist", directory.display()));
+    let header = directory.join("include/mpv/client.h");
+    let text = std::fs::read_to_string(&header)
+        .unwrap_or_else(|_| panic!("MPV_DIR is missing {}", header.display()));
+    let version = client_api_version(&text)
+        .unwrap_or_else(|| panic!("{} has no MPV_CLIENT_API_VERSION", header.display()));
+    assert!(
+        version >= MIN_CLIENT_API,
+        "MPV_DIR provides libmpv client API {}.{}; {}.{} or newer is required",
+        version.0,
+        version.1,
+        MIN_CLIENT_API.0,
+        MIN_CLIENT_API.1
+    );
+    println!("cargo:rerun-if-changed={}", header.display());
+    let msvc_import = directory.join("mpv.lib");
+    let gnu_import = directory.join("libmpv.dll.a");
+    println!("cargo:rustc-link-search=native={}", directory.display());
+    if msvc_import.is_file() {
+        println!("cargo:rerun-if-changed={}", msvc_import.display());
+        println!("cargo:rustc-link-lib=dylib=mpv");
+    } else if gnu_import.is_file() {
+        println!("cargo:rerun-if-changed={}", gnu_import.display());
+        println!("cargo:rustc-link-lib=dylib:+verbatim=libmpv.dll.a");
+    } else {
+        panic!(
+            "MPV_DIR {} has neither mpv.lib nor libmpv.dll.a",
+            directory.display()
+        );
+    }
+    // Cargo prepends link-search directories inside the target directory to
+    // PATH for `cargo run`/`cargo test`, so a private copy of the runtime DLL
+    // makes development runs work without editing the user's PATH. Packages
+    // must still ship libmpv-2.dll next to oxplay.exe.
+    if let Some(dll) = runtime_dll(&directory) {
+        println!("cargo:rerun-if-changed={}", dll.display());
+        let out = PathBuf::from(std::env::var_os("OUT_DIR").expect("OUT_DIR"));
+        let copy = out.join(dll.file_name().expect("DLL file name"));
+        std::fs::copy(&dll, &copy)
+            .unwrap_or_else(|_| panic!("copy {} into OUT_DIR", dll.display()));
+        println!("cargo:rustc-link-search=native={}", out.display());
+    } else {
+        println!("cargo:warning=MPV_DIR has no libmpv-2.dll; put it on PATH to run Oxplay");
+    }
+}
+
+fn runtime_dll(directory: &Path) -> Option<PathBuf> {
+    ["libmpv-2.dll", "mpv-2.dll"]
+        .into_iter()
+        .map(|name| directory.join(name))
+        .find(|path| path.is_file())
+}
+
+/// Parses `#define MPV_CLIENT_API_VERSION MPV_MAKE_VERSION(major, minor)`.
+fn client_api_version(header: &str) -> Option<(u32, u32)> {
+    let line = header
+        .lines()
+        .map(str::trim)
+        .find(|line| line.starts_with("#define MPV_CLIENT_API_VERSION"))?;
+    let arguments = line.split_once("MPV_MAKE_VERSION(")?.1.split_once(')')?.0;
+    let (major, minor) = arguments.split_once(',')?;
+    Some((major.trim().parse().ok()?, minor.trim().parse().ok()?))
 }
