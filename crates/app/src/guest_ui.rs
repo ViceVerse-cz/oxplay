@@ -2,10 +2,10 @@
 //! Typed guest catalog adapter. Shared card models retain their identity;
 //! row replacement occurs only for an explicit catalog/page navigation.
 use crate::{App, UiState, VideoRow, catalog::Request};
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelHandle, ChannelId, ChannelSummary, PlaylistId, ProviderError, VideoId,
 };
-use serein_youtube::catalog::{
+use oxplay_youtube::catalog::{
     CatalogCursor, CatalogHeader, CatalogPage, CatalogRequest, ChannelTab, SearchKind,
 };
 use slint::{ComponentHandle, Model};
@@ -221,8 +221,8 @@ pub(crate) fn thumbnail_source(
 
 pub fn video_summary(
     state: &UiState,
-    id: &serein_core::VideoId,
-) -> Option<serein_core::VideoSummary> {
+    id: &oxplay_core::VideoId,
+) -> Option<oxplay_core::VideoSummary> {
     state
         .guest_ui
         .items
@@ -253,7 +253,7 @@ fn kind(index: i32) -> SearchKind {
     }
 }
 enum Input {
-    Video(serein_core::VideoLink),
+    Video(oxplay_core::VideoLink),
     Catalog(CatalogRequest),
 }
 fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, ProviderError> {
@@ -264,7 +264,7 @@ fn request_from_input(input: &str, search_kind: SearchKind) -> Result<Input, Pro
     if input.contains("://") || input.starts_with("https:") {
         // A watch URL remains a video action even when it contains a playlist.
         if VideoId::from_url(input).is_ok() {
-            return Ok(Input::Video(serein_core::VideoLink::from_url(input)?));
+            return Ok(Input::Video(oxplay_core::VideoLink::from_url(input)?));
         }
         if let Ok(id) = ChannelId::from_url(input) {
             return Ok(Input::Catalog(CatalogRequest::Channel {
@@ -534,7 +534,7 @@ pub fn begin_account_home(app: &App, state: &UiState) {
 pub fn publish_account_home(
     app: &App,
     state: &UiState,
-    videos: &[serein_core::VideoSummary],
+    videos: &[oxplay_core::VideoSummary],
 ) -> Result<(), &'static str> {
     if videos.len() > crate::home_ui::RECOMMENDATION_PAGE
         || videos
@@ -598,7 +598,7 @@ pub fn clear_cached_catalog(app: &App, state: &UiState) {
     app.set_guest_can_follow(false);
     app.invoke_reset_feed_scroll();
 }
-pub fn local_videos(state: &UiState) -> Option<Vec<serein_core::VideoSummary>> {
+pub fn local_videos(state: &UiState) -> Option<Vec<oxplay_core::VideoSummary>> {
     state
         .guest_ui
         .items
@@ -613,10 +613,10 @@ pub fn local_videos(state: &UiState) -> Option<Vec<serein_core::VideoSummary>> {
 pub fn publish_home(
     app: &App,
     state: &UiState,
-    videos: Vec<serein_core::VideoSummary>,
+    videos: Vec<oxplay_core::VideoSummary>,
     same_page: bool,
 ) -> Result<(), &'static str> {
-    if videos.len() > serein_storage::MAX_PAGE_SIZE as usize
+    if videos.len() > oxplay_storage::MAX_PAGE_SIZE as usize
         || videos.iter().any(|video| video.thumbnail_url.is_some())
         || videos
             .iter()
@@ -1101,7 +1101,7 @@ mod tests {
     }
 
     fn artwork_video(index: u8) -> CatalogItem {
-        CatalogItem::Video(serein_core::VideoSummary {
+        CatalogItem::Video(oxplay_core::VideoSummary {
             metadata: None,
             id: VideoId::new(&format!("{index:011}")).unwrap(),
             title: "Synthetic artwork fixture".into(),
@@ -1141,7 +1141,7 @@ mod tests {
         state
             .items
             .borrow_mut()
-            .push(CatalogItem::Channel(serein_core::ChannelSummary {
+            .push(CatalogItem::Channel(oxplay_core::ChannelSummary {
                 id: ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap(),
                 title: "Synthetic channel".into(),
                 description: None,
@@ -1261,7 +1261,7 @@ mod tests {
         assert_eq!(
             RequestKind::from_request(&Request::ResolveQuality(
                 id,
-                serein_youtube::ResolutionPolicy {
+                oxplay_youtube::ResolutionPolicy {
                     max_height: 720,
                     prefer_h264: true
                 }
@@ -1302,7 +1302,7 @@ mod tests {
     }
     #[test]
     fn rows_keep_channel_and_playlist_kinds_without_fake_video_summaries() {
-        let channel = CatalogItem::Channel(serein_core::ChannelSummary {
+        let channel = CatalogItem::Channel(oxplay_core::ChannelSummary {
             id: ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap(),
             title: "Synthetic channel".into(),
             description: None,
@@ -1312,7 +1312,7 @@ mod tests {
         let row = row(&channel);
         assert_eq!(row.kind.as_str(), "Channel");
         assert!(row.duration.is_empty());
-        let playlist = CatalogItem::Playlist(serein_core::PlaylistSummary {
+        let playlist = CatalogItem::Playlist(oxplay_core::PlaylistSummary {
             id: PlaylistId::new("PLsynthetic").unwrap(),
             title: "Synthetic playlist".into(),
             description: None,

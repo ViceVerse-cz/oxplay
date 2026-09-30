@@ -89,7 +89,7 @@ Once the CLI is integrated, the existing sampler can cover the complete hour:
 ```sh
 python3 scripts/measure.py --warmup 0 --seconds 3600 \
   --include-new-vt-services --output artifacts/soak/local-60m.json -- \
-  target/release/serein --local ABSOLUTE_MOVING_FIXTURE --demo-related \
+  target/release/oxplay --local ABSOLUTE_MOVING_FIXTURE --demo-related \
   --data-root NEW_DIRECTORY --soak-minutes 60 --quit-after 3615
 ```
 

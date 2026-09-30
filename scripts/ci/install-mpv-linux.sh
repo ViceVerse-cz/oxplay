@@ -12,7 +12,7 @@ for tool in curl sha256sum tar meson ninja timeout pkg-config; do
   command -v "$tool" >/dev/null
 done
 
-work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/serein-mpv-build.XXXXXXXX")
+work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/oxplay-mpv-build.XXXXXXXX")
 trap 'rm -rf -- "$work"' EXIT
 archive="$work/mpv.tar.gz"
 source_sha=ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209

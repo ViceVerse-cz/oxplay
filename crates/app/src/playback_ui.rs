@@ -2,8 +2,8 @@
 //! Event-driven stream replacement. A fresh native position reply is required
 //! before a replacement can load; hidden controls are not a playback clock.
 use crate::{App, QUALITY_HEIGHTS, UiState, account_playback, caption_ui, catalog, load_remote};
-use serein_core::{RefreshBudget, ResolvedPlayback};
-use serein_youtube::account::{AccountPlaybackLease, AuthorizedPlayback};
+use oxplay_core::{RefreshBudget, ResolvedPlayback};
+use oxplay_youtube::account::{AccountPlaybackLease, AuthorizedPlayback};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -41,11 +41,11 @@ const MARGIN: Duration = Duration::from_secs(60);
 /// detailed error messages. Never publish a prior load's terminal state while
 /// a newer accepted load is still waiting for its native START_FILE event.
 pub fn status(
-    snapshot: &serein_media::Snapshot,
+    snapshot: &oxplay_media::Snapshot,
     loaded: bool,
     current_load_is_active: bool,
 ) -> &'static str {
-    use serein_media::PlaybackState;
+    use oxplay_media::PlaybackState;
     if !loaded || snapshot.stop_pending || snapshot.load_request_id == 0 {
         return "";
     }
@@ -100,8 +100,8 @@ impl State {
         &self,
         load: u64,
         session: u64,
-        displayed: Option<&serein_core::VideoId>,
-    ) -> Option<serein_core::VideoId> {
+        displayed: Option<&oxplay_core::VideoId>,
+    ) -> Option<oxplay_core::VideoId> {
         if load == 0 || self.current_load.get() != load {
             return None;
         }
@@ -114,8 +114,8 @@ impl State {
     fn guest_retry_video(
         &self,
         load: u64,
-        displayed: Option<&serein_core::VideoId>,
-    ) -> Option<serein_core::VideoId> {
+        displayed: Option<&oxplay_core::VideoId>,
+    ) -> Option<oxplay_core::VideoId> {
         if load == 0 || self.current_load.get() != load {
             return None;
         }
@@ -131,7 +131,7 @@ pub fn account_retry_video(
     state: &UiState,
     load: u64,
     session: u64,
-) -> Option<serein_core::VideoId> {
+) -> Option<oxplay_core::VideoId> {
     state.playback_ui.account_retry_video(
         load,
         session,
@@ -141,7 +141,7 @@ pub fn account_retry_video(
 
 /// Return only the typed identity of the guest stream accepted by this exact
 /// native load. The caller must separately reject any retained account lease.
-pub fn guest_retry_video(state: &UiState, load: u64) -> Option<serein_core::VideoId> {
+pub fn guest_retry_video(state: &UiState, load: u64) -> Option<oxplay_core::VideoId> {
     state.playback_ui.guest_retry_video(
         load,
         state.current_video.borrow().as_ref().map(|video| &video.id),
@@ -179,9 +179,9 @@ pub fn selected(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
 pub fn upgrade_guest_details(
     app: &App,
     state: &Rc<UiState>,
-    video: &serein_core::VideoId,
-    merge: impl FnOnce(&ResolvedPlayback) -> serein_core::VideoDetails,
-) -> Option<serein_core::VideoDetails> {
+    video: &oxplay_core::VideoId,
+    merge: impl FnOnce(&ResolvedPlayback) -> oxplay_core::VideoDetails,
+) -> Option<oxplay_core::VideoDetails> {
     let item = {
         let mut current = state.playback_ui.current.borrow_mut();
         let item = current
@@ -224,7 +224,7 @@ fn remember(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
 /// Native pause observations can lag a just-accepted user pause/navigation.
 /// Both intent and exact native load identity must admit automatic replacement.
 fn refresh_admitted(
-    snapshot: &serein_media::Snapshot,
+    snapshot: &oxplay_media::Snapshot,
     load: u64,
     loaded: bool,
     watching: bool,
@@ -241,7 +241,7 @@ fn refresh_admitted(
         && !snapshot.stop_pending
         && !user_paused
         && !snapshot.paused
-        && snapshot.state == serein_media::PlaybackState::Playing
+        && snapshot.state == oxplay_media::PlaybackState::Playing
 }
 
 /// A due refresh waits for active playback and the existing single extractor.
@@ -304,7 +304,7 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
             app,
             state,
             &request.video_id,
-            serein_youtube::ResolutionPolicy {
+            oxplay_youtube::ResolutionPolicy {
                 max_height: QUALITY_HEIGHTS[state.quality_index.get()],
                 prefer_h264: true,
             },
@@ -319,7 +319,7 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
         .borrow_mut()
         .submit(catalog::Request::ResolveQuality(
             request.video_id,
-            serein_youtube::ResolutionPolicy {
+            oxplay_youtube::ResolutionPolicy {
                 max_height: QUALITY_HEIGHTS[state.quality_index.get()],
                 prefer_h264: true,
             },
@@ -425,7 +425,7 @@ fn resolved_inner(
         }
     });
 }
-pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &oxplay_media::Snapshot) {
     let s = &state.playback_ui;
     let Some((token, position)) = snapshot.resume_position_reply else {
         return;
@@ -515,7 +515,7 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot
                 || crate::library_ui::save_quality(
                     app,
                     state,
-                    serein_core::QualityCeiling::ALL[index],
+                    oxplay_core::QualityCeiling::ALL[index],
                 );
             crate::chapters_ui::install(app, state, &pending.item);
             remember(app, state, &pending.item);
@@ -585,7 +585,7 @@ impl Smoke {
         let mut timers = Vec::new();
         let generation = Rc::new(Cell::new(0));
         let audio_token = Rc::new(Cell::new(0));
-        let first_audio = Rc::new(Cell::new(None::<serein_media::AudioProbeReply>));
+        let first_audio = Rc::new(Cell::new(None::<oxplay_media::AudioProbeReply>));
         for stage in [12, 16, 20, 25, 55, 60, 65] {
             let weak = app.as_weak();
             let state = state.clone();
@@ -733,7 +733,7 @@ impl Smoke {
 mod tests {
     #[test]
     fn automatic_refresh_respects_pause_intent_navigation_and_exact_live_load() {
-        use serein_media::{PlaybackState, Snapshot};
+        use oxplay_media::{PlaybackState, Snapshot};
         let playing = Snapshot {
             load_request_id: 12,
             active_load_request_id: 12,
@@ -804,11 +804,11 @@ mod tests {
         );
     }
     use super::*;
-    use serein_core::{MediaTrack, MediaUrl, OriginHeaders, VideoId, VideoSummary};
+    use oxplay_core::{MediaTrack, MediaUrl, OriginHeaders, VideoId, VideoSummary};
 
     #[test]
     fn transport_label_does_not_republish_old_load_or_account_stop_state() {
-        use serein_media::{PlaybackState, Snapshot};
+        use oxplay_media::{PlaybackState, Snapshot};
         let mut snapshot = Snapshot {
             load_request_id: 42,
             active_load_request_id: 41,
@@ -833,7 +833,7 @@ mod tests {
 
     #[test]
     fn transport_label_follows_observed_cache_and_seek_recovery() {
-        use serein_media::{PlaybackState, Snapshot};
+        use oxplay_media::{PlaybackState, Snapshot};
         let mut snapshot = Snapshot {
             load_request_id: 42,
             active_load_request_id: 42,

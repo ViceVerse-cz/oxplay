@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     int window_height = argc == 9 ? atoi(argv[8]) : 280;
     if (window_width < 1 || window_width > 4096 || window_height < 1 || window_height > 4096)
         fail("invalid window dimensions");
-    SDL_Window *window = SDL_CreateWindow("Serein media baseline (diagnostic)",
+    SDL_Window *window = SDL_CreateWindow("Oxplay media baseline (diagnostic)",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height,
         SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!window) fail(SDL_GetError());
@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
             bool playing = running && observed_playing && !observed_paused && !hidden;
             if (playing && power_assertion == kIOPMNullAssertionID) {
                 if (IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep,
-                    kIOPMAssertionLevelOn, CFSTR("Serein standalone playback diagnostic"),
+                    kIOPMAssertionLevelOn, CFSTR("Oxplay standalone playback diagnostic"),
                     &power_assertion) != kIOReturnSuccess) fail("playback power assertion failed");
             } else if (!playing && power_assertion != kIOPMNullAssertionID) {
                 if (IOPMAssertionRelease(power_assertion) != kIOReturnSuccess)

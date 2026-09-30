@@ -29,7 +29,7 @@ in-flight save preserves it while the selector is disabled.
 
 ## Regression scope
 
-`cargo test -p serein --test controlled_widgets --locked` exercises the actual
+`cargo test -p oxplay --test controlled_widgets --locked` exercises the actual
 compiled shared `App` with Slint's same-revision mock backend. Five cases check
 rejected and delayed acknowledgements, later rollback, changing caption labels,
 quality state, and Save draft/reset behavior. Callbacks in these tests are

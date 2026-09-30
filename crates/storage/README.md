@@ -51,7 +51,7 @@ identity verification. The store never reads browser profiles, parses cookies,
 contacts YouTube or determines that the user is logged in.
 
 The macOS adapter keeps a 48-byte key-ID/encryption-key record in the local
-Keychain under `org.serein.desktop.session-key.v1`, explicitly excluding iCloud
+Keychain under `cz.viceverse.oxplay.session-key.v1`, explicitly excluding iCloud
 synchronization. Atomic key creation refuses to replace an existing item.
 XChaCha20Poly1305 encrypts each ≤4 MiB session with a fresh OS-random 24-byte nonce.
 The envelope header/version, random key ID and local profile ID are authenticated.
@@ -82,5 +82,5 @@ signed packaged application, not inferred from compiling the adapter.
 The explicit `rusqlite` bundled feature compiles its pinned SQLite source so a
 system SQLite package is not an undeclared requirement. Audit both crate/native
 source licenses and versions in the final SBOM. Test with
-`cargo test -p serein-storage --locked` after adding the crate to the workspace
+`cargo test -p oxplay-storage --locked` after adding the crate to the workspace
 and resolving the committed lockfile.

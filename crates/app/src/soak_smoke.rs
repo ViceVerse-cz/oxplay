@@ -25,13 +25,13 @@ pub fn validate_environment() -> Result<(), &'static str> {
 }
 fn validate_environment_with(present: impl Fn(&str) -> bool) -> Result<(), &'static str> {
     if [
-        "SEREIN_STABLE_VIDEO_TARGET",
-        "SEREIN_VIDEO_LEAD_MS",
-        "SEREIN_VIDEO_PREPARE_MS",
-        "SEREIN_DIAGNOSTIC_NULL_AUDIO",
-        "SEREIN_DIAGNOSTIC_AUTOSYNC",
-        "SEREIN_MEDIA_TIMING",
-        "SEREIN_GPU_TIMING",
+        "OXPLAY_STABLE_VIDEO_TARGET",
+        "OXPLAY_VIDEO_LEAD_MS",
+        "OXPLAY_VIDEO_PREPARE_MS",
+        "OXPLAY_DIAGNOSTIC_NULL_AUDIO",
+        "OXPLAY_DIAGNOSTIC_AUTOSYNC",
+        "OXPLAY_MEDIA_TIMING",
+        "OXPLAY_GPU_TIMING",
     ]
     .into_iter()
     .any(present)
@@ -210,7 +210,7 @@ impl Driver {
         match phase {
             5 | 57 => {
                 if snapshot.paused
-                    || !matches!(snapshot.state, serein_media::PlaybackState::Playing)
+                    || !matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
                     || !state.player.current_load_is_active()
                     || !state.player.current_load_frame_ready()
                     || snapshot.file_loads != self.expected_loads.get()
@@ -427,9 +427,9 @@ mod tests {
     fn soak_does_not_silently_measure_an_experimental_or_silent_pipeline() {
         assert!(validate_environment_with(|_| false).is_ok());
         for selected in [
-            "SEREIN_STABLE_VIDEO_TARGET",
-            "SEREIN_DIAGNOSTIC_NULL_AUDIO",
-            "SEREIN_GPU_TIMING",
+            "OXPLAY_STABLE_VIDEO_TARGET",
+            "OXPLAY_DIAGNOSTIC_NULL_AUDIO",
+            "OXPLAY_GPU_TIMING",
         ] {
             assert!(validate_environment_with(|name| name == selected).is_err());
         }

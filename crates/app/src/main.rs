@@ -63,7 +63,7 @@ mod watch_meta;
 mod window_chrome;
 use catalog::{Response, Worker};
 use model::CatalogModel;
-use serein_media::{GlPresenter, Player};
+use oxplay_media::{GlPresenter, Player};
 use slint::winit_030::{EventResult, WinitWindowAccessor, winit};
 use slint::{ComponentHandle, Model, Timer, TimerMode};
 use std::{
@@ -89,8 +89,8 @@ struct UiState {
     started: std::time::Instant,
     player: Player,
     native_child: native_child::State,
-    media_network: Option<serein_network::NetworkConfig>,
-    account_media_network: Option<serein_network::NetworkConfig>,
+    media_network: Option<oxplay_network::NetworkConfig>,
+    account_media_network: Option<oxplay_network::NetworkConfig>,
     presentation_ready: Cell<bool>,
     presentation_retry: Cell<bool>,
     progress: Timer,
@@ -123,9 +123,9 @@ struct UiState {
     search_suggestions: search_suggestions::State,
     library_fixture: Option<library_fixture::Config>,
     fixture_quiescence: fixture_quiescence::State,
-    playlists: RefCell<Vec<serein_storage::LocalPlaylist>>,
-    preferences: Cell<serein_storage::LocalPreferences>,
-    current_video: RefCell<Option<serein_core::VideoSummary>>,
+    playlists: RefCell<Vec<oxplay_storage::LocalPlaylist>>,
+    preferences: Cell<oxplay_storage::LocalPreferences>,
+    current_video: RefCell<Option<oxplay_core::VideoSummary>>,
     quality_index: Cell<usize>,
     displayed_elapsed: Cell<u64>,
     displayed_remaining: Cell<u64>,
@@ -136,7 +136,7 @@ struct UiState {
     draw_callbacks: Cell<u64>,
     geometry_events: Option<Cell<u64>>,
 }
-fn report(app: &App, result: serein_media::Result<()>) {
+fn report(app: &App, result: oxplay_media::Result<()>) {
     if let Err(e) = result {
         app.set_status(e.to_string().into());
     }
@@ -179,9 +179,9 @@ fn update(app: &App, state: &Rc<UiState>) {
         && !state.player.current_load_frame_ready()
         && !matches!(
             snapshot.state,
-            serein_media::PlaybackState::Ended | serein_media::PlaybackState::Failed
+            oxplay_media::PlaybackState::Ended | oxplay_media::PlaybackState::Failed
         )
-        && (snapshot.state == serein_media::PlaybackState::Buffering
+        && (snapshot.state == oxplay_media::PlaybackState::Buffering
             || snapshot.width > 0
             || !state.player.current_load_is_active());
     if app.get_video_starting() != video_starting {
@@ -192,7 +192,7 @@ fn update(app: &App, state: &Rc<UiState>) {
     let buffering = app.get_loaded()
         && !video_starting
         && !snapshot.paused
-        && snapshot.state == serein_media::PlaybackState::Buffering;
+        && snapshot.state == oxplay_media::PlaybackState::Buffering;
     if app.get_buffering() != buffering {
         app.set_buffering(buffering);
     }
@@ -266,7 +266,7 @@ fn update(app: &App, state: &Rc<UiState>) {
     } else {
         (0., 0.)
     };
-    let stage_clock = matches!(snapshot.state, serein_media::PlaybackState::Playing)
+    let stage_clock = matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
         && !snapshot.paused
         && snapshot.display_clock_active
         && state.presentation_ready.get()
@@ -310,7 +310,7 @@ fn update(app: &App, state: &Rc<UiState>) {
             app.set_technical(info.into());
         }
     }
-    if matches!(snapshot.state, serein_media::PlaybackState::Playing)
+    if matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
         && !snapshot.paused
         && app.get_loaded()
         && snapshot.load_request_id != 0
@@ -328,12 +328,12 @@ fn update(app: &App, state: &Rc<UiState>) {
     controls_ui::observe(
         app,
         state,
-        matches!(snapshot.state, serein_media::PlaybackState::Playing)
+        matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
             && !snapshot.paused
             && state.presentation_ready.get(),
         snapshot.load_request_id,
     );
-    let active = matches!(snapshot.state, serein_media::PlaybackState::Playing)
+    let active = matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
         && !snapshot.paused
         && app.get_loaded()
         && app.get_video_visible()
@@ -546,7 +546,7 @@ fn selected_file(value: Option<std::path::PathBuf>) -> std::io::Result<Option<st
         })
         .transpose()
 }
-fn video_row(video: &serein_core::VideoSummary) -> VideoRow {
+fn video_row(video: &oxplay_core::VideoSummary) -> VideoRow {
     VideoRow {
         title: video.title.clone().into(),
         channel: video.channel.clone().into(),
@@ -902,7 +902,7 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
 // Native libavformat cannot yet enforce per-origin headers across redirects.
 // These extractor browser hints are optional on the exercised guest content path;
 // Origin/Referer and every unknown/credential header require the policy adapter.
-fn guest_media_headers_supported(item: &serein_core::ResolvedPlayback) -> bool {
+fn guest_media_headers_supported(item: &oxplay_core::ResolvedPlayback) -> bool {
     item.guest
         && item.session_generation == 0
         && std::iter::once(&item.video_track)
@@ -920,7 +920,7 @@ const QUALITY_HEIGHTS: [u16; 6] = [1080, 720, 480, 360, 240, 144];
 
 fn load_remote(
     state: &UiState,
-    item: &serein_core::ResolvedPlayback,
+    item: &oxplay_core::ResolvedPlayback,
     position: f64,
     paused: bool,
 ) -> Result<(), String> {
@@ -962,7 +962,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Diagnostics never reconnect a developer's remembered account.
     let restore_account = !options.finite_diagnostic();
     let save_smoke_video = if options.save_smoke {
-        Some(serein_core::VideoId::from_url(
+        Some(oxplay_core::VideoId::from_url(
             options
                 .url
                 .as_deref()
@@ -1015,7 +1015,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_paused = options.paused;
     let minimized = options.minimized;
     // An explicit root keeps native validation isolated from the normal profile.
-    // Only its Serein child is app-owned; never chmod the selected root itself.
+    // Only its Oxplay child is app-owned; never chmod the selected root itself.
     let mut home_fixture = None;
     let mut collection_window_fixture = None;
     let library_path = if let Some(root) = options.data_root {
@@ -1040,7 +1040,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             clear_smoke::create_root(&root)?;
         }
-        root.join("Serein/library.sqlite3")
+        root.join("Oxplay/library.sqlite3")
     } else {
         library::data_path()?
     };
@@ -1077,7 +1077,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     helpers.validate_media_ca()?;
     let account_media_network = if helpers.validate_dns_helper().is_ok() {
-        Some(serein_network::NetworkConfig::new(
+        Some(oxplay_network::NetworkConfig::new(
             helpers.dns_helper.clone(),
         )?)
     } else {
@@ -1085,7 +1085,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let media_network = if options.scoped_media {
         helpers.validate_dns_helper()?;
-        Some(serein_network::NetworkConfig::new(
+        Some(oxplay_network::NetworkConfig::new(
             helpers.dns_helper.clone(),
         )?)
     } else {
@@ -1207,7 +1207,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         library_fixture,
         fixture_quiescence: fixture_quiescence::State::default(),
         playlists: RefCell::new(Vec::new()),
-        preferences: Cell::new(serein_storage::LocalPreferences::default()),
+        preferences: Cell::new(oxplay_storage::LocalPreferences::default()),
         current_video: RefCell::new(None),
         quality_index: Cell::new(0),
         displayed_elapsed: Cell::new(u64::MAX),
@@ -1334,7 +1334,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &app,
                 &s,
                 &video.id,
-                serein_youtube::ResolutionPolicy {
+                oxplay_youtube::ResolutionPolicy {
                     max_height: height,
                     prefer_h264: true,
                 },
@@ -1348,7 +1348,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .borrow_mut()
             .submit(catalog::Request::ResolveQuality(
                 video.id,
-                serein_youtube::ResolutionPolicy {
+                oxplay_youtube::ResolutionPolicy {
                     max_height: height,
                     prefer_h264: true,
                 },

@@ -201,7 +201,7 @@ mod tests {
             }
         }
         let root = std::env::temp_dir().join(format!(
-            "serein-native-fixture-{}-{}",
+            "oxplay-native-fixture-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));

@@ -5,7 +5,7 @@
 //! the prefix rather than continue remotely.
 use crate::{YtDlp, innertube::GuestTransport, watch};
 use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     ChannelId, CommentSummary, OperationContext, ProviderError, VideoDetails, VideoId,
 };
 use std::{collections::HashMap, sync::Arc};

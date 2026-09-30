@@ -1,4 +1,4 @@
-# Serein
+# Oxplay
 
 An experimental, open-source native YouTube client: one compiled Slint UI and an
 in-process Rust/libmpv core. This repository implements an early working slice of
@@ -32,7 +32,7 @@ using Homebrew. A graphical macOS session is required to run the application:
 ```sh
 brew install pkgconf mpv yt-dlp
 cargo build --locked --release
-./target/release/serein
+./target/release/oxplay
 ```
 
 The inspected development environment is Apple Silicon macOS 27.0. Other targets
@@ -71,16 +71,16 @@ launch unless you chose to remember an account session, which is verified once
 at launch to sign you back in. History, autoplay, previews, telemetry, and background refresh are off.
 
 ```sh
-./target/release/serein --local /absolute/path/video.mp4 --subtitle /absolute/path/subtitles.srt
-./target/release/serein --yt-dlp /absolute/path/yt-dlp
-./target/release/serein --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+./target/release/oxplay --local /absolute/path/video.mp4 --subtitle /absolute/path/subtitles.srt
+./target/release/oxplay --yt-dlp /absolute/path/yt-dlp
+./target/release/oxplay --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
 ```
 
 The Mac default helper paths are `/opt/homebrew/bin/yt-dlp` and
 `/opt/homebrew/bin/deno`. No helper, plugin, or runtime is downloaded at playback.
 Explicit `--yt-dlp` and `--deno` paths support nonstandard installations.
 The opt-in `--scoped-media` diagnostic on macOS requires the first-party
-`serein-dns` executable beside `serein` (bundles place it in `Contents/Helpers`).
+`oxplay-dns` executable beside `oxplay` (bundles place it in `Contents/Helpers`).
 `cargo build --locked --release --workspace` builds both. This short-lived DNS
 helper is supervised and bounded; the experimental transport is not a proxy or
 production-network qualification claim.
@@ -123,7 +123,7 @@ It has been functionally exercised on the development Mac; native Wayland and
 the experimental child presenter keep it disabled. See [PiP details](docs/picture-in-picture.md).
 The account page explains session import and its risks before enabling it. On
 macOS you can **Sign in with your browser**: pick one installed browser profile
-(Chrome, Brave, Edge, Arc, Chromium, Vivaldi, Firefox or Safari) and Serein
+(Chrome, Brave, Edge, Arc, Chromium, Vivaldi, Firefox or Safari) and Oxplay
 imports only that profile's YouTube/Google sign-in cookies, then runs the same
 identity verification and protected storage as the file import; Safari needs Full
 Disk Access, and the manual Netscape file import stays available as a fallback.
@@ -146,8 +146,8 @@ cargo check --locked --workspace
 cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo test --locked --workspace
 scripts/generate-fixture.sh
-./target/release/serein --local artifacts/local-1080p60.mp4 --subtitle artifacts/local.srt --smoke-test
-python3 scripts/measure.py --output artifacts/playback.json -- ./target/release/serein --local artifacts/local-1080p60.mp4 --quit-after 85
+./target/release/oxplay --local artifacts/local-1080p60.mp4 --subtitle artifacts/local.srt --smoke-test
+python3 scripts/measure.py --output artifacts/playback.json -- ./target/release/oxplay --local artifacts/local-1080p60.mp4 --quit-after 85
 ```
 
 `--smoke-test` is explicit fixture mode; its synthetic catalog rows are labeled.

@@ -116,7 +116,7 @@ struct State {
 pub(super) struct Stats(Mutex<State>);
 impl Stats {
     pub fn configured() -> Option<Arc<Self>> {
-        std::env::var_os("SEREIN_HTTP_TIMING")
+        std::env::var_os("OXPLAY_HTTP_TIMING")
             .is_some_and(|value| value == "1")
             .then(|| Arc::new(Self::default()))
     }
@@ -299,7 +299,7 @@ mod tests {
             headers: reqwest::header::HeaderMap::new(),
             timing: Some(Arc::new(Stats::default())),
             access: None,
-            config: crate::NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: crate::NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let weak = Arc::downgrade(source.timing.as_ref().unwrap());
         let (mut reader, cancel) = source.open();

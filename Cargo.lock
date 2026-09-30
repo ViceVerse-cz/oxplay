@@ -4508,7 +4508,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "serein"
+name = "oxplay"
 version = "0.1.0"
 dependencies = [
  "i-slint-backend-testing",
@@ -4519,11 +4519,11 @@ dependencies = [
  "reqwest",
  "rfd",
  "ring",
- "serein-core",
- "serein-media",
- "serein-network",
- "serein-storage",
- "serein-youtube",
+ "oxplay-core",
+ "oxplay-media",
+ "oxplay-network",
+ "oxplay-storage",
+ "oxplay-youtube",
  "slint",
  "slint-build",
  "tokio",
@@ -4532,7 +4532,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "serein-core"
+name = "oxplay-core"
 version = "0.1.0"
 dependencies = [
  "tokio",
@@ -4540,7 +4540,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "serein-media"
+name = "oxplay-media"
 version = "0.1.0"
 dependencies = [
  "cc",
@@ -4550,20 +4550,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "serein-network"
+name = "oxplay-network"
 version = "0.1.0"
 dependencies = [
  "hickory-resolver",
  "libc",
  "reqwest",
- "serein-core",
- "serein-youtube",
+ "oxplay-core",
+ "oxplay-youtube",
  "tokio",
  "url",
 ]
 
 [[package]]
-name = "serein-storage"
+name = "oxplay-storage"
 version = "0.1.0"
 dependencies = [
  "chacha20poly1305",
@@ -4574,13 +4574,13 @@ dependencies = [
  "security-framework-sys",
  "serde",
  "serde_json",
- "serein-core",
+ "oxplay-core",
  "tempfile",
  "zeroize",
 ]
 
 [[package]]
-name = "serein-youtube"
+name = "oxplay-youtube"
 version = "0.1.0"
 dependencies = [
  "aes",
@@ -4592,7 +4592,7 @@ dependencies = [
  "rusqlite",
  "security-framework",
  "serde_json",
- "serein-core",
+ "oxplay-core",
  "sha1",
  "tempfile",
  "tokio",

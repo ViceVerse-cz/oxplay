@@ -372,7 +372,7 @@ mod tests {
     fn setup() -> (PathBuf, Worker, Client) {
         use std::os::unix::fs::DirBuilderExt;
         let path = std::env::temp_dir().join(format!(
-            "serein-caption-purge-{}",
+            "oxplay-caption-purge-{}",
             private::random_name().unwrap()
         ));
         std::fs::DirBuilder::new()
@@ -488,7 +488,7 @@ mod tests {
     fn final_lease_controls_private_file_cleanup_and_capacity() {
         use std::os::unix::fs::DirBuilderExt;
         let profile = std::env::temp_dir().join(format!(
-            "serein-caption-worker-test-{}",
+            "oxplay-caption-worker-test-{}",
             private::random_name().unwrap()
         ));
         std::fs::DirBuilder::new()

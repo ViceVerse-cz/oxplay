@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit public-network check. Prints structural counts only, never titles/queries/URLs.
-use serein_core::{CancellationToken, CatalogItem, OperationContext};
-use serein_youtube::{
+use oxplay_core::{CancellationToken, CatalogItem, OperationContext};
+use oxplay_youtube::{
     YtDlp,
     catalog::{CatalogRequest, ChannelTab, SearchKind},
 };

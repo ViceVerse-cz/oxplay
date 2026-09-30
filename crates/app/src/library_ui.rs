@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Bounded local-library pages. SQLite and selected-file I/O stay on the worker.
 use crate::{App, LibraryRow, LibraryUi, SaveUi, UiState, library};
-use serein_core::{ChannelId, VideoSummary};
-use serein_storage::{
+use oxplay_core::{ChannelId, VideoSummary};
+use oxplay_storage::{
     HistoryCursor, HistoryEntry, LocalPlaylistId, LocalSubscription, PageCursor, PlaylistWindow,
 };
 use slint::{ComponentHandle, Model};
@@ -28,9 +28,9 @@ enum Item {
 }
 #[derive(Clone, PartialEq, Eq)]
 enum ItemKey {
-    Video(serein_core::VideoId),
+    Video(oxplay_core::VideoId),
     Follow(ChannelId),
-    History(serein_core::VideoId),
+    History(oxplay_core::VideoId),
 }
 impl Item {
     fn key(&self) -> ItemKey {
@@ -88,10 +88,10 @@ impl Reads {
 struct SaveTarget {
     video: VideoSummary,
     load: u64,
-    collections: Vec<serein_storage::LocalPlaylist>,
+    collections: Vec<oxplay_storage::LocalPlaylist>,
 }
 impl SaveTarget {
-    fn matches(&self, video: &VideoSummary, snapshot: &serein_media::Snapshot) -> bool {
+    fn matches(&self, video: &VideoSummary, snapshot: &oxplay_media::Snapshot) -> bool {
         self.video.id == video.id && self.load == snapshot.load_request_id && savable_load(snapshot)
     }
 }
@@ -172,7 +172,7 @@ fn playlist_name(draft: &str) -> Result<String, &'static str> {
         Ok(name.to_owned())
     }
 }
-fn savable_load(snapshot: &serein_media::Snapshot) -> bool {
+fn savable_load(snapshot: &oxplay_media::Snapshot) -> bool {
     !snapshot.stop_pending
         && snapshot.load_request_id != 0
         && snapshot.playback_restarted
@@ -180,10 +180,10 @@ fn savable_load(snapshot: &serein_media::Snapshot) -> bool {
         && snapshot.failed_load_request_id != Some(snapshot.load_request_id)
         && matches!(
             snapshot.state,
-            serein_media::PlaybackState::Playing
-                | serein_media::PlaybackState::Paused
-                | serein_media::PlaybackState::Buffering
-                | serein_media::PlaybackState::Ended
+            oxplay_media::PlaybackState::Playing
+                | oxplay_media::PlaybackState::Paused
+                | oxplay_media::PlaybackState::Buffering
+                | oxplay_media::PlaybackState::Ended
         )
 }
 #[derive(Clone, Default)]
@@ -253,7 +253,7 @@ pub struct State {
     preference_serial: Cell<u64>,
     volume_save: slint::Timer,
     picker: RefCell<Option<slint::JoinHandle<()>>>,
-    last_record: RefCell<Option<(serein_core::VideoId, u64)>>,
+    last_record: RefCell<Option<(oxplay_core::VideoId, u64)>>,
     save_target: RefCell<Option<SaveTarget>>,
     pending_save: RefCell<Option<PendingSave>>,
     save_serial: Cell<u64>,
@@ -291,8 +291,8 @@ pub fn acknowledged_video_page(state: &UiState) -> Option<Vec<VideoSummary>> {
 impl State {
     fn desired_preferences(
         &self,
-        committed: serein_storage::LocalPreferences,
-    ) -> serein_storage::LocalPreferences {
+        committed: oxplay_storage::LocalPreferences,
+    ) -> oxplay_storage::LocalPreferences {
         self.requested_preferences
             .get()
             .map(|write| write.value)
@@ -396,19 +396,19 @@ fn finish_name(app: &App, state: &UiState, kind: NameKind) -> Option<NameWrite> 
     );
     Some(write)
 }
-pub fn desired_preferences(state: &UiState) -> serein_storage::LocalPreferences {
+pub fn desired_preferences(state: &UiState) -> oxplay_storage::LocalPreferences {
     state
         .library_ui
         .desired_preferences(state.preferences.get())
 }
-fn theme_index(theme: serein_storage::Theme) -> i32 {
+fn theme_index(theme: oxplay_storage::Theme) -> i32 {
     match theme {
-        serein_storage::Theme::System => 0,
-        serein_storage::Theme::Light => 1,
-        serein_storage::Theme::Dark => 2,
+        oxplay_storage::Theme::System => 0,
+        oxplay_storage::Theme::Light => 1,
+        oxplay_storage::Theme::Dark => 2,
     }
 }
-fn save_preferences(app: &App, state: &UiState, value: serein_storage::LocalPreferences) -> bool {
+fn save_preferences(app: &App, state: &UiState, value: oxplay_storage::LocalPreferences) -> bool {
     if state.caption_cache.active() || !state.playback_preferences.ready() {
         status(
             app,
@@ -437,12 +437,12 @@ pub fn set_search_suggestions(app: &App, state: &UiState, enabled: bool) -> bool
     prefs.search_suggestions = enabled;
     save_preferences(app, state, prefs)
 }
-pub fn save_quality(app: &App, state: &UiState, quality: serein_core::QualityCeiling) -> bool {
+pub fn save_quality(app: &App, state: &UiState, quality: oxplay_core::QualityCeiling) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.quality = quality;
     save_preferences(app, state, prefs)
 }
-pub fn save_speed(app: &App, state: &UiState, speed: serein_core::PlaybackSpeed) -> bool {
+pub fn save_speed(app: &App, state: &UiState, speed: oxplay_core::PlaybackSpeed) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.speed = speed;
     save_preferences(app, state, prefs)
@@ -548,7 +548,7 @@ pub fn follow_channel(app: &App, state: &UiState, id: &ChannelId, name: &str) {
         );
     }
 }
-fn follow_target(item: &LocalSubscription) -> Result<String, serein_core::ProviderError> {
+fn follow_target(item: &LocalSubscription) -> Result<String, oxplay_core::ProviderError> {
     Ok(ChannelId::new(item.channel_id.as_str())?.browse_url())
 }
 fn complete(app: &App, s: &UiState) {
@@ -599,7 +599,7 @@ fn save_status(app: &App, message: impl Into<slint::SharedString>) {
 fn current_savable_video(
     app: &App,
     state: &UiState,
-) -> Option<(VideoSummary, serein_media::Snapshot)> {
+) -> Option<(VideoSummary, oxplay_media::Snapshot)> {
     if !app.get_remote_video()
         || !app.get_loaded()
         || app.get_busy()
@@ -791,7 +791,7 @@ pub fn thumbnail_source(state: &UiState, index: usize) -> Option<crate::thumbnai
 pub fn publish_thumbnail(
     state: &UiState,
     index: usize,
-    id: &serein_core::VideoId,
+    id: &oxplay_core::VideoId,
     image: slint::Image,
 ) -> bool {
     let matches = matches!(state.library_ui.items.borrow().get(index), Some(Item::History(entry)) if &entry.video.id == id);
@@ -1000,7 +1000,7 @@ fn apply_filter(app: &App, state: &UiState, draft: &str) {
     let Some(id) = selected(app, state) else {
         return;
     };
-    if draft.len() > serein_storage::MAX_PLAYLIST_FILTER_BYTES
+    if draft.len() > oxplay_storage::MAX_PLAYLIST_FILTER_BYTES
         || draft.chars().any(char::is_control)
     {
         status(
@@ -1130,7 +1130,7 @@ fn restore_collection_page(state: &State, origin: Option<(u64, CollectionWindow)
     }
 }
 fn collection_selection(
-    items: &[serein_storage::LocalPlaylist],
+    items: &[oxplay_storage::LocalPlaylist],
     prefer: Option<LocalPlaylistId>,
 ) -> i32 {
     prefer
@@ -1141,7 +1141,7 @@ fn collection_selection(
 fn publish_collections(
     app: &App,
     s: &UiState,
-    items: Vec<serein_storage::LocalPlaylist>,
+    items: Vec<oxplay_storage::LocalPlaylist>,
     prefer: Option<LocalPlaylistId>,
 ) -> bool {
     crate::fixture_quiescence::trace(s, "publish-collections");
@@ -1258,9 +1258,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     crate::comments_ui::sync_preferences(&app, &s);
                     crate::search_suggestions::sync_preferences(&app, &s);
                       app.set_theme(match prefs.theme {
-                        serein_storage::Theme::System => 0,
-                        serein_storage::Theme::Light => 1,
-                        serein_storage::Theme::Dark => 2,
+                        oxplay_storage::Theme::System => 0,
+                        oxplay_storage::Theme::Light => 1,
+                        oxplay_storage::Theme::Dark => 2,
                       });
                       app.set_volume_level(prefs.volume_percent as f32);
                       let _ = s.player.set_volume(prefs.volume_percent as f64);
@@ -1974,9 +1974,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     app.on_theme_changed(move |index| {
         let Some(app) = weak.upgrade() else { return };
         let theme = match index {
-            0 => serein_storage::Theme::System,
-            1 => serein_storage::Theme::Light,
-            2 => serein_storage::Theme::Dark,
+            0 => oxplay_storage::Theme::System,
+            1 => oxplay_storage::Theme::Light,
+            2 => oxplay_storage::Theme::Dark,
             _ => return,
         };
         let mut prefs = desired_preferences(&s);
@@ -2005,7 +2005,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let s = state.clone();
     app.on_default_quality(move |index| {
         let Some(app) = weak.upgrade() else { return };
-        if let Some(quality) = serein_core::QualityCeiling::from_index(index) {
+        if let Some(quality) = oxplay_core::QualityCeiling::from_index(index) {
             save_quality(&app, &s, quality);
         }
         app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
@@ -2045,9 +2045,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             } else {
                 picker
                     .set_file_name(if kind == 1 {
-                        "serein-library.json"
+                        "oxplay-library.json"
                     } else {
-                        "serein-library.sqlite3"
+                        "oxplay-library.sqlite3"
                     })
                     .save_file()
                     .await
@@ -2150,7 +2150,7 @@ mod tests {
         let entry = HistoryEntry {
             video: VideoSummary {
                 metadata: None,
-                id: serein_core::VideoId::new("abcdefghijk").unwrap(),
+                id: oxplay_core::VideoId::new("abcdefghijk").unwrap(),
                 title: "Synthetic title".into(),
                 channel: "Synthetic creator".into(),
                 channel_id: None,
@@ -2180,7 +2180,7 @@ mod tests {
     }
     #[test]
     fn created_selection_requires_its_exact_read_and_live_submission_context() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         let id = store.create_playlist("Synthetic created").unwrap();
         let context = CreateContext {
             route_epoch: 3,
@@ -2214,7 +2214,7 @@ mod tests {
     }
     #[test]
     fn collection_windows_move_both_directions_after_a_jump_without_a_cursor_stack() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         let ids: Vec<_> = (0..206)
             .map(|i| store.create_playlist(&format!("Synthetic {i}")).unwrap())
             .collect();
@@ -2255,7 +2255,7 @@ mod tests {
     }
     #[test]
     fn rename_target_rejects_selection_navigation_and_reset_changes() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         let first = store.create_playlist("Synthetic first").unwrap();
         let second = store.create_playlist("Synthetic second").unwrap();
         let mut target = RenameTarget {
@@ -2283,7 +2283,7 @@ mod tests {
     }
     #[test]
     fn collection_read_failure_restores_epoch_and_next_cursor_without_model_changes() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         store.create_playlist("Synthetic first").unwrap();
         store.create_playlist("Synthetic second").unwrap();
         let cursor = store.playlists(None, 1).unwrap().next.unwrap();
@@ -2326,12 +2326,12 @@ mod tests {
     }
     #[test]
     fn page_identity_checks_route_epoch_kind_and_playlist_id() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         let first = store.create_playlist("Synthetic first").unwrap();
         let second = store.create_playlist("Synthetic second").unwrap();
         let result = library::PageResult::Videos(
             first,
-            serein_storage::Page {
+            oxplay_storage::Page {
                 items: Vec::new(),
                 next: None,
             },
@@ -2346,7 +2346,7 @@ mod tests {
     }
     #[test]
     fn collection_selection_survives_rename_and_deletion_of_an_earlier_sibling() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         let first = store.create_playlist("Synthetic first").unwrap();
         let second = store.create_playlist("Synthetic second").unwrap();
         let mut items = store.playlists(None, 100).unwrap().items;
@@ -2362,7 +2362,7 @@ mod tests {
     fn save_target_rejects_replacement_failed_and_stopped_loads() {
         let video = VideoSummary {
             metadata: None,
-            id: serein_core::VideoId::new("abcdefghijk").unwrap(),
+            id: oxplay_core::VideoId::new("abcdefghijk").unwrap(),
             title: "Synthetic title".into(),
             channel: "Synthetic channel".into(),
             channel_id: None,
@@ -2374,8 +2374,8 @@ mod tests {
             load: 42,
             collections: Vec::new(),
         };
-        let snapshot = serein_media::Snapshot {
-            state: serein_media::PlaybackState::Playing,
+        let snapshot = oxplay_media::Snapshot {
+            state: oxplay_media::PlaybackState::Playing,
             playback_restarted: true,
             load_request_id: 42,
             active_load_request_id: 42,
@@ -2385,10 +2385,10 @@ mod tests {
         let mut renamed = video.clone();
         renamed.title = "Updated actual metadata".into();
         assert!(target.matches(&renamed, &snapshot));
-        renamed.id = serein_core::VideoId::new("lmnopqrstuv").unwrap();
+        renamed.id = oxplay_core::VideoId::new("lmnopqrstuv").unwrap();
         assert!(!target.matches(&renamed, &snapshot));
         for (requested, active) in [(0, 42), (43, 42), (43, 43), (42, 0)] {
-            let changed = serein_media::Snapshot {
+            let changed = oxplay_media::Snapshot {
                 load_request_id: requested,
                 active_load_request_id: active,
                 ..snapshot.clone()
@@ -2396,13 +2396,13 @@ mod tests {
             assert!(!target.matches(&video, &changed));
         }
         for state in [
-            serein_media::PlaybackState::Idle,
-            serein_media::PlaybackState::Failed,
-            serein_media::PlaybackState::Seeking,
+            oxplay_media::PlaybackState::Idle,
+            oxplay_media::PlaybackState::Failed,
+            oxplay_media::PlaybackState::Seeking,
         ] {
             assert!(!target.matches(
                 &video,
-                &serein_media::Snapshot {
+                &oxplay_media::Snapshot {
                     state,
                     ..snapshot.clone()
                 }
@@ -2410,21 +2410,21 @@ mod tests {
         }
         assert!(!target.matches(
             &video,
-            &serein_media::Snapshot {
+            &oxplay_media::Snapshot {
                 stop_pending: true,
                 ..snapshot.clone()
             }
         ));
         assert!(!target.matches(
             &video,
-            &serein_media::Snapshot {
+            &oxplay_media::Snapshot {
                 playback_restarted: false,
                 ..snapshot.clone()
             }
         ));
         assert!(!target.matches(
             &video,
-            &serein_media::Snapshot {
+            &oxplay_media::Snapshot {
                 failed_load_request_id: Some(42),
                 ..snapshot
             }
@@ -2454,10 +2454,10 @@ mod tests {
     #[test]
     fn identical_preference_values_do_not_let_an_old_failure_discard_a_new_write() {
         let state = State::default();
-        let value = serein_storage::LocalPreferences {
-            playback: serein_core::PlaybackPreferences {
-                quality: serein_core::QualityCeiling::P720,
-                speed: serein_core::PlaybackSpeed::OneAndHalf,
+        let value = oxplay_storage::LocalPreferences {
+            playback: oxplay_core::PlaybackPreferences {
+                quality: oxplay_core::QualityCeiling::P720,
+                speed: oxplay_core::PlaybackSpeed::OneAndHalf,
             },
             ..Default::default()
         };
@@ -2472,7 +2472,7 @@ mod tests {
     }
     #[test]
     fn theme_preview_keeps_newer_admission_and_rolls_back_only_its_failed_write() {
-        use serein_storage::{LocalPreferences, Theme};
+        use oxplay_storage::{LocalPreferences, Theme};
         let state = State::default();
         let mut committed = LocalPreferences::default();
         let light = library::PreferenceWrite {
@@ -2536,7 +2536,7 @@ mod tests {
     }
     #[test]
     fn page_navigation_retains_previous_and_bounds_history() {
-        let store = serein_storage::LocalStore::in_memory().unwrap();
+        let store = oxplay_storage::LocalStore::in_memory().unwrap();
         store.create_playlist("Synthetic one").unwrap();
         store.create_playlist("Synthetic two").unwrap();
         let cursor = store.playlists(None, 1).unwrap().next.unwrap();

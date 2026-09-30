@@ -3,8 +3,8 @@
 //! all later database operations use the ordinary library worker. Synthetic
 //! identifiers never enter a provider or player request.
 use crate::{App, LibraryUi, UiState, home_ui, library};
-use serein_core::{VideoId, VideoSummary};
-use serein_storage::{
+use oxplay_core::{VideoId, VideoSummary};
+use oxplay_storage::{
     LocalPlaylistId, LocalStore,
     artwork::{ArtworkCache, CacheLimit},
 };
@@ -34,7 +34,7 @@ pub struct Fixture {
 /// database can become this diagnostic's mutation target.
 pub fn prepare_root(root: &Path) -> io::Result<Fixture> {
     crate::clear_smoke::create_root(root)?;
-    let directory = root.join("Serein");
+    let directory = root.join("Oxplay");
     #[cfg(unix)]
     {
         use std::os::unix::fs::DirBuilderExt;
@@ -459,7 +459,7 @@ mod tests {
     fn fresh_private_fixture_uses_real_pages_and_import_without_reusing_roots() {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let root = std::env::temp_dir().canonicalize().unwrap().join(format!(
-            "serein-home-{}-{}",
+            "oxplay-home-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
@@ -478,7 +478,7 @@ mod tests {
                 & 0o777,
             0o600
         );
-        let mut store = LocalStore::open(root.join("Serein/library.sqlite3")).unwrap();
+        let mut store = LocalStore::open(root.join("Oxplay/library.sqlite3")).unwrap();
         let first = store.recently_saved_videos(None, 100).unwrap();
         assert!(matches_page(
             &first.items,
@@ -508,7 +508,7 @@ mod tests {
             &root
                 .canonicalize()
                 .unwrap()
-                .join("Serein/artwork-youtube-guest-default-locale-v1"),
+                .join("Oxplay/artwork-youtube-guest-default-locale-v1"),
             CacheLimit::Mib256,
         )
         .unwrap();

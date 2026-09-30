@@ -105,7 +105,7 @@ fn capture(app: &App, state: &UiState) -> Result<Frame, &'static str> {
         || media.paused
         || media.width <= 0
         || media.height <= 0
-        || !matches!(media.state, serein_media::PlaybackState::Playing)
+        || !matches!(media.state, oxplay_media::PlaybackState::Playing)
         || media.error.is_some()
         || app.get_watch_offset() != 0.
     {

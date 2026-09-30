@@ -35,7 +35,7 @@ impl Checks {
         if app.get_catalog_subtitle().as_str() != expected_title
             || app.get_catalog_empty_title().as_str() != expected_title
             || app.get_catalog_empty_message().as_str()
-                != serein_core::ProviderError::ExtractorFailed.to_string()
+                != oxplay_core::ProviderError::ExtractorFailed.to_string()
             || (expected_title == "Couldn’t open this video"
                 && app.get_catalog_title().as_str() != "YouTube video")
         {
@@ -104,7 +104,7 @@ impl Checks {
                 if !state.playback_preferences.ready() {
                     return Err("Local settings did not hydrate before recovery diagnostic");
                 }
-                app.invoke_search("Serein synthetic failure diagnostic".into());
+                app.invoke_search("Oxplay synthetic failure diagnostic".into());
                 if !app.get_busy() {
                     return Err("Diagnostic search was not admitted");
                 }

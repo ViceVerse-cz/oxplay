@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Opt-in guest probe. Logs counts/results only, never signed URLs or caption text.
-use serein_core::{OperationContext, VideoId};
-use serein_youtube::YtDlp;
+use oxplay_core::{OperationContext, VideoId};
+use oxplay_youtube::YtDlp;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let id = VideoId::new(
         &std::env::args()

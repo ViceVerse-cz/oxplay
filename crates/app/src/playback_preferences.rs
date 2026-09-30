@@ -2,7 +2,7 @@
 //! Playback defaults are local preferences. Native speed acknowledgement and
 //! SQLite acknowledgement are separate, bounded, event-driven operations.
 use crate::{App, UiState, library_ui};
-use serein_core::{PlaybackPreferences, PlaybackSpeed};
+use oxplay_core::{PlaybackPreferences, PlaybackSpeed};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -18,7 +18,7 @@ struct PendingSpeed {
     persist: bool,
 }
 impl PendingSpeed {
-    fn acknowledged(self, snapshot: &serein_media::Snapshot) -> bool {
+    fn acknowledged(self, snapshot: &oxplay_media::Snapshot) -> bool {
         snapshot.speed_updates > self.after_updates
             && snapshot.speed_observed
             && PlaybackSpeed::from_rate(snapshot.speed) == Some(self.desired)
@@ -38,11 +38,11 @@ impl State {
     }
 }
 
-pub fn policy(state: &UiState) -> serein_youtube::ResolutionPolicy {
+pub fn policy(state: &UiState) -> oxplay_youtube::ResolutionPolicy {
     policy_for(library_ui::desired_preferences(state).playback)
 }
-fn policy_for(prefs: PlaybackPreferences) -> serein_youtube::ResolutionPolicy {
-    serein_youtube::ResolutionPolicy {
+fn policy_for(prefs: PlaybackPreferences) -> oxplay_youtube::ResolutionPolicy {
+    oxplay_youtube::ResolutionPolicy {
         max_height: prefs.quality.height(),
         prefer_h264: true,
     }
@@ -113,7 +113,7 @@ pub fn request(app: &App, state: &Rc<UiState>, rate: f64) {
     };
     request_native(app, state, speed, true);
 }
-fn sync_speed(app: &App, snapshot: &serein_media::Snapshot) {
+fn sync_speed(app: &App, snapshot: &oxplay_media::Snapshot) {
     if snapshot.speed_observed {
         let index = PlaybackSpeed::from_rate(snapshot.speed).map_or(-1, PlaybackSpeed::index);
         if app.get_speed_index() != index {
@@ -162,7 +162,7 @@ fn request_native(app: &App, state: &Rc<UiState>, desired: PlaybackSpeed, persis
         }
     });
 }
-pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &oxplay_media::Snapshot) {
     sync_speed(app, snapshot);
     let s = &state.playback_preferences;
     let Some(pending) = s
@@ -201,7 +201,7 @@ mod tests {
             after_updates: 10,
             persist: true,
         };
-        let mut snapshot = serein_media::Snapshot {
+        let mut snapshot = oxplay_media::Snapshot {
             speed: 1.5,
             speed_observed: true,
             speed_updates: 10,
@@ -218,7 +218,7 @@ mod tests {
     }
     #[test]
     fn every_supported_ceiling_builds_the_same_explicit_initial_policy() {
-        for quality in serein_core::QualityCeiling::ALL {
+        for quality in oxplay_core::QualityCeiling::ALL {
             let policy = policy_for(PlaybackPreferences {
                 quality,
                 ..Default::default()

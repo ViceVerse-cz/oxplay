@@ -5,7 +5,7 @@ ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=1920x1080:rate=60 
 cat > artifacts/local.srt <<'SUB'
 1
 00:00:01,000 --> 00:00:08,000
-Serein local subtitle validation
+Oxplay local subtitle validation
 
 2
 00:00:20,000 --> 00:00:28,000

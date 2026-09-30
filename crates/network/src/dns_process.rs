@@ -80,7 +80,7 @@ async fn resolve(helper: &Path, hostname: String) -> io::Result<Vec<SocketAddr>>
     // The owning supervisor survives cancellation/drop of a current-thread
     // Tokio runtime. At most four bounded threads/children exist, with no queue.
     std::thread::Builder::new()
-        .name("serein-dns-owner".into())
+        .name("oxplay-dns-owner".into())
         .stack_size(256 * 1024)
         .spawn(move || {
             let result = supervise(&helper, &hostname, receiver, DEADLINE);
@@ -357,7 +357,7 @@ fn start_watchdog() -> io::Result<()> {
         return Err(failure(io::ErrorKind::Other, "DNS parent watch failed"));
     }
     std::thread::Builder::new()
-        .name("serein-dns-watch".into())
+        .name("oxplay-dns-watch".into())
         .stack_size(64 * 1024)
         .spawn(move || {
             let deadline = Instant::now() + Duration::from_millis(2800);
@@ -397,7 +397,7 @@ mod tests {
     impl Fixture {
         fn new(body: &str) -> Self {
             let path = std::env::temp_dir().join(format!(
-                "serein-dns-test-{}-{}",
+                "oxplay-dns-test-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

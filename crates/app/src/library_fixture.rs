@@ -11,8 +11,8 @@ use std::{
 pub const THUMBNAILS: usize = 30;
 pub const ITEMS: usize = 10_000;
 pub const MAX_IMAGE_BYTES: u64 = 2 * 1024 * 1024;
-const MANIFEST: &str = ".serein-library-resource-fixture-v1";
-const HEADER: &str = "SEREIN_LIBRARY_RESOURCE_FIXTURE_V1\nitems=10000\nimages=30\n";
+const MANIFEST: &str = ".oxplay-library-resource-fixture-v1";
+const HEADER: &str = "OXPLAY_LIBRARY_RESOURCE_FIXTURE_V1\nitems=10000\nimages=30\n";
 
 #[derive(Clone)]
 pub struct Config {
@@ -49,7 +49,7 @@ impl Config {
                     return Err(invalid());
                 }
             }
-            let profile = open_at(&directory, "Serein", libc::O_DIRECTORY)?;
+            let profile = open_at(&directory, "Oxplay", libc::O_DIRECTORY)?;
             private_directory(&profile)?;
             let database = open_regular(&profile, "library.sqlite3", 16 * 1024 * 1024)?;
             if database.metadata()?.len() == 0 {
@@ -120,7 +120,7 @@ fn parse_manifest(text: &str) -> io::Result<[u64; THUMBNAILS]> {
 
 /// Reuse the persistent production feed only after the ordinary library worker
 /// acknowledges a bounded SQLite page. No fixture provider result is invented.
-pub fn publish(app: &crate::App, state: &crate::UiState, videos: &[serein_core::VideoSummary]) {
+pub fn publish(app: &crate::App, state: &crate::UiState, videos: &[oxplay_core::VideoSummary]) {
     use slint::ComponentHandle;
     if state.library_fixture.is_none() {
         return;
@@ -284,7 +284,7 @@ mod tests {
     fn fixture_reads_stay_anchored_and_reject_symlinks_and_special_files() {
         use std::os::unix::fs::{PermissionsExt, symlink};
         let root = std::env::temp_dir().join(format!(
-            "serein-image-fixture-{}-{}",
+            "oxplay-image-fixture-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -293,7 +293,7 @@ mod tests {
         ));
         std::fs::create_dir(&root).unwrap();
         std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
-        let profile = root.join("Serein");
+        let profile = root.join("Oxplay");
         std::fs::create_dir(&profile).unwrap();
         std::fs::set_permissions(&profile, std::fs::Permissions::from_mode(0o700)).unwrap();
         let put = |path: &Path, bytes: &[u8]| {

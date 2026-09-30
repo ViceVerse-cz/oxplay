@@ -43,7 +43,7 @@ offers no override for that path. The yt-dlp executable path can be overridden.
 See licensing.md for distribution limitations. Source build requires declared
 native packages; application does not download or update executables.
 
-The in-process `serein-storage` workspace crate uses rusqlite 0.40.2 with
+The in-process `oxplay-storage` workspace crate uses rusqlite 0.40.2 with
 defaults disabled and `bundled,backup` enabled. Its locked libsqlite3-sys 0.38.2
 contains SQLite 3.53.2. No system SQLite prerequisite is needed for this crate.
 The application now depends on it and owns SQLite on a dedicated bounded
@@ -60,7 +60,7 @@ is part of account access. The app adds rfd 0.17.2 with defaults disabled and
 `xdg-portal,wayland` for native file selection, plus webbrowser 1.2.4 for explicit
 system-browser opening. These adapters do not replace the shared compiled UI.
 
-The bootstrap `cargo tree --locked -p serein -e features` was inspected: no Qt, Skia, software
+The bootstrap `cargo tree --locked -p oxplay -e features` was inspected: no Qt, Skia, software
 renderer, tray or runtime preview is in the selected macOS application graph.
 Reaudit the full selected graph after account/file-dialog additions before
 packaging; the bootstrap inspection is not an audit of those later additions.
@@ -90,7 +90,7 @@ addition (new packages/features were added).
 
 ## Browser-session sign-in (2026-09-30)
 
-The account adapter (`serein-youtube`) gained an explicit, user-selected
+The account adapter (`oxplay-youtube`) gained an explicit, user-selected
 "Sign in with your browser" path that reads ONLY YouTube/Google session cookies
 from one chosen installed browser profile on macOS. It adds, all permissively
 licensed (MIT OR Apache-2.0 unless noted) and all already resolvable from the
@@ -98,7 +98,7 @@ locked registry:
 
 - `rusqlite 0.40.2` (MIT) with defaults disabled and only `bundled` enabled, to
   read Chromium (`Cookies`) and Firefox (`cookies.sqlite`) databases. Feature
-  unification with `serein-storage` means the single locked `libsqlite3-sys
+  unification with `oxplay-storage` means the single locked `libsqlite3-sys
   0.38.2` (SQLite 3.53.2) is built once; no system SQLite is required.
 - `aes 0.9.3`, `cbc 0.2.1` (features `alloc,block-padding`) and `pbkdf2 0.12.2`
   (defaults off, `hmac`) to decrypt Chromium "v10" values: AES-128-CBC with a
@@ -150,7 +150,7 @@ and palette change adds no framework or icon runtime dependency.
 
 ## Scoped media transport experiment
 
-The new `serein-network` workspace crate carries compressed media ranges, never
+The new `oxplay-network` workspace crate carries compressed media ranges, never
 decoded frames. It reuses reqwest 0.12.28 (Rustls/stream, defaults off) and Tokio
 1.53.1. On non-macOS targets, Hickory resolver/net/proto are locked to 0.26.3; the
 direct resolver dependency has only `system-config,tokio`, with defaults disabled. The published
@@ -165,7 +165,7 @@ the native path delegates scoped/VPN selection to the system daemon without
 discarding that configuration. No Hickory resolver is compiled into the macOS
 transport. Native reference ownership, descriptor teardown and callback types
 were checked against macOS 27 `dns_sd.h`; its explicit resolver/cleanup smoke
-passed. Native calls now run in the first-party `serein-dns` workspace executable,
+passed. Native calls now run in the first-party `oxplay-dns` workspace executable,
 with no new third-party dependency. It is built from the same source/lockfile and
 included in the bundle's closure, signing, source archive and inventory. A bounded
 supervisor and independent helper watchdog cover cancellation and userspace stalls
@@ -242,7 +242,7 @@ recorded in [UI validation](ui-validation.md); subsequent focus correction
 ## Native-child diagnostic build glue
 
 The macOS experiment adds direct build dependency `cc = "=1.5.1"` to
-`serein-media`, and exact-fixture hashing adds app dependency `ring = "0.17"`
+`oxplay-media`, and exact-fixture hashing adds app dependency `ring = "0.17"`
 (resolved 0.17.14). Both versions were already locked; the only Cargo.lock changes
 are these two direct dependency edges. macOS-filtered offline metadata and the
 locked workspace tests compile successfully. An initial unfiltered offline
@@ -298,7 +298,7 @@ or runtime UI interpreter. Development builds emit Slint element metadata for
 these tests; release builds omit it, and this specific integration test target is
 restricted to debug-assertion builds. Native release checks remain separate.
 
-`cargo tree -p serein --locked -e normal,build` was inspected after the addition:
+`cargo tree -p oxplay --locked -e normal,build` was inspected after the addition:
 the testing backend is absent, as are Qt, Skia, the software renderer and the
 interpreter. This is selected dependency-graph evidence, not a binary-size or
 resource measurement. Runtime Winit/FemtoVG/accessibility features are unchanged.

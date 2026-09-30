@@ -2,13 +2,13 @@
 //! Explicit account actions on one sleeping worker. No browser discovery, automatic
 //! connection, unsolicited account writes, or credentials in UI responses.
 use crate::resolver::SharedResolver;
-use serein_core::{
+use oxplay_core::{
     CancellationToken, ChannelId, OperationContext, PlaylistId, ProviderError, VideoId,
     VideoSummary,
 };
-use serein_storage::vault::{ProtectedSessionStore, SessionProfile, VaultError};
-use serein_youtube::ResolutionPolicy;
-use serein_youtube::account::{
+use oxplay_storage::vault::{ProtectedSessionStore, SessionProfile, VaultError};
+use oxplay_youtube::ResolutionPolicy;
+use oxplay_youtube::account::{
     AccountChannel, AccountClient, AccountCursor, AccountError, AccountMutation, AccountPage,
     AccountPlaylist, AuthenticatedResolveError, AuthorizedPlayback, BrowserKind, ConnectionInfo,
     MAX_COOKIE_BYTES, MutationOutcome, PlaylistContents, SessionControl, SessionCookies,
@@ -744,7 +744,7 @@ fn read_import(path: &Path) -> Result<Zeroizing<Vec<u8>>, WorkerError> {
 }
 
 const MARKER: &str = "saved-profile";
-const MARKER_MAGIC: &str = "serein-session-v1";
+const MARKER_MAGIC: &str = "oxplay-session-v1";
 /// The recovery reference precedes credential allocation. On any failure the
 /// caller attempts vault deletion, retaining this reference if deletion fails.
 fn save_with_recovery_marker(
@@ -904,7 +904,7 @@ mod tests {
     impl TestDirectory {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!(
-                "serein-account-synthetic-{}",
+                "oxplay-account-synthetic-{}",
                 SessionProfile::random().unwrap().as_str()
             ));
             prepare_directory(&path).unwrap();
@@ -1187,7 +1187,7 @@ mod tests {
         assert!(matches!(
             engine.handle(
                 AccountRequest::ImportBrowser {
-                    browser: serein_youtube::account::BrowserKind::Chrome,
+                    browser: oxplay_youtube::account::BrowserKind::Chrome,
                     profile: "Default".to_owned(),
                     account_index: 10,
                     remember: false,

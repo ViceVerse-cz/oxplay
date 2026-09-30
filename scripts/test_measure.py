@@ -214,7 +214,7 @@ class MeasurementTests(unittest.TestCase):
             self.assertEqual(result["sample_count"], 1)
 
     def test_owned_descendants_and_new_decoder_are_separate_from_foreign_compiler(self):
-        previous = {10: row(1, 1, "/app/serein"), 11: row(10, 2, "/helper/yt-dlp"),
+        previous = {10: row(1, 1, "/app/oxplay"), 11: row(10, 2, "/helper/yt-dlp"),
                     12: row(11, 3, "/helper/deno"), 20: row(1, 9, "/sys/VTDecoderXPCService"),
                     21: row(1, 4, "/sys/VTDecoderXPCService"), 30: row(1, 10, "/other/rustc")}
         current = {pid: (r[0], r[1], r[2] + 1, r[3]) for pid, r in previous.items()}
@@ -259,7 +259,7 @@ class MeasurementTests(unittest.TestCase):
                          {"mean": 10.5, "p95": 19, "peak": 20})
 
     def test_process_rss_separates_root_nested_child_and_temporal_service_without_extra_scan(self):
-        current = {10: row(1, 0, "/private/root/serein", 2048),
+        current = {10: row(1, 0, "/private/root/oxplay", 2048),
                    11: row(10, 0, "/private/child/worker", 1024),
                    12: row(11, 0, "/another/worker", 512),
                    20: row(1, 0, "/System/VTDecoderXPCService", 4096)}

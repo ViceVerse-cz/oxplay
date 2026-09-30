@@ -17,7 +17,7 @@ pub struct State {
     pub enabled: bool,
     awaiting_layout: Cell<bool>,
     #[cfg(target_os = "macos")]
-    presenter: RefCell<Option<serein_media::NativeChildPresenter>>,
+    presenter: RefCell<Option<oxplay_media::NativeChildPresenter>>,
 }
 impl State {
     pub fn new(enabled: bool) -> Self {
@@ -32,13 +32,13 @@ impl State {
 
 pub fn validate_environment() -> Result<(), &'static str> {
     if [
-        "SEREIN_STABLE_VIDEO_TARGET",
-        "SEREIN_VIDEO_LEAD_MS",
-        "SEREIN_VIDEO_PREPARE_MS",
-        "SEREIN_DIAGNOSTIC_NULL_AUDIO",
-        "SEREIN_DIAGNOSTIC_AUTOSYNC",
-        "SEREIN_MEDIA_TIMING",
-        "SEREIN_GPU_TIMING",
+        "OXPLAY_STABLE_VIDEO_TARGET",
+        "OXPLAY_VIDEO_LEAD_MS",
+        "OXPLAY_VIDEO_PREPARE_MS",
+        "OXPLAY_DIAGNOSTIC_NULL_AUDIO",
+        "OXPLAY_DIAGNOSTIC_AUTOSYNC",
+        "OXPLAY_MEDIA_TIMING",
+        "OXPLAY_GPU_TIMING",
     ]
     .into_iter()
     .any(|name| std::env::var_os(name).is_some())
@@ -67,7 +67,7 @@ pub fn setup(app: &App, state: &UiState) -> Result<String, String> {
         }
         // SAFETY: called by this window's rendering setup on the AppKit thread.
         // The adapter keeps Winit's content view in place and restores CGL state.
-        let presenter = unsafe { serein_media::NativeChildPresenter::new(&state.player, view) }
+        let presenter = unsafe { oxplay_media::NativeChildPresenter::new(&state.player, view) }
             .map_err(|error| error.to_string())?;
         let info = presenter.graphics_info().to_owned();
         match presenter.window_number() {
@@ -115,7 +115,7 @@ pub fn before_render(app: &App, state: &UiState) {
     }
     #[cfg(target_os = "macos")]
     {
-        use serein_media::{NativeChildGeometry, NativeRect};
+        use oxplay_media::{NativeChildGeometry, NativeRect};
         // These getters can evaluate layout/change callbacks. Finish them all
         // before acquiring the RefCell: a callback may synchronously call hide.
         let video = NativeRect {
@@ -211,7 +211,7 @@ pub fn teardown(state: &UiState) {
 }
 
 #[cfg(target_os = "macos")]
-pub fn statistics(state: &UiState) -> Option<serein_media::NativeChildStats> {
+pub fn statistics(state: &UiState) -> Option<oxplay_media::NativeChildStats> {
     state
         .native_child
         .presenter

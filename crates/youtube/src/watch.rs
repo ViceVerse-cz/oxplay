@@ -15,7 +15,7 @@ use crate::{
     renderers::{self, Parsed},
 };
 use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelId, MAX_VIDEO_CHAPTERS, OperationContext, ProviderError, VideoDetails,
     VideoId,
 };

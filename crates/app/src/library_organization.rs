@@ -3,7 +3,7 @@
 //! row indices; destination pages and writes have their own bounded tickets.
 use super::*;
 use library::{OrganizationRequest as Request, OrganizationResult as ResultValue};
-use serein_storage::{LocalPlaylist, PlaylistWindowPage};
+use oxplay_storage::{LocalPlaylist, PlaylistWindowPage};
 
 #[derive(Clone, Copy)]
 enum Kind {

@@ -14,7 +14,7 @@ use crate::{
     renderers::{self, Parsed, text},
 };
 use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelHandle, ChannelId, ChannelSummary, OperationContext, PlaylistId,
     PlaylistSummary, ProviderError,
 };
@@ -819,7 +819,7 @@ mod tests {
     //! no real video, channel, playlist, token or session data.
     use super::*;
     use crate::YtDlp;
-    use serein_core::CancellationToken;
+    use oxplay_core::CancellationToken;
 
     const OWNER: &str = "UCsyntheticchannel000001";
     const OTHER: &str = "UCsyntheticchannel000002";

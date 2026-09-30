@@ -2,7 +2,7 @@
 //! Finite offline playlist form checks in a native window using injected Slint
 //! key events. This does not test macOS event delivery, IME or accessibility APIs.
 use crate::{App, LibraryUi, UiState};
-use serein_storage::LocalPlaylistId;
+use oxplay_storage::LocalPlaylistId;
 use slint::{
     ComponentHandle, Model, SharedString, Timer, TimerMode,
     platform::{Key, WindowEvent},
@@ -24,10 +24,10 @@ const PAGE_DRAFT: &str = "TEST FIXTURE create draft retained across video pages"
 const SAVES: usize = 101;
 const SAVE_BATCH: usize = 20;
 
-fn fixture_video(index: usize) -> serein_core::VideoSummary {
-    serein_core::VideoSummary {
+fn fixture_video(index: usize) -> oxplay_core::VideoSummary {
+    oxplay_core::VideoSummary {
         metadata: None,
-        id: serein_core::VideoId::new(&format!("k{index:010}")).unwrap(),
+        id: oxplay_core::VideoId::new(&format!("k{index:010}")).unwrap(),
         title: format!("TEST FIXTURE keyboard pagination video {index:03}"),
         channel: "TEST FIXTURE offline local channel".into(),
         channel_id: None,

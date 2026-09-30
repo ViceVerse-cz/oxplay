@@ -43,7 +43,7 @@ fn wait_for_paused_caption_load(player: &Player) {
 fn fixture() -> Fixture {
     static NEXT: AtomicU64 = AtomicU64::new(0);
     let path = std::env::temp_dir().join(format!(
-        "serein-caption-test-{}-{}-{}",
+        "oxplay-caption-test-{}-{}-{}",
         std::process::id(),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -316,7 +316,7 @@ fn rapid_loads_correlate_native_entries_and_stale_command_failure_is_ignored() {
     // Inject a real failing asynchronous native command with an old load token
     // to exercise stale COMMAND_REPLY handling independently of file errors.
     player
-        .command_with_reply(&["set", "serein-nonexistent-property", "yes"], old)
+        .command_with_reply(&["set", "oxplay-nonexistent-property", "yes"], old)
         .unwrap();
     player
         .load_local_at(&fixture.0.join("silent.wav"), 0., true)
@@ -341,7 +341,7 @@ fn rapid_loads_correlate_native_entries_and_stale_command_failure_is_ignored() {
         std::thread::sleep(Duration::from_millis(5));
     }
     player
-        .command_with_reply(&["set", "serein-nonexistent-property", "yes"], latest)
+        .command_with_reply(&["set", "oxplay-nonexistent-property", "yes"], latest)
         .unwrap();
     let deadline = Instant::now() + Duration::from_secs(5);
     while player.drain_events().failed_load_request_id != Some(latest) {

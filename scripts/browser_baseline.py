@@ -517,7 +517,7 @@ def run(args):
     os.link(clip, run_dir / "clip.mp4")
     (run_dir / "index.html").write_text("""<!doctype html><meta charset=utf-8>
 <meta http-equiv=Content-Security-Policy content="default-src 'none'; media-src 'self'; style-src 'unsafe-inline'">
-<title>Serein local browser baseline</title><style>html,body{margin:0;background:#161616}
+<title>Oxplay local browser baseline</title><style>html,body{margin:0;background:#161616}
 video{display:block;object-fit:contain}</style><video preload=none playsinline></video>""")
     result = {"browser": provenance, "harness_sha256": sha256(Path(__file__)),
               "clip_sha256": sha256(clip), "warmup_seconds": args.warmup,

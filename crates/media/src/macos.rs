@@ -97,7 +97,7 @@ impl PlaybackAssertion {
                 );
                 let name = CFStringCreateWithCString(
                     std::ptr::null(),
-                    c"Serein video playback".as_ptr(),
+                    c"Oxplay video playback".as_ptr(),
                     0x08000100,
                 );
                 if kind.is_null() || name.is_null() {

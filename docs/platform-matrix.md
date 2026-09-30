@@ -138,7 +138,7 @@ checks, not clean-machine, performance, accessibility, subtitle-composition or
 account qualification. The bundle remains experimental; see
 [packaging evidence](packaging.md) for hashes, retained failed probes and limits.
 
-The newer `bc2e53f` bundle includes the first-party transient `serein-dns`
+The newer `bc2e53f` bundle includes the first-party transient `oxplay-dns`
 executable. Both binaries were built from a clean detached checkpoint with
 `--build`; their original hashes matched the main-checkout release inputs.
 All five offline helper probes, deep strict ad-hoc signature verification and

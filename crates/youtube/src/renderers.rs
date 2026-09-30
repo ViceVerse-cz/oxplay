@@ -4,7 +4,7 @@
 //! validated by its core constructor and every image URL by the exact-host
 //! thumbnail/avatar policies; unknown shapes are reported, never invented.
 use serde_json::Value;
-use serein_core::{ChannelId, ChannelSummary, PlaylistId, PlaylistSummary, VideoId, VideoSummary};
+use oxplay_core::{ChannelId, ChannelSummary, PlaylistId, PlaylistSummary, VideoId, VideoSummary};
 use std::time::Duration;
 
 /// Outcome of interpreting one item renderer.

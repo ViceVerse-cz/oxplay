@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Bounded resolved chapter navigation; no clock subscriptions or provider work.
 use crate::{App, ChaptersUi, UiState, account_playback};
-use serein_core::{MAX_VIDEO_CHAPTERS, ResolvedPlayback, VideoChapter, VideoId};
+use oxplay_core::{MAX_VIDEO_CHAPTERS, ResolvedPlayback, VideoChapter, VideoId};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -100,7 +100,7 @@ pub fn install(app: &App, state: &UiState, item: &ResolvedPlayback) {
     ui.set_available(true);
     ui.set_status("Select a chapter, then Jump. Playback stays paused if already paused.".into());
 }
-fn load_admitted(snapshot: &serein_media::Snapshot, load: u64) -> bool {
+fn load_admitted(snapshot: &oxplay_media::Snapshot, load: u64) -> bool {
     load != 0
         && snapshot.load_request_id == load
         && snapshot.active_load_request_id == load
@@ -109,7 +109,7 @@ fn load_admitted(snapshot: &serein_media::Snapshot, load: u64) -> bool {
         && snapshot.playback_restarted
         && !matches!(
             snapshot.state,
-            serein_media::PlaybackState::Idle | serein_media::PlaybackState::Failed
+            oxplay_media::PlaybackState::Idle | oxplay_media::PlaybackState::Failed
         )
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
@@ -176,33 +176,33 @@ mod tests {
     use super::*;
     #[test]
     fn chapters_cannot_seek_a_new_failed_stopped_or_not_started_native_load() {
-        let snapshot = serein_media::Snapshot {
+        let snapshot = oxplay_media::Snapshot {
             load_request_id: 7,
             active_load_request_id: 7,
             playback_restarted: true,
-            state: serein_media::PlaybackState::Paused,
+            state: oxplay_media::PlaybackState::Paused,
             ..Default::default()
         };
         assert!(load_admitted(&snapshot, 7));
         assert!(!load_admitted(&snapshot, 6));
         for rejected in [
-            serein_media::Snapshot {
+            oxplay_media::Snapshot {
                 stop_pending: true,
                 ..snapshot.clone()
             },
-            serein_media::Snapshot {
+            oxplay_media::Snapshot {
                 load_request_id: 8,
                 ..snapshot.clone()
             },
-            serein_media::Snapshot {
+            oxplay_media::Snapshot {
                 active_load_request_id: 6,
                 ..snapshot.clone()
             },
-            serein_media::Snapshot {
+            oxplay_media::Snapshot {
                 failed_load_request_id: Some(7),
                 ..snapshot.clone()
             },
-            serein_media::Snapshot {
+            oxplay_media::Snapshot {
                 playback_restarted: false,
                 ..snapshot.clone()
             },

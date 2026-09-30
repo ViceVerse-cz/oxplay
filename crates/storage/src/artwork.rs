@@ -5,7 +5,7 @@
 //! Unix operations stay relative to a retained private directory descriptor. An
 //! exclusive lock excludes concurrent application instances; unsupported systems
 //! fail closed without disabling ordinary session browsing.
-use serein_core::VideoId;
+use oxplay_core::VideoId;
 use std::{fmt, path::Path};
 
 pub const MAX_FILE_BYTES: usize = 512 * 1024;

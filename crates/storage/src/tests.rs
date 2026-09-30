@@ -987,7 +987,7 @@ fn local_export_import_is_atomic_and_has_no_urls_or_privacy_preferences() {
             .is_err()
     );
     invalid = serde_json::from_slice(&bytes).unwrap();
-    invalid["serein_local_library_version"] = 2.into();
+    invalid["oxplay_local_library_version"] = 2.into();
     assert!(
         destination
             .import_library_json(&serde_json::to_vec(&invalid).unwrap())

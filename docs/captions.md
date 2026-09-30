@@ -25,14 +25,14 @@ An explicit selected-track fetch runs off the UI thread, supplies no cookies, ig
 On 2026-09-29, deterministic core/provider tests and strict Clippy passed after the initial implementation. Generated cases exercise URL authority/video/format mutations, output caps and cancellation before transport; raw caption addresses remain redacted. A guest-only live probe used `wsQiKKfKxug`, the installed upstream extractor's multiple-language caption fixture. It returned 2 manual VTT tracks (no truncation), then fetched and validated 79,661 bytes through the Rust HTTPS path. Only counts/byte length were printed:
 
 ```sh
-cargo run --locked -p serein-youtube --example captions_smoke -- wsQiKKfKxug
+cargo run --locked -p oxplay-youtube --example captions_smoke -- wsQiKKfKxug
 ```
 
 Automatic/translated live tracks and visual subtitle glyph appearance still need their own qualification. Provider download success alone is not a subtitle presentation pass.
 
 ## Shared UI and file lifetime
 
-The app caption-file worker creates private 0600 files under a random 0700 instance directory in the app-owned `Serein/captions` cache and bounds live files to 8 files / 16 MiB. Creation happens on a worker. Final lease Drop only changes state and wakes cleanup; the cleanup thread performs filesystem deletion. The app must retain selected/cache leases through the playback generation, and media additionally retains pending commands through their reply and successfully attached captions through their exact native END_FILE/engine termination. The cleanup owner must outlive App/Player and join only after their destruction. Normal-shutdown cleanup and bounded recovery of unlocked crash leftovers are implemented; legacy system-temp directories from earlier builds are not scanned. The shared Slint caption popup now drives selected-only downloads through the cancellable catalog worker. It caches at most eight tracks per playback, uses native `sub-add cached` for reselection, retires old files only after actual replacement/stop, and reattaches the selected track after an observed quality-change FILE_LOADED event. Native selection confirmation also checks the selected external filename against the requested private lease without exposing that filename in diagnostics. The cleanup owner is declared before App/Player and explicitly joined after both are dropped.
+The app caption-file worker creates private 0600 files under a random 0700 instance directory in the app-owned `Oxplay/captions` cache and bounds live files to 8 files / 16 MiB. Creation happens on a worker. Final lease Drop only changes state and wakes cleanup; the cleanup thread performs filesystem deletion. The app must retain selected/cache leases through the playback generation, and media additionally retains pending commands through their reply and successfully attached captions through their exact native END_FILE/engine termination. The cleanup owner must outlive App/Player and join only after their destruction. Normal-shutdown cleanup and bounded recovery of unlocked crash leftovers are implemented; legacy system-temp directories from earlier builds are not scanned. The shared Slint caption popup now drives selected-only downloads through the cancellable catalog worker. It caches at most eight tracks per playback, uses native `sub-add cached` for reselection, retires old files only after actual replacement/stop, and reattaches the selected track after an observed quality-change FILE_LOADED event. Native selection confirmation also checks the selected external filename against the requested private lease without exposing that filename in diagnostics. The cleanup owner is declared before App/Player and explicitly joined after both are dropped.
 
 The opt-in `--captions-smoke-test --url https://www.youtube.com/watch?v=wsQiKKfKxug` finite diagnostic exercises paused selection, observed Off, cached reselection, and caption reattachment across a quality change. On 2026-09-29 it passed with exit 0 using the debug app after the central workspace checks (139 tests passed, 3 explicit ignores, formatting and strict all-target Clippy passed). The first track was real English; native exact-file selection, observed Off, cached reselection without a new download, and reattachment after a second FILE_LOADED all passed while retaining one cache file. Cleanup joined successfully after player destruction. Windows protected caption-file creation fails closed until a platform implementation is validated.
 
@@ -41,11 +41,11 @@ The opt-in `--captions-smoke-test --url https://www.youtube.com/watch?v=wsQiKKfK
 
 ```sh
 caffeinate -u -t 5
-caffeinate -d -i ./target/debug/serein \
+caffeinate -d -i ./target/debug/oxplay \
   --url 'https://www.youtube.com/watch?v=wsQiKKfKxug' \
-  --captions-smoke-test --snapshot /tmp/serein-captions-repeat.5YqJOQ/captions.png \
+  --captions-smoke-test --snapshot /tmp/oxplay-captions-repeat.5YqJOQ/captions.png \
   --ui-size 760x600 --ui-theme light \
-  --data-root /tmp/serein-captions-repeat.5YqJOQ/state
+  --data-root /tmp/oxplay-captions-repeat.5YqJOQ/state
 ```
 
 The observed graphics backend was Apple M1/OpenGL 4.1; final native media reported VideoToolbox H.264 1280×720 at 59.94 fps, Opus/avfoundation audio, selected sid 1, two file loads and no media error. Catalog model changes/resets were both zero. The functional run reported no decoder or VO drops, but it spent most of its time paused and included a diagnostic screenshot: it is **not a performance acceptance result**.
@@ -73,7 +73,7 @@ private-cache crash-recovery change described below.
 
 ## Private-cache recovery hardening
 
-The new file worker takes the app-owned `Serein/captions` path. Its startup runs
+The new file worker takes the app-owned `Oxplay/captions` path. Its startup runs
 on the cleanup worker and creates/checks private profile/cache directories.
 An exclusive registry lock serializes startup/recovery and final directory removal;
 lock acquisition has a two-second deadline. Each random instance holds its own
@@ -213,6 +213,6 @@ cross-platform qualification follows from this run.
 Release executable SHA256:
 `5a5e9c8c7a238aec2a37bb0cb57919715b9a4cbc91ca2ad06f7c081b8e92b3d8`.
 
-Post-exit inspection of the actual isolated `profile/Serein/captions` directory
+Post-exit inspection of the actual isolated `profile/Oxplay/captions` directory
 confirmed it exists and retains zero VTT files. An initial inspection omitted
-the `Serein` namespace and was rejected as evidence before this corrected check.
+the `Oxplay` namespace and was rejected as evidence before this corrected check.

@@ -169,7 +169,7 @@ class PinnedRedirects(urllib.request.HTTPRedirectHandler):
 def download_bytes(url: str, limit: int) -> bytes:
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), PinnedRedirects())
     deadline = time.monotonic() + 60
-    with opener.open(urllib.request.Request(url, headers={"User-Agent": "Serein-source-audit/1"}), timeout=5) as response:
+    with opener.open(urllib.request.Request(url, headers={"User-Agent": "Oxplay-source-audit/1"}), timeout=5) as response:
         if response.status != 200:
             raise DiagnosticError("Source download failed")
         chunks = []
@@ -192,7 +192,7 @@ def download(url: str, limit: int) -> bytes:
     index = next((i for i, item in enumerate(INPUTS) if item[1] == url and item[3] == limit), None)
     if index is None:
         raise DiagnosticError("Download is not a pinned source input")
-    temp = tempfile.mkdtemp(prefix="serein-mpv-download-")
+    temp = tempfile.mkdtemp(prefix="oxplay-mpv-download-")
     env = {"HOME": temp, "TMPDIR": temp, "PATH": "/usr/bin:/bin", "LC_ALL": "C",
            "PYTHONNOUSERSITE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
     # On command/cleanup failure retain the private directory for explicit cleanup;

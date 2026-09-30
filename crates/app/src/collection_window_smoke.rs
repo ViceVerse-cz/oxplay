@@ -2,7 +2,7 @@
 //! Finite offline collection-window callbacks against a newly created private
 //! database. No helper, media, account or resource-measurement admission.
 use crate::{App, LibraryUi, UiState};
-use serein_storage::{LocalPlaylistId, LocalStore};
+use oxplay_storage::{LocalPlaylistId, LocalStore};
 use slint::{ComponentHandle, Model, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -24,7 +24,7 @@ pub struct Fixture {
 }
 pub fn prepare_root(root: &Path) -> io::Result<Fixture> {
     crate::clear_smoke::create_root(root)?;
-    let directory = root.join("Serein");
+    let directory = root.join("Oxplay");
     #[cfg(unix)]
     {
         use std::os::unix::fs::DirBuilderExt;
@@ -386,14 +386,14 @@ mod tests {
             }
         }
         let root = Root(std::env::temp_dir().canonicalize().unwrap().join(format!(
-            "serein-collection-window-fixture-{}-{}",
+            "oxplay-collection-window-fixture-{}-{}",
             std::process::id(),
             SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         )));
         let fixture = prepare_root(&root.0).unwrap();
         assert_eq!(fixture.seed.len(), 205);
         assert!(prepare_root(&root.0).is_err());
-        let store = LocalStore::open(root.0.join("Serein/library.sqlite3")).unwrap();
+        let store = LocalStore::open(root.0.join("Oxplay/library.sqlite3")).unwrap();
         let first = store.playlists(None, 100).unwrap();
         let second = store.playlists(first.next, 100).unwrap();
         let third = store.playlists(second.next, 100).unwrap();

@@ -1,9 +1,9 @@
 # Optional GPU timeline diagnostics
 
-Set `SEREIN_GPU_TIMING=1` for an explicit diagnostic run. With the variable absent,
+Set `OXPLAY_GPU_TIMING=1` for an explicit diagnostic run. With the variable absent,
 the presenter creates no query objects and performs no diagnostic GL queries.
 This instrumentation is not enabled in resource acceptance runs.
-`SEREIN_GPU_TIMING=ui-elapsed` separately selects the UI-only elapsed-query mode
+`OXPLAY_GPU_TIMING=ui-elapsed` separately selects the UI-only elapsed-query mode
 described below. It does not silently change the meaning of the existing timestamp
 mode or populate its media/frame counters.
 
@@ -104,7 +104,7 @@ zero. [Native evidence](evidence/2026-09-29-clear-local-native.log).
 
 ## Explicit UI-only elapsed mode
 
-`SEREIN_GPU_TIMING=ui-elapsed` allocates sixteen TIME_ELAPSED query objects in
+`OXPLAY_GPU_TIMING=ui-elapsed` allocates sixteen TIME_ELAPSED query objects in
 the owning context, only when GetQueryiv reports 30–64 useful elapsed bits.
 The same context/thread requirements and nonblocking availability checks apply.
 No native execution of this new mode has been recorded yet.
@@ -157,7 +157,7 @@ next required step before collecting or publishing UI GPU durations.
 ## Native UI elapsed-query result
 
 Release binary `ac87f2c3ad53ff066fcb5596ec9ffc614c5f0e81c737700ed25f1a7f8628ea80`
-passed the20-second local lifecycle with `SEREIN_GPU_TIMING=ui-elapsed`,
+passed the20-second local lifecycle with `OXPLAY_GPU_TIMING=ui-elapsed`,
 `--search-cache`, light theme and the labeled related-row fixture. It exercised
 pause, paused seek, resume, resize/fullscreen, text-input shortcut ownership,
 hidden controls, minimize/restore and cleanup. Catalog changes stayed zero;

@@ -97,7 +97,7 @@ See [platform matrix](platform-matrix.md) and [progress](progress.md).
 Actions use verified full commit IDs. Workflow tokens default to read-only
 repository access; only the final release job can write repository contents.
 Checkout does not retain Git credentials. Tests and compilation run before
-that job, with no write token. The other Serein application's workflow informed
+that job, with no write token. The other Oxplay application's workflow informed
 the release job structure; its unrelated dependencies and signing/packaging
 pipeline are not used here.
 
@@ -110,7 +110,7 @@ must match `[workspace.package].version` in the committed `Cargo.toml`. Stable t
 are intentionally rejected while release qualification is incomplete. The workflow
 does not change versions; make any version update in a reviewed commit first.
 
-Jobs, following the structure of the other Serein application's release pipeline
+Jobs, following the structure of the other Oxplay application's release pipeline
 (plan, build matrix, publish):
 
 1. **source** resolves the tag and archives the exact checked-out commit.
@@ -124,12 +124,12 @@ Jobs, following the structure of the other Serein application's release pipeline
    regenerates `SHA256SUMS` across all assets, creates the tag and a **prerelease**
    (never `latest`). It is a draft unless **publish** was ticked.
 
-Assets: `serein-<tag>-source.tar.gz`, `serein-<tag>-macOS-ARM64.zip` with its
-`.inventory.json`, `serein-<tag>-Linux-X64.tar.gz`, `release.json`,
+Assets: `oxplay-<tag>-source.tar.gz`, `oxplay-<tag>-macOS-ARM64.zip` with its
+`.inventory.json`, `oxplay-<tag>-Linux-X64.tar.gz`, `release.json`,
 `RELEASE_NOTES.md` and `SHA256SUMS`. Unlike the other application, no Apple
 secrets are required because nothing is Developer ID signed or notarized: the macOS
 bundle is ad-hoc signed and quarantined on download (`xattr -dr com.apple.quarantine
-Serein.app`). The pipeline adds no conventional-commit versioning, nightly channel,
+Oxplay.app`). The pipeline adds no conventional-commit versioning, nightly channel,
 Windows build or package repositories. Draft assets expire from Actions storage
 after 14 days; the attached release assets remain.
 
@@ -141,8 +141,8 @@ CI or build job prevents tag and release creation.
 For a local source preview from a committed checkout:
 
 ```sh
-python3 scripts/release_source.py --output /tmp/serein-source-preview
-cd /tmp/serein-source-preview
+python3 scripts/release_source.py --output /tmp/oxplay-source-preview
+cd /tmp/oxplay-source-preview
 shasum -a 256 -c SHA256SUMS
 ```
 

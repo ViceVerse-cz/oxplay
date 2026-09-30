@@ -43,7 +43,7 @@ count minus its immediate children; totals were checked against each thread root
 | `mpv_render_context_render` (all disjoint occurrences) | 230 | 316 |
 | `gl_timer_stop` | 91 | 113 |
 | Timer-stop leaves at explicit wait/IPC boundaries | 78 | 98 |
-| Native `serein_child_flush` | 0 | 197 |
+| Native `oxplay_child_flush` | 0 | 197 |
 | Native child-flush semaphore-wait leaves | 0 | 128 |
 | `glTexImage2D_Exec` | 13 | 1 |
 
@@ -76,7 +76,7 @@ application-clock tweak. Removing queries could simply move submission to the
 later draw/flush; the earlier default ON/OFF comparison did not pass the CPU
 ceiling repeatably.
 
-Native `serein_child_flush` calls `NSOpenGLContext.flushBuffer` on the retained
+Native `oxplay_child_flush` calls `NSOpenGLContext.flushBuffer` on the retained
 main-thread context. Its wall-time and semaphore residence do not justify
 removing synchronization, changing swap policy, presenting early or moving the
 context to another thread. No such source changes were made.

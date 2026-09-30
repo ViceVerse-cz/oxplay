@@ -2,7 +2,7 @@
 //! Immediate, selection-scoped watch navigation. Extraction stays on its worker;
 //! this adapter only clears stale presentation and publishes pending UI state.
 use crate::{App, UiState};
-use serein_core::VideoId;
+use oxplay_core::VideoId;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},

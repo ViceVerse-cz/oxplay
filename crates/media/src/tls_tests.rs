@@ -60,11 +60,11 @@ fn play(url: &str, ca: Option<&std::path::Path>, success: bool) {
 #[test]
 #[ignore = "requires explicit synthetic HTTPS servers from scripts/test_media_tls.py"]
 fn synthetic_loopback_certificate_and_hostname_verification() {
-    let good = fixture_url("SEREIN_TLS_FIXTURE_GOOD");
-    let untrusted = fixture_url("SEREIN_TLS_FIXTURE_UNTRUSTED");
-    let mismatch = fixture_url("SEREIN_TLS_FIXTURE_MISMATCH");
+    let good = fixture_url("OXPLAY_TLS_FIXTURE_GOOD");
+    let untrusted = fixture_url("OXPLAY_TLS_FIXTURE_UNTRUSTED");
+    let mismatch = fixture_url("OXPLAY_TLS_FIXTURE_MISMATCH");
     let ca =
-        PathBuf::from(std::env::var_os("SEREIN_TLS_FIXTURE_CA").expect("fixture CA path required"));
+        PathBuf::from(std::env::var_os("OXPLAY_TLS_FIXTURE_CA").expect("fixture CA path required"));
     assert!(ca.is_absolute() && ca.is_file());
     assert_ne!(
         good, untrusted,

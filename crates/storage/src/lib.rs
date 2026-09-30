@@ -14,7 +14,7 @@ pub use history::{
 };
 pub use library_transfer::{ImportSummary, MAX_TRANSFER_BYTES};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
-use serein_core::{
+use oxplay_core::{
     ChannelId, PlaybackPreferences, PlaybackSpeed, Preferences, QualityCeiling, VideoId,
     VideoSummary,
 };

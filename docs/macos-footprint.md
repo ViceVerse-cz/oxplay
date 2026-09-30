@@ -22,7 +22,7 @@ buffer and flavor zero, never the moving `RUSAGE_INFO_CURRENT` definition. The
 C11 probe compiled with strict warnings and passed its live self-query; the
 Python ctypes reader also returned a live nonzero footprint for itself.
 The explicit probe source is `scripts/check_macos_footprint.c`; compile with
-`cc -std=c11 -Wall -Wextra -Werror scripts/check_macos_footprint.c -lproc -o /tmp/serein-footprint-check`
+`cc -std=c11 -Wall -Wextra -Werror scripts/check_macos_footprint.c -lproc -o /tmp/oxplay-footprint-check`
 and run that temporary executable outside any measurement window. The Python
 reader self-query used `MacosFootprint.read(os.getpid())`.
 Neither self-query measures the application or proves decoder-service access.

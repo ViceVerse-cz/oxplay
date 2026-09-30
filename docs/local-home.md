@@ -109,7 +109,7 @@ synthetic video IDs to the extractor. Repeat with:
 
 ```sh
 cargo build --locked
-./target/debug/serein --home-smoke-test \
+./target/debug/oxplay --home-smoke-test \
   --data-root /absolute/path/new-home-profile --ui-size 1000x720 \
   --snapshot /absolute/path/home.png
 ```

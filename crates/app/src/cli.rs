@@ -384,7 +384,7 @@ impl Options {
                 || options
                     .url
                     .as_deref()
-                    .is_none_or(|url| serein_core::VideoId::from_url(url).is_err())
+                    .is_none_or(|url| oxplay_core::VideoId::from_url(url).is_err())
                 || seen.iter().any(|key| {
                     !ALLOWED
                         .iter()
@@ -731,7 +731,7 @@ fn parse_size(value: &str) -> Result<(u32, u32), &'static str> {
     Ok((width, height))
 }
 
-pub const HELP: &str = "Serein experimental native client
+pub const HELP: &str = "Oxplay experimental native client
   --local PATH      Explicit local media
   --subtitle PATH   Explicit local subtitle (requires --local)
   --yt-dlp PATH     Absolute helper path
@@ -740,7 +740,7 @@ pub const HELP: &str = "Serein experimental native client
   --search TEXT     Search public YouTube metadata
   --paused          Start local playback paused
   --minimized       Minimized idle diagnostic
-  --data-root DIR   Store local data under DIR/Serein (absolute path)
+  --data-root DIR   Store local data under DIR/Oxplay (absolute path)
   --ui-page PAGE    Diagnostic: browse/library/settings/account
   --ui-theme THEME  Diagnostic: system/light/dark (not saved)
   --ui-size WxH     Diagnostic logical window size
@@ -752,7 +752,7 @@ pub const HELP: &str = "Serein experimental native client
   --library-smoke-test 28-second offline local-navigation test (requires NEW --data-root)
   --library-keyboard-smoke-test 68-second offline injected-key playlist test (requires NEW --data-root)
   --collection-window-smoke-test 58-second offline playlist-window test (requires NEW --data-root)
-  --library-resource-fixture ROOT  Prepared, labeled offline 10,000-item fixture (uses ROOT/Serein)
+  --library-resource-fixture ROOT  Prepared, labeled offline 10,000-item fixture (uses ROOT/Oxplay)
   --library-resource-smoke-test  Five 100-row page/input checks plus keyboard/resize checks (44s; requires prepared fixture; no resource qualification)
   --comments-smoke-test 70-second guest details/comments test (requires --url)
   --comments-snapshots DIR  Two PNGs (requires comments smoke)

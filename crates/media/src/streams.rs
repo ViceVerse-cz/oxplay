@@ -44,7 +44,7 @@ pub trait StreamFactory: Send + Sync {
 
 const MAX_STREAMS: usize = 4;
 const MAX_READ: usize = 64 * 1024;
-const PREFIX: &str = "serein-stream://";
+const PREFIX: &str = "oxplay-stream://";
 #[derive(Default)]
 struct State {
     next: u64,
@@ -80,7 +80,7 @@ impl Registry {
             checked(
                 mpv_stream_cb_add_ro(
                     raw,
-                    c"serein-stream".as_ptr(),
+                    c"oxplay-stream".as_ptr(),
                     std::ptr::from_ref(self).cast_mut().cast(),
                     Some(open),
                 ),

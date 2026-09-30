@@ -2,7 +2,7 @@
 //! Decisions shared by the compressed media range transport. No credential discovery.
 use crate::{Error, Result};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use serein_core::OriginHeaders;
+use oxplay_core::OriginHeaders;
 use std::net::IpAddr;
 use url::Url;
 

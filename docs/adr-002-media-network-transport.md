@@ -2,8 +2,8 @@
 
 Status: implementation in progress; not qualified as the default transport.
 
-`serein-network` now implements bounded guest ranges, cancellation, strict response
-checks, public-address filtering and per-hop origin policy. `serein-media::streams`
+`oxplay-network` now implements bounded guest ranges, cancellation, strict response
+checks, public-address filtering and per-hop origin policy. `oxplay-media::streams`
 provides the libmpv callback boundary; `--scoped-media` selects the experimental
 app integration. Seven deterministic HTTP/policy tests and strict Clippy passed.
 The first live probe found that Hickory 0.26.3 cannot parse this macOS host's
@@ -113,7 +113,7 @@ acceptance and hostname-mismatch rejection also pass (media-tls.md).
 ## macOS DNS initialization isolation
 
 The HTTP transport remains in-process, but macOS native DNS lookup now uses a
-short-lived first-party `serein-dns` helper. Source review showed synchronous
+short-lived first-party `oxplay-dns` helper. Source review showed synchronous
 DNSServiceGetAddrInfo initialization could outlive Tokio's async timeout; merely
 moving it to an uncancellable blocking thread would not solve shutdown ownership.
 The helper has an independent parent-death/deadline watchdog, while a bounded

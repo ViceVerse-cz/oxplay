@@ -7,7 +7,7 @@
 //! Slint cf3b07d's OpenGL texture example likewise sets a generated property in
 //! this callback; FemtoVG invokes it inside the draw dependency tracker before
 //! item traversal. This module never changes layout, transport state or models.
-use serein_media::ClockIdentity;
+use oxplay_media::ClockIdentity;
 use std::cell::Cell;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

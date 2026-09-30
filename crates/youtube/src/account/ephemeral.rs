@@ -86,7 +86,7 @@ fn private_root() -> Result<PathBuf, AccountError> {
         os::unix::fs::{DirBuilderExt, MetadataExt},
     };
     let uid = unsafe { libc::geteuid() };
-    let root = std::env::temp_dir().join(format!("serein-auth-{uid}"));
+    let root = std::env::temp_dir().join(format!("oxplay-auth-{uid}"));
     match DirBuilder::new().mode(0o700).create(&root) {
         Ok(()) => {}
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}

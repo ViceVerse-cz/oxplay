@@ -8,17 +8,17 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-@interface SereinVideoClip : NSView
+@interface OxplayVideoClip : NSView
 @end
-@implementation SereinVideoClip
+@implementation OxplayVideoClip
 - (BOOL)isFlipped { return YES; }
 - (BOOL)acceptsFirstResponder { return NO; }
 - (NSView *)hitTest:(NSPoint)point { (void)point; return nil; }
 @end
 
-@interface SereinVideoView : NSView
+@interface OxplayVideoView : NSView
 @end
-@implementation SereinVideoView
+@implementation OxplayVideoView
 - (BOOL)isFlipped { return YES; }
 - (BOOL)acceptsFirstResponder { return NO; }
 - (NSView *)hitTest:(NSPoint)point { (void)point; return nil; }
@@ -26,22 +26,22 @@
 - (void)drawRect:(NSRect)rect { (void)rect; }
 @end
 
-@interface SereinVideoSurface : NSObject
+@interface OxplayVideoSurface : NSObject
 @property(strong) NSView *parent;
-@property(strong) SereinVideoClip *clip;
-@property(strong) SereinVideoView *video;
+@property(strong) OxplayVideoClip *clip;
+@property(strong) OxplayVideoView *video;
 @property(strong) NSOpenGLContext *context;
 @end
-@implementation SereinVideoSurface
+@implementation OxplayVideoSurface
 @end
 
-int serein_child_is_main(void) { return [NSThread isMainThread] ? 1 : 0; }
+int oxplay_child_is_main(void) { return [NSThread isMainThread] ? 1 : 0; }
 
-void *serein_child_create(void *parentPointer) {
+void *oxplay_child_create(void *parentPointer) {
     if (![NSThread isMainThread] || !parentPointer) return NULL;
     CGLContextObj previous = CGLGetCurrentContext();
     @autoreleasepool {
-      SereinVideoSurface *surface = nil;
+      OxplayVideoSurface *surface = nil;
       @try {
         NSView *parent = (__bridge NSView *)parentPointer;
         if (!parent.window) return NULL;
@@ -53,13 +53,13 @@ void *serein_child_create(void *parentPointer) {
         };
         NSOpenGLPixelFormat *format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
         if (!format) return NULL;
-        surface = [SereinVideoSurface new];
+        surface = [OxplayVideoSurface new];
         surface.parent = parent;
-        surface.clip = [[SereinVideoClip alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
+        surface.clip = [[OxplayVideoClip alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
         surface.clip.wantsLayer = YES;
         surface.clip.layer.masksToBounds = YES;
         surface.clip.hidden = YES;
-        surface.video = [[SereinVideoView alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
+        surface.video = [[OxplayVideoView alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
         if (!surface.video) return NULL;
         surface.video.wantsLayer = YES;
         surface.video.wantsBestResolutionOpenGLSurface = YES;
@@ -81,29 +81,29 @@ void *serein_child_create(void *parentPointer) {
     }
 }
 
-void *serein_child_context(void *opaque) {
+void *oxplay_child_context(void *opaque) {
     if (![NSThread isMainThread] || !opaque) return NULL;
-    return [(__bridge SereinVideoSurface *)opaque context].CGLContextObj;
+    return [(__bridge OxplayVideoSurface *)opaque context].CGLContextObj;
 }
 
-int serein_child_window_number(void *opaque, int64_t *number) {
+int oxplay_child_window_number(void *opaque, int64_t *number) {
     if (![NSThread isMainThread] || !opaque || !number) return -1;
     @try {
         // Read only this retained surface's owning window. Never enumerate
         // other windows, inspect titles, or capture any pixels here.
-        NSWindow *window = [(__bridge SereinVideoSurface *)opaque parent].window;
+        NSWindow *window = [(__bridge OxplayVideoSurface *)opaque parent].window;
         if (!window || window.windowNumber <= 0) return -1;
         *number = (int64_t)window.windowNumber;
         return 0;
     } @catch (NSException *exception) { (void)exception; return -1; }
 }
 
-int serein_child_geometry(void *opaque, double x, double y, double width, double height,
+int oxplay_child_geometry(void *opaque, double x, double y, double width, double height,
                           double clipX, double clipY, double clipWidth, double clipHeight,
                           int *pixelWidth, int *pixelHeight) {
     if (![NSThread isMainThread] || !opaque) return -1;
     @autoreleasepool { @try {
-        SereinVideoSurface *surface = (__bridge SereinVideoSurface *)opaque;
+        OxplayVideoSurface *surface = (__bridge OxplayVideoSurface *)opaque;
         surface.clip.hidden = YES;
         NSRect proposedBacking = [surface.parent convertRectToBacking:NSMakeRect(x, y, width, height)];
         NSRect proposedClip = [surface.parent convertRectToBacking:NSMakeRect(clipX, clipY, clipWidth, clipHeight)];
@@ -127,26 +127,26 @@ int serein_child_geometry(void *opaque, double x, double y, double width, double
     } @catch (NSException *exception) { (void)exception; return -1; } }
 }
 
-int serein_child_hidden(void *opaque, int hidden) {
+int oxplay_child_hidden(void *opaque, int hidden) {
     if (![NSThread isMainThread] || !opaque) return -1;
-    @try { [(__bridge SereinVideoSurface *)opaque clip].hidden = hidden != 0; return 0; }
+    @try { [(__bridge OxplayVideoSurface *)opaque clip].hidden = hidden != 0; return 0; }
     @catch (NSException *exception) { (void)exception; return -1; }
 }
 
-int serein_child_flush(void *opaque) {
+int oxplay_child_flush(void *opaque) {
     if (![NSThread isMainThread] || !opaque) return -1;
-    @try { [[(__bridge SereinVideoSurface *)opaque context] flushBuffer]; return 0; }
+    @try { [[(__bridge OxplayVideoSurface *)opaque context] flushBuffer]; return 0; }
     @catch (NSException *exception) { (void)exception; return -1; }
 }
 
-void serein_child_destroy(void *opaque) {
+void oxplay_child_destroy(void *opaque) {
     if (!opaque) return;
     // Rust !Send ownership guarantees this; do not dispatch synchronously from
     // another thread and create a shutdown dependency cycle.
     if (![NSThread isMainThread]) abort();
     CGLContextObj previous = CGLGetCurrentContext();
     @autoreleasepool {
-        SereinVideoSurface *surface = (__bridge_transfer SereinVideoSurface *)opaque;
+        OxplayVideoSurface *surface = (__bridge_transfer OxplayVideoSurface *)opaque;
         // No Objective-C exception may cross the Rust FFI boundary.
         @try {
             surface.clip.hidden = YES;

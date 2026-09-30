@@ -1,6 +1,6 @@
 # Audio-clock smoothing diagnostic
 
-`SEREIN_DIAGNOSTIC_AUTOSYNC=1` selects libmpv `autosync=30`; the production
+`OXPLAY_DIAGNOSTIC_AUTOSYNC=1` selects libmpv `autosync=30`; the production
 default remains `0`. `Snapshot.autosync_factor` and the diagnostic startup line
 record the selected factor. This changes neither the audio output selection nor
 the video codec, resolution, or decoding path. It requires separate A/V
@@ -27,8 +27,8 @@ This motivates testing clock smoothing; it does not establish the cause of the
 late frames. A timed null-output diagnostic also failed the frame-loss gate.
 
 The controlled comparison uses audible output, unchanged 1080p60 fixture,
-`SEREIN_VIDEO_LEAD_MS=0`, `SEREIN_VIDEO_PREPARE_MS=0`, and
-`SEREIN_MEDIA_TIMING=1`, with the same 10-second and 25-second checkpoints.
+`OXPLAY_VIDEO_LEAD_MS=0`, `OXPLAY_VIDEO_PREPARE_MS=0`, and
+`OXPLAY_MEDIA_TIMING=1`, with the same 10-second and 25-second checkpoints.
 No successful outcome is implied by the existence of this diagnostic.
 
 The completed 30-second run (`artifacts/autosync-30.log`) observed

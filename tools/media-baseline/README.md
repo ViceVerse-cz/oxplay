@@ -9,8 +9,8 @@ printed `hwdec` is the observed decoder, not the request.
 ```sh
 cc -std=c11 -Wall -Wextra -Werror -O2 tools/media-baseline/main.c \
   $(pkg-config --cflags --libs mpv sdl2) -framework OpenGL -framework CoreVideo \
-  -framework IOKit -framework CoreFoundation -o /tmp/serein-media-baseline
-/tmp/serein-media-baseline "$PWD/artifacts/local-1080p60.mp4" 30 1 0.05
+  -framework IOKit -framework CoreFoundation -o /tmp/oxplay-media-baseline
+/tmp/oxplay-media-baseline "$PWD/artifacts/local-1080p60.mp4" 30 1 0.05
 ```
 
 Arguments are absolute clip path, duration in seconds, whether libmpv blocks
@@ -70,8 +70,8 @@ Compile after any source edits and outside a measurement window:
 cc -std=c11 -Wall -Wextra -Werror -O2 tools/media-baseline/main.c \
   $(pkg-config --cflags --libs mpv sdl2) \
   -framework OpenGL -framework CoreVideo -framework IOKit -framework CoreFoundation \
-  -o /tmp/serein-media-baseline
-shasum -a 256 /tmp/serein-media-baseline tools/media-baseline/main.c
+  -o /tmp/oxplay-media-baseline
+shasum -a 256 /tmp/oxplay-media-baseline tools/media-baseline/main.c
 ```
 
 The matched application options are nonblocking render, 50 ms timing offset,
@@ -79,7 +79,7 @@ advanced control disabled, and mode 6. A short functional run should precede
 resource sampling:
 
 ```sh
-/tmp/serein-media-baseline "$PWD/artifacts/local-1080p60.mp4" 10 0 0.05 0 6 692 389
+/tmp/oxplay-media-baseline "$PWD/artifacts/local-1080p60.mp4" 10 0 0.05 0 6 692 389
 ```
 
 Only after that succeeds and the whole host is quiet, collect the same ten-second
@@ -88,7 +88,7 @@ warm-up plus sixty one-second samples used for the application:
 ```sh
 python3 scripts/measure.py --warmup 10 --seconds 60 --include-new-vt-services \
   --output artifacts/standalone-mode6.json -- \
-  /tmp/serein-media-baseline "$PWD/artifacts/local-1080p60.mp4" 85 0 0.05 0 6 692 389
+  /tmp/oxplay-media-baseline "$PWD/artifacts/local-1080p60.mp4" 85 0 0.05 0 6 692 389
 ```
 
 Record source/binary hashes, GL vendor/renderer/version, observed drawable

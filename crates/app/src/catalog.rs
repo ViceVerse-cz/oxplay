@@ -1,6 +1,6 @@
 //! A single owned worker and a latest-request slot. Replaced jobs are cancelled.
-use serein_core::{CancellationToken, OperationContext, ProviderError, ResolvedPlayback, VideoId};
-use serein_youtube::{
+use oxplay_core::{CancellationToken, OperationContext, ProviderError, ResolvedPlayback, VideoId};
+use oxplay_youtube::{
     ResolutionPolicy,
     catalog::{CatalogCursor, CatalogPage, CatalogRequest},
     comments::{CommentCursor, CommentPage},
@@ -9,17 +9,17 @@ use std::sync::{Arc, Condvar, Mutex};
 
 pub enum Request {
     Catalog(CatalogRequest, Option<CatalogCursor>),
-    Resolve(VideoId, serein_core::QualityCeiling),
+    Resolve(VideoId, oxplay_core::QualityCeiling),
     ResolveAt(
         VideoId,
-        serein_core::QualityCeiling,
-        serein_core::VideoStart,
+        oxplay_core::QualityCeiling,
+        oxplay_core::VideoStart,
     ),
     Comments(VideoId, Option<CommentCursor>),
     Caption(
         VideoId,
         usize,
-        Box<serein_core::SubtitleTrack>,
+        Box<oxplay_core::SubtitleTrack>,
         crate::caption_files::Client,
     ),
     ResolveQuality(VideoId, ResolutionPolicy),
@@ -28,8 +28,8 @@ pub enum Response {
     Catalog(Box<CatalogPage>),
     Resolved(
         Box<ResolvedPlayback>,
-        serein_core::QualityCeiling,
-        serein_core::VideoStart,
+        oxplay_core::QualityCeiling,
+        oxplay_core::VideoStart,
     ),
     Comments(VideoId, Result<CommentPage, ProviderError>),
     Caption(
@@ -118,7 +118,7 @@ impl Worker {
                         let native = resolver.native_on_worker().ok();
                         Ok(Response::Comments(
                             id.clone(),
-                            serein_youtube::comments::guest_comments(
+                            oxplay_youtube::comments::guest_comments(
                                 native.as_deref(),
                                 provider.as_deref().ok(),
                                 &id,
@@ -346,7 +346,7 @@ mod tests {
                 Request::Catalog(
                     CatalogRequest::Search {
                         query: "pending".into(),
-                        kind: serein_youtube::catalog::SearchKind::All,
+                        kind: oxplay_youtube::catalog::SearchKind::All,
                     },
                     None,
                 ),
@@ -393,7 +393,7 @@ mod tests {
         let admitted = trace.clone();
         worker.on_submitted(move |generation, request| {
             assert!(matches!(request, Request::Resolve(id, quality)
-                if id.as_str() == "aqz-KE-bpKQ" && *quality == serein_core::QualityCeiling::default()));
+                if id.as_str() == "aqz-KE-bpKQ" && *quality == oxplay_core::QualityCeiling::default()));
             assert_eq!(admitted.borrow().last(), Some(&(generation, "retired")));
             admitted.borrow_mut().push((generation, "admitted"));
         });
@@ -438,7 +438,7 @@ mod tests {
             Request::Catalog(
                 CatalogRequest::Search {
                     query: "synthetic blocked search".into(),
-                    kind: serein_youtube::catalog::SearchKind::All,
+                    kind: oxplay_youtube::catalog::SearchKind::All,
                 },
                 None,
             )
@@ -462,7 +462,7 @@ mod tests {
         worker.submit(Request::Catalog(
             CatalogRequest::Search {
                 query: "first".into(),
-                kind: serein_youtube::catalog::SearchKind::All,
+                kind: oxplay_youtube::catalog::SearchKind::All,
             },
             None,
         ));
@@ -479,7 +479,7 @@ mod tests {
         worker.submit(Request::Catalog(
             CatalogRequest::Search {
                 query: "second".into(),
-                kind: serein_youtube::catalog::SearchKind::All,
+                kind: oxplay_youtube::catalog::SearchKind::All,
             },
             None,
         ));

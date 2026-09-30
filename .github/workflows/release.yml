@@ -98,12 +98,12 @@ jobs:
       - name: Build and inspect the bundle
         run: |
           mkdir dist release-assets
-          python3 scripts/package_macos.py bundle --build --bundle-helpers --output dist/Serein.app
-          python3 scripts/verify_package.py dist/Serein.app
+          python3 scripts/package_macos.py bundle --build --bundle-helpers --output dist/Oxplay.app
+          python3 scripts/verify_package.py dist/Oxplay.app
       - name: Archive the bundle
         run: |
-          ditto -c -k --sequesterRsrc --keepParent dist/Serein.app "release-assets/serein-$TAG-macOS-ARM64.zip"
-          cp dist/Serein.app.inventory.json "release-assets/serein-$TAG-macOS-ARM64.inventory.json"
+          ditto -c -k --sequesterRsrc --keepParent dist/Oxplay.app "release-assets/oxplay-$TAG-macOS-ARM64.zip"
+          cp dist/Oxplay.app.inventory.json "release-assets/oxplay-$TAG-macOS-ARM64.inventory.json"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: asset-macos
@@ -152,16 +152,16 @@ jobs:
         id: mpv-cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: ${{ runner.temp }}/serein-mpv-0.41.0
+          path: ${{ runner.temp }}/oxplay-mpv-0.41.0
           key: libmpv-${{ runner.os }}-${{ runner.arch }}-0.41.0-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}-${{ steps.native.outputs.hash }}
       - name: Build verified Linux libmpv source
         if: steps.mpv-cache.outputs.cache-hit != 'true'
         timeout-minutes: 20
-        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/serein-mpv-0.41.0"
+        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/oxplay-mpv-0.41.0"
       - name: Select isolated Linux libmpv
         run: |
-          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/serein-mpv-0.41.0/lib/pkgconfig" >> "$GITHUB_ENV"
-          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/serein-mpv-0.41.0/lib" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/oxplay-mpv-0.41.0/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/oxplay-mpv-0.41.0/lib" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: release-linux-${{ steps.native.outputs.hash }}
@@ -170,9 +170,9 @@ jobs:
       - name: Build locked release binary
         run: |
           rustc --version --verbose
-          cargo build --release --locked -p serein
+          cargo build --release --locked -p oxplay
       - name: Package tarball
-        run: bash scripts/ci/package-linux.sh "$TAG" "$RUNNER_TEMP/serein-mpv-0.41.0" release-assets
+        run: bash scripts/ci/package-linux.sh "$TAG" "$RUNNER_TEMP/oxplay-mpv-0.41.0" release-assets
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: asset-linux
@@ -221,6 +221,6 @@ jobs:
           [ "$PUBLISH" = true ] && state=
           gh release create "$RELEASE_TAG" release-assets/* \
             --verify-tag --target "$RELEASE_COMMIT" \
-            --title "Serein $RELEASE_TAG" \
+            --title "Oxplay $RELEASE_TAG" \
             --notes-file release-assets/RELEASE_NOTES.md \
             --prerelease --latest=false $state

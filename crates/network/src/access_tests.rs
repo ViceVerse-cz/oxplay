@@ -46,7 +46,7 @@ fn source(lease: Arc<Lease>) -> HttpSource {
         .unwrap(),
         headers: HeaderMap::new(),
         timing: None,
-        config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+        config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         access: Some(lease),
     }
 }
@@ -90,13 +90,13 @@ fn authorized_constructor_preserves_no_credentials_and_origin_policies() {
     let lease = Arc::new(Lease::default());
     let source = source(lease.clone());
     let mut track = MediaTrack {
-        url: serein_core::MediaUrl::parse(source.url.as_str()).unwrap(),
+        url: oxplay_core::MediaUrl::parse(source.url.as_str()).unwrap(),
         codec: None,
         width: None,
         height: None,
         fps: None,
         contains_audio: true,
-        headers: serein_core::OriginHeaders {
+        headers: oxplay_core::OriginHeaders {
             origin: source.url.origin().ascii_serialization(),
             fields: vec![],
         },

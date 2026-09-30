@@ -33,7 +33,7 @@ account is connected.
 
 ## Native watch page and comments (InnerTube `next`)
 
-`serein_youtube::watch::watch_page` performs one anonymous `next` request
+`oxplay_youtube::watch::watch_page` performs one anonymous `next` request
 (`{"videoId", "racyCheckOk", "contentCheckOk"}`) through the shared
 `innertube::GuestTransport` (WEB client context, `hl=en`/`gl=US`, no cookies,
 bounded 8 MiB response, cancellation, shared 429 cooldown). The response must
@@ -113,7 +113,7 @@ The opaque cursor binds the video, session generation, prefix offset and ordered
 
 ## Observed checks
 
-On 2026-09-30, `cargo run --locked -p serein-youtube --example comments_smoke`
+On 2026-09-30, `cargo run --locked -p oxplay-youtube --example comments_smoke`
 (guest, macOS Apple Silicon host, home network; single sequential runs, not a
 benchmark) measured the native watch page against yt-dlp. It prints counts,
 dates and timings only. Wall-clock milliseconds:
@@ -141,7 +141,7 @@ the replayed prefix changed order between runs; the native continuation does
 not have that failure mode. These are sequential samples from two runs; network
 and helper variance is not characterized.
 
-On 2026-09-29, `cargo run --locked -p serein-youtube --example comments_smoke` fetched the public Big Buck Bunny video `aqz-KE-bpKQ` in guest mode: first page 20, second page 20, both with more results. The example reports counts only; no comment text, author identities, credentials or signed media addresses are logged. An initial probe used depth 0 and returned no entries; inspecting the exact implementation corrected it to depth 1 before the successful two-page probe.
+On 2026-09-29, `cargo run --locked -p oxplay-youtube --example comments_smoke` fetched the public Big Buck Bunny video `aqz-KE-bpKQ` in guest mode: first page 20, second page 20, both with more results. The example reports counts only; no comment text, author identities, credentials or signed media addresses are logged. An initial probe used depth 0 and returned no entries; inspecting the exact implementation corrected it to depth 1 before the successful two-page probe.
 
 Deterministic fixtures cover disabled/missing/foreign responses, bounded pages/text, changed boundary identity, safety ceiling, cursor generation/video scope, and stale request cancellation. Generated JSON mutations and external-URL authority mutations assert output bounds, plain-text preservation, typed identity and rejection invariants. The native harness evidence below validates automatic opening/paging/cancellation at the small supported window. Manual keyboard/clipboard interaction and actual screen-reader qualification remain pending.
 
@@ -160,11 +160,11 @@ The release binary built after 110 passing workspace tests (one ignored OS-secre
 
 ```sh
 caffeinate -u -t 5
-caffeinate -d -i ./target/release/serein \
+caffeinate -d -i ./target/release/oxplay \
   --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' \
-  --comments-smoke-test --comments-snapshots /tmp/serein-comments-native.gotBGn \
+  --comments-smoke-test --comments-snapshots /tmp/oxplay-comments-native.gotBGn \
   --ui-size 760x600 --ui-theme light \
-  --data-root /tmp/serein-comments-native.gotBGn/state
+  --data-root /tmp/oxplay-comments-native.gotBGn/state
 ```
 
 The [description capture](evidence/2026-09-29-guest-description.png) and [second comment-page capture](evidence/2026-09-29-guest-comments.png) were inspected visually. The description/date/counts, comment text and author metadata, copy actions, scrollbar and page controls fit the window. These intentional diagnostic images contain real public YouTube content; they are neither fixture data nor shipped application chrome. The harness asserted 20 first-page rows, 20 second-page rows, retained Previous state and successful cancellation of an explicit third request. It did not test OS clipboard contents or actual screen-reader output.

@@ -26,7 +26,7 @@ PATTERNS = ("LICENSE*", "LICENCE*", "COPYING*", "COPYRIGHT*", "NOTICE*", "GPL*",
 
 
 def fetch(url: str) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": "Serein-notice-audit/1"})
+    request = urllib.request.Request(url, headers={"User-Agent": "Oxplay-notice-audit/1"})
     with urllib.request.urlopen(request, timeout=30) as response:
         if urllib.parse.urlparse(response.url).hostname not in {"api.github.com", "raw.githubusercontent.com"}:
             raise packaging.PackagingError("Notice request redirected outside the reviewed source hosts")
@@ -140,7 +140,7 @@ def main() -> None:
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = [item for group in pool.map(source_group, groups.items()) for item in group]
     output.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=".serein-notices-", dir=output.parent))
+    stage = Path(tempfile.mkdtemp(prefix=".oxplay-notices-", dir=output.parent))
     try:
         records = []
         for record, copied in sorted(results, key=lambda item: (item[0]["name"], item[0]["version"])):

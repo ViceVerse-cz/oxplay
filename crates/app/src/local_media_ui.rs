@@ -2,7 +2,7 @@
 //! Explicit local selection, bounded worker validation, and an event-driven
 //! stop-before-load handoff. Local paths never enter storage or provider models.
 use crate::{App, UiState};
-use serein_media::Snapshot;
+use oxplay_media::Snapshot;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -260,7 +260,7 @@ fn begin(app: &App, state: &Rc<UiState>, kind: Kind) {
         return;
     }
     let Some(serial) = state.local_media.serial.get().checked_add(1) else {
-        app.set_status("File selection identifiers are exhausted. Restart Serein.".into());
+        app.set_status("File selection identifiers are exhausted. Restart Oxplay.".into());
         return;
     };
     state.local_media.stop_picker();

@@ -170,11 +170,11 @@ Deletion attempts removal of the key before ciphertext and reports any denial.
 Account generation invalidation, request cancellation and authenticated playback
 shutdown must still be coordinated by the account controller.
 
-Executed `cargo test --locked -p serein-storage`: 17 tests passed; the actual
+Executed `cargo test --locked -p oxplay-storage`: 17 tests passed; the actual
 Keychain integration test is ignored in routine runs. Executed
-`cargo clippy --locked -p serein-storage --all-targets -- -D warnings`: passed.
+`cargo clippy --locked -p oxplay-storage --all-targets -- -D warnings`: passed.
 Then explicitly ran
-`cargo test --locked -p serein-storage vault::tests::macos_keychain_synthetic_roundtrip -- --ignored --exact`:
+`cargo test --locked -p oxplay-storage vault::tests::macos_keychain_synthetic_roundtrip -- --ignored --exact`:
 passed. That local test created one random application-owned **synthetic** key,
 encrypted and loaded synthetic bytes, deleted the item and verified its absence.
 It refused any pre-existing record and used an unwind cleanup guard. No real
@@ -297,7 +297,7 @@ unit-tested only; a real remembered account was not exercised.
 ## Sign in with your browser (2026-09-30, macOS)
 
 An optional convenience path lets the user pick one installed browser profile
-and have Serein import ONLY that profile's YouTube/Google session cookies
+and have Oxplay import ONLY that profile's YouTube/Google session cookies
 directly, instead of exporting a Netscape file by hand. It is the SPEC's
 explicitly-consented, narrowly-scoped browser-profile helper — not a browser
 scan or an implicit import.

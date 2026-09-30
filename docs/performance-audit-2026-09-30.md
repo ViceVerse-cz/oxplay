@@ -128,14 +128,14 @@ cargo test --locked --workspace
 cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo build --locked --release --workspace
 python3 -m unittest discover -s scripts -p 'test_*.py'
-cargo test --locked --release -p serein thumbnails::performance:: -- --ignored --nocapture --test-threads=1
+cargo test --locked --release -p oxplay thumbnails::performance:: -- --ignored --nocapture --test-threads=1
 
 scripts/generate-fixture.sh
 # Choose a NEW absolute private directory for the offline library fixture:
 python3 scripts/prepare_library_resource_fixture.py /absolute/new/fixture "$PWD/artifacts/local-1080p60.mp4"
-python3 scripts/measure.py --warmup 5 --seconds 30 --library-fixture-ready --output artifacts/library-audit.json -- ./target/release/serein --library-resource-fixture /absolute/new/fixture --quit-after 45
-./target/release/serein --library-resource-fixture /absolute/new/fixture --library-resource-smoke-test
-./target/release/serein --data-root /absolute/new/local-profile --local "$PWD/artifacts/local-1080p60.mp4" --subtitle "$PWD/artifacts/local.srt" --smoke-test
+python3 scripts/measure.py --warmup 5 --seconds 30 --library-fixture-ready --output artifacts/library-audit.json -- ./target/release/oxplay --library-resource-fixture /absolute/new/fixture --quit-after 45
+./target/release/oxplay --library-resource-fixture /absolute/new/fixture --library-resource-smoke-test
+./target/release/oxplay --data-root /absolute/new/local-profile --local "$PWD/artifacts/local-1080p60.mp4" --subtitle "$PWD/artifacts/local.srt" --smoke-test
 ```
 
 Native commands require an awake graphical macOS session. Close each fixture

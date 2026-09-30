@@ -5,7 +5,7 @@ fn main() {
             .file("src/native_child.m")
             .flag("-fobjc-arc")
             .flag("-Wno-deprecated-declarations")
-            .compile("serein_native_child");
+            .compile("oxplay_native_child");
         println!("cargo:rustc-link-lib=framework=AppKit");
         println!("cargo:rustc-link-lib=framework=QuartzCore");
         println!("cargo:rustc-link-lib=framework=OpenGL");

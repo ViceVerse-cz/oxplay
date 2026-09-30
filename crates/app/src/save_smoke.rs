@@ -2,8 +2,8 @@
 //! Explicit finite real-guest/local-write diagnostic in a fresh private profile.
 //! SQL remains on the ordinary worker; account connection is never admitted.
 use crate::{App, LibraryUi, SaveUi, UiState, library_ui};
-use serein_core::VideoId;
-use serein_storage::LocalPlaylistId;
+use oxplay_core::VideoId;
+use oxplay_storage::LocalPlaylistId;
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},

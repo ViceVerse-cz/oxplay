@@ -274,10 +274,10 @@ def verify(bundle: Path, inventory: Path, expected_inventory_hash: str | None = 
             require(isinstance(first_party, list) and len(first_party) == 1,
                     "Invalid first-party helper inventory")
             helper = first_party[0]
-            require(isinstance(helper, dict) and helper.get("name") == "serein-dns"
-                    and helper.get("cargo_package") == "serein-network"
+            require(isinstance(helper, dict) and helper.get("name") == "oxplay-dns"
+                    and helper.get("cargo_package") == "oxplay-network"
                     and helper.get("license") == "GPL-3.0-or-later"
-                    and helper.get("bundle_path") == "Contents/Helpers/serein-dns"
+                    and helper.get("bundle_path") == "Contents/Helpers/oxplay-dns"
                     and helper["bundle_path"] in expected
                     and valid_hash(helper.get("original_sha256"))
                     and type(helper.get("source_build_performed")) is bool,

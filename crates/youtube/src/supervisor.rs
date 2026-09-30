@@ -1,4 +1,4 @@
-use serein_core::{OperationContext, ProviderError};
+use oxplay_core::{OperationContext, ProviderError};
 use std::{path::Path, time::Duration};
 pub(crate) struct Output {
     pub success: bool,
@@ -179,7 +179,7 @@ pub(crate) fn run_guarded(
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
-    use serein_core::CancellationToken;
+    use oxplay_core::CancellationToken;
     fn op() -> OperationContext {
         OperationContext {
             request_id: 1,

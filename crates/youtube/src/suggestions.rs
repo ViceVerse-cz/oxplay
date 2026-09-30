@@ -3,7 +3,7 @@
 //! One exact HTTPS origin, no cookies, redirects, proxies or retries, short
 //! timeouts and a bounded response. The caller owns scheduling/cancellation.
 use serde_json::Value;
-use serein_core::ProviderError;
+use oxplay_core::ProviderError;
 use std::time::Duration;
 use url::Url;
 
@@ -65,7 +65,7 @@ pub fn client() -> Result<reqwest::Client, ProviderError> {
         .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .pool_max_idle_per_host(1)
-        .user_agent("Serein/0.1 (experimental native YouTube client)")
+        .user_agent("Oxplay/0.1 (experimental native YouTube client)")
         .build()
         .map_err(|_| ProviderError::Offline)
 }

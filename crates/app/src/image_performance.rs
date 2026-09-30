@@ -2,7 +2,7 @@
 //! Opt-in, offline release microbenchmarks. Never part of application startup.
 use super::{Counters, decode_sized, store};
 use image::{DynamicImage, ImageFormat, RgbaImage};
-use serein_core::VideoId;
+use oxplay_core::VideoId;
 use std::{
     hint::black_box,
     io::Cursor,

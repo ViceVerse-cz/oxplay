@@ -9,32 +9,32 @@ if [[ $(uname -s) != Linux || $(uname -m) != x86_64 || $# != 3 ]]; then
   exit 2
 fi
 tag=$1 mpv=$2 output=$3
-binary=target/release/serein
+binary=target/release/oxplay
 test -x "$binary"
 test -e "$mpv/lib/libmpv.so.2"
 
-name="serein-$tag-Linux-X64"
+name="oxplay-$tag-Linux-X64"
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 root="$stage/$name"
 mkdir -p "$root/bin" "$root/lib" "$output"
-install -m 755 "$binary" "$root/bin/serein"
+install -m 755 "$binary" "$root/bin/oxplay"
 cp -a "$mpv"/lib/libmpv.so* "$root/lib/"
 cp LICENSE "$root/"
 cp "$mpv/ci-source.txt" "$root/lib/MPV-SOURCE.txt"
 
-cat > "$root/serein" <<'LAUNCHER'
+cat > "$root/oxplay" <<'LAUNCHER'
 #!/usr/bin/env bash
 here=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 export LD_LIBRARY_PATH="$here/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$here/bin/serein" "$@"
+exec "$here/bin/oxplay" "$@"
 LAUNCHER
-chmod 755 "$root/serein"
+chmod 755 "$root/oxplay"
 
 cat > "$root/README.txt" <<'README'
-Serein experimental Linux x86_64 build (unsigned, not runtime-qualified).
+Oxplay experimental Linux x86_64 build (unsigned, not runtime-qualified).
 
-Run ./serein. It uses the bundled libmpv 0.41.0 (see lib/MPV-SOURCE.txt) and needs
+Run ./oxplay. It uses the bundled libmpv 0.41.0 (see lib/MPV-SOURCE.txt) and needs
 system FFmpeg 6.x, libplacebo, LuaJIT, GL/EGL, X11 or Wayland, ALSA/PulseAudio
 libraries and yt-dlp on PATH (Ubuntu 24.04 package names). Native X11 and Wayland
 playback are unvalidated.

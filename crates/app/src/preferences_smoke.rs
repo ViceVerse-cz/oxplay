@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit offline preference/restart diagnostic; never loads provider content.
 use crate::{App, LibraryUi, UiState, playback_preferences};
-use serein_core::{PlaybackPreferences, PlaybackSpeed, QualityCeiling};
+use oxplay_core::{PlaybackPreferences, PlaybackSpeed, QualityCeiling};
 use slint::ComponentHandle;
 use std::{cell::Cell, io, path::Path, rc::Rc, time::Duration};
 
@@ -26,8 +26,8 @@ impl Phase {
     }
 }
 
-const MARKER: &str = ".serein-preferences-diagnostic-v1";
-const CONTENT: &[u8] = b"Serein isolated preferences diagnostic v1\n";
+const MARKER: &str = ".oxplay-preferences-diagnostic-v1";
+const CONTENT: &[u8] = b"Oxplay isolated preferences diagnostic v1\n";
 /// Startup-only filesystem admission, before any UI, worker, or credential work.
 /// Verify can clear only a private root explicitly created by the write phase.
 pub fn prepare_root(path: &Path, phase: Phase) -> io::Result<()> {
@@ -153,7 +153,7 @@ impl Smoke {
                 assert_eq!(state.player.snapshot().file_loads, 0, "offline diagnostic loaded media");
                 match (phase, stage) {
                     (Phase::Write, 3) => {
-                        assert_eq!(state.preferences.get(), serein_storage::LocalPreferences::default());
+                        assert_eq!(state.preferences.get(), oxplay_storage::LocalPreferences::default());
                         change(&app, QualityCeiling::P720, PlaybackSpeed::OneAndHalf, 37);
                     }
                     (Phase::Write, _) | (Phase::Verify, 3) => {
@@ -172,7 +172,7 @@ impl Smoke {
                     (Phase::Verify, 21) => {
                         assert!(!state.caption_cache.active(), "clear did not finish");
                         assert!(app.global::<LibraryUi>().get_status().starts_with("Local library and cached captions cleared."));
-                        assert_eq!(state.preferences.get(), serein_storage::LocalPreferences::default());
+                        assert_eq!(state.preferences.get(), oxplay_storage::LocalPreferences::default());
                         assert_values(&app, &state, QualityCeiling::P1080, PlaybackSpeed::Normal, 100);
                     }
                     _ => unreachable!(),
@@ -218,7 +218,7 @@ mod tests {
     fn diagnostic_reuse_requires_private_regular_exact_marker() {
         use std::os::unix::fs::{PermissionsExt, symlink};
         let path = std::env::temp_dir().join(format!(
-            "serein-preferences-test-{}-{}",
+            "oxplay-preferences-test-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

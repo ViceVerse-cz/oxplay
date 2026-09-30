@@ -4,14 +4,14 @@
 //! titles, URLs, tokens or provider JSON. No cookies or account session.
 //!
 //! usage: innertube_catalog_smoke /abs/yt-dlp /abs/deno 'search query' @handle [PLAYLIST_ID]
-use serein_core::{CancellationToken, CatalogItem, ChannelHandle, OperationContext, PlaylistId};
-use serein_youtube::{
+use oxplay_core::{CancellationToken, CatalogItem, ChannelHandle, OperationContext, PlaylistId};
+use oxplay_youtube::{
     YtDlp,
     catalog::{CatalogCursor, CatalogHeader, CatalogPage, CatalogRequest, ChannelTab, SearchKind},
 };
 use std::time::Instant;
 
-type Fetch<'a> = dyn Fn(&CatalogRequest, Option<&CatalogCursor>) -> Result<CatalogPage, serein_core::ProviderError>
+type Fetch<'a> = dyn Fn(&CatalogRequest, Option<&CatalogCursor>) -> Result<CatalogPage, oxplay_core::ProviderError>
     + 'a;
 
 fn report(label: &str, fetch: &Fetch, request: &CatalogRequest) -> Option<CatalogPage> {

@@ -65,10 +65,10 @@ identity before enabling account operations. Its real-account acceptance tests
 have not been run. Never provide a password, authentication code or cookie file through
 chat, a bug report or public CI.
 
-On macOS the user may instead pick one installed browser profile and let Serein
+On macOS the user may instead pick one installed browser profile and let Oxplay
 import that profile's YouTube session directly ("Sign in with your browser").
 This is an explicit, consented choice, not a browser scan. When the account page
-opens (never at launch) Serein lists installed browsers by checking for their
+opens (never at launch) Oxplay lists installed browsers by checking for their
 profile folders and non-secret profile metadata (`Local State` profile names,
 Firefox `profiles.ini`) and, for Safari, `/Applications/Safari.app`; no cookie
 database, Keychain item or Safari container is touched until you press **Sign in

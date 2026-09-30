@@ -124,7 +124,7 @@ index e1a82ed..eef3c39 100644
              return Err(MediaError("A presenter is already attached".into()));
          }
 +        let render_ahead_enabled =
-+            std::env::var_os("SEREIN_RENDER_AHEAD").is_some_and(|v| v == "1");
++            std::env::var_os("OXPLAY_RENDER_AHEAD").is_some_and(|v| v == "1");
 +        let snapshot = player.snapshot();
 +        if render_ahead_enabled
 +            && (!(1..=50).contains(&snapshot.timing_lead_ms) || snapshot.prepare_ms != 0)

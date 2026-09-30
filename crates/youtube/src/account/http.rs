@@ -5,7 +5,7 @@ use reqwest::{
     header::{AUTHORIZATION, COOKIE, HeaderValue},
 };
 use serde_json::{Value, json};
-use serein_core::OperationContext;
+use oxplay_core::OperationContext;
 use sha1::{Digest, Sha1};
 use std::{
     cell::Cell,
@@ -52,7 +52,7 @@ impl Transport {
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(10))
             .pool_max_idle_per_host(0)
-            .user_agent("Serein/0.1 (experimental native YouTube client)")
+            .user_agent("Oxplay/0.1 (experimental native YouTube client)")
             .build()
             .map_err(|_| AccountError::Offline)?;
         let runtime = tokio::runtime::Builder::new_current_thread()

@@ -6,7 +6,7 @@ use std::{
     process::{Child, Command, Stdio},
     time::{Duration, Instant},
 };
-const HELPER: &str = env!("CARGO_BIN_EXE_serein-dns");
+const HELPER: &str = env!("CARGO_BIN_EXE_oxplay-dns");
 
 struct OwnedHelper(Child);
 impl Drop for OwnedHelper {

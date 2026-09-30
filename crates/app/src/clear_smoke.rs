@@ -133,7 +133,7 @@ impl Smoke {
                                 );
                                 assert_eq!(
                                     state.preferences.get(),
-                                    serein_storage::LocalPreferences::default(),
+                                    oxplay_storage::LocalPreferences::default(),
                                     "privacy defaults were not installed before admission reopened"
                                 );
                                 verified.set(true);
@@ -169,7 +169,7 @@ mod tests {
     fn destructive_diagnostic_refuses_existing_data_and_symlinks() {
         use std::os::unix::fs::{PermissionsExt, symlink};
         let root = std::env::temp_dir().join(format!(
-            "serein-clear-scope-{}-{}",
+            "oxplay-clear-scope-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

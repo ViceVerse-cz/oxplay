@@ -77,8 +77,8 @@ are demonstrated; the static playback comparison below does not complete those g
 
 ## Checks
 
-On 2026-09-29, `cargo test --locked -p serein cli::tests` passed all five CLI
-tests and compiled the shared Slint UI. `cargo clippy --locked -p serein
+On 2026-09-29, `cargo test --locked -p oxplay cli::tests` passed all five CLI
+tests and compiled the shared Slint UI. `cargo clippy --locked -p oxplay
 --all-targets -- -D warnings` and `cargo fmt --all -- --check` passed. The CLI
 regression verifies the default, explicit activation and rejection of mixed or
 duplicate experiment flags. The later native performance comparison is recorded below. Screenshots,

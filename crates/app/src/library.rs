@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! SQLite stays on one dedicated worker. Queues are bounded and teardown closes
 //! the result receiver before joining, including when the UI no longer drains it.
-use serein_core::{ChannelId, VideoId, VideoSummary};
-use serein_storage::{
+use oxplay_core::{ChannelId, VideoId, VideoSummary};
+use oxplay_storage::{
     HistoryCursor, HistoryEntry, ImportSummary, LocalPlaylist, LocalPlaylistId, LocalPreferences,
     LocalStore, LocalSubscription, MAX_PAGE_SIZE, MAX_TRANSFER_BYTES, Page, PageCursor,
     PlaylistWindow, PlaylistWindowPage, StorageError, vault::SessionProfile,
@@ -165,7 +165,7 @@ impl Worker {
             let store = (|| {
                 let parent = path
                     .parent()
-                    .ok_or(serein_storage::StorageError::Unavailable)?;
+                    .ok_or(oxplay_storage::StorageError::Unavailable)?;
                 prepare_library_directory(parent)?;
                 LocalStore::open(&path)
             })();
@@ -283,14 +283,14 @@ impl Drop for Worker {
 fn summary(
     store: &LocalStore,
     selected: Option<LocalPlaylistId>,
-) -> serein_storage::Result<Response> {
+) -> oxplay_storage::Result<Response> {
     Ok(Response::Library(
         store.playlists(None, 100)?.items,
         store.preferences()?,
         selected,
     ))
 }
-fn read_page(store: &LocalStore, page: PageQuery) -> serein_storage::Result<PageResult> {
+fn read_page(store: &LocalStore, page: PageQuery) -> oxplay_storage::Result<PageResult> {
     Ok(match page {
         PageQuery::Collections(window) => {
             PageResult::Collections(store.playlist_window(window, MAX_PAGE_SIZE)?)
@@ -316,7 +316,7 @@ fn read_page(store: &LocalStore, page: PageQuery) -> serein_storage::Result<Page
         }
     })
 }
-fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Response> {
+fn handle(store: &mut LocalStore, request: Request) -> oxplay_storage::Result<Response> {
     match request {
         Request::Organize { ticket, action } => {
             let result = (|| {
@@ -348,7 +348,7 @@ fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Re
         }
         Request::DeleteEmpty(id) => {
             if !store.playlist_videos(id, None, 1)?.items.is_empty() {
-                return Err(serein_storage::StorageError::InvalidInput);
+                return Err(oxplay_storage::StorageError::InvalidInput);
             }
             store.delete_playlist(id)?;
             summary(store, None)
@@ -447,7 +447,7 @@ fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Re
         }
     }
 }
-pub(crate) fn data_path() -> serein_storage::Result<PathBuf> {
+pub(crate) fn data_path() -> oxplay_storage::Result<PathBuf> {
     #[cfg(target_os = "macos")]
     let base =
         std::env::var_os("HOME").map(|p| PathBuf::from(p).join("Library/Application Support"));
@@ -458,11 +458,11 @@ pub(crate) fn data_path() -> serein_storage::Result<PathBuf> {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|p| PathBuf::from(p).join(".local/share")));
     base.filter(|p| p.is_absolute())
-        .map(|p| p.join("Serein/library.sqlite3"))
-        .ok_or(serein_storage::StorageError::Unavailable)
+        .map(|p| p.join("Oxplay/library.sqlite3"))
+        .ok_or(oxplay_storage::StorageError::Unavailable)
 }
 
-fn prepare_library_directory(directory: &Path) -> serein_storage::Result<()> {
+fn prepare_library_directory(directory: &Path) -> oxplay_storage::Result<()> {
     std::fs::create_dir_all(directory).map_err(|_| StorageError::Unavailable)?;
     let metadata = std::fs::symlink_metadata(directory).map_err(|_| StorageError::Unavailable)?;
     if !metadata.is_dir() {
@@ -474,13 +474,13 @@ fn prepare_library_directory(directory: &Path) -> serein_storage::Result<()> {
         if metadata.uid() != unsafe { libc::geteuid() } {
             return Err(StorageError::Unavailable);
         }
-        // This is only the app-owned Serein directory, never an arbitrary user directory.
+        // This is only the app-owned Oxplay directory, never an arbitrary user directory.
         std::fs::set_permissions(directory, std::fs::Permissions::from_mode(0o700))
             .map_err(|_| StorageError::Unavailable)?;
     }
     Ok(())
 }
-fn read_selected_import(path: &Path) -> serein_storage::Result<Vec<u8>> {
+fn read_selected_import(path: &Path) -> oxplay_storage::Result<Vec<u8>> {
     let canonical = path.canonicalize().map_err(|_| StorageError::Unavailable)?;
     let mut options = OpenOptions::new();
     options.read(true);
@@ -507,7 +507,7 @@ fn read_selected_import(path: &Path) -> serein_storage::Result<Vec<u8>> {
 }
 /// Commit a complete private export. No-clobber uses an atomic same-filesystem
 /// link; replacing an existing file requires the caller's explicit authorization.
-fn atomic_export(path: &Path, bytes: &[u8], overwrite: bool) -> serein_storage::Result<()> {
+fn atomic_export(path: &Path, bytes: &[u8], overwrite: bool) -> oxplay_storage::Result<()> {
     if !path.is_absolute() || bytes.len() > MAX_TRANSFER_BYTES {
         return Err(StorageError::InvalidInput);
     }
@@ -527,7 +527,7 @@ fn atomic_export(path: &Path, bytes: &[u8], overwrite: bool) -> serein_storage::
         }
     }
     let nonce = SessionProfile::random().map_err(|_| StorageError::Unavailable)?;
-    let temporary = parent.join(format!(".serein-export-{}", nonce.as_str()));
+    let temporary = parent.join(format!(".oxplay-export-{}", nonce.as_str()));
     let result = (|| {
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
@@ -574,7 +574,7 @@ mod tests {
     impl TestDirectory {
         fn new() -> Self {
             let directory = std::env::temp_dir().join(format!(
-                "serein-library-synthetic-{}",
+                "oxplay-library-synthetic-{}",
                 SessionProfile::random().unwrap().as_str()
             ));
             std::fs::create_dir(&directory).unwrap();

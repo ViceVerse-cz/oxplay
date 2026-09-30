@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit finite local-video UI exercise, never a performance measurement.
 use crate::{App, UiState};
-use serein_media::PlaybackState;
+use oxplay_media::PlaybackState;
 use slint::{
     ComponentHandle, Timer, TimerMode,
     winit_030::{WinitWindowAccessor, winit},
