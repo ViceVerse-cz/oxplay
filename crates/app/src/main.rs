@@ -2039,7 +2039,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             1 => report(&app, s.player.seek(20.)),
                             2 => {
                                 report(&app, s.player.set_paused(false));
-                                app.window().set_size(slint::LogicalSize::new(760., 600.));
+                                // Below the side-by-side related breakpoint, but
+                                // wide enough that the video and watch header put
+                                // related cards fully below the viewport. At the
+                                // 760px minimum width their first row intersects it.
+                                app.window().set_size(slint::LogicalSize::new(1000., 600.));
                             }
                             3 => {
                                 assert!(
