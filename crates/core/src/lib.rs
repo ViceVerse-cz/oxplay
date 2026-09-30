@@ -9,6 +9,8 @@ use std::{
 };
 use url::Url;
 
+#[cfg(test)]
+mod cancellation_tests;
 mod video_link;
 pub use video_link::{VideoLink, VideoStart};
 
@@ -30,13 +32,31 @@ fn parse_url(value: &str, error: ProviderError) -> Result<Url, ProviderError> {
 }
 
 #[derive(Clone, Default)]
-pub struct CancellationToken(Arc<AtomicBool>);
+pub struct CancellationToken(Arc<CancellationState>);
+#[derive(Default)]
+struct CancellationState {
+    cancelled: AtomicBool,
+    wake: tokio::sync::Notify,
+}
 impl CancellationToken {
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::Release);
+        self.0.cancelled.store(true, Ordering::Release);
+        self.0.wake.notify_waiters();
     }
     pub fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::Acquire)
+        self.0.cancelled.load(Ordering::Acquire)
+    }
+    /// Wait without a timer or background task. All clones observe permanent
+    /// cancellation, including listeners first polled after cancel() returns.
+    pub async fn cancelled(&self) {
+        let notified = self.0.wake.notified();
+        let mut notified = std::pin::pin!(notified);
+        // Register before checking the flag: cancellation between the check
+        // and await must still wake this listener. Dropping removes the waiter.
+        notified.as_mut().enable();
+        if !self.is_cancelled() {
+            notified.await;
+        }
     }
 }
 #[derive(Clone)]

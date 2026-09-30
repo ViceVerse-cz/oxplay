@@ -164,7 +164,7 @@ impl YtDlp {
                     if operation.cancel.is_cancelled() { return Err(ProviderError::Cancelled); }
                     validate_vtt(bytes)
                 } => result,
-                _ = async { loop { tokio::time::sleep(Duration::from_millis(20)).await; if operation.cancel.is_cancelled() { break; } } } => Err(ProviderError::Cancelled),
+                _ = operation.cancel.cancelled() => Err(ProviderError::Cancelled),
             }
         })
     }

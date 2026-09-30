@@ -6,3 +6,4 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 url = "2.5"
+tokio = { version = "1", default-features = false, features = ["sync"] }

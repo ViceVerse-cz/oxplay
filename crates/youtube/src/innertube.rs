@@ -172,14 +172,7 @@ impl GuestTransport {
                     validate(&value)?;
                     Ok(value)
                 } => result,
-                cancelled = async {
-                    loop {
-                        tokio::time::sleep(Duration::from_millis(20)).await;
-                        if operation.cancel.is_cancelled() {
-                            break ProviderError::Cancelled;
-                        }
-                    }
-                } => Err(cancelled),
+                _ = operation.cancel.cancelled() => Err(ProviderError::Cancelled),
             }
         });
         if operation.cancel.is_cancelled() {
