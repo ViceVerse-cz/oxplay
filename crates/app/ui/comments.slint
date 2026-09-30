@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { Colors, Action, ActionVariant } from "components.slint";
-export struct CommentRow { author: string, metadata: string, likes: string, creator: bool, content: string, avatar: image, avatar-ready: bool }
+import { Spinner } from "player-controls.slint";
+export struct CommentReply { author: string, metadata: string, likes: string, creator: bool, content: string, avatar: image, avatar-ready: bool }
+// `replies-label` is empty when the thread has no native reply continuation
+// (including every extractor-fallback page), which hides the toggle.
+export struct CommentRow {
+    author: string, metadata: string, likes: string, creator: bool, content: string, avatar: image, avatar-ready: bool,
+    replies-label: string, replies-expanded: bool, replies-loading: bool, replies-more: bool, replies-status: string, replies: [CommentReply],
+}
 export global CommentsUi {
     in property <string> description;
     in property <string> description-preview;
@@ -23,6 +30,115 @@ export global CommentsUi {
     callback set-enabled(bool);
     // Coalesced worker handoff for decoded author avatars.
     callback avatar-wake();
+    // Reply threads of the visible page, by top-level row.
+    callback toggle-replies(int);
+    callback more-replies(int);
+    // Coalesced handoff for reply pages and reply-author avatars.
+    callback replies-wake();
+}
+// One curved branch of a reply thread. The line runs at the parent avatar's
+// centre (36px left of thread rows), descends `rise` from above this row and
+// bends right into the row at `center`; `continues` carries it on through the
+// row's full `extent` towards the next row.
+component ThreadConnector inherits Rectangle {
+    in property <length> rise;
+    in property <length> center;
+    in property <length> extent;
+    in property <bool> continues;
+    x: -37px; y: -root.rise; width: 33px; height: root.rise + root.extent;
+    Rectangle {
+        x: 0px; y: 0px; width: 2px; background: Colors.border;
+        height: root.continues ? root.rise + root.extent : max(0px, root.rise + root.center - 11px);
+    }
+    Path {
+        x: 0px; y: root.rise + root.center - 11px; width: 12px; height: 12px;
+        viewbox-width: 12; viewbox-height: 12;
+        commands: "M 1 0 Q 1 11 12 11";
+        stroke: Colors.border; stroke-width: 2px; fill: transparent;
+    }
+    Rectangle { x: 12px; y: root.rise + root.center - 1px; width: 21px; height: 2px; background: Colors.border; }
+}
+// YouTube-style blue text button for "N replies", "Hide replies" and
+// "Show more replies".
+component ThreadButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> chevron;
+    in property <bool> up;
+    callback clicked;
+    private property <bool> pointer-focus;
+    private property <bool> keyboard-pressed;
+    width: row.preferred-width; height: 36px; border-radius: self.height / 2;
+    background: touch.pressed || root.keyboard-pressed ? Colors.pressed : touch.has-hover ? Colors.hover : transparent;
+    border-width: focus.has-focus && !root.pointer-focus ? 2px : 0px;
+    border-color: Colors.focus;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-enabled: true;
+    accessible-action-default => { root.clicked(); }
+    forward-focus: focus;
+    focus := FocusScope {
+        focus-lost => { root.pointer-focus = false; root.keyboard-pressed = false; }
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                // A held key is one activation, just like a held pointer.
+                if !root.keyboard-pressed { root.keyboard-pressed = true; root.clicked(); }
+                return accept;
+            }
+            return reject;
+        }
+        key-released(event) => {
+            if event.text == " " || event.text == Key.Return { root.keyboard-pressed = false; return accept; }
+            return reject;
+        }
+    }
+    row := HorizontalLayout {
+        padding-left: root.chevron ? 8px : 12px; padding-right: 12px; padding-top: 8px; padding-bottom: 8px; spacing: 6px;
+        if root.chevron: Image {
+            width: 20px; source: @image-url("icons/chevron-down.svg"); colorize: Colors.focus;
+            transform-rotation: root.up ? 180deg : 0deg;
+        }
+        Text { text: root.label; color: Colors.focus; font-size: 14px; font-weight: 600; vertical-alignment: center; }
+    }
+    touch := TouchArea { mouse-cursor: pointer; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
+}
+component ReplyItem inherits Rectangle {
+    in property <CommentReply> reply;
+    in property <bool> continues;
+    height: max(24px, reply-layout.preferred-height);
+    background: transparent;
+    ThreadConnector { rise: 12px; center: 12px; extent: root.height; continues: root.continues; }
+    Rectangle {
+        x: 0px; y: 0px; width: 24px; height: 24px;
+        background: Colors.hover; border-radius: 12px; clip: true;
+        if reply.avatar-ready: Image {
+            x: 0px; y: 0px; width: parent.width; height: parent.height;
+            source: reply.avatar; image-fit: cover;
+        }
+        if !reply.avatar-ready: Image {
+            x: 4px; y: 4px; width: 16px; height: 16px;
+            source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted;
+        }
+    }
+    reply-layout := VerticalLayout {
+        x: 36px; width: max(0px, parent.width - 36px);
+        spacing: 4px;
+        HorizontalLayout {
+            height: 20px; spacing: 8px;
+            Text { text: reply.author; color: Colors.text; font-size: 13px; font-weight: 600; overflow: elide; horizontal-stretch: 0; max-width: parent.width * 0.65; vertical-alignment: center; }
+            if reply.creator: Rectangle {
+                width: 56px; height: 20px; border-radius: 10px; background: Colors.pressed;
+                Text { text: "Creator"; color: Colors.text; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            Text { text: reply.metadata; color: Colors.muted; font-size: 12px; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+        }
+        TextInput {
+            text: reply.content; accessible-label: "Reply by " + reply.author;
+            color: Colors.text; font-size: 14px; wrap: word-wrap; read-only: true; single-line: false;
+            selection-background-color: Colors.focus;
+            selection-foreground-color: #fff;
+        }
+        if reply.likes != "": Text { text: reply.likes + " likes"; color: Colors.muted; font-size: 12px; height: 18px; }
+    }
 }
 // At most 20 comments are instantiated. Explicit pagination replaces that
 // finite page; initial background publication preserves watch-page scrolling.
@@ -103,7 +219,7 @@ export component WatchDetails inherits Rectangle {
                 }
                 if CommentsUi.rows.length > 0: VerticalLayout {
                     spacing: 24px;
-                    for item in CommentsUi.rows: Rectangle {
+                    for item[row] in CommentsUi.rows: Rectangle {
                         height: comment-layout.preferred-height;
                         background: transparent;
                         Rectangle {
@@ -137,6 +253,48 @@ export component WatchDetails inherits Rectangle {
                                 selection-foreground-color: #fff;
                             }
                             if item.likes != "": Text { text: item.likes + " likes"; color: Colors.muted; font-size: 12px; height: 18px; }
+                            // Reply thread, indented under the parent text. Every row
+                            // draws its own branch of the line from the parent avatar.
+                            if item.replies-label != "": thread-block := VerticalLayout {
+                                spacing: 12px;
+                                Rectangle {
+                                    height: 36px;
+                                    // From the parent avatar's bottom edge (40px + 4px gap).
+                                    ThreadConnector {
+                                        rise: max(0px, thread-block.y - 44px); center: 18px; extent: 36px;
+                                        continues: item.replies-expanded && (item.replies.length > 0 || item.replies-loading || item.replies-more || item.replies-status != "");
+                                    }
+                                    ThreadButton {
+                                        x: -4px;
+                                        label: item.replies-expanded ? "Hide replies" : item.replies-label;
+                                        chevron: true; up: item.replies-expanded;
+                                        clicked => { CommentsUi.toggle-replies(row); }
+                                    }
+                                }
+                                if item.replies-expanded: VerticalLayout {
+                                    spacing: 12px;
+                                    for reply[index] in item.replies: ReplyItem {
+                                        reply: reply;
+                                        continues: index < item.replies.length - 1 || item.replies-status != "" || item.replies-loading || item.replies-more;
+                                    }
+                                    if item.replies-status != "": Rectangle {
+                                        height: max(20px, reply-status.preferred-height);
+                                        ThreadConnector { rise: 12px; center: 10px; extent: parent.height; continues: item.replies-loading || item.replies-more; }
+                                        reply-status := Text { x: 0px; width: parent.width; text: item.replies-status; color: Colors.muted; font-size: 13px; wrap: word-wrap; }
+                                    }
+                                    if item.replies-loading: Rectangle {
+                                        height: 24px;
+                                        ThreadConnector { rise: 12px; center: 12px; extent: 24px; }
+                                        Spinner { x: 4px; y: 4px; width: 16px; height: 16px; thickness: 2px; tint: Colors.muted; }
+                                        Text { x: 36px; height: 24px; text: "Loading replies…"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
+                                    }
+                                    if item.replies-more && !item.replies-loading: Rectangle {
+                                        height: 36px;
+                                        ThreadConnector { rise: 12px; center: 18px; extent: 36px; }
+                                        ThreadButton { x: -4px; label: "Show more replies"; clicked => { CommentsUi.more-replies(row); } }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

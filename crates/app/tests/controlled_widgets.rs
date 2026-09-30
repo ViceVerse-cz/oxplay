@@ -674,6 +674,80 @@ fn comments_setting_uses_acknowledgement_and_supports_rollback() {
 }
 
 #[test]
+fn comment_reply_threads_toggle_hide_and_load_more_by_row() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    let comments = app.global::<CommentsUi>();
+    comments.set_enabled(true);
+    comments.set_available(true);
+    comments.set_has_loaded(true);
+    let rows = Rc::new(slint::VecModel::from(vec![
+        CommentRow {
+            author: "TEST FIXTURE author without replies".into(),
+            content: "TEST FIXTURE comment".into(),
+            ..CommentRow::default()
+        },
+        CommentRow {
+            author: "TEST FIXTURE author".into(),
+            content: "TEST FIXTURE comment".into(),
+            replies_label: "12 replies".into(),
+            ..CommentRow::default()
+        },
+    ]));
+    comments.set_rows(rows.clone().into());
+    let toggled = Rc::new(std::cell::RefCell::new(Vec::new()));
+    let output = toggled.clone();
+    comments.on_toggle_replies(move |row| output.borrow_mut().push(row));
+    let more = Rc::new(Cell::new(None));
+    let output = more.clone();
+    comments.on_more_replies(move |row| output.set(Some(row)));
+    // A tall window keeps the comment rows inside the watch viewport, where
+    // the watch page instantiates them.
+    app.window().set_size(slint::LogicalSize::new(1000., 2400.));
+    settle();
+    // Only the row with a native reply continuation offers a toggle.
+    element(&app, "12 replies").invoke_accessible_default_action();
+    assert_eq!(*toggled.borrow(), [1]);
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Show more replies")
+            .next()
+            .is_none()
+    );
+    // Rust owns thread state; an expanded thread shows its replies.
+    let mut row = rows.row_data(1).unwrap();
+    row.replies_expanded = true;
+    row.replies_more = true;
+    row.replies = Rc::new(slint::VecModel::from(vec![CommentReply {
+        author: "TEST FIXTURE reply author".into(),
+        content: "TEST FIXTURE reply".into(),
+        ..CommentReply::default()
+    }]))
+    .into();
+    rows.set_row_data(1, row.clone());
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Reply by TEST FIXTURE reply author")
+            .next()
+            .is_some()
+    );
+    element(&app, "Show more replies").invoke_accessible_default_action();
+    assert_eq!(more.get(), Some(1));
+    element(&app, "Hide replies").invoke_accessible_default_action();
+    assert_eq!(*toggled.borrow(), [1, 1]);
+    // While a page loads, "Show more replies" is replaced by the indicator.
+    row.replies_loading = true;
+    rows.set_row_data(1, row);
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Show more replies")
+            .next()
+            .is_none()
+    );
+}
+
+#[test]
 fn history_removal_does_not_play_the_video_and_artwork_click_does() {
     let app = app();
     app.set_page(1);

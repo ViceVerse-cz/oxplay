@@ -75,6 +75,22 @@ impl ReplyCursor {
     pub fn parent(&self) -> &str {
         &self.parent
     }
+    /// TEST FIXTURE support for downstream ownership tests, which cannot parse
+    /// a provider page. The token passes the same opaque-token policy and is
+    /// only ever sent back to the public `next` endpoint.
+    #[doc(hidden)]
+    pub fn synthetic(video: VideoId, parent: &str, token: &str) -> Option<Self> {
+        let value = Value::from(token);
+        let token = watch::token(&value)?;
+        valid_id(parent).then(|| Self {
+            video,
+            generation: 0,
+            parent: parent.into(),
+            offset: 0,
+            seen: Arc::from([]),
+            token: token.into(),
+        })
+    }
 }
 pub struct ReplyPage {
     pub video: VideoId,

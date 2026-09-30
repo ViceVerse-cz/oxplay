@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Anonymous author portraits for the one visible page of comments (at most 20).
+//! Anonymous author portraits for the one visible page of comments (at most 20),
+//! and, through a second instance, for the reply threads opened on that page.
 //!
 //! Reuses the bounded thumbnail fetch policy (`thumbnails::fetch`: exact Google
 //! image hosts only, HTTPS, no proxy, cookies or redirects, 2 MiB input, bounded
@@ -40,6 +41,7 @@ fn drain_current(results: &mut Vec<Ready>, generation: u64) -> Vec<Ready> {
 }
 pub struct Avatars {
     generation: Cell<u64>,
+    max_avatars: usize,
     command: Option<watch::Sender<Option<Job>>>,
     cancellation: RefCell<Option<watch::Sender<bool>>>,
     results: Arc<Mutex<Vec<Ready>>>,
@@ -48,6 +50,14 @@ pub struct Avatars {
 impl Avatars {
     /// `wake` is invoked from the worker after each published result.
     pub fn new(wake: impl Fn() + Send + Sync + 'static) -> Self {
+        Self::with_limits(MAX_EDGE, MAX_AVATARS, wake)
+    }
+    /// Same pipeline with a different per-job count and decoded edge bound.
+    pub fn with_limits(
+        max_edge: u32,
+        max_avatars: usize,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Self {
         let (command, mut commands) = watch::channel::<Option<Job>>(None);
         let results = Arc::new(Mutex::new(Vec::<Ready>::new()));
         let out = results.clone();
@@ -84,7 +94,7 @@ impl Avatars {
                         {
                             let client = client.clone();
                             set.spawn(async move {
-                                (row, fetch_sized(&client, &url, MAX_EDGE, MAX_EDGE).await)
+                                (row, fetch_sized(&client, &url, max_edge, max_edge).await)
                             });
                         }
                         if set.is_empty() {
@@ -115,6 +125,7 @@ impl Avatars {
         });
         Self {
             generation: Cell::new(0),
+            max_avatars,
             command: Some(command),
             cancellation: RefCell::new(None),
             results,
@@ -139,7 +150,7 @@ impl Avatars {
     /// Replace the job with portraits for at most one page of rows.
     pub fn request(&self, mut urls: Vec<(usize, String)>) {
         self.cancel();
-        urls.truncate(MAX_AVATARS);
+        urls.truncate(self.max_avatars);
         if urls.is_empty() {
             return;
         }

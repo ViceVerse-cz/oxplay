@@ -25,15 +25,28 @@ pub struct State {
     avatars: RefCell<Option<crate::comment_avatars::Avatars>>,
     /// Portrait URLs of the rows currently published, in row order.
     avatar_urls: RefCell<Vec<Option<String>>>,
+    /// Reply threads of the published rows, with their own worker.
+    replies: crate::comment_replies::Replies,
 }
 impl State {
-    /// Retire portraits for the page being replaced or removed. Late results are
-    /// dropped by generation, so a stale page can never decorate a new one.
-    fn retire_avatars(&self) {
+    pub fn new(app: slint::Weak<App>, resolver: crate::resolver::SharedResolver) -> Self {
+        Self {
+            replies: crate::comment_replies::Replies::new(resolver, move || {
+                let _ = app
+                    .upgrade_in_event_loop(|app| app.global::<CommentsUi>().invoke_replies_wake());
+            }),
+            ..Default::default()
+        }
+    }
+    /// Retire portraits and reply threads for the page being replaced or
+    /// removed. Late results are dropped by generation, so a stale page can
+    /// never decorate a new one.
+    fn retire_page(&self) {
         self.avatar_urls.borrow_mut().clear();
         if let Some(avatars) = self.avatars.borrow().as_ref() {
             avatars.cancel();
         }
+        self.replies.retire();
     }
     fn supersede(&self, generation: u64) -> bool {
         if self
@@ -77,7 +90,7 @@ fn set_details(
     s.reveal_page.set(false);
     *s.video.borrow_mut() = guest_comments.then(|| video.clone());
     s.pending.set(None);
-    s.retire_avatars();
+    s.retire_page();
     s.rows.set_vec(Vec::new());
     s.cursor.borrow_mut().take();
     s.next.borrow_mut().take();
@@ -160,7 +173,7 @@ pub fn sync_preferences(app: &App, state: &UiState) {
         state.comments_ui.auto_load.stop();
         state.comments_ui.auto_generation.set(None);
         cancel_owned(app, state);
-        state.comments_ui.retire_avatars();
+        state.comments_ui.retire_page();
         state.comments_ui.rows.set_vec(Vec::new());
         state.comments_ui.auto_requested.set(false);
         ui.set_has_loaded(false);
@@ -232,7 +245,7 @@ pub fn clear_local(app: &App, state: &UiState) {
     s.auto_requested.set(false);
     cancel_owned(app, state);
     s.video.borrow_mut().take();
-    s.retire_avatars();
+    s.retire_page();
     s.rows.set_vec(Vec::new());
     s.cursor.borrow_mut().take();
     s.next.borrow_mut().take();
@@ -278,7 +291,7 @@ fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
         .comments_ui
         .pending
         .set(Some(state.worker.borrow().generation()));
-    state.comments_ui.retire_avatars();
+    state.comments_ui.retire_page();
     state.comments_ui.rows.set_vec(Vec::new());
     state.comments_ui.next.borrow_mut().take();
     let ui = app.global::<CommentsUi>();
@@ -306,8 +319,9 @@ pub fn publish(
     let ui = app.global::<CommentsUi>();
     ui.set_request_active(false);
     match result {
-        Ok(page) if page.video == video => {
+        Ok(mut page) if page.video == video => {
             ui.set_has_loaded(true);
+            state.comments_ui.retire_page();
             let comments: Vec<_> = page.comments.into_iter().take(20).collect();
             let urls: Vec<Option<String>> = comments
                 .iter()
@@ -315,26 +329,34 @@ pub fn publish(
                 .collect();
             let rows = comments
                 .into_iter()
-                .map(|comment| CommentRow {
-                    author: comment
-                        .author
-                        .unwrap_or_else(|| "Author unavailable".into())
-                        .into(),
-                    metadata: comment.published_text.unwrap_or_default().into(),
-                    likes: comment
-                        .like_count
-                        .filter(|count| *count > 0)
-                        .map(display_format::compact_count)
-                        .unwrap_or_default()
-                        .into(),
-                    creator: comment.author_is_uploader,
-                    content: comment.text.into(),
-                    avatar: slint::Image::default(),
-                    avatar_ready: false,
+                .map(|comment| {
+                    // Extractor pages carry no reply cursors, hence no toggle.
+                    let cursor = page.replies.remove(&comment.id);
+                    let (replies_label, replies) =
+                        state.comments_ui.replies.attach(&comment, cursor);
+                    CommentRow {
+                        author: comment
+                            .author
+                            .unwrap_or_else(|| "Author unavailable".into())
+                            .into(),
+                        metadata: comment.published_text.unwrap_or_default().into(),
+                        likes: comment
+                            .like_count
+                            .filter(|count| *count > 0)
+                            .map(display_format::compact_count)
+                            .unwrap_or_default()
+                            .into(),
+                        creator: comment.author_is_uploader,
+                        content: comment.text.into(),
+                        avatar: slint::Image::default(),
+                        avatar_ready: false,
+                        replies_label,
+                        replies,
+                        ..CommentRow::default()
+                    }
                 })
                 .collect::<Vec<_>>();
             let empty = rows.is_empty();
-            state.comments_ui.retire_avatars();
             state.comments_ui.rows.set_vec(rows);
             if let Some(avatars) = state.comments_ui.avatars.borrow().as_ref() {
                 avatars.request(
@@ -371,6 +393,18 @@ pub fn publish(
             error.to_string().into()
         }),
     }
+}
+/// The accepted guest video whose published comment page owns reply threads.
+fn thread_video(app: &App, state: &UiState) -> Option<VideoId> {
+    if !app.global::<CommentsUi>().get_enabled() || app.get_account_playback_active() {
+        return None;
+    }
+    let video = state
+        .current_video
+        .borrow()
+        .as_ref()
+        .map(|v| v.id.clone())?;
+    (state.comments_ui.video.borrow().as_ref() == Some(&video)).then_some(video)
 }
 pub fn bind(app: &App, state: &Rc<UiState>) {
     *state.comments_ui.owner.borrow_mut() = Rc::downgrade(state);
@@ -415,6 +449,46 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             row.avatar = slint::Image::from_rgba8(buffer);
             row.avatar_ready = true;
             slint::Model::set_row_data(&*state.comments_ui.rows, ready.row, row);
+        }
+    });
+    let owner = Rc::downgrade(state);
+    let weak = app.as_weak();
+    ui.on_replies_wake(move || {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+            return;
+        };
+        // Stale work for another page/video was retired with that page.
+        if let Some(video) = thread_video(&app, &state) {
+            state
+                .comments_ui
+                .replies
+                .receive(&state.comments_ui.rows, &video);
+        }
+    });
+    let owner = Rc::downgrade(state);
+    let weak = app.as_weak();
+    ui.on_toggle_replies(move |row| {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+            return;
+        };
+        if let (Some(video), Ok(row)) = (thread_video(&app, &state), usize::try_from(row)) {
+            state
+                .comments_ui
+                .replies
+                .toggle(&state.comments_ui.rows, &video, row);
+        }
+    });
+    let owner = Rc::downgrade(state);
+    let weak = app.as_weak();
+    ui.on_more_replies(move |row| {
+        let (Some(app), Some(state)) = (weak.upgrade(), owner.upgrade()) else {
+            return;
+        };
+        if let (Some(video), Ok(row)) = (thread_video(&app, &state), usize::try_from(row)) {
+            state
+                .comments_ui
+                .replies
+                .more(&state.comments_ui.rows, &video, row);
         }
     });
     let weak = app.as_weak();
@@ -507,7 +581,7 @@ impl Smoke {
         let verified = Rc::new(Cell::new(false));
         let captures = Rc::new(RefCell::new(Vec::new()));
         let mut timers = Vec::new();
-        for stage in [15, 17, 20, 40, 60, 62, 65] {
+        for stage in [15, 17, 20, 40, 48, 60, 62, 65] {
             let weak = app.as_weak();
             let state = state.clone();
             let verified = verified.clone();
@@ -551,6 +625,25 @@ impl Smoke {
                                 "expected 20 real comments"
                             );
                             assert!(ui.get_next(), "public fixture has no second comment page");
+                            // Open the first reply thread, revealing the comments.
+                            if let Some(row) = reply_thread(&state) {
+                                ui.invoke_toggle_replies(row as i32);
+                                ui.set_page_epoch(ui.get_page_epoch().wrapping_add(1));
+                            }
+                        }
+                        48 => {
+                            if let Some(row) = reply_thread(&state) {
+                                let data = slint::Model::row_data(&*state.comments_ui.rows, row)
+                                    .expect("reply thread row");
+                                let count = slint::Model::row_count(&data.replies);
+                                assert!(
+                                    data.replies_expanded && !data.replies_loading && count > 0,
+                                    "first reply page did not load: {}",
+                                    data.replies_status
+                                );
+                                capture(&app, directory.as_deref(), "replies.png", &captures);
+                                eprintln!("comments smoke reply rows={count}");
+                            }
                             ui.invoke_page(true);
                         }
                         60 => {
@@ -601,6 +694,13 @@ impl Smoke {
         }
         Ok(())
     }
+}
+/// The first published row offering a reply toggle, if any.
+fn reply_thread(state: &UiState) -> Option<usize> {
+    let rows = &*state.comments_ui.rows;
+    (0..slint::Model::row_count(rows)).find(|row| {
+        slint::Model::row_data(rows, *row).is_some_and(|data| !data.replies_label.is_empty())
+    })
 }
 type Captures = Rc<RefCell<Vec<std::thread::JoinHandle<Result<(), String>>>>>;
 fn capture(app: &App, directory: Option<&std::path::Path>, name: &str, workers: &Captures) {

@@ -22,14 +22,14 @@ there is no polling timer or new helper stack.
 
 The finite page contains at most 20 inline comments with selectable bodies,
 author/date, genuine optional creator badge and compact likes. The Copy action
-and reply clutter are removed. Missing avatar data uses the existing attributed
+is removed; replies open inline per thread ([below](#reply-threads)). Missing avatar data uses the existing attributed
 Lucide glyph. Refresh/cancel controls are compact, and pending-only skeletons
 have no animation. Dates and counts are presentation-only formatting; absent
 provider values remain absent. Explicit Previous/Next replaces the bounded page.
 Automatic publication preserves watch scrolling; an explicit load/page may
 reveal the comments heading without stealing focus. Account comments/writes
-and replies remain unsupported. No credentials are consulted even when an
-account is connected.
+remain unsupported. No credentials are consulted even when an account is
+connected.
 
 ## Native watch page and comments (InnerTube `next`)
 
@@ -82,7 +82,7 @@ Each thread's `commentViewModel.commentViewModel.commentKey` names a
 bare `commentRenderer` rows are still accepted. Bounds: 8 endpoints, 100 items,
 2,000 mutations, one continuation token (printable ASCII, 16 KiB), 20 published
 comments per page, 10,000-character bodies, 200 browsable comments with the
-existing limit message. Replies (`replyLevel` > 0) are rejected. A thread whose
+existing limit message. Top-level pages reject replies (`replyLevel` > 0). A thread whose
 entity is missing is skipped; a page whose threads all fail is malformed. Comment
 IDs already published by earlier pages are dropped, and a page of only repeats
 ends paging instead of looping.
@@ -97,6 +97,62 @@ continuation never silently turns into a differently ordered replay, and an
 extractor replay cursor never reaches the native path. The existing UI
 (`comments_ui.rs`, avatars in `comment_avatars.rs`, Previous/Next) is unchanged;
 its Previous stack simply holds native cursors.
+
+### Reply threads
+
+Each native top-level thread also yields its reply total and first reply
+continuation. The total is the entity toolbar's `replyCount` (`""` when there
+are none), else the `commentRepliesRenderer.viewReplies` label ("12 replies"),
+else legacy `commentRenderer.replyCount`. The continuation is the
+`continuationItemRenderer` in `commentThreadRenderer.replies.commentRepliesRenderer`
+`contents` (or `subThreads`); a missing or malformed one simply means no reply
+toggle. `CommentPage.replies` maps published comment IDs to opaque
+`ReplyCursor`s (video, session generation, parent ID, offset, published reply
+IDs, token). Extractor pages have none, so fallback-sourced pages show no toggle.
+
+`comments::native_replies` sends the token to the same `next` endpoint.
+Observed replies (2026-09-30) are bare `commentViewModel` rows joined to
+`commentEntityPayload` mutations with `replyLevel` 1, followed by a "Show more
+replies" `continuationItemRenderer.button.buttonRenderer.command` token. Reply
+pages reuse the top-level parser, admit only `replyLevel` > 0 and apply the same
+text/item/mutation/token bounds. The first reply page has about 10 rows and
+later ones about 40-50, so a reply page publishes at most 50 and a thread at
+most 100; replies beyond either bound are never skipped silently: the thread
+ends with "Reply browsing limit reached." Repeats are dropped and a page of only
+repeats ends the thread. There is no extractor fallback for replies.
+
+In the UI (`comment_replies.rs`, `comments.slint`) a thread with a cursor shows
+a blue chevron "N replies" button (compact count; "Replies" when no total was
+reported). Clicking it fetches the first page once and shows the replies
+indented under the parent (24px avatar, author, relative time, selectable text,
+likes), joined by a line from the parent avatar with a curved branch into each
+row. The button becomes "Hide replies" with an up chevron; collapsing keeps the
+loaded replies. "Show more replies" appends the next page. Each thread shows its
+own spinner row and error/limit/empty status; reopening an unloaded thread or
+pressing Show more again retries.
+
+Replies run on their own FIFO worker thread over the shared anonymous
+transport (same 429 cooldown), so they never supersede playback, search or the
+comment page on the catalog worker. Each thread owns at most one job. A new
+comment page, video, disabled setting, account playback or clear retires all
+threads: queued and running jobs are cancelled and late results are dropped by
+page generation and job identity; collapsing a loading thread cancels its job.
+At most 300 replies are held per comment page: when another page would exceed
+that, collapsed threads are released first (they reload when reopened),
+otherwise the thread asks to hide others. Reply portraits use a second instance
+of the comment avatar pipeline (same host/fetch policy), at most 50 per job,
+resized to 48x48, requested for the newly loaded thread first and then for other
+open threads; results are checked against the reply's URL before display.
+
+Validation: offline fixtures cover reply totals/continuations (toolbar, label,
+`subThreads`, malformed tokens, unpublished rows, extractor pages), reply
+paging (Show more, repeats, loops, page/thread bounds, scope and cancellation),
+malformed reply pages, per-thread job ownership, stale/foreign results,
+retirement and the page bound; a mock-backend widget test covers the toggle,
+Hide, Show more and loading states. The thread layout was **not** rendered
+natively: on 2026-09-30 the harness below stopped with `presenter setup failed
+(-6661)` (no display clock in that session), so the line geometry, spacing and
+colours still need visual review.
 
 ## Extractor fallback path
 
@@ -131,6 +187,16 @@ resolve and 15,956 / 16,558 ms yt-dlp comment pages; `aqz-KE-bpKQ` 508 / 209 /
 258 ms native against 8,755 ms and 5,708 / 5,057 ms; `rfscVS0vtbw` 742 / 232 /
 241 ms native against 4,345 ms and 4,377 ms / failed (prefix changed) again.
 
+The same day, the example (now also following the first thread that has a reply
+continuation, `--native-only`) reported reply continuations on 18, 19, 19 and
+15 of the 20 first-page threads of the four videos above, each with a reply
+total. Reply pages (rows): `OBJZw3bF0dg` 10 + 2 of a reported 12,
+`aqz-KE-bpKQ` 10 + 11 of 21, `rfscVS0vtbw` 10 + 42 of 148 (more pages
+available), `8jLOx1hD3_o` 9 + 4 of 13; 255-884 ms per reply page, every reply
+with an accepted portrait, no overlap between reply pages. A raw probe of the
+148-reply thread saw pages of 10, 42, 40, 43 and 12 replies, which set the
+50-row reply page bound.
+
 Every native comment page returned 20 rows, all with a policy-accepted portrait,
 with no overlap between pages 1 and 2 and a further continuation. Native
 metadata agreed with yt-dlp's for upload date, views, likes, comment count and
@@ -147,7 +213,7 @@ Deterministic fixtures cover disabled/missing/foreign responses, bounded pages/t
 
 The complete-prefix check and its new regressions were authored during the exclusive soak measurement and have not yet been compiled or run. They cover cross-boundary reordering with an unchanged final ID, legitimate text edits, shared cursor storage and each page through the 200-comment ceiling. The earlier native checks below predate this correction.
 
-The opt-in native harness `--comments-smoke-test --url URL` now reveals the inline description, explicitly loads two comment pages, checks bounded nonempty results and Previous state, then exercises request cancellation. It exits after 70 seconds and fails if assertions did not finish. `--comments-snapshots /absolute/existing/directory` writes two new diagnostic PNGs (`description.png`, `comments.png`); readback/encoding are diagnostics only and invalidate performance sampling for that run. The example fixture URL is the public Big Buck Bunny URL above. Its previous modal version passed on the available macOS host; that historical evidence follows and does not qualify the new inline layout.
+The opt-in native harness `--comments-smoke-test --url URL` now reveals the inline description, explicitly loads two comment pages, opens the first reply thread on page one (when one exists) and checks that its first reply page loaded, checks bounded nonempty results and Previous state, then exercises request cancellation. It exits after 70 seconds and fails if assertions did not finish. `--comments-snapshots /absolute/existing/directory` writes diagnostic PNGs (`description.png`, `replies.png` when a thread was opened, `comments.png`); readback/encoding are diagnostics only and invalidate performance sampling for that run. The example fixture URL is the public Big Buck Bunny URL above. Its previous modal version passed on the available macOS host; that historical evidence follows and does not qualify the new inline layout.
 
 
 ## Inline layout validation status
@@ -184,7 +250,9 @@ proxy/cookies/redirects, 2 MiB input, bounded decode), four at a time, and resiz
 each to at most 88x88 before it reaches Slint. The placeholder icon stays until a
 portrait is ready or if it fails. A new page, a different video, disabling
 comments, account playback or clearing supersedes the job, and late results are
-dropped by generation and by row identity. Portraits are not persisted.
+dropped by generation and by row identity. Portraits are not persisted. Reply
+portraits follow the same policy through a separate instance ([reply
+threads](#reply-threads)).
 
 Validation: unit tests cover URL policy, resize bounds, stale-result dropping and
 cancellation; a one-off live check fetched a real `author_thumbnail` from
