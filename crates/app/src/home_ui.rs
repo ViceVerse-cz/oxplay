@@ -233,7 +233,6 @@ pub fn cancel(app: &App, state: &UiState) {
 fn header(app: &App) {
     app.set_home_source(Source::Saved.index());
     app.set_catalog_title("Home".into());
-    app.set_catalog_subtitle("Recently saved · From your local playlists on this device".into());
     app.set_catalog_empty_title("Make yourself at home".into());
     app.set_catalog_empty_message("Save videos to a local playlist and they’ll appear here.\nSearch YouTube above when you’re ready to explore.".into());
     app.set_guest_scope(4);
@@ -318,9 +317,6 @@ fn open_saved(app: &App, state: &UiState) {
 fn recommended_header(app: &App) {
     app.set_home_source(Source::Recommended.index());
     app.set_catalog_title("Home".into());
-    app.set_catalog_subtitle(
-        "Recommended for your YouTube account · Read when you open Home or Refresh".into(),
-    );
     app.set_catalog_empty_title("Recommendations aren’t loaded".into());
     app.set_catalog_empty_message(
         "Use Refresh to read your YouTube home feed.\nYour saved videos stay under Saved.".into(),

@@ -263,7 +263,7 @@ export component App inherits Window {
     // application models. Focused controls and open editors cannot disappear.
     out property <bool> controls-held: transport-hover.has-hover || seek-control.has-focus || seek-control.interacting || volume-control.interacting
         || play-control.has-focus || elapsed-control.has-focus || mute-control.has-focus || (volume-control.visible && volume-control.has-focus)
-        || captions-control.has-focus || settings-control.has-focus || pip-control.has-focus
+        || captions-control.has-focus || (settings-control.visible && settings-control.has-focus) || pip-control.has-focus
         || (theatre-control.visible && theatre-control.has-focus)
         || (fullscreen-control.visible && fullscreen-control.has-focus) || (mini-return-control.visible && mini-return-control.has-focus) || native-overlay-open || TextInputInterface.text-input-focused;
     callback controls-activity();
@@ -335,7 +335,7 @@ export component App inherits Window {
     out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
     out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
-    private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 240px : 72px;
+    private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 200px : 56px;
     private property <bool> guide-compact: root.sidebar-width < 100px;
     private property <length> top-height: video-only ? 0px : 48px;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
@@ -684,29 +684,29 @@ export component App inherits Window {
             vertical-scrollbar-policy: root.guide-compact ? always-off : as-needed;
             VerticalLayout {
                 width: parent.visible-width; min-height: parent.visible-height;
-                padding-left: root.guide-compact ? 4px : 12px; padding-right: root.guide-compact ? 4px : 12px; padding-top: 4px; padding-bottom: 12px;
-                spacing: root.guide-compact ? 0px : 2px;
-                Action { icon-name: "house"; label: "Home"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
-                if root.loaded: Action { icon-name: "play"; label: "Now playing"; caption: "Playing"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
-                if !root.guide-compact: GuideDivider {}
+                padding-left: 8px; padding-right: 8px; padding-top: 4px; padding-bottom: 12px;
+                spacing: root.guide-compact ? 4px : 2px;
+                Action { icon-name: "house"; label: "Home"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 0 && root.home-active; clicked => { root.navigate(0); } }
+                if root.loaded: Action { icon-name: "play"; label: "Now playing"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 2; clicked => { root.navigate(2); } }
+                GuideDivider {}
                 if !root.guide-compact: GuideHeading { text: "You"; }
-                Action { icon-name: "users"; label: "Local subscriptions"; caption: "Subscriptions"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
-                Action { icon-name: "list-video"; label: "Local playlists"; caption: "Playlists"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
-                if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
-                Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; caption: root.local-file-busy ? "Opening…" : "Open file"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
-                if root.local-file-cancellable: Action { label: "Cancel file selection"; caption: "Cancel"; icon-name: "chevron-left"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; clicked => { root.cancel-local-file(); } }
+                Action { icon-name: "users"; label: "Local subscriptions"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
+                Action { icon-name: "list-video"; label: "Local playlists"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
+                if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
+                Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
+                if root.local-file-cancellable: Action { label: "Cancel file selection"; icon-name: "chevron-left"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; clicked => { root.cancel-local-file(); } }
                 if !root.guide-compact: GuideDivider {}
                 if !root.guide-compact: GuideHeading { text: "Explore"; }
-                if !root.guide-compact: Action { icon-name: "music"; label: "Music"; accessible-label: "Search YouTube for music"; height: 40px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
-                if !root.guide-compact: Action { icon-name: "gamepad-2"; label: "Gaming"; accessible-label: "Search YouTube for gaming"; height: 40px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Gaming"; root.search(search.text); } }
-                if !root.guide-compact: Action { icon-name: "newspaper"; label: "News"; accessible-label: "Search YouTube for news"; height: 40px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "News"; root.search(search.text); } }
-                if !root.guide-compact: Action { icon-name: "trophy"; label: "Sports"; accessible-label: "Search YouTube for sports"; height: 40px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Sports"; root.search(search.text); } }
-                if !root.guide-compact: Action { icon-name: "graduation-cap"; label: "Learning"; accessible-label: "Search YouTube for learning"; height: 40px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Learning"; root.search(search.text); } }
+                if !root.guide-compact: Action { icon-name: "music"; label: "Music"; accessible-label: "Search YouTube for music"; dense: true; corner-radius: 10px; height: 36px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }
+                if !root.guide-compact: Action { icon-name: "gamepad-2"; label: "Gaming"; accessible-label: "Search YouTube for gaming"; dense: true; corner-radius: 10px; height: 36px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Gaming"; root.search(search.text); } }
+                if !root.guide-compact: Action { icon-name: "newspaper"; label: "News"; accessible-label: "Search YouTube for news"; dense: true; corner-radius: 10px; height: 36px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "News"; root.search(search.text); } }
+                if !root.guide-compact: Action { icon-name: "trophy"; label: "Sports"; accessible-label: "Search YouTube for sports"; dense: true; corner-radius: 10px; height: 36px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Sports"; root.search(search.text); } }
+                if !root.guide-compact: Action { icon-name: "graduation-cap"; label: "Learning"; accessible-label: "Search YouTube for learning"; dense: true; corner-radius: 10px; height: 36px; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Learning"; root.search(search.text); } }
                 if !root.guide-compact: GuideDivider {}
-                Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; caption: "Account"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
+                Action { enabled: !root.native-video-child; icon-name: "circle-user-round"; label: "YouTube account"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 4; clicked => { root.navigate(4); } }
                 if root.guide-compact: Rectangle { vertical-stretch: 1; }
-                if root.recovery-available: Action { icon-name: "info"; label: "Connection issue"; caption: "Issue"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; clicked => { root.show-status-message(); } }
-                Action { icon-name: "settings"; label: "Settings"; compact: root.guide-compact; stacked: root.guide-compact; height: root.guide-compact ? 64px : 40px; selectable: true; selected: root.page == 3; clicked => { root.navigate(3); } }
+                if root.recovery-available: Action { icon-name: "info"; label: "Connection issue"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; clicked => { root.show-status-message(); } }
+                Action { icon-name: "settings"; label: "Settings"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 3; clicked => { root.navigate(3); } }
                 if !root.guide-compact: Rectangle { vertical-stretch: 1; min-height: 12px; }
                 if !root.guide-compact: Rectangle { height: 44px; Text { x: 14px; width: parent.width - 14px; height: parent.height; text: "Private by default.\nNot affiliated with YouTube."; color: Colors.muted; font-size: 11px; wrap: word-wrap; vertical-alignment: bottom; } }
             }
@@ -717,7 +717,8 @@ export component App inherits Window {
         width: root.width - self.x - 24px; height: root.height - self.y - 16px;
         visible: root.page == 0;
         private property <bool> channel-header: root.guest-scope == 1;
-        private property <length> toolbar-y: self.channel-header ? 112px : 80px;
+        // Home has no title block; its toolbar row starts at the top.
+        private property <length> toolbar-y: root.home-active ? 0px : self.channel-header ? 112px : 80px;
         private property <bool> skeleton: root.videos.length == 0 && (root.home-loading || (root.busy && !root.home-active)) && !root.native-video-child;
         if self.channel-header: Rectangle {
             x: 2px; y: 2px; width: 80px; height: 80px; border-radius: 40px; clip: true; background: Colors.surface;
@@ -739,8 +740,8 @@ export component App inherits Window {
             }
             Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.focus; border-radius: 12px; background: transparent; }
         }
-        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
-        Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
+        if !root.home-active: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
+        if !root.home-active: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
         HorizontalLayout { y: browse.toolbar-y; height: 36px; spacing: 8px;
             if root.home-active && root.account-connected: Action { height: 36px; width: 128px; horizontal-stretch: 0; label: "Recommended"; variant: root.home-source == 1 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 1; enabled: !root.busy && !root.native-video-child && (root.home-source == 1 || !root.account-busy); clicked => { root.home-source-changed(1); } }
             if root.home-active && root.account-connected: Action { height: 36px; width: 80px; horizontal-stretch: 0; label: "Saved"; variant: root.home-source == 0 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 0; enabled: !root.busy && !root.native-video-child; clicked => { root.home-source-changed(0); } }
@@ -801,7 +802,7 @@ export component App inherits Window {
             }
         }
         if root.videos.length == 0 && !browse.skeleton: Rectangle {
-            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
+            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : root.home-active ? 80px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
             Rectangle { x: (parent.width - 72px) / 2; y: 0px; width: 72px; height: 72px; border-radius: 36px; background: Colors.hover;
                 Image { x: (parent.width - 32px) / 2; y: (parent.height - 32px) / 2; width: 32px; height: 32px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
             }
@@ -1099,7 +1100,7 @@ export component App inherits Window {
                     }
                     Rectangle { horizontal-stretch: 1; }
                     captions-control := Action { visible: !root.mini-player-active; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "captions"; label: root.account-playback-active ? "Account captions unavailable" : root.remote-video ? "Choose guest captions" : "Cycle local subtitles"; clicked => { if root.remote-video { root.show-captions(); } else { root.subtitles(); } } }
-                    settings-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
+                    settings-control := Action { visible: !root.picture-in-picture; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "settings"; label: "Playback settings"; clicked => { root.prepare-native-overlay(); playback-settings.show(); } }
                     pip-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: "picture-in-picture-2"; label: root.picture-in-picture ? "Return to main window (P or Esc)" : root.pip-available ? "Picture in picture (P)" : "Picture in picture unavailable on this window backend"; enabled: root.picture-in-picture || (root.pip-available && root.loaded && !root.fullscreen-active); checkable: true; selected: root.picture-in-picture; clicked => { root.picture-in-picture-toggle(); } }
                     theatre-control := Action { visible: !root.compact-video && !root.native-video-child; changed visible => { if !self.visible && self.has-focus { focus.focus(); } } on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "rectangle-horizontal"; label: root.theatre-mode ? "Exit theatre mode (T)" : "Theatre mode (T)"; checkable: true; selected: root.theatre-mode; clicked => { root.toggle-theatre(); } }
                     mini-return-control := Action { visible: root.mini-player-active; on-video: true; min-width: self.visible ? 40px : 0px; max-width: self.visible ? 40px : 0px; horizontal-stretch: 0; compact: true; icon-name: "maximize"; label: "Return to watch page"; clicked => { root.navigate(2); root.focus-player(); } }

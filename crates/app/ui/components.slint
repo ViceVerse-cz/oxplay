@@ -180,13 +180,11 @@ export component Action inherits Rectangle {
     in property <bool> enabled: true;
     in property <bool> compact;
     in property <bool> on-video;
-    // Mini-guide presentation: icon above a short caption, without a tooltip.
-    in property <bool> stacked;
-    // Short visible caption for stacked rows; the accessible label stays complete.
-    in property <string> caption: root.label;
+    // Sidebar rows: slightly smaller icon and label with a tighter leading inset.
+    in property <bool> dense;
     // Negative keeps the variant's shape; embedded segments can square it off.
     in property <length> corner-radius: -1px;
-    in property <length> icon-size: root.on-video ? 24px : root.stacked ? 22px : 20px;
+    in property <length> icon-size: root.on-video ? 24px : root.dense ? 18px : 20px;
     // Visual emphasis is independent of selection/check state and accessibility.
     in property <ActionVariant> variant: quiet;
     private property <bool> keyboard-pressed;
@@ -199,7 +197,7 @@ export component Action inherits Rectangle {
     height: 40px;
     min-width: compact ? 40px : 70px;
     // Filled/tonal actions are pills; quiet rows keep a softer rounded rectangle.
-    border-radius: root.corner-radius >= 0px ? root.corner-radius : root.on-video || (root.compact && !root.stacked && root.variant == quiet) || root.variant != quiet ? self.height / 2 : 10px;
+    border-radius: root.corner-radius >= 0px ? root.corner-radius : root.on-video || (root.compact && root.variant == quiet) || root.variant != quiet ? self.height / 2 : 10px;
     background: root.on-video ? (pressed ? #ffffff38 : hovered ? #ffffff2e : selected ? #ffffff18 : variant == secondary ? #ffffff1f : transparent)
         : variant == primary ? (pressed ? Colors.primary-pressed : hovered ? Colors.primary-hover : Colors.primary)
         : variant == quiet ? (pressed ? Colors.strong : hovered ? (selected ? Colors.pressed : Colors.hover) : selected ? Colors.selected : transparent)
@@ -268,25 +266,19 @@ export component Action inherits Rectangle {
             : root.icon-name == "graduation-cap" ? @image-url("icons/graduation-cap.svg")
             : root.icon-name == "chevron-left" ? @image-url("icons/chevron-left.svg") : @image-url("icons/chevron-right.svg");
         colorize: root.variant == quiet && root.selected && !root.on-video ? Colors.accent : root.foreground;
-        x: root.compact ? (root.width - root.icon-size) / 2 : root.variant == quiet ? 14px : 12px;
-        y: root.stacked ? 12px : (root.height - root.icon-size) / 2; width: root.icon-size; height: root.icon-size;
+        x: root.compact ? (root.width - root.icon-size) / 2 : root.dense ? 12px : root.variant == quiet ? 14px : 12px;
+        y: (root.height - root.icon-size) / 2; width: root.icon-size; height: root.icon-size;
     }
     if !root.compact: Text {
-        x: root.icon-name != "" ? (root.variant == quiet ? 50px : 40px) : root.variant == quiet ? 14px : 16px; y: 0;
-        width: parent.width - self.x - (root.variant == quiet ? 12px : 16px); height: parent.height;
-        text: root.label; color: root.foreground; font-size: 14px;
+        x: root.icon-name != "" ? (root.dense ? 42px : root.variant == quiet ? 50px : 40px) : root.variant == quiet ? 14px : 16px; y: 0;
+        width: parent.width - self.x - (root.dense ? 8px : root.variant == quiet ? 12px : 16px); height: parent.height;
+        text: root.label; color: root.foreground; font-size: root.dense ? 13px : 14px;
         font-weight: root.variant != quiet || root.selected ? 600 : 400;
         horizontal-alignment: (root.variant == quiet && !root.on-video) || root.icon-name != "" ? left : center;
         vertical-alignment: center; overflow: elide;
     }
-    if root.compact && root.stacked: Text {
-        x: 2px; y: 38px; width: parent.width - 4px; height: 16px;
-        text: root.caption; color: root.foreground; font-size: 10px;
-        font-weight: root.selected ? 600 : 400;
-        horizontal-alignment: center; vertical-alignment: center; overflow: elide;
-    }
     touch := TouchArea { enabled: root.enabled; mouse-cursor: root.enabled ? pointer : default; clicked => { root.pointer-focus = true; focus.focus(); root.clicked(); } }
-    if root.compact && !root.stacked: Tooltip {
+    if root.compact: Tooltip {
         Rectangle {
             width: tip.preferred-width + 16px; height: 30px;
             background: #3a3a3aef; border-radius: 6px;

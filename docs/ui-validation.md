@@ -459,9 +459,10 @@ monochrome finish, as SPEC.md's restrained neutral/limited-red guidance asks:
 - 56 px header: a red play tile beside a tightly set wordmark, a 40 px
   segmented search pill (a leading glass appears while it has focus), and a
   tonal account pill.
-- Guide: 40 px rounded rows with a red selected icon and bold label, a
-  "Your library" section with dividers, and a stacked icon-over-caption
-  mini-guide below 1100 px. Captions are short; accessible labels are unchanged.
+- Guide: 200 px wide with 36 px rounded rows, a red selected icon and bold
+  label, and dividers; below 1100 px (or when toggled) a 56 px icon-only rail
+  of 40 px buttons with a rounded selected highlight and tooltips. Accessible
+  labels are unchanged.
 - Actions: neutral translucent state layers (`hover`/`pressed`/`strong`), pill
   shapes for tonal/filled variants, inverted monochrome primary buttons and one
   blue focus ring (`Colors.focus`) for controls, cards, parking scopes and fields.
