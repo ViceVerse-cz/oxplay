@@ -122,6 +122,10 @@ fn parse_comment(value: &Value) -> Result<CommentSummary, ProviderError> {
             .get("author_is_uploader")
             .and_then(Value::as_bool)
             .unwrap_or(false),
+        author_thumbnail_url: value
+            .get("author_thumbnail")
+            .and_then(Value::as_str)
+            .and_then(crate::channel_avatar::safe_avatar),
     })
 }
 fn parse_page(
@@ -299,6 +303,40 @@ mod tests {
         .unwrap();
         assert_eq!(comment.text, "ab");
         assert!(comment.author_id.is_none());
+    }
+    #[test]
+    fn author_thumbnail_is_kept_only_for_exact_public_avatar_hosts() {
+        let comment = |url: Value| {
+            parse_comment(
+                &json!({"id":"UgSynthetic","parent":"root","text":"hello","author_thumbnail":url}),
+            )
+            .unwrap()
+            .author_thumbnail_url
+        };
+        assert_eq!(
+            comment(json!(
+                "https://yt3.ggpht.com/synthetic=s48-c-k-c0x00ffffff-no-rj"
+            ))
+            .as_deref(),
+            Some("https://yt3.ggpht.com/synthetic=s48-c-k-c0x00ffffff-no-rj")
+        );
+        assert!(comment(json!("https://yt3.googleusercontent.com/synthetic")).is_some());
+        for hostile in [
+            json!("http://yt3.ggpht.com/a"),
+            json!("https://yt3.ggpht.com.evil.test/a"),
+            json!("https://user@yt3.ggpht.com/a"),
+            json!("https://yt3.ggpht.com:444/a"),
+            json!("https://i.ytimg.com/vi/a/hqdefault.jpg"),
+            json!("https://example.com/a"),
+            json!(format!("https://yt3.ggpht.com/{}", "a".repeat(5000))),
+            json!(42),
+            Value::Null,
+        ] {
+            assert_eq!(comment(hostile.clone()), None, "{hostile}");
+        }
+        // A missing field is simply "no portrait", never a parse failure.
+        let bare = parse_comment(&json!({"id":"UgSynthetic","parent":"root","text":"hello"}));
+        assert!(bare.unwrap().author_thumbnail_url.is_none());
     }
     #[test]
     fn final_page_stops_at_ceiling_and_foreign_cursors_fail_before_spawn() {

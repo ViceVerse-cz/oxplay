@@ -572,6 +572,7 @@ pub fn clear_cached_catalog(app: &App, state: &UiState) {
     state.guest_ui.origin.set(Origin::Public);
     state.thumbnails.borrow_mut().replace(Vec::new());
     state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_retained.borrow_mut().clear();
     state.thumbnail_range.set((usize::MAX, usize::MAX));
     state.guest_ui.current.borrow_mut().take();
     state.guest_ui.next.borrow_mut().take();

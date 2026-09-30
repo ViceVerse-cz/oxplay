@@ -530,6 +530,10 @@ pub struct CommentSummary {
     pub published_text: Option<String>,
     pub like_count: Option<u64>,
     pub author_is_uploader: bool,
+    /// Provider-supplied public portrait URL, already restricted by the provider
+    /// adapter to an HTTPS Google avatar host. The app still applies its own
+    /// exact-host fetch policy; absence means "show the placeholder".
+    pub author_thumbnail_url: Option<String>,
 }
 /// A single controlled refresh attempt owned by one playback lifecycle. Preserve
 /// this budget when replacing expired stream URLs; reset only for a new selection.

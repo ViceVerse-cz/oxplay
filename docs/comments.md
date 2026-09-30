@@ -75,3 +75,25 @@ caffeinate -d -i ./target/release/serein \
 The [description capture](evidence/2026-09-29-guest-description.png) and [second comment-page capture](evidence/2026-09-29-guest-comments.png) were inspected visually. The description/date/counts, comment text and author metadata, copy actions, scrollbar and page controls fit the window. These intentional diagnostic images contain real public YouTube content; they are neither fixture data nor shipped application chrome. The harness asserted 20 first-page rows, 20 second-page rows, retained Previous state and successful cancellation of an explicit third request. It did not test OS clipboard contents or actual screen-reader output.
 
 The [native log](evidence/2026-09-29-guest-comments.log) observed Apple M1 OpenGL 4.1, VideoToolbox H.264 1920×1080 at 60 fps, Opus audio via avfoundation, and no media error. Catalog model notifications and full resets stayed at 0 while playback and comment paging ran. Two persistent GPU targets were reported. This run had 60 VO drops and included screenshot readbacks; it provides no optimized-playback, CPU, RAM or energy pass. No account credentials or writes were involved. The application and its finite caffeinate wrapper exited before the next measurement slot.
+
+## Author portraits
+
+Each comment shows its author's public portrait in the existing 40px circle. The
+guest provider keeps yt-dlp's `author_thumbnail` only when it is an HTTPS
+`yt3.ggpht.com` / `yt3.googleusercontent.com` URL without credentials, port,
+fragment or more than 4096 bytes (the same rule as channel portraits); anything
+else is simply "no portrait". The app then fetches at most one page (20) of
+portraits with the existing anonymous thumbnail fetcher (exact image hosts, no
+proxy/cookies/redirects, 2 MiB input, bounded decode), four at a time, and resizes
+each to at most 88x88 before it reaches Slint. The placeholder icon stays until a
+portrait is ready or if it fails. A new page, a different video, disabling
+comments, account playback or clearing supersedes the job, and late results are
+dropped by generation and by row identity. Portraits are not persisted.
+
+Validation: unit tests cover URL policy, resize bounds, stale-result dropping and
+cancellation; a one-off live check fetched a real `author_thumbnail` from
+yt-dlp output through the worker and got an 88x88 image. The full comment page
+with portraits was **not** rendered natively: this session had no display clock
+(`presenter setup failed -6661`), so guest playback and the comments smoke could
+not start. Visual review of the 40px clipped portrait is still open.
+

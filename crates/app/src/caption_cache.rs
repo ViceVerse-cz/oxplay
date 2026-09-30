@@ -87,6 +87,7 @@ pub fn begin(app: &App, state: &Rc<UiState>) {
         return;
     }
     state.thumbnails.borrow_mut().replace(Vec::new());
+    state.thumbnail_retained.borrow_mut().clear();
     for index in 0..state.model.row_count() {
         if let Some(mut row) = state.model.row_data(index)
             && row.thumbnail_ready

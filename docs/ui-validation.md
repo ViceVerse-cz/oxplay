@@ -37,6 +37,25 @@ workers) are approximately 11.43 MiB, separately from decoder scratch space and
 renderer texture caches. Actual GPU-cache eviction and peak resident memory still
 need measurement; this arithmetic is not a budget pass.
 
+Rows that leave the request window release their Slint image, but the 32 most
+recently released images (at most about 7 MiB, keyed by row kind and identity, not
+URL) stay in a small in-memory retention so scrolling straight back repaints
+synchronously instead of waiting for a new fetch. It is cleared on surface changes
+and when catalog/local/account data is cleared. Total retained display buffers are
+therefore the 11.43 MiB estimate below plus that bound. Related-list channel rows
+(including the creator's) are omitted from the watch page's related list.
+
+Investigation of "images stay blank after scrolling away and back": in a native
+debug run against the real guest catalog (search, 20 rows, programmatic reveal and
+synthetic wheel events, with snapshots) and in the watch related list, model state
+and rendering were correct after returning, so a permanent blank was **not
+reproduced**. The observed weakness was churn: every visible-range change aborts
+all in-flight image jobs and re-requests still-wanted rows (43 job starts to show
+8 rows), so cards stay blank until a scroll settles, and longer on a slow or failed
+fetch. The retention above removes the dependence for immediate returns; the
+job-restart behavior itself is unchanged. Not validated: trackpad momentum on a
+real display, a playing video on the watch page, and slow-network timing.
+
 Thumbnail completion notifies one flat row and its existing grouped child row.
 Appending results retains existing child models. Grouping is rebuilt only at a
 column-count boundary or explicit catalog replacement. Deterministic tests cover
