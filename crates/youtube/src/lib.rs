@@ -7,6 +7,7 @@ pub mod catalog;
 mod channel_avatar;
 mod chapters;
 pub mod comments;
+pub mod innertube;
 pub mod suggestions;
 mod supervisor;
 use serde_json::Value;
