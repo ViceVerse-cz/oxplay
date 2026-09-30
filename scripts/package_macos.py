@@ -461,6 +461,50 @@ def validate_dns_helper(executable: Path) -> dict:
             "cancellation_and_system_dns_qualified": False}
 
 
+def bundle_versions(version: str) -> tuple[str, str]:
+    """CFBundleShortVersionString must be numeric X.Y.Z, so nightly suffixes are
+    dropped; OXPLAY_BUNDLE_VERSION (CI: run number.attempt) sets CFBundleVersion."""
+    match = re.fullmatch(r"([0-9]+\.[0-9]+\.[0-9]+)(?:-[0-9A-Za-z.-]+)?", version)
+    if match is None:
+        raise PackagingError("The workspace version is not a semantic version")
+    build = os.environ.get("OXPLAY_BUNDLE_VERSION") or match[1]
+    if re.fullmatch(r"[0-9]{1,9}(?:\.[0-9]{1,9}){0,2}", build) is None:
+        raise PackagingError("OXPLAY_BUNDLE_VERSION must be one to three dot-separated integers")
+    return match[1], build
+
+
+def final_inventory(app: Path, bundle: str, input_fingerprint: str) -> dict:
+    files = [{"path": str(file.relative_to(app)), "sha256": digest(file), "bytes": file.stat().st_size}
+             for file in sorted(app.rglob("*")) if file.is_file()]
+    return {"schema": 1, "bundle": bundle, "development_only": True, "input_fingerprint": input_fingerprint,
+            "files": files}
+
+
+def reinventory(output: Path) -> None:
+    """Refresh the final file inventory after Developer ID signing/stapling.
+
+    Signing rewrites Mach-O signatures and _CodeSignature only; the build
+    manifest, evidence and helper resources keep their recorded hashes, which
+    verify_package.py still checks against this refreshed inventory.
+    """
+    app = output.absolute()
+    inventory = Path(str(app) + ".inventory.json")
+    if app.suffix != ".app" or not app.is_dir() or app.is_symlink() or not inventory.is_file():
+        raise PackagingError("Reinventory needs an existing .app bundle and its inventory")
+    previous = json.loads(inventory.read_text())
+    if previous.get("schema") != 1 or previous.get("bundle") != app.name:
+        raise PackagingError("The existing inventory does not describe this bundle")
+    manifest = json.loads((app / "Contents/Resources/BuildInfo/build-manifest.json").read_text())
+    if manifest.get("input_fingerprint") != previous.get("input_fingerprint"):
+        raise PackagingError("The bundle manifest no longer matches its inventory")
+    refreshed = final_inventory(app, app.name, previous["input_fingerprint"])
+    staged = inventory.with_name(inventory.name + ".new")
+    with staged.open("x") as file:
+        file.write(json.dumps(refreshed, indent=2, sort_keys=True) + "\n")
+    staged.replace(inventory)
+    print(f"Refreshed {inventory.name}: {len(refreshed['files'])} files.")
+
+
 def package(args: argparse.Namespace) -> None:
     if sys.platform != "darwin":
         raise PackagingError("Only the available macOS developer target is implemented")
@@ -680,9 +724,10 @@ def package(args: argparse.Namespace) -> None:
                         native_closure(app / item["target"], copied)
             if len(copied) != len(native) + int(helper_resources is not None) or any(not path.is_relative_to(app) for path in copied):
                 raise PackagingError("Relocated Mach-O closure still requires a non-system external library")
-            version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
+            short_version, bundle_version = bundle_versions(
+                tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"])
             with (app / "Contents/Info.plist").open("wb") as file:
-                plistlib.dump({"CFBundleExecutable": "oxplay", "CFBundleIdentifier": ID, "CFBundleName": "Oxplay Development", "CFBundleDisplayName": "Oxplay Development", "CFBundlePackageType": "APPL", "CFBundleShortVersionString": version, "CFBundleVersion": version, "LSMinimumSystemVersion": minimum, "NSHighResolutionCapable": True}, file, sort_keys=True)
+                plistlib.dump({"CFBundleExecutable": "oxplay", "CFBundleIdentifier": ID, "CFBundleName": "Oxplay", "CFBundleDisplayName": "Oxplay", "CFBundlePackageType": "APPL", "CFBundleShortVersionString": short_version, "CFBundleVersion": bundle_version, "LSApplicationCategoryType": "public.app-category.video", "LSMinimumSystemVersion": minimum, "NSHighResolutionCapable": True}, file, sort_keys=True)
             (app / "Contents/PkgInfo").write_bytes(b"APPL????")
             manifest["relocated_native_count"] = len(copied)
             manifest["dns_helper_offline_validation"] = validate_dns_helper(helper_directory / "oxplay-dns")
@@ -694,12 +739,11 @@ def package(args: argparse.Namespace) -> None:
         json_write(evidence / "build-manifest.json", manifest)
         write_spdx(evidence / "sbom.spdx.json", manifest, cargo, native, helpers, epoch)
         helper_note = ("The exact Python/yt-dlp/EJS/Deno runtime and native helper modules are bundled; clean-machine qualification is still required." if helper_resources is not None else "Network operations still require the exact external Homebrew yt-dlp/Python/Deno inputs recorded in build-manifest.json.")
-        (evidence / "READ-ME-FIRST.txt").write_text("Oxplay development evidence; NOT a portable release.\nNative dylibs are relocated only in bundle mode. " + helper_note + "\nAd-hoc signed only; no Developer ID or notarization. Package redistribution and complete corresponding-source obligations remain unaudited.\nInspect docs/packaging.md in application-source.tar. No account credentials are included.\n")
+        (evidence / "READ-ME-FIRST.txt").write_text("Oxplay development evidence; NOT a portable release.\nNative dylibs are relocated only in bundle mode. " + helper_note + "\nAd-hoc signed by this packager. The release workflow re-signs with Developer ID and notarizes only when its signing secrets are configured; check with codesign -dv and spctl. Package redistribution and complete corresponding-source obligations remain unaudited.\nInspect docs/packaging.md in application-source.tar. No account credentials are included.\n")
         if args.command == "bundle":
             run("codesign", "--force", "--sign", "-", "--timestamp=none", "--identifier", ID, app)
             run("codesign", "--verify", "--deep", "--strict", app)
-        final_files = [{"path": str(file.relative_to(app)), "sha256": digest(file), "bytes": file.stat().st_size} for file in sorted(app.rglob("*")) if file.is_file()]
-        final = {"schema": 1, "bundle": output.name, "development_only": True, "input_fingerprint": manifest["input_fingerprint"], "files": final_files}
+        final = final_inventory(app, output.name, manifest["input_fingerprint"])
         app.rename(output)
         with Path(str(output) + ".inventory.json").open("x") as file:
             file.write(json.dumps(final, indent=2, sort_keys=True) + "\n")
@@ -710,8 +754,8 @@ def package(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("inspect", "bundle"))
-    parser.add_argument("--output", type=Path, required=True, help="fresh evidence directory or .app path; never overwritten")
+    parser.add_argument("command", choices=("inspect", "bundle", "reinventory"))
+    parser.add_argument("--output", type=Path, required=True, help="fresh evidence directory or .app path; never overwritten (reinventory: the existing signed .app)")
     parser.add_argument("--binary", type=Path, default=ROOT / "target/release/oxplay")
     parser.add_argument("--dns-helper", type=Path, default=ROOT / "target/release/oxplay-dns", help="Exact first-party macOS DNS helper; always bundled")
     parser.add_argument("--yt-dlp", type=Path, default=Path("/opt/homebrew/bin/yt-dlp"))
@@ -719,7 +763,11 @@ def main() -> None:
     parser.add_argument("--bundle-helpers", action="store_true", help="Include the exact reviewed installed Python/yt-dlp/EJS/Deno runtime")
     parser.add_argument("--build", action="store_true", help="build both first-party binaries with the lockfile; otherwise source association is explicitly unverified")
     try:
-        package(parser.parse_args())
+        args = parser.parse_args()
+        if args.command == "reinventory":
+            reinventory(args.output)
+        else:
+            package(args)
     except (PackagingError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
         print(f"Packaging stopped: {error}", file=sys.stderr)
         raise SystemExit(1) from None
