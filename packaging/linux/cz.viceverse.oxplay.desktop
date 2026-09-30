@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Oxplay
+GenericName=YouTube Client
+Comment=Experimental native YouTube client
+Exec=oxplay
+Icon=oxplay
+Terminal=false
+Categories=AudioVideo;Video;Player;Network;
+Keywords=YouTube;video;player;mpv;
+StartupWMClass=oxplay
