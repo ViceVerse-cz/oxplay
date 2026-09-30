@@ -210,6 +210,14 @@ jobs:
         # Report every failing test binary, not just the first.
         run: cargo test --workspace --locked --no-fail-fast
 
+      - name: Exercise synthetic Credential Manager roundtrip
+        # Ephemeral runner only: one random app-owned credential is created,
+        # read, replaced and deleted. No account, cookie or browser data.
+        run: >-
+          cargo test --locked -p oxplay-storage
+          vault::tests::windows_credential_manager_synthetic_roundtrip
+          -- --ignored --exact --test-threads=1
+
       - name: Build locked production workspace
         run: cargo build --workspace --release --locked
 
