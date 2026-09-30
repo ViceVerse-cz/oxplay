@@ -2625,6 +2625,53 @@ mod tests {
         wav.resize(96_044, 0);
         wav
     }
+    // Three 16x16 I420 frames in a supported AVI container. Keep the fixture
+    // in source so the null-output test needs neither FFmpeg nor a display.
+    fn gray_avi() -> Vec<u8> {
+        fn chunk(tag: &[u8; 4], bytes: &[u8]) -> Vec<u8> {
+            let mut chunk = tag.to_vec();
+            chunk.extend((bytes.len() as u32).to_le_bytes());
+            chunk.extend(bytes);
+            if !bytes.len().is_multiple_of(2) {
+                chunk.push(0);
+            }
+            chunk
+        }
+        fn words(values: &[u32]) -> Vec<u8> {
+            values
+                .iter()
+                .flat_map(|value| value.to_le_bytes())
+                .collect()
+        }
+        let avih = words(&[1_000_000, 384, 0, 16, 3, 0, 1, 384, 16, 16, 0, 0, 0, 0]);
+        let mut strh = b"vidsI420".to_vec();
+        strh.extend(words(&[0, 0, 0, 1, 1, 0, 3, 384, u32::MAX, 0]));
+        strh.extend([0, 0, 16, 16].into_iter().flat_map(i16::to_le_bytes));
+        let mut strf = words(&[40, 16, 16]);
+        strf.extend([1, 12].into_iter().flat_map(u16::to_le_bytes));
+        strf.extend(b"I420");
+        strf.extend(words(&[384, 0, 0, 0, 0]));
+        let mut strl = b"strl".to_vec();
+        strl.extend(chunk(b"strh", &strh));
+        strl.extend(chunk(b"strf", &strf));
+        let mut hdrl = b"hdrl".to_vec();
+        hdrl.extend(chunk(b"avih", &avih));
+        hdrl.extend(chunk(b"LIST", &strl));
+        let mut frame = vec![100; 256];
+        frame.extend([128; 128]);
+        let mut movi = b"movi".to_vec();
+        let mut index = Vec::new();
+        for _ in 0..3 {
+            index.extend(b"00dc");
+            index.extend(words(&[16, movi.len() as u32, frame.len() as u32]));
+            movi.extend(chunk(b"00dc", &frame));
+        }
+        let mut avi = b"AVI ".to_vec();
+        avi.extend(chunk(b"LIST", &hdrl));
+        avi.extend(chunk(b"LIST", &movi));
+        avi.extend(chunk(b"idx1", &index));
+        chunk(b"RIFF", &avi)
+    }
     fn drain_until_stopped(player: &Player) {
         drain_until_stopped_with_error(player, None);
     }
@@ -2973,17 +3020,14 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-                "serein-frame-fence-{}-{}.y4m",
+                "serein-frame-fence-{}-{}.avi",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_nanos()
             )));
-        let mut image = b"YUV4MPEG2 W16 H16 F1:1 Ip A1:1 C420jpeg\nFRAME\n".to_vec();
-        image.extend([100u8; 256]);
-        image.extend([128u8; 128]);
-        std::fs::write(&fixture.0, image).unwrap();
+        std::fs::write(&fixture.0, gray_avi()).unwrap();
         let player = Player::new(|| {}).unwrap();
         player.command(&["set", "vo", "null"]).unwrap();
         player.command(&["set", "ao", "null"]).unwrap();
