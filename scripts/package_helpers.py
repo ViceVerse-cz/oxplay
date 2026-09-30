@@ -130,8 +130,11 @@ def validate_helpers(bundle: Path, plan: dict, api) -> dict:
             if result.returncode or len(result.stdout) > 128 * 1024 or len(result.stderr) > 2 * 1024 * 1024:
                 raise api.PackagingError('A bundled helper failed its isolated offline runtime probe: ' + name)
             loaded = sorted(set(re.findall(r'dyld\[\d+\]: <[^>]+> (/.+)', result.stderr)))
-            if not loaded or any(not api.is_system(path) and not Path(path).resolve().is_relative_to(bundle.resolve()) for path in loaded):
-                raise api.PackagingError('A bundled helper loaded an external non-system native library')
+            external = [path for path in loaded
+                        if not api.is_system(path) and not Path(path).resolve().is_relative_to(bundle.resolve())]
+            if not loaded or external:
+                raise api.PackagingError('A bundled helper loaded an external non-system native library: '
+                                         + name + ' -> ' + (', '.join(external) or 'no dyld output'))
             if name == 'python':
                 audit = json.loads(result.stdout)
                 validate_runtime_paths(audit, bundle, api)
