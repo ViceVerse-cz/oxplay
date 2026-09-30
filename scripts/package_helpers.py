@@ -29,8 +29,12 @@ MACHO_MAGICS = {bytes.fromhex(value) for value in (
     'cafebabf', 'bfbafeca',
 )}
 BOOTSTRAP = '''# SPDX-License-Identifier: GPL-3.0-or-later
+import os
 import pathlib
 import sys
+# pycryptodomex would otherwise dlopen a host libgmp (Homebrew Python also
+# searches /opt/homebrew/lib); use its bundled integer implementation instead.
+os.environ["PYCRYPTODOME_DISABLE_GMP"] = "1"
 # -I -S excludes environment, user site, site initialization and all .pth execution.
 root = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(root / "Python" / "packages"))
