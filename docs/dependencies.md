@@ -343,6 +343,9 @@ qualification. See [window appearance](window-appearance.md).
 Slint's exact revision, Rust toolchain and Cargo.lock are unchanged. macOS-only
 objc2-app-kit 0.3.2 now additionally enables `NSButton,NSControl` to access the real
 standard traffic lights; no new crate/version or native UI framework is added.
+The rounded-corner blur fix additionally enables `NSVisualEffectView,NSGraphics`
+so macOS uses a public AppKit material instead of Winit's private CGS blur; the
+lockfile is unchanged.
 The refreshed comments action uses unchanged official Lucide `refresh-cw.svg`
 from revision `66d8f9fc394b8530377e5f6112f0b8908ba01280`; its hash/source are added
 alongside the existing ISC/MIT notices. Shared English count/calendar formatting

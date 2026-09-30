@@ -51,19 +51,38 @@ and borrowed-texture ownership.
 
 | Backend | Translucency request | Native blur |
 | --- | --- | --- |
-| macOS | Alpha-capable FemtoVG configuration and native transparent window; requested by default | Experimental Winit request, requested by default when available |
+| macOS | Alpha-capable FemtoVG configuration and native transparent window; requested by default | Public AppKit `NSVisualEffectView` behind the content view, requested by default |
 | Windows | Requested; graphics/compositor behavior unqualified | Unavailable through selected Winit API |
 | Linux/X11 | Alpha visual requested at window creation; requires compositor | Unavailable through selected Winit API |
 | Native Wayland | Requested; compositor behavior unqualified | Disabled: selected API cannot confirm KWin blur-protocol availability |
 
 These describe code/API capabilities, not runtime support claims. Winit exposes
 no result or active-state getter for blur. The UI therefore does not report
-successful blur activation. The macOS implementation in Winit 0.30.13 uses the
-private `CGSSetWindowBackgroundBlurRadius` function, rather than an AppKit public
-visual-effect material. This is an experimental compatibility limitation and
-must be reviewed before distribution/OS-support claims. System accessibility
-and compositor settings can affect the appearance; an opaque option and an
-immediate opt-out remain available.
+successful blur activation. System accessibility and compositor settings can
+affect the appearance; an opaque option and an immediate opt-out remain available.
+
+macOS does not use Winit's `set_blur`. In Winit 0.30.13 it calls the private
+`CGSSetWindowBackgroundBlurRadius`, which blurs the window server's whole
+*square* window rectangle. AppKit clips the transparent content to the rounded
+system frame, so that blur showed as a square translucent patch beyond each
+rounded corner. Instead, the adapter inserts one `NSVisualEffectView`
+(`HUDWindow` material, behind-window blending, always active) into the frame
+view, directly below Winit's content view. It is clipped by the same system
+corner shape as the content, so blur, content and shadow share AppKit's corner
+radius on every macOS release, and no radius is hard-coded. An autoresizing mask
+tracks resizes. The view is removed when blur is off (translucent content alone
+already follows the rounded frame), in fullscreen and in PiP (a square borderless
+window). Every synchronization reconciles it and writes only on mismatch,
+because PiP replaces the frame view. The material adds its own system tint
+under the shared canvas, so blur looks darker than the previous raw CGS blur. It
+follows the system appearance, not an explicit in-app theme override.
+On 2026-10-01 (macOS 27.0, Apple M1) blur on/off, opaque, resize, fullscreen
+exit and PiP enter/restore were captured over a high-contrast backdrop. In each
+capture all four corners were rounded, with no square patch; before the fix,
+the square CGS blur corner was visible (bottom-right crops:
+[before](evidence/2026-10-01-macos-blur-corner-before.png),
+[after](evidence/2026-10-01-macos-blur-corner-after.png)). Resize and fullscreen
+were driven by temporary, uncommitted test hooks, not native pointer input.
 
 Source reviewed for this implementation:
 
@@ -79,12 +98,13 @@ Source reviewed for this implementation:
 - Locked Winit 0.30.13, `src/window.rs` and
   `src/platform_impl/macos/window_delegate.rs`: native operation contracts,
   platform restrictions, borderless resizable style, decoration-mask restoration,
-  and native blur internals; `src/platform/macos.rs` provides the creation-time
+  and native blur internals (the private CGS blur macOS no longer calls); `src/platform/macos.rs` provides the creation-time
   transparent/hidden-title/full-size-content attributes.
 - Already-locked objc2 0.6.4 and objc2-app-kit 0.3.2, now direct macOS-only
   dependencies with limited AppKit features: `MainThreadMarker`, `NSView.window`,
   and public `NSWindow` style/title/standard-button methods; `NSButton` and
-  `NSControl` features permit accessing the real controls. The adapter borrows Winit's live view
+  `NSControl` features permit accessing the real controls; `NSVisualEffectView`
+  and `NSGraphics` (subview ordering) provide the macOS blur backdrop. The adapter borrows Winit's live view
   synchronously on the main thread and retains no raw handle across events.
 
 `window_chrome.rs` owns the native adapter. `BackendSelector` installs its window
@@ -94,10 +114,11 @@ macOS the pinned backend derives native transparency from `Window.background` an
 overriding the creation hook. With translucency enabled the Window background
 is transparent and the shared canvas provides one neutral tint, while the
 native frame/rounding remains owned by AppKit. Turning translucency off restores
-opaque shared tokens and the opaque Window background; this is not a promise
-of an AppKit vibrancy material.
-Native blur writes are cached and updated only by user actions or observed
-window/mode changes. No appearance polling loop is introduced.
+opaque shared tokens and the opaque Window background. With translucency, the
+only AppKit material is the behind-window blur backdrop described above.
+Native blur writes are cached (Winit) or reconciled on mismatch (macOS), and
+updated only by user actions or observed window/mode changes. No appearance
+polling loop is introduced.
 
 The previous 56px integrated-header checkpoint is source
 `c75af56c87145c37769c46e9266f3cf6257029d8`; its formatting, strict Clippy and
