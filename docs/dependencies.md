@@ -348,3 +348,18 @@ from revision `66d8f9fc394b8530377e5f6112f0b8908ba01280`; its hash/source are ad
 alongside the existing ISC/MIT notices. Shared English count/calendar formatting
 adds no runtime dependency. See [comments](comments.md), [portraits](channel-avatars.md),
 [history](local-library-ui.md) and [native header](window-appearance.md).
+
+## Video-card clipboard (2026-10-01)
+
+The card context menu writes text and thumbnail pixels to the system clipboard
+through a direct application dependency on `arboard = "=3.6.1"`, default features
+off, `image-data` on. arboard 3.6.1 was already locked through Slint's Winit
+backend (which uses it for text with default features off); the exact version is
+unchanged. `image-data` unifies onto that one package and adds: on macOS,
+`objc2-core-graphics`/`objc2-core-foundation` edges (already locked) and image's
+`tiff` codec; on Linux the `png` codec; on Windows `png`/`bmp`. The deliberate
+lock update added only `tiff 0.11.3` and `fax 0.2.7` (both from the local
+registry cache) plus these edges; no existing package version, Slint revision or
+renderer feature moved. An offline unfiltered `cargo metadata` still stops at the
+uncached Windows-only `ipconfig`, as recorded above. See
+[sharing](sharing.md#video-card-menu) for behavior and limits.

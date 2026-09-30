@@ -1388,3 +1388,124 @@ fn play_pause_acknowledgement_holds_before_it_fades() {
     }
     assert!(!app.get_play_flash_visible(), "fade starts after the hold");
 }
+
+#[test]
+fn video_card_menu_forwards_copy_channel_and_save_commands_by_surface() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    let rows = vec![
+        VideoRow {
+            kind: "Video".into(),
+            title: "TEST FIXTURE unknown creator".into(),
+            id: "fixtureCard".into(),
+            ..VideoRow::default()
+        },
+        VideoRow {
+            kind: "Video".into(),
+            title: "TEST FIXTURE known creator".into(),
+            id: "fixtureKnow".into(),
+            channel_known: true,
+            ..VideoRow::default()
+        },
+    ];
+    app.set_videos(Rc::new(slint::VecModel::from(rows.clone())).into());
+    app.set_groups(
+        Rc::new(slint::VecModel::from(vec![VideoGroup {
+            start: 0,
+            items: Rc::new(slint::VecModel::from(rows.clone())).into(),
+        }]))
+        .into(),
+    );
+    let events = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = events.clone();
+    app.global::<CardMenuUi>()
+        .on_action(move |surface, index, action| {
+            output
+                .borrow_mut()
+                .push(format!("{surface} {index} {action:?}"));
+            // Rust asks the shared Save dialog to open only for this command.
+            action == CardAction::AddToPlaylist
+        });
+    let selected = Rc::new(Cell::new(0));
+    let output = selected.clone();
+    app.on_select_video(move |_| output.set(output.get() + 1));
+    settle();
+    let menu_item = |title: &str| {
+        ElementHandle::find_by_accessible_label(&app, title)
+            .next()
+            .unwrap_or_else(|| panic!("menu item {title}"))
+    };
+    let first = element(&app, "Video, TEST FIXTURE unknown creator, ");
+    let second = element(&app, "Video, TEST FIXTURE known creator, ");
+    first.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Copy link").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    // Without a known channel ID the entry is visible but cannot activate.
+    first.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Open channel").mock_single_click(slint::platform::PointerEventButton::Left);
+    key(&app, Key::Escape);
+    settle();
+    second.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Open channel").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        events.take(),
+        ["0 0 CopyLink", "0 1 OpenChannel"].map(String::from)
+    );
+    // Keyboard: the Menu key and Shift+F10 open the same menu on a focused card.
+    first.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(selected.get(), 1);
+    key(&app, Key::Menu);
+    settle();
+    menu_item("Copy title").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    first.mock_single_click(slint::platform::PointerEventButton::Left);
+    modified_key(&app, &[Key::Shift], &SharedString::from(Key::F10));
+    settle();
+    menu_item("Copy thumbnail").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        events.take(),
+        ["0 0 CopyTitle", "0 0 CopyThumbnail"].map(String::from)
+    );
+    // Add to local playlist opens the shared Save dialog only on acceptance.
+    assert!(!app.get_playback_overlay_open());
+    second.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Add to local playlist").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["0 1 AddToPlaylist"].map(String::from));
+    assert!(app.get_playback_overlay_open());
+    key(&app, Key::Escape);
+    settle();
+
+    // Confirmation is a polite live region with the toast text as its label.
+    app.global::<CardMenuUi>().set_toast("Link copied".into());
+    settle();
+    let toast = ElementHandle::find_by_accessible_label(&app, "Link copied")
+        .next()
+        .expect("toast");
+    assert_eq!(
+        toast.accessible_live_region(),
+        Some(i_slint_backend_testing::AccessibleLiveness::Polite)
+    );
+    app.global::<CardMenuUi>().set_toast("".into());
+
+    // Related cards on the watch page offer the same menu as surface 1.
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_watch_videos(Rc::new(slint::VecModel::from(rows)).into());
+    settle();
+    // (At this compact width the list sits below the player; row 0 is visible.)
+    element(&app, "Video, TEST FIXTURE unknown creator, ")
+        .mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Copy link").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["1 0 CopyLink"].map(String::from));
+}

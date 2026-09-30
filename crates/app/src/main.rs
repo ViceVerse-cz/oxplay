@@ -6,6 +6,7 @@ mod ambient_ui;
 mod caption_cache;
 mod caption_files;
 mod caption_ui;
+mod card_menu;
 mod catalog;
 mod channel_avatar;
 mod chapters_ui;
@@ -102,6 +103,7 @@ struct UiState {
     progress: Timer,
     controls_ui: controls_ui::State,
     share_ui: share_ui::State,
+    card_menu: card_menu::State,
     jump_ui: jump_ui::State,
     local_media: local_media_ui::State,
     clock_ui: clock_ui::State,
@@ -561,6 +563,7 @@ fn video_row(video: &oxplay_core::VideoSummary) -> VideoRow {
         id: video.id.as_str().into(),
         duration: video.duration.map(clock_text).unwrap_or_default().into(),
         meta: video.metadata.clone().unwrap_or_default().into(),
+        channel_known: video.channel_id.is_some(),
         ..VideoRow::default()
     }
 }
@@ -1197,6 +1200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         controls_ui: controls_ui::State::default(),
         chapters_ui: chapters_ui::State::default(),
         share_ui: share_ui::State::default(),
+        card_menu: card_menu::State::default(),
         jump_ui: jump_ui::State::default(),
         local_media: local_media_ui::State::new(app.as_weak())?,
         clock_ui: clock_ui::State::new(options.stage_progress),
@@ -1410,6 +1414,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     controls_ui::connect(&app, &state);
     share_ui::connect(&app, &state);
+    card_menu::connect(&app, &state);
     jump_ui::connect(&app, &state);
     local_media_ui::bind(&app, &state);
     chapters_ui::bind(&app, &state);

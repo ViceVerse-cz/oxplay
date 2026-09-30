@@ -15,6 +15,13 @@ local-file playback, resource fixture, or native-child diagnostic cannot reuse
 the captured target. Refreshing the ordinary library model cannot redirect a
 selected popup index to a different playlist.
 
+A video card's **Add to local playlist** menu command opens the same popup
+for that card's public video, without playing it. That target is the captured
+public summary: submission does not require or check a native load. It still
+refuses the native-child diagnostic, resource fixture, and caption-cache purge,
+and waits while the library is busy. A later watch-page Save replaces the
+captured target, and a card target can never pass the playback check.
+
 The existing dedicated SQLite worker accepts a bounded command containing the
 explicit destination and normalized video metadata. A new playlist and its first
 video are created in one transaction: failed validation or insertion rolls back

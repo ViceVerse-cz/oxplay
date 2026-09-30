@@ -287,7 +287,10 @@ export component Action inherits Rectangle {
     }
 }
 export struct AccountRow { title: string, detail: string, action: string, can-account-play: bool }
-export struct VideoRow { kind: string, title: string, channel: string, id: string, duration: string, thumbnail: image, thumbnail-ready: bool, meta: string }
+// channel-known: the provider supplied a channel ID, so "Open channel" can work.
+export struct VideoRow { kind: string, title: string, channel: string, id: string, duration: string, thumbnail: image, thumbnail-ready: bool, meta: string, channel-known: bool }
+// Context-menu commands a video card forwards to Rust (card_menu.rs).
+export enum CardAction { copy-link, copy-title, copy-thumbnail, open-channel, add-to-playlist }
 export struct VideoGroup { items: [VideoRow], start: int }
 export global CatalogKeys {
     public pure function command(event: KeyEvent) -> int {
@@ -333,6 +336,8 @@ export component VideoCard inherits Rectangle {
     callback clicked;
     // Keep this video ready in a background watch tab (videos only).
     callback open-in-new-tab;
+    // Other context-menu commands (videos only); Rust revalidates the row.
+    callback menu-action(CardAction);
     private property <bool> tabbable: root.enabled && root.item.kind == "Video";
     private property <bool> new-tab-click;
     private property <bool> channel: root.item.kind == "Channel";
@@ -358,6 +363,12 @@ export component VideoCard inherits Rectangle {
                 return accept;
             }
             if event.text == " " || event.text == Key.Return { root.clicked(); return accept; }
+            // The card's FocusScope is a sibling of the menu area, so the
+            // platform Menu key and Shift+F10 open it explicitly.
+            if event.text == Key.Menu || (event.text == Key.F10 && event.modifiers.shift) {
+                if root.tabbable { menu-area.show({ x: 12px, y: 12px }); }
+                return accept;
+            }
             return reject;
         }
     }
@@ -429,8 +440,18 @@ export component VideoCard inherits Rectangle {
             else { root.pointer-focus = true; focus.focus(); root.clicked(); }
         }
     }
-    if root.tabbable: ContextMenuArea {
+    menu-area := ContextMenuArea {
         width: root.width; height: root.height;
-        Menu { MenuItem { title: "Open in new tab"; activated => { root.open-in-new-tab(); } } }
+        enabled: root.tabbable;
+        Menu {
+            MenuItem { title: "Open in new tab"; activated => { root.open-in-new-tab(); } }
+            MenuSeparator {}
+            MenuItem { title: "Copy link"; activated => { root.menu-action(CardAction.copy-link); } }
+            MenuItem { title: "Copy title"; activated => { root.menu-action(CardAction.copy-title); } }
+            MenuItem { title: "Copy thumbnail"; activated => { root.menu-action(CardAction.copy-thumbnail); } }
+            MenuSeparator {}
+            MenuItem { title: "Open channel"; enabled: root.item.channel-known; activated => { root.menu-action(CardAction.open-channel); } }
+            MenuItem { title: "Add to local playlist"; activated => { root.menu-action(CardAction.add-to-playlist); } }
+        }
     }
 }

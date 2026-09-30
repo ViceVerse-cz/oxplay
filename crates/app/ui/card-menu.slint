@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Colors, CardAction } from "components.slint";
+
+// Video-card context-menu commands and their short confirmation (card_menu.rs).
+export global CardMenuUi {
+    // Brief feedback such as "Link copied"; Rust clears it after a moment.
+    in property <string> toast;
+    // Surface 0 is the feed/results grid, 1 the watch page's related list.
+    // Returns true only when the local-playlist dialog should open.
+    callback action(int, int, CardAction) -> bool;
+}
+
+// Transient, non-interactive confirmation above page content.
+export component CardToast inherits Rectangle {
+    visible: CardMenuUi.toast != "";
+    width: min(label.preferred-width + 32px, 520px);
+    height: 38px;
+    border-radius: 19px;
+    background: Colors.dark ? #f1f1f1 : #212121;
+    accessible-role: text;
+    accessible-label: CardMenuUi.toast;
+    accessible-live-region: polite;
+    label := Text {
+        x: 16px; width: parent.width - 32px; height: parent.height;
+        text: CardMenuUi.toast; color: Colors.dark ? #0f0f0f : #ffffff;
+        font-size: 13px; font-weight: 600;
+        horizontal-alignment: center; vertical-alignment: center; overflow: elide;
+    }
+}

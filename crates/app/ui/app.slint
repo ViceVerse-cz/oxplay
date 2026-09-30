@@ -15,6 +15,8 @@ import { MediaSlider, Spinner } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 import { TabStrip, TabsUi, WatchTab } from "tabs.slint";
 export { TabsUi, WatchTab }
+import { CardMenuUi, CardToast } from "card-menu.slint";
+export { CardMenuUi }
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 // Guide section chrome: a hairline divider and a compact section title.
 component GuideDivider inherits Rectangle {
@@ -79,13 +81,15 @@ export component App inherits Window {
     }
     public function show-captions() { root.prepare-native-overlay(); captions-popup.show(); }
     public function show-local-save() -> bool {
-        if SaveUi.begin() {
-            // A destination is a local draft for this frozen dialog snapshot,
-            // not an acknowledged save. Preserve it only for an in-flight save.
-            if !SaveUi.busy { root.save-destination = SaveUi.collections.length > 0 ? 0 : -1; }
-            root.prepare-native-overlay(); save-popup.show(); return true;
-        }
+        if SaveUi.begin() { root.open-local-save(); return true; }
         return false;
+    }
+    // Rust has already captured the dialog target (current video or a card).
+    function open-local-save() {
+        // A destination is a local draft for this frozen dialog snapshot,
+        // not an acknowledged save. Preserve it only for an in-flight save.
+        if !SaveUi.busy { root.save-destination = SaveUi.collections.length > 0 ? 0 : -1; }
+        root.prepare-native-overlay(); save-popup.show();
     }
     public function close-local-save() { save-popup.close(); }
     in property <bool> share-available;
@@ -868,6 +872,7 @@ export component App inherits Window {
                         focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                         clicked => { root.select-video(group.start + index); }
                         open-in-new-tab => { TabsUi.open(0, group.start + index); }
+                        menu-action(action) => { if CardMenuUi.action(0, group.start + index, action) { root.open-local-save(); } }
                     }
                     if group.items.length < root.columns: Rectangle { horizontal-stretch: root.columns - group.items.length; }
                 }
@@ -969,7 +974,7 @@ export component App inherits Window {
             Text { text: "The glow follows the picture's colours and is shown only with the dark theme. A larger glow reaches further beyond the video."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            Text { text: "Ctrl / Cmd + O  Open video file\nCtrl + Tab / Ctrl + Shift + Tab  Next / previous video tab\nCtrl / Cmd + W  Close the video tab\nMiddle-click, Cmd/Ctrl + click or right-click a video  Open in a new tab\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Ctrl / Cmd + O  Open video file\nCtrl + Tab / Ctrl + Shift + Tab  Next / previous video tab\nCtrl / Cmd + W  Close the video tab\nMiddle-click, Cmd/Ctrl + click or right-click a video  Open in a new tab\nRight-click, Menu key or Shift + F10 on a video  Copy link, title or thumbnail; open channel; save\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
@@ -1312,6 +1317,7 @@ export component App inherits Window {
                 focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                 clicked => { root.select-related(index); }
                 open-in-new-tab => { TabsUi.open(1, index); }
+                menu-action(action) => { if CardMenuUi.action(1, index, action) { root.open-local-save(); } }
             }
         }
     }
@@ -1327,6 +1333,11 @@ export component App inherits Window {
         allowed: !root.video-only && !root.native-video-child;
         preview(text) => { search.text = text; }
         activate(text) => { search.text = text; suggestions.close(); root.search(text); }
+    }
+    // Card-menu confirmation ("Link copied"), above feeds and the watch page.
+    if !root.video-only: CardToast {
+        x: root.sidebar-width + (root.width - root.sidebar-width - self.width) / 2;
+        y: root.height - self.height - 28px;
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.
