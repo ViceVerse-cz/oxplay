@@ -129,15 +129,19 @@ def build(binary: Path, helpers: Path, mpv_prefix: Path, version: str, tag: str,
         if candidate.stat().st_size > MAX_APPIMAGE:
             raise ValueError("The AppImage exceeds its size bound")
         candidate.chmod(0o755)
+        # The runtime answers --appimage-* itself (no FUSE mount); never set
+        # APPIMAGE_EXTRACT_AND_RUN here, or the option reaches the application.
+        runtime_env = {key: value for key, value in os.environ.items() if key != "APPIMAGE_EXTRACT_AND_RUN"}
         embedded = subprocess.check_output([str(candidate), "--appimage-updateinformation"], text=True,
-                                           env={**os.environ, "APPIMAGE_EXTRACT_AND_RUN": "1"})
+                                           env=runtime_env)
         if embedded.strip() != information:
             raise ValueError("AppImage update information did not survive packaging")
         zsync = candidate.with_name(candidate.name + ".zsync")
         if not zsync.is_file() or not 0 < zsync.stat().st_size <= 16 * 1024 * 1024:
             raise ValueError("AppImage zsync metadata is missing, empty or oversized")
         # Run only the pinned runtime's extraction, never AppRun or the application.
-        subprocess.run([str(candidate), "--appimage-extract"], cwd=temporary, stdout=subprocess.DEVNULL, check=True)
+        subprocess.run([str(candidate), "--appimage-extract"], cwd=temporary, stdout=subprocess.DEVNULL, check=True,
+                       env=runtime_env)
         extracted = temporary / "squashfs-root"
         for source in appdir.rglob("*"):
             if source.is_file():
