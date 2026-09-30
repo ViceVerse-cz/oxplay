@@ -84,6 +84,11 @@ struct Record {
     used: u64,
 }
 impl ArtworkCache {
+    /// A disabled cache has no writer; callers can skip PNG encoding entirely.
+    pub fn enabled(&self) -> bool {
+        self.limit != CacheLimit::Off
+    }
+
     /// An unavailable protected cache permits local clearing only when there is
     /// no cache to delete. Existing symlink/reparse ancestors are never followed;
     /// an existing cache requires the ordinary locked purge, not this check.

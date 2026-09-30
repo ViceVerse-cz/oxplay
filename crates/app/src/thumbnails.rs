@@ -504,13 +504,17 @@ fn cached(cache: &Cache, id: &VideoId, counters: &Counters) -> Option<image::Rgb
     pixels
 }
 fn store(cache: &Cache, id: &VideoId, pixels: &image::RgbaImage, counters: &Counters) {
+    let mut cache = cache.lock().unwrap();
+    let Some(cache) = cache.as_mut().filter(|cache| cache.enabled()) else {
+        return;
+    };
     // This is small normalized artwork, never decoded-video frame transport.
     let mut png = Cursor::new(Vec::new());
     let result = pixels
         .write_to(&mut png, image::ImageFormat::Png)
         .ok()
         .filter(|_| png.get_ref().len() <= 512 * 1024)
-        .and_then(|_| cache.lock().unwrap().as_mut()?.put(id, png.get_ref()).ok());
+        .and_then(|_| cache.put(id, png.get_ref()).ok());
     if result.is_none() {
         counters.cache_errors.fetch_add(1, Ordering::SeqCst);
     }
@@ -749,6 +753,56 @@ mod tests {
         assert!(identity == Some(id));
         assert_eq!(metrics.snapshot().remote_started, 0);
         assert_eq!(metrics.snapshot().cache_errors, 1);
+    }
+
+    #[test]
+    fn unavailable_artwork_writer_does_not_encode_or_count_a_write_error() {
+        let metrics = Counters::default();
+        // An empty image cannot be PNG-encoded. With no writer it is skipped.
+        store(
+            &Arc::new(Mutex::new(None)),
+            &VideoId::new("abcdefghijk").unwrap(),
+            &image::RgbaImage::new(0, 0),
+            &metrics,
+        );
+        assert_eq!(metrics.snapshot().cache_errors, 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn disabled_artwork_writer_is_skipped_and_enabled_writer_still_persists() {
+        use std::os::unix::fs::DirBuilderExt;
+        let path = std::env::temp_dir().join(format!(
+            "serein-artwork-encoding-test-{}",
+            std::process::id(),
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&path)
+            .unwrap();
+        let path = path.canonicalize().unwrap();
+        let cache = Arc::new(Mutex::new(Some(
+            ArtworkCache::open(&path.join("cache"), CacheLimit::Off).unwrap(),
+        )));
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let metrics = Counters::default();
+        store(&cache, &id, &image::RgbaImage::new(0, 0), &metrics);
+        assert_eq!(metrics.snapshot().cache_errors, 0);
+        cache
+            .lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .set_limit(CacheLimit::Mib32)
+            .unwrap();
+        store(&cache, &id, &image::RgbaImage::new(16, 9), &metrics);
+        assert_eq!(
+            cached(&cache, &id, &metrics).unwrap().dimensions(),
+            (320, 180)
+        );
+        assert_eq!(metrics.snapshot().cache_errors, 0);
+        drop(cache);
+        std::fs::remove_dir_all(path).unwrap();
     }
 
     #[cfg(unix)]
