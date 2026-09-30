@@ -119,8 +119,13 @@ The picture-in-picture button or **P** switches the same window into a borderles
 player with controls inside the video; **P**, **Escape** or closing that compact window restores browsing.
 It has been functionally exercised on the development Mac; native Wayland and
 the experimental child presenter keep it disabled. See [PiP details](docs/picture-in-picture.md).
-The account page explains session import and its risks before enabling an explicit
-file selection. Account playlist videos have a separate **Play with account**
+The account page explains session import and its risks before enabling it. On
+macOS you can **Sign in with your browser**: pick one installed browser profile
+(Chrome, Brave, Edge, Arc, Chromium, Vivaldi, Firefox or Safari) and Serein
+imports only that profile's YouTube/Google sign-in cookies, then runs the same
+identity verification and protected storage as the file import; Safari needs Full
+Disk Access, and the manual Netscape file import stays available as a fallback.
+Account playlist videos have a separate **Play with account**
 action backed by revocable scoped media transport. This path is implemented but
 real-account playback remains unverified; account captions/comments and private
 local storage are unavailable. Guest playback never escalates automatically. See [privacy](docs/privacy.md),

@@ -31,6 +31,21 @@ struct Cookie {
     name: String,
     value: Zeroizing<String>,
 }
+/// One candidate cookie from any source (Netscape line or browser database)
+/// before domain/name filtering and validation. `domain` may keep a leading
+/// dot; `subdomains` records whether it did (a domain cookie). Producers must
+/// already have restricted reads to YouTube/Google hosts; this type never
+/// widens that scope.
+pub(crate) struct RawCookie {
+    pub domain: String,
+    pub subdomains: bool,
+    pub path: String,
+    pub secure: bool,
+    pub http_only: bool,
+    pub expires: u64,
+    pub name: String,
+    pub value: Zeroizing<String>,
+}
 /// A parsed candidate credential jar. Possession does not mean account connection.
 /// Values are wiped on drop; transport libraries can retain temporary copies.
 pub struct SessionCookies {
@@ -114,53 +129,15 @@ impl SessionCookies {
             if fields.len() != 7 {
                 return Err(AccountError::InvalidCookieFile);
             }
-            let domain = fields[0].strip_prefix('.').unwrap_or(fields[0]);
-            if !domain.is_ascii() || domain.is_empty() || domain.contains(['/', ':', '@', '\\']) {
-                return Err(AccountError::InvalidCookieFile);
-            }
-            let domain = domain.to_ascii_lowercase();
             let subdomains = parse_bool(fields[1])?;
             let secure = parse_bool(fields[3])?;
             let expires = fields[4]
                 .parse::<u64>()
                 .map_err(|_| AccountError::InvalidCookieFile)?;
-            // Unrelated Google cookies are never imported or sent to YouTube.
-            if !["youtube.com", "www.youtube.com"].contains(&domain.as_str())
-                || !AUTH_NAMES.contains(&fields[5])
-            {
-                continue;
-            }
-            if !fields[2].starts_with('/')
-                || fields[2].len() > 2048
-                || !fields[2].is_ascii()
-                || fields[2]
-                    .bytes()
-                    .any(|c| c <= 0x20 || c == 0x7f || c == b';')
-            {
-                return Err(AccountError::InvalidCookieFile);
-            }
-            if fields[5].starts_with("__Secure-") && !secure {
-                return Err(AccountError::InvalidCookieFile);
-            }
-            if fields[6].is_empty()
-                || fields[6].len() > 4096
-                || fields[6]
-                    .bytes()
-                    .any(|c| !(0x21..=0x7e).contains(&c) || matches!(c, b';' | b'"' | b'\\' | b','))
-            {
-                return Err(AccountError::InvalidCookieFile);
-            }
-            if expires != 0 && expires <= now_unix {
-                continue;
-            }
-            let key = (domain.clone(), fields[2].to_owned(), fields[5].to_owned());
-            if retained.contains_key(&key) {
-                return Err(AccountError::AmbiguousCookies);
-            }
-            retained.insert(
-                key,
-                Cookie {
-                    domain,
+            Self::accept(
+                &mut retained,
+                RawCookie {
+                    domain: fields[0].to_owned(),
                     subdomains,
                     path: fields[2].to_owned(),
                     secure,
@@ -169,7 +146,8 @@ impl SessionCookies {
                     name: fields[5].to_owned(),
                     value: Zeroizing::new(fields[6].to_owned()),
                 },
-            );
+                now_unix,
+            )?;
         }
         let jar = Self {
             cookies: retained.into_values().collect(),
@@ -178,6 +156,92 @@ impl SessionCookies {
             return Err(AccountError::MissingSessionCookies);
         }
         Ok(jar)
+    }
+    /// Build a jar from cookies read out of a browser database. The producer
+    /// must already restrict reads to YouTube/Google hosts; this method applies
+    /// the exact same filtering, validation, expiry and de-duplication rules as
+    /// the Netscape file import, so both paths reach identical verification.
+    pub(crate) fn import_entries(
+        entries: Vec<RawCookie>,
+        now_unix: u64,
+    ) -> Result<Self, AccountError> {
+        if entries.len() > MAX_COOKIE_ENTRIES {
+            return Err(AccountError::ImportTooLarge);
+        }
+        let mut retained = BTreeMap::new();
+        for raw in entries {
+            Self::accept(&mut retained, raw, now_unix)?;
+        }
+        let jar = Self {
+            cookies: retained.into_values().collect(),
+        };
+        if jar.cookies.is_empty() {
+            return Err(AccountError::MissingSessionCookies);
+        }
+        Ok(jar)
+    }
+    /// Shared candidate handling. Non-YouTube hosts and non-session names are
+    /// silently skipped (never imported or sent to YouTube); malformed retained
+    /// candidates and duplicates are rejected with a typed error.
+    fn accept(
+        retained: &mut BTreeMap<(String, String, String), Cookie>,
+        raw: RawCookie,
+        now_unix: u64,
+    ) -> Result<(), AccountError> {
+        let domain = raw.domain.strip_prefix('.').unwrap_or(&raw.domain);
+        if !domain.is_ascii() || domain.is_empty() || domain.contains(['/', ':', '@', '\\']) {
+            return Err(AccountError::InvalidCookieFile);
+        }
+        let domain = domain.to_ascii_lowercase();
+        // Unrelated Google/browser cookies are never imported or sent to YouTube.
+        if !["youtube.com", "www.youtube.com"].contains(&domain.as_str())
+            || !AUTH_NAMES.contains(&raw.name.as_str())
+        {
+            return Ok(());
+        }
+        if !raw.path.starts_with('/')
+            || raw.path.len() > 2048
+            || !raw.path.is_ascii()
+            || raw
+                .path
+                .bytes()
+                .any(|c| c <= 0x20 || c == 0x7f || c == b';')
+        {
+            return Err(AccountError::InvalidCookieFile);
+        }
+        if raw.name.starts_with("__Secure-") && !raw.secure {
+            return Err(AccountError::InvalidCookieFile);
+        }
+        if raw.value.is_empty()
+            || raw.value.len() > 4096
+            || raw
+                .value
+                .bytes()
+                .any(|c| !(0x21..=0x7e).contains(&c) || matches!(c, b';' | b'"' | b'\\' | b','))
+        {
+            return Err(AccountError::InvalidCookieFile);
+        }
+        if raw.expires != 0 && raw.expires <= now_unix {
+            return Ok(());
+        }
+        let key = (domain.clone(), raw.path.clone(), raw.name.clone());
+        if retained.contains_key(&key) {
+            return Err(AccountError::AmbiguousCookies);
+        }
+        retained.insert(
+            key,
+            Cookie {
+                domain,
+                subdomains: raw.subdomains,
+                path: raw.path,
+                secure: raw.secure,
+                http_only: raw.http_only,
+                expires: raw.expires,
+                name: raw.name,
+                value: raw.value,
+            },
+        );
+        Ok(())
     }
     /// Explicit export of filtered credentials for the protected vault. Never log or persist plainly.
     pub fn export_for_vault(&self) -> Zeroizing<Vec<u8>> {
@@ -289,6 +353,51 @@ mod tests {
             1
         );
         assert!(!format!("{jar:?}").contains("synthetic"));
+    }
+    fn raw(domain: &str, name: &str, value: &str, expires: u64) -> RawCookie {
+        RawCookie {
+            domain: domain.to_owned(),
+            subdomains: domain.starts_with('.'),
+            path: "/".to_owned(),
+            secure: true,
+            http_only: false,
+            expires,
+            name: name.to_owned(),
+            value: Zeroizing::new(value.to_owned()),
+        }
+    }
+    #[test]
+    fn entry_import_filters_like_the_file_import() {
+        // Google and unrelated cookies are dropped; only unexpired YouTube
+        // session cookies survive, reaching the identical request path.
+        let jar = SessionCookies::import_entries(
+            vec![
+                raw(".youtube.com", "SAPISID", "synthetic", 200),
+                raw(".google.com", "SID", "excluded", 200),
+                raw(".youtube.com", "PREF", "excluded", 200),
+                raw(".youtube.com", "__Secure-3PSID", "expired", 99),
+            ],
+            100,
+        )
+        .unwrap();
+        assert_eq!(jar.cookies.len(), 1);
+        assert_eq!(
+            &*jar.request_values("/youtubei/v1/browse", 100).unwrap().0,
+            "SAPISID=synthetic"
+        );
+        assert!(!format!("{jar:?}").contains("synthetic"));
+        // No supported cookie at all is a typed error, never an empty jar.
+        assert!(matches!(
+            SessionCookies::import_entries(vec![raw(".google.com", "SID", "x", 200)], 100),
+            Err(AccountError::MissingSessionCookies)
+        ));
+        // A __Secure- cookie that is not marked secure is rejected, as in files.
+        let mut insecure = raw(".youtube.com", "__Secure-1PSID", "x", 200);
+        insecure.secure = false;
+        assert!(matches!(
+            SessionCookies::import_entries(vec![insecure], 100),
+            Err(AccountError::InvalidCookieFile)
+        ));
     }
     #[test]
     fn rejects_injection_duplicates_and_bad_flags() {

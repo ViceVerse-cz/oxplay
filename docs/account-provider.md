@@ -293,3 +293,64 @@ identity verification succeeds, Home switches to the account's
 recommendations; any other page is left alone. This deliberately relaxes the
 earlier "no network work on clean launch" rule only for this opt-in. It is
 unit-tested only; a real remembered account was not exercised.
+
+## Sign in with your browser (2026-09-30, macOS)
+
+An optional convenience path lets the user pick one installed browser profile
+and have Serein import ONLY that profile's YouTube/Google session cookies
+directly, instead of exporting a Netscape file by hand. It is the SPEC's
+explicitly-consented, narrowly-scoped browser-profile helper — not a browser
+scan or an implicit import.
+
+- **Consent and gating.** The same risk-consent checkbox governs both paths. The
+  "Sign in with <Browser>" action is enabled only when consent is checked and no
+  account operation is busy; the shared **Remember** checkbox still applies (and
+  still also means "sign in automatically at launch"). File import remains as an
+  "Other options" fallback below the browser block. Detection runs when the
+  account page opens (not at launch) and is filesystem metadata only: Chromium
+  profile folders that contain a cookie database (names from `Local State`),
+  Firefox `profiles.ini` entries whose `cookies.sqlite` exists, and Safari when
+  `/Applications/Safari.app` exists — Safari's protected container is not probed,
+  so no privacy prompt appears before the user acts. No cookie database, Keychain
+  item or network request is touched. A browser with several profiles is offered
+  per profile, default profile first; the selected profile id is re-validated
+  against fresh discovery before any read.
+- **What is read.** Only cookies whose host is
+  `youtube.com`/`.youtube.com`/`www.youtube.com` or
+  `google.com`/`.google.com`/`www.google.com`/`accounts.google.com` are read,
+  restricted by exact host match in the SQL query (Chromium/Firefox) or during
+  parsing (Safari, before the value is extracted) before any decryption; other
+  Google subdomains such as `mail.google.com` are never read. The Keychain is
+  queried only if an allowed row has an encrypted value. The rows are converted to the same in-memory
+  `SessionCookies` the Netscape parser produces and run through the identical
+  filtering, validation, expiry, de-duplication, identity verification, consent
+  gating, protected `Remember` storage and typed error handling as file import.
+  As with file import, only the YouTube auth cookies survive that shared filter;
+  Google-domain cookies are read but dropped.
+- **Supported browsers/formats (macOS).** Chromium family — Google Chrome,
+  Brave, Microsoft Edge, Arc, Chromium, Vivaldi — under
+  `~/Library/Application Support/<vendor>/<Profile>/[Network/]Cookies`
+  (AES-128-CBC, key = `PBKDF2-HMAC-SHA1(<Vendor> Safe Storage password,
+  "saltysalt", 1003, 16 bytes)`, IV = 16 spaces, `v10` prefix; at meta
+  `version >= 24` a 32-byte SHA-256 host prefix is stripped). Firefox —
+  `profiles.ini` → `cookies.sqlite` (plaintext; the DB and its `-wal` are copied
+  to a private temp dir before opening because the browser locks it). Safari —
+  `~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies`
+  (binary format; requires Full Disk Access — a permission error tells the user
+  how to grant it). Other platforms compile and report "not supported yet".
+- **Secrets.** The Keychain password, derived key and decrypted values are held
+  in zeroizing buffers. Keychain access uses `security-framework`; macOS shows
+  its own access prompt and denial/cancellation is a typed permission error with
+  no plaintext fallback. Keychain access is isolated behind a small trait so
+  tests inject a synthetic password; the real Keychain is never used in CI.
+- **Validation.** Chromium decryption (v10, with and without the 32-byte host
+  hash), host filtering before decryption/Keychain (other sites, other Google
+  subdomains and look-alike hosts never read), expired-cookie handling, Keychain
+  denial, Firefox fixture DBs (including uncheckpointed WAL data while a
+  "browser" connection stays open), Safari binarycookies fixtures, profile
+  discovery and default-first ordering from a synthetic tree, permission-denied
+  and corrupt-source mapping, and app-side consent gating/choice mapping are
+  covered by synthetic-only tests. No real browser session, profile, Keychain
+  item or human credential was used; the real Keychain prompt, Full Disk Access
+  behavior, current browser schema versions and live account acceptance remain
+  unverified.
