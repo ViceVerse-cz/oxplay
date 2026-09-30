@@ -10,7 +10,7 @@ import { JumpDialog, JumpUi } from "jump.slint";
 import { SearchField } from "search-field.slint";
 import { SearchSuggestions, SearchSuggestionsUi, SearchSuggestion } from "search-suggestions.slint";
 export { SearchSuggestionsUi, SearchSuggestion }
-import { MediaSlider } from "player-controls.slint";
+import { MediaSlider, Spinner } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 // Guide section chrome: a hairline divider and a compact section title.
@@ -214,6 +214,20 @@ export component App inherits Window {
     in property <float> pending-seek-position: -1;
     in property <float> duration: 1;
     in property <bool> paused: true;
+    // Started playback stalled on the network (cache refill or seek).
+    in property <bool> buffering;
+    callback close-player();
+    // Brief centre acknowledgement of a user play/pause, like YouTube's.
+    private property <bool> flash-on;
+    private property <bool> flash-play;
+    function user-toggle-pause() {
+        if root.loaded && !root.playback-failed && !root.watch-loading {
+            root.flash-play = root.paused;
+            root.flash-on = true;
+            flash-timer.running = true;
+        }
+        root.toggle-pause();
+    }
     in property <bool> busy;
     in property <bool> has-more;
     in property <bool> has-previous;
@@ -448,6 +462,10 @@ export component App inherits Window {
         width: root.width - self.x; height: root.height - self.y;
         background: Colors.canvas;
     }
+    flash-timer := Timer {
+        interval: 80ms; running: false;
+        triggered => { root.flash-on = false; self.running = false; }
+    }
     shortcuts := FocusScope {
     x: 0; y: 0; width: root.width; height: root.height;
     // Neutral startup focus belongs to the stable shared shell. Search keeps
@@ -474,7 +492,7 @@ export component App inherits Window {
         if event.modifiers.control || event.modifiers.alt || event.modifiers.meta { return reject; }
         if event.text == "/" { if !root.picture-in-picture && !root.native-video-child { search.focus(); } return accept; }
         if root.watching || (root.mini-player-active && focus.has-focus) {
-            if event.text == " " || event.text == "k" { root.toggle-pause(); return accept; }
+            if event.text == " " || event.text == "k" { root.user-toggle-pause(); return accept; }
             if event.text == "g" { root.show-jump(); return accept; }
             if event.text == "j" { root.relative-seek(-10); return accept; }
             if event.text == "l" { root.relative-seek(10); return accept; }
@@ -903,7 +921,7 @@ export component App inherits Window {
                     mouse-cursor: root.picture-in-picture ? move : pointer;
                     clicked => {
                         if !self.moved-during-press && root.loaded && !root.watch-loading && !root.playback-failed {
-                            focus.focus(); root.toggle-pause();
+                            focus.focus(); root.user-toggle-pause();
                         }
                     }
                     double-clicked => { if root.mini-player-active { root.navigate(2); } root.fullscreen(); }
@@ -926,6 +944,37 @@ export component App inherits Window {
                 }
             }
             Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; visible: root.loaded && !root.watch-loading; }
+            // Fades and grows out after a user play/pause; invisible at rest.
+            Rectangle {
+                width: root.compact-video && !root.video-only ? 52px : 68px; height: self.width;
+                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+                border-radius: self.width / 2; background: #000000a6;
+                opacity: root.flash-on ? 1 : 0;
+                transform-scale-x: root.flash-on ? 100% : 145%;
+                transform-scale-y: root.flash-on ? 100% : 145%;
+                animate opacity { duration: 420ms; easing: ease-out; }
+                animate transform-scale-x, transform-scale-y { duration: 420ms; easing: ease-out; }
+                Image {
+                    width: parent.width * 0.44; height: self.width;
+                    x: (parent.width - self.width) / 2 + (root.flash-play ? parent.width * 0.03 : 0px); y: (parent.height - self.height) / 2;
+                    source: root.flash-play ? @image-url("icons/play.svg") : @image-url("icons/pause.svg"); colorize: #ffffff;
+                }
+            }
+            if root.buffering && !root.watch-loading && !root.playback-failed: Spinner {
+                width: root.compact-video && !root.video-only ? 40px : 56px; height: self.width;
+                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+            }
+            // The in-app mini-player can be dismissed, stopping playback.
+            if root.mini-player-active: Rectangle {
+                x: parent.width - self.width - 8px; y: 8px; width: 32px; height: 32px;
+                border-radius: 16px; background: #00000099;
+                visible: root.controls-visible || root.paused || root.controls-held;
+                Action {
+                    width: parent.width; height: parent.height; on-video: true; compact: true;
+                    icon-size: 18px; icon-name: "x"; label: "Close player";
+                    clicked => { root.close-player(); }
+                }
+            }
             if root.watch-loading || root.watch-load-error != "" || (root.video-starting && !root.playback-failed): Rectangle {
                 x: 0px; y: 0px; width: parent.width; height: parent.height; background: #121212;
                 VerticalLayout {
@@ -940,8 +989,8 @@ export component App inherits Window {
                     }
                     Text { text: root.watch-load-error != "" ? "Couldn’t open this video" : root.watch-loading ? "Loading video…" : "Starting playback…"; color: #eeeeee; font-size: 18px; font-weight: 600; horizontal-alignment: center; wrap: word-wrap; }
                     if root.watch-load-error != "": Text { text: root.watch-load-error; color: #bbbbbb; font-size: 13px; horizontal-alignment: center; wrap: word-wrap; }
-                    if root.watch-loading: HorizontalLayout { alignment: center; height: 4px;
-                        Rectangle { height: 4px; width: min(200px, parent.width); horizontal-stretch: 0; border-radius: 2px; background: #333333; }
+                    if root.watch-load-error == "": HorizontalLayout { alignment: center; height: 36px;
+                        Spinner { width: 36px; height: 36px; thickness: 3px; tint: #bbbbbb; }
                     }
                     if root.watch-load-error != "" && (root.watch-load-account || root.recovery-available): HorizontalLayout { height: 36px; spacing: 8px; alignment: center;
                         Action { on-video: true; variant: ActionVariant.secondary; label: root.watch-load-account ? "Retry" : root.recovery-ready ? "Retry" : "Retry shortly"; width: 128px; height: 36px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && (root.watch-load-account ? root.account-connected && !root.account-pending : root.recovery-ready); clicked => { root.watch-retry(); } }
@@ -968,7 +1017,7 @@ export component App inherits Window {
                 seek-control := MediaSlider { x: 12px; y: parent.height - 70px; width: parent.width - 24px; height: 24px; accessible-label: "Playback position in seconds"; enabled: root.loaded && !root.playback-failed; maximum: root.duration; value: root.loaded && root.pending-seek-position >= 0 ? root.pending-seek-position : root.position; changed(value) => { root.seek(value); } }
                 HorizontalLayout {
                     x: 8px; y: parent.height - 48px; width: parent.width - 16px; height: 40px; spacing: 2px;
-                    play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.toggle-pause(); } }
+                    play-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.playback-failed || root.paused ? "play" : "pause"; label: root.can-retry-playback ? "Retry from start" : root.playback-failed ? "Playback unavailable" : root.paused ? "Play" : "Pause"; enabled: root.loaded && (!root.playback-failed || (root.can-retry-playback && root.account-retry-ready && !root.busy && !root.account-busy && (!root.recovery-available || root.recovery-ready))); clicked => { root.user-toggle-pause(); } }
 
                     mute-control := Action { on-video: true; width: 40px; horizontal-stretch: 0; compact: true; icon-name: root.mute-known && root.muted ? "volume-x" : "volume-2"; label: !root.mute-known ? "Audio mute state unavailable" : root.muted ? "Unmute audio" : "Mute audio"; enabled: root.mute-known; checkable: true; selected: root.mute-known && root.muted; clicked => { root.mute(); } }
                     // Compact PiP keeps mute; full volume remains in settings.

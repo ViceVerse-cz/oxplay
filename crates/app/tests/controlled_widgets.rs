@@ -795,3 +795,26 @@ fn home_source_chips_exist_only_for_a_connected_account_and_follow_rust_acknowle
     settle();
     assert!(absent(&app, "Recommended"), "chips are Home-only");
 }
+
+#[test]
+fn close_player_exists_only_in_the_mini_player_and_requests_a_stop() {
+    let app = app();
+    let closes = Rc::new(Cell::new(0));
+    let output = closes.clone();
+    app.on_close_player(move || output.set(output.get() + 1));
+    app.set_loaded(true);
+    app.set_controls_visible(true);
+    app.set_page(2);
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Close player")
+            .all(|element| element.accessible_enabled().is_none()),
+        "The full watch page has no close control"
+    );
+    app.set_page(0);
+    settle();
+    assert!(app.get_mini_player_active());
+    element(&app, "Close player").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(closes.get(), 1);
+}

@@ -187,6 +187,15 @@ fn update(app: &App, state: &Rc<UiState>) {
     if app.get_video_starting() != video_starting {
         app.set_video_starting(video_starting);
     }
+    // A started video waiting on the network (cache stall or seek) shows the
+    // player spinner; the first frame keeps its own starting overlay.
+    let buffering = app.get_loaded()
+        && !video_starting
+        && !snapshot.paused
+        && snapshot.state == serein_media::PlaybackState::Buffering;
+    if app.get_buffering() != buffering {
+        app.set_buffering(buffering);
+    }
     let pending_seek = state
         .player
         .pending_seek_target()
@@ -404,6 +413,52 @@ fn request_windowed(app: &App) {
     app.window()
         .with_winit_window(|window| window.set_fullscreen(None));
     app.set_fullscreen_active(false);
+}
+
+/// Explicit "close player" from the mini-player: stop the one media load and
+/// retire every watch-scoped presentation, leaving browsing untouched.
+fn close_player(app: &App, state: &Rc<UiState>) {
+    if app.get_account_playback_active() {
+        // Owns lease teardown, the stop command and its watch-scoped state.
+        account_playback::clear(app, state);
+        return;
+    }
+    guest_playback::cancel(app, state);
+    watch_loading::cancel_guest(app, state);
+    local_media_ui::cancel(app, state);
+    channel_avatar::clear(app, state);
+    state.clock_ui.invalidate();
+    if let Err(error) = state.player.stop() {
+        watch_loading::stop_failed(state);
+        app.set_status(error.to_string().into());
+        return;
+    }
+    if playback_ui::clear_local(state) {
+        app.set_busy(false);
+    }
+    caption_ui::clear_local(app, state);
+    chapters_ui::clear(app, state);
+    comments_ui::clear_local(app, state);
+    watch_meta::clear(state);
+    share_ui::clear(app, state);
+    state.current_video.borrow_mut().take();
+    state.progress.stop();
+    app.set_loaded(false);
+    app.set_buffering(false);
+    app.set_remote_video(false);
+    app.set_video_texture(slint::Image::default());
+    app.set_video_title("".into());
+    app.set_video_channel("".into());
+    apply_clock(
+        app,
+        state,
+        clock_ui::Values {
+            position: 0.,
+            duration: 0.,
+        },
+    );
+    app.set_duration(1.);
+    app.set_status("Player closed.".into());
 }
 
 fn exit_picture_in_picture(app: &App, state: &UiState) {
@@ -1349,6 +1404,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.on_watch_visibility_changed(move || {
         if let Some(app) = weak.upgrade() {
             update(&app, &s);
+        }
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_close_player(move || {
+        if let Some(app) = weak.upgrade()
+            && app.get_mini_player_active()
+        {
+            close_player(&app, &s);
         }
     });
     let weak = app.as_weak();

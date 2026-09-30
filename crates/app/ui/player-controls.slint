@@ -79,3 +79,17 @@ export component MediaSlider inherits Rectangle {
         moved => { if root.dragging { root.seek-pointer(); } }
     }
 }
+// Indeterminate ring shown only while playback is actually waiting. The
+// element exists only for that state, so no redraw loop outlives the wait.
+export component Spinner inherits Rectangle {
+    in property <color> tint: #ffffff;
+    in property <length> thickness: 4px;
+    width: 48px; height: 48px;
+    Path {
+        width: parent.width; height: parent.height;
+        viewbox-width: 48; viewbox-height: 48;
+        stroke: root.tint; stroke-width: root.thickness; fill: transparent;
+        commands: "M 24 3 A 21 21 0 1 1 3 24";
+        transform-rotation: (animation-tick() / 1ms) * 0.4deg;
+    }
+}

@@ -43,3 +43,18 @@ retained watch properties/model, settings selection and both creator hit targets
 They use labeled synthetic metadata and mocked commands; no network, native GPU,
 media continuity, OS drag or accessibility qualification is implied. Native
 functional checks remain outstanding. Performance/usage testing was not run.
+
+## Close, play/pause feedback and buffering (2026-09-30)
+
+The mini-player shows a **Close player** button (top-right, visible with the
+controls or while paused). It stops the single media load and retires
+watch-scoped captions, chapters, comments, share and metadata state; browsing
+and its catalog are untouched, and account playback uses the existing account
+teardown. A user play/pause (video click, play button, Space/K) briefly shows
+the resulting action's icon in the centre, fading and growing out over 420 ms.
+While started playback is stalled on the network (`Buffering`, not paused) a
+centre spinner appears; the loading overlay uses the same spinner. Both
+animations exist only for those states, so no redraw loop outlives them.
+Reduced-motion preferences are not yet observed. `close_player` is covered by a
+compiled-Slint test for visibility and dispatch; the stop sequence itself was
+not exercised natively because this capture session cannot present video.
