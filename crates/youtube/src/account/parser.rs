@@ -5,6 +5,13 @@ use std::collections::HashSet;
 const MAX_NODES: usize = 50_000;
 const MAX_ITEMS: usize = 200;
 fn nodes(value: &Value) -> Result<Vec<(&str, &Value)>, AccountError> {
+    nodes_except(value, &[])
+}
+/// Bounded traversal that does not descend into the values of `skip` keys.
+fn nodes_except<'a>(
+    value: &'a Value,
+    skip: &[&str],
+) -> Result<Vec<(&'a str, &'a Value)>, AccountError> {
     let mut stack = vec![value];
     let mut result = Vec::new();
     let mut visited = 0;
@@ -32,7 +39,9 @@ fn nodes(value: &Value) -> Result<Vec<(&str, &Value)>, AccountError> {
                 }
                 for (key, value) in map {
                     result.push((key.as_str(), value));
-                    stack.push(value);
+                    if !skip.contains(&key.as_str()) {
+                        stack.push(value);
+                    }
                 }
             }
             Value::Array(values) => {
@@ -361,6 +370,284 @@ pub(super) fn action_rejected(value: &Value) -> bool {
             })
             .unwrap_or(true)
 }
+/// Shelves (Shorts, news, posts), Shorts items and the topic-chip bar are not
+/// part of the recommendation grid; their subtrees are neither traversed nor shown.
+const FEED_SKIP: &[&str] = &[
+    "richSectionRenderer",
+    "reelShelfRenderer",
+    "richShelfRenderer",
+    "reelItemRenderer",
+    "shortsLockupViewModel",
+    "feedFilterChipBarRenderer",
+];
+enum FeedEntry {
+    Video(VideoSummary),
+    /// Deliberately omitted (advertising or Shorts); not an interpretation failure.
+    Filtered,
+    Unsupported,
+}
+/// Signed-in `FEwhat_to_watch` browse or its continuation. Only the direct item
+/// arrays of the reviewed grid containers are read; nested navigation commands,
+/// chip continuations and shelves never become items or cursors.
+pub(super) fn recommendations(
+    value: &Value,
+    generation: u64,
+) -> Result<AccountPage<VideoSummary>, AccountError> {
+    let mut items = Vec::new();
+    let mut seen = HashSet::new();
+    let mut partial = false;
+    let mut saw_feed = false;
+    let mut tokens = HashSet::new();
+    for (key, container) in nodes_except(value, FEED_SKIP)? {
+        let entries = match key {
+            "richGridRenderer" => container.get("contents"),
+            "appendContinuationItemsAction" | "reloadContinuationItemsCommand" => {
+                container.get("continuationItems")
+            }
+            _ => continue,
+        };
+        saw_feed = true;
+        let Some(entries) = entries.and_then(Value::as_array) else {
+            continue;
+        };
+        for entry in entries {
+            if crate::is_promoted(entry) || has_ad_badge(entry) {
+                continue;
+            }
+            if let Some(next) = entry.get("continuationItemRenderer") {
+                match next
+                    .pointer("/continuationEndpoint/continuationCommand/token")
+                    .and_then(Value::as_str)
+                {
+                    Some(token) => {
+                        if token.is_empty()
+                            || token.len() > 16_384
+                            || token.chars().any(char::is_control)
+                        {
+                            return Err(AccountError::UnsupportedResponse);
+                        }
+                        tokens.insert(token.to_owned());
+                    }
+                    None => partial = true,
+                }
+                continue;
+            }
+            if FEED_SKIP.iter().any(|key| entry.get(*key).is_some()) {
+                continue;
+            }
+            let Some(content) = entry.pointer("/richItemRenderer/content") else {
+                partial = true;
+                continue;
+            };
+            match feed_entry(content) {
+                FeedEntry::Video(video) => {
+                    if seen.insert(video.id.clone()) {
+                        items.push(video);
+                    }
+                }
+                FeedEntry::Filtered => {}
+                FeedEntry::Unsupported => partial = true,
+            }
+            if items.len() > MAX_ITEMS {
+                return Err(AccountError::ResponseTooLarge);
+            }
+        }
+    }
+    if !saw_feed && !recognized_empty(value)? {
+        return Err(AccountError::UnsupportedResponse);
+    }
+    if tokens.len() > 1 {
+        return Err(AccountError::UnsupportedResponse);
+    }
+    Ok(AccountPage {
+        items,
+        next: tokens.into_iter().next().map(|token| AccountCursor {
+            token,
+            generation,
+            kind: PageKind::Recommendations,
+        }),
+        partial,
+    })
+}
+fn has_ad_badge(entry: &Value) -> bool {
+    entry
+        .pointer("/richItemRenderer/content/videoRenderer/badges")
+        .and_then(Value::as_array)
+        .is_some_and(|badges| {
+            badges.iter().take(16).any(|badge| {
+                badge
+                    .pointer("/metadataBadgeRenderer/style")
+                    .and_then(Value::as_str)
+                    == Some("BADGE_STYLE_TYPE_AD")
+            })
+        })
+}
+fn feed_entry(content: &Value) -> FeedEntry {
+    if let Some(video) = content.get("videoRenderer") {
+        video_renderer(video)
+    } else if let Some(lockup) = content.get("lockupViewModel") {
+        video_lockup(lockup)
+    } else if content.get("reelItemRenderer").is_some()
+        || content.get("shortsLockupViewModel").is_some()
+    {
+        FeedEntry::Filtered
+    } else {
+        FeedEntry::Unsupported
+    }
+}
+fn video_renderer(video: &Value) -> FeedEntry {
+    if video
+        .pointer("/navigationEndpoint/reelWatchEndpoint")
+        .is_some()
+    {
+        return FeedEntry::Filtered;
+    }
+    let Some(id) = video
+        .get("videoId")
+        .and_then(Value::as_str)
+        .and_then(|id| VideoId::new(id).ok())
+    else {
+        return FeedEntry::Unsupported;
+    };
+    if let Some(target) = video.pointer("/navigationEndpoint/watchEndpoint/videoId")
+        && target.as_str() != Some(id.as_str())
+    {
+        return FeedEntry::Unsupported;
+    }
+    let byline = ["ownerText", "shortBylineText", "longBylineText"]
+        .iter()
+        .find_map(|key| video.get(*key));
+    FeedEntry::Video(VideoSummary {
+        id,
+        title: title_or_default(text(video.get("title"))),
+        channel: channel_or_default(text(byline)),
+        channel_id: byline
+            .and_then(|b| b.pointer("/runs/0/navigationEndpoint/browseEndpoint/browseId"))
+            .and_then(Value::as_str)
+            .and_then(|id| ChannelId::new(id).ok()),
+        duration: duration_text(&text(video.get("lengthText"))),
+        thumbnail_url: thumbnail(video.pointer("/thumbnail/thumbnails")),
+    })
+}
+fn video_lockup(lockup: &Value) -> FeedEntry {
+    if lockup.get("contentType").and_then(Value::as_str) != Some("LOCKUP_CONTENT_TYPE_VIDEO") {
+        // Mixes, playlists and other lockups are not playable single videos here.
+        return FeedEntry::Unsupported;
+    }
+    let command = lockup.pointer("/rendererContext/commandContext/onTap/innertubeCommand");
+    if command.is_some_and(|c| c.get("reelWatchEndpoint").is_some()) {
+        return FeedEntry::Filtered;
+    }
+    let Some(id) = lockup
+        .get("contentId")
+        .and_then(Value::as_str)
+        .and_then(|id| VideoId::new(id).ok())
+    else {
+        return FeedEntry::Unsupported;
+    };
+    if let Some(target) = command.and_then(|c| c.pointer("/watchEndpoint/videoId"))
+        && target.as_str() != Some(id.as_str())
+    {
+        return FeedEntry::Unsupported;
+    }
+    let metadata = lockup.pointer("/metadata/lockupMetadataViewModel");
+    let duration = lockup
+        .pointer("/contentImage/thumbnailViewModel/overlays")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .take(8)
+        .flat_map(|overlay| {
+            overlay
+                .pointer("/thumbnailOverlayBadgeViewModel/thumbnailBadges")
+                .or_else(|| overlay.pointer("/thumbnailBottomOverlayViewModel/badges"))
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .take(8)
+        })
+        .find_map(|badge| {
+            duration_text(
+                badge
+                    .pointer("/thumbnailBadgeViewModel/text")
+                    .and_then(Value::as_str)?,
+            )
+        });
+    FeedEntry::Video(VideoSummary {
+        id,
+        title: title_or_default(text(metadata.and_then(|m| m.get("title")))),
+        channel: channel_or_default(text(metadata.and_then(|m| {
+            m.pointer("/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text")
+        }))),
+        channel_id: metadata
+            .and_then(|m| {
+                m.pointer("/image/decoratedAvatarViewModel/rendererContext/commandContext/onTap/innertubeCommand/browseEndpoint/browseId")
+            })
+            .and_then(Value::as_str)
+            .and_then(|id| ChannelId::new(id).ok()),
+        duration,
+        thumbnail_url: thumbnail(lockup.pointer("/contentImage/thumbnailViewModel/image/sources")),
+    })
+}
+fn title_or_default(title: String) -> String {
+    if title.trim().is_empty() {
+        "Untitled video".into()
+    } else {
+        title
+    }
+}
+fn channel_or_default(channel: String) -> String {
+    if channel.trim().is_empty() {
+        "Unknown channel".into()
+    } else {
+        channel.chars().take(200).collect()
+    }
+}
+/// Card-sized candidate from a bounded list; only reviewed HTTPS artwork hosts.
+fn thumbnail(value: Option<&Value>) -> Option<String> {
+    let mut best: Option<(u64, &str)> = None;
+    for candidate in value?.as_array()?.iter().take(16) {
+        let Some(url) = candidate.get("url").and_then(Value::as_str) else {
+            continue;
+        };
+        let width = candidate.get("width").and_then(Value::as_u64).unwrap_or(0);
+        let better = match best {
+            None => true,
+            Some((current, _)) if current > 720 => width < current,
+            Some((current, _)) => width <= 720 && width > current,
+        };
+        if better {
+            best = Some((width, url));
+        }
+    }
+    let url = best?.1;
+    if url.len() > 2048 {
+        return None;
+    }
+    match url.strip_prefix("//") {
+        Some(rest) => crate::safe_thumbnail(&format!("https://{rest}")),
+        None => crate::safe_thumbnail(url),
+    }
+}
+/// `M:SS` or `H:MM:SS`; anything else (LIVE, localized words) is unknown.
+fn duration_text(value: &str) -> Option<std::time::Duration> {
+    let parts: Vec<_> = value.trim().split(':').collect();
+    if !(2..=3).contains(&parts.len()) {
+        return None;
+    }
+    let mut total = 0u64;
+    for (index, part) in parts.iter().enumerate() {
+        if part.is_empty() || part.len() > 4 || !part.bytes().all(|b| b.is_ascii_digit()) {
+            return None;
+        }
+        let number: u64 = part.parse().ok()?;
+        if index > 0 && (number >= 60 || part.len() != 2) {
+            return None;
+        }
+        total = total * 60 + number;
+    }
+    (total <= 31_536_000).then(|| std::time::Duration::from_secs(total))
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,6 +698,226 @@ mod tests {
         let page = playlists(&value, 1).unwrap();
         assert_eq!(page.items[0].title, "Synthetic playlist");
         assert!(page.items[0].editable.is_none());
+    }
+    // TEST FIXTURES below are small synthetic shapes written for these tests.
+    // They contain no real account, video, channel or session data.
+    fn synthetic_video(id: &str) -> Value {
+        json!({"richItemRenderer":{"content":{"videoRenderer":{
+            "videoId": id,
+            "navigationEndpoint": {"watchEndpoint": {"videoId": id}},
+            "title": {"runs": [{"text": "Synthetic recommendation "}, {"text": id}]},
+            "ownerText": {"runs": [{"text": "Synthetic channel", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCabcdefghijklmnopqrstuv"}}}]},
+            "lengthText": {"simpleText": "1:02:03"},
+            "thumbnail": {"thumbnails": [
+                {"url": "https://i.ytimg.com/vi/synthetic/default.jpg", "width": 120},
+                {"url": "https://i.ytimg.com/vi/synthetic/hqdefault.jpg?sqp=synthetic", "width": 480},
+                {"url": "https://i.ytimg.com/vi/synthetic/maxresdefault.jpg", "width": 1280}
+            ]}
+        }}}})
+    }
+    fn continuation_item(token: &str) -> Value {
+        json!({"continuationItemRenderer":{"continuationEndpoint":{"continuationCommand":{"token": token}}}})
+    }
+    #[test]
+    fn synthetic_home_grid_yields_videos_and_one_scoped_continuation() {
+        let response = json!({
+            "responseContext": {"mainAppWebResponseContext": {"loggedOut": false}},
+            "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"content": {"richGridRenderer": {
+                "header": {"feedFilterChipBarRenderer": {"contents": [{"chipCloudChipRenderer": {
+                    "navigationEndpoint": {"continuationCommand": {"token": "synthetic-chip-token"}}}}]}},
+                "contents": [
+                    synthetic_video("aaaaaaaaaaa"),
+                    {"richItemRenderer": {"content": {"adSlotRenderer": {"synthetic": true}}}},
+                    {"richSectionRenderer": {"content": {"richShelfRenderer": {"contents": [
+                        synthetic_video("sssssssssss"), continuation_item("synthetic-shelf-token")]}}}},
+                    {"richItemRenderer": {"content": {"reelItemRenderer": {"videoId": "rrrrrrrrrrr"}}}},
+                    synthetic_video("bbbbbbbbbbb"),
+                    synthetic_video("aaaaaaaaaaa"),
+                    continuation_item("synthetic-feed-token")
+                ]
+            }}}}]}}
+        });
+        let page = recommendations(&response, 9).unwrap();
+        let ids: Vec<_> = page.items.iter().map(|v| v.id.as_str()).collect();
+        assert_eq!(ids, ["aaaaaaaaaaa", "bbbbbbbbbbb"]);
+        assert!(!page.partial, "ads and Shorts are filtered, not failures");
+        let video = &page.items[0];
+        assert_eq!(video.title, "Synthetic recommendation aaaaaaaaaaa");
+        assert_eq!(video.channel, "Synthetic channel");
+        assert_eq!(
+            video.channel_id.as_ref().map(ChannelId::as_str),
+            Some("UCabcdefghijklmnopqrstuv")
+        );
+        assert_eq!(video.duration, Some(std::time::Duration::from_secs(3723)));
+        assert_eq!(
+            video.thumbnail_url.as_deref(),
+            Some("https://i.ytimg.com/vi/synthetic/hqdefault.jpg?sqp=synthetic")
+        );
+        let cursor = page.next.unwrap();
+        assert_eq!(cursor.token, "synthetic-feed-token");
+        assert_eq!(cursor.generation, 9);
+        assert!(cursor.kind == PageKind::Recommendations);
+    }
+    #[test]
+    fn promoted_metadata_and_ad_badges_are_excluded_from_recommendations() {
+        let mut badged = synthetic_video("ccccccccccc");
+        badged["richItemRenderer"]["content"]["videoRenderer"]["badges"] =
+            json!([{"metadataBadgeRenderer": {"style": "BADGE_STYLE_TYPE_AD"}}]);
+        let mut metadata = synthetic_video("ddddddddddd");
+        metadata["richItemRenderer"]["content"]["videoRenderer"]["adMetadata"] = json!({});
+        let response = json!({"richGridRenderer": {"contents": [
+            badged,
+            metadata,
+            {"richItemRenderer": {"content": {"promotedVideoRenderer": {"videoId": "eeeeeeeeeee"}}}},
+            {"richItemRenderer": {"content": {"inFeedAdLayoutRenderer": {}}}},
+            synthetic_video("fffffffffff")
+        ]}});
+        let page = recommendations(&response, 0).unwrap();
+        assert_eq!(page.items.len(), 1);
+        assert_eq!(page.items[0].id.as_str(), "fffffffffff");
+        assert!(page.next.is_none());
+    }
+    #[test]
+    fn lockup_view_models_are_normalized_and_non_video_lockups_are_partial() {
+        let lockup = json!({"richItemRenderer": {"content": {"lockupViewModel": {
+            "contentId": "ggggggggggg",
+            "contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+            "rendererContext": {"commandContext": {"onTap": {"innertubeCommand": {"watchEndpoint": {"videoId": "ggggggggggg"}}}}},
+            "contentImage": {"thumbnailViewModel": {
+                "image": {"sources": [{"url": "//i.ytimg.com/vi/synthetic/lockup.jpg", "width": 360}]},
+                "overlays": [{"thumbnailOverlayBadgeViewModel": {"thumbnailBadges": [{"thumbnailBadgeViewModel": {"text": "12:34"}}]}}]
+            }},
+            "metadata": {"lockupMetadataViewModel": {
+                "title": {"content": "Synthetic lockup video"},
+                "image": {"decoratedAvatarViewModel": {"rendererContext": {"commandContext": {"onTap": {"innertubeCommand": {"browseEndpoint": {"browseId": "UCzyxwvutsrqponmlkjihgfe"}}}}}}},
+                "metadata": {"contentMetadataViewModel": {"metadataRows": [{"metadataParts": [{"text": {"content": "Synthetic lockup channel"}}]}]}}
+            }}
+        }}}});
+        let short = json!({"richItemRenderer": {"content": {"lockupViewModel": {
+            "contentId": "hhhhhhhhhhh", "contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+            "rendererContext": {"commandContext": {"onTap": {"innertubeCommand": {"reelWatchEndpoint": {"videoId": "hhhhhhhhhhh"}}}}}
+        }}}});
+        let mix = json!({"richItemRenderer": {"content": {"lockupViewModel": {
+            "contentId": "RDsynthetic", "contentType": "LOCKUP_CONTENT_TYPE_PLAYLIST"
+        }}}});
+        let page = recommendations(
+            &json!({"richGridRenderer": {"contents": [lockup, short, mix]}}),
+            0,
+        )
+        .unwrap();
+        assert_eq!(page.items.len(), 1);
+        let video = &page.items[0];
+        assert_eq!(video.id.as_str(), "ggggggggggg");
+        assert_eq!(video.title, "Synthetic lockup video");
+        assert_eq!(video.channel, "Synthetic lockup channel");
+        assert_eq!(
+            video.channel_id.as_ref().map(ChannelId::as_str),
+            Some("UCzyxwvutsrqponmlkjihgfe")
+        );
+        assert_eq!(video.duration, Some(std::time::Duration::from_secs(754)));
+        assert_eq!(
+            video.thumbnail_url.as_deref(),
+            Some("https://i.ytimg.com/vi/synthetic/lockup.jpg")
+        );
+        assert!(
+            page.partial,
+            "an unsupported mix lockup is reported, not hidden"
+        );
+    }
+    #[test]
+    fn continuation_responses_append_items_and_expose_the_next_token() {
+        let response = json!({"onResponseReceivedActions": [{"appendContinuationItemsAction": {
+            "continuationItems": [synthetic_video("iiiiiiiiiii"), continuation_item("synthetic-next-token")]
+        }}]});
+        let page = recommendations(&response, 3).unwrap();
+        assert_eq!(page.items[0].id.as_str(), "iiiiiiiiiii");
+        assert_eq!(page.next.unwrap().token, "synthetic-next-token");
+        let last = json!({"onResponseReceivedActions": [{"appendContinuationItemsAction": {
+            "continuationItems": [synthetic_video("jjjjjjjjjjj")]
+        }}]});
+        assert!(recommendations(&last, 3).unwrap().next.is_none());
+    }
+    #[test]
+    fn malformed_recommendations_are_partial_or_rejected_never_fabricated() {
+        let mut unsafe_art = synthetic_video("kkkkkkkkkkk");
+        unsafe_art["richItemRenderer"]["content"]["videoRenderer"]["thumbnail"] = json!({"thumbnails": [
+            {"url": "https://i.ytimg.com.attacker.invalid/vi/x.jpg", "width": 480}]});
+        unsafe_art["richItemRenderer"]["content"]["videoRenderer"]["lengthText"] =
+            json!({"simpleText": "LIVE"});
+        let mut mismatched = synthetic_video("lllllllllll");
+        mismatched["richItemRenderer"]["content"]["videoRenderer"]["navigationEndpoint"] =
+            json!({"watchEndpoint": {"videoId": "mmmmmmmmmmm"}});
+        let response = json!({"richGridRenderer": {"contents": [
+            unsafe_art,
+            mismatched,
+            synthetic_video("bad/id?x=1"),
+            {"richItemRenderer": {"content": {"futureRenderer": {}}}},
+            {"richItemRenderer": {}},
+            "not an object"
+        ]}});
+        let page = recommendations(&response, 0).unwrap();
+        assert_eq!(page.items.len(), 1);
+        assert!(page.partial);
+        assert!(page.items[0].thumbnail_url.is_none());
+        assert!(page.items[0].duration.is_none());
+        // Unknown page shapes are not a successful empty feed.
+        assert_eq!(
+            recommendations(&json!({"futureRenderer": {}}), 0).err(),
+            Some(AccountError::UnsupportedResponse)
+        );
+        assert!(
+            recommendations(
+                &json!({"messageRenderer": {"text": {"simpleText": "Synthetic empty"}}}),
+                0
+            )
+            .unwrap()
+            .items
+            .is_empty()
+        );
+        for tokens in [
+            vec![
+                continuation_item("synthetic-one"),
+                continuation_item("synthetic-two"),
+            ],
+            vec![continuation_item("synthetic\ncontrol")],
+            vec![continuation_item("")],
+        ] {
+            assert_eq!(
+                recommendations(&json!({"richGridRenderer": {"contents": tokens}}), 0).err(),
+                Some(AccountError::UnsupportedResponse)
+            );
+        }
+        let many: Vec<_> = (0..=MAX_ITEMS)
+            .map(|index| synthetic_video(&format!("{index:011}")))
+            .collect();
+        assert_eq!(
+            recommendations(&json!({"richGridRenderer": {"contents": many}}), 0).err(),
+            Some(AccountError::ResponseTooLarge)
+        );
+    }
+    #[test]
+    fn duration_text_accepts_only_clock_forms() {
+        assert_eq!(
+            duration_text("0:59"),
+            Some(std::time::Duration::from_secs(59))
+        );
+        assert_eq!(
+            duration_text(" 10:00 "),
+            Some(std::time::Duration::from_secs(600))
+        );
+        for invalid in [
+            "",
+            "59",
+            "1:5",
+            "1:60",
+            "a:00",
+            "1:00:00:00",
+            "-1:00",
+            "LIVE",
+            "9999:99",
+        ] {
+            assert_eq!(duration_text(invalid), None, "{invalid}");
+        }
     }
     #[test]
     fn missing_state_is_not_false_reconciliation() {

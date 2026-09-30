@@ -188,6 +188,9 @@ export component App inherits Window {
     in property <bool> home-error;
     callback home-refresh();
     callback home-leave();
+    // Home feed source: 0 Saved (local), 1 Recommended (verified account only).
+    in property <int> home-source;
+    callback home-source-changed(int);
     public function reset-feed-scroll() { feed.content-y = 0px; }
     in property <bool> account-retry-ready: true;
     in property <bool> playback-failed;
@@ -649,15 +652,17 @@ export component App inherits Window {
         Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
         Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
         HorizontalLayout { y: browse.toolbar-y; height: 36px; spacing: 8px;
+            if root.home-active && root.account-connected: Action { height: 36px; width: 128px; horizontal-stretch: 0; label: "Recommended"; variant: root.home-source == 1 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 1; enabled: !root.busy && !root.native-video-child && (root.home-source == 1 || !root.account-busy); clicked => { root.home-source-changed(1); } }
+            if root.home-active && root.account-connected: Action { height: 36px; width: 80px; horizontal-stretch: 0; label: "Saved"; variant: root.home-source == 0 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 0; enabled: !root.busy && !root.native-video-child; clicked => { root.home-source-changed(0); } }
             if root.home-active: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "refresh-cw"; label: root.home-loading ? "Loading…" : "Refresh"; width: 112px; horizontal-stretch: 0; enabled: !root.home-loading && !root.busy; clicked => { root.home-refresh(); } }
-            if root.home-active: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "list-video"; label: "Local playlists"; width: 156px; horizontal-stretch: 0; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
+            if root.home-active && root.home-source == 0: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "list-video"; label: "Local playlists"; width: 156px; horizontal-stretch: 0; enabled: !LibraryUi.busy; clicked => { root.open-local-tab(0); } }
             if root.guest-can-back: Action { height: 36px; variant: ActionVariant.secondary; icon-name: "chevron-left"; label: "Back"; width: 92px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy; clicked => { root.guest-back(); } }
             if root.guest-scope == 0: ConfirmedChoice { accessible-label: "Search result type"; width: 170px; horizontal-stretch: 0; model: ["All results", "Videos", "Channels", "Playlists"]; acknowledged-index: root.search-kind; enabled: !root.native-video-child && !root.busy; choose(index) => { root.search-kind-changed(index); } }
             if root.guest-scope == 1: ConfirmedChoice { accessible-label: "Channel content type"; width: 170px; horizontal-stretch: 0; model: ["Videos", "Shorts", "Streams", "Playlists"]; acknowledged-index: root.channel-tab; enabled: !root.native-video-child && !root.busy; choose(index) => { root.channel-tab-changed(index); } }
             if root.guest-can-follow: Action { height: 36px; variant: ActionVariant.primary; icon-name: "plus"; label: "Follow locally"; width: 148px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !LibraryUi.busy; clicked => { root.follow-guest-channel(); } }
             if root.guest-scope == 2: Text { text: "Public YouTube playlist"; color: Colors.muted; vertical-alignment: center; }
             Rectangle { horizontal-stretch: 1; }
-            Text { text: root.home-active ? "Saved on this device" : "Guest browsing"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
+            Text { text: !root.home-active ? "Guest browsing" : root.account-connected ? "" : "Saved on this device"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
         }
         feed := ListView {
             y: browse.toolbar-y + 56px; width: parent.width; height: parent.height - self.y;
@@ -708,8 +713,8 @@ export component App inherits Window {
             Rectangle { x: (parent.width - 72px) / 2; y: 0px; width: 72px; height: 72px; border-radius: 36px; background: Colors.hover;
                 Image { x: (parent.width - 32px) / 2; y: (parent.height - 32px) / 2; width: 32px; height: 32px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
             }
-            Text { y: 86px; width: parent.width; height: 35px; text: root.home-loading ? "Loading saved videos…" : root.home-active && root.home-error ? "Couldn’t load Home" : root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 700; horizontal-alignment: center; overflow: elide; }
-            Text { y: 137px; width: parent.width; height: 84px; text: root.home-loading ? "Reading your local playlists. No network request is needed." : root.home-active && root.home-error ? "Your saved library couldn’t be read. Use Refresh to try again, or open Settings for connection details." : root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
+            Text { y: 86px; width: parent.width; height: 35px; text: root.home-loading ? (root.home-source == 1 ? "Loading recommendations…" : "Loading saved videos…") : root.home-active && root.home-error ? (root.home-source == 1 ? "Couldn’t load recommendations" : "Couldn’t load Home") : root.busy ? "Loading YouTube…" : root.catalog-empty-title; color: Colors.text; font-size: 22px; font-weight: 700; horizontal-alignment: center; overflow: elide; }
+            Text { y: 137px; width: parent.width; height: 84px; text: root.home-loading ? (root.home-source == 1 ? "Reading the home feed of your connected YouTube account." : "Reading your local playlists. No network request is needed.") : root.home-active && root.home-error ? (root.home-source == 1 ? root.catalog-empty-message : "Your saved library couldn’t be read. Use Refresh to try again, or open Settings for connection details.") : root.busy ? "Contacting YouTube. You can search again to cancel this request." : root.catalog-empty-message; color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; overflow: elide; }
             if (root.home-active && !root.home-loading && !root.home-error) || root.catalog-title == "Find your next watch": HorizontalLayout {
                 x: 0px; y: 228px; width: parent.width; height: 36px; spacing: 8px; alignment: center;
                 Action { label: "Music"; accessible-label: "Search YouTube for music"; variant: ActionVariant.secondary; height: 36px; width: 96px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && !root.native-video-child; clicked => { search.text = "Music"; root.search(search.text); } }

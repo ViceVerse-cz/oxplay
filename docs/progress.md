@@ -6,6 +6,24 @@ application screens use one shared compiled Slint UI and an in-process Rust core
 
 ## Current source and validation
 
+Connected accounts now get an optional **Recommended** Home view: the signed-in
+`FEwhat_to_watch` feed is read through the existing account worker/transport.
+It is shown as the normal 20-per-page video grid, with the local **Saved** Home
+one chip away. Guest Home is unchanged, and startup never reads account data.
+Promoted items and Shorts are excluded. Selection plays with guest access,
+account rows never become the related list, and sign-out clears them. See
+[local Home](local-home.md#account-recommendations-connected-accounts) and
+[account provider](account-provider.md#home-recommendations-implemented-not-qualified).
+Validation: `cargo fmt --all -- --check` and
+`cargo clippy --locked --workspace --all-targets -- -D warnings` passed.
+`cargo build --locked -p serein` passed. With `--no-fail-fast`,
+`cargo test --locked --workspace` passed 494 tests with 4 ignored. This includes
+new synthetic parser, client, worker, pager and compiled-UI chip tests. One
+unchanged `serein-media` test failed in this environment: local libmpv rejected
+its synthetic y4m fixture (engine error -17). That crate and its inputs are
+untouched by this change. No real account feed, native run or screenshot was
+used, so account qualification (AC-08 scope) remains pending.
+
 The header/watch/history/comments correction centers shared header controls and
 aligns the real AppKit traffic-light centers to its 48px height. The native
 adapter preserves system button ownership/spacing/actions and updates existing

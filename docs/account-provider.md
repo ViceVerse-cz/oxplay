@@ -66,6 +66,7 @@ and [Utils.ts](https://github.com/LuanRT/YouTube.js/blob/bad89d2657e88f907011655
 | Identity/channel enumeration | `account/accounts_list` | WEB channel-switcher request: `requestType=ACCOUNTS_LIST_REQUEST_TYPE_CHANNEL_SWITCHER`, `callCircumstance=SWITCHING_USERS_FULL`; reference also uses TV for active channel | Parse an actual account identity; offer explicit channel choice; verify selected identity again |
 | Account subscriptions | `browse` | `browseId=FEchannels` lists channels; `FEsubscriptions` is the video feed | Bounded pagination and an independently observed subscribed channel |
 | Account playlists | `browse` | `browseId=FEplaylist_aggregation`; individual playlist browse ID starts with `VL` | Distinguish owned/editable/saved playlists; verify private reads locally |
+| Home recommendations | `browse` | `browseId=FEwhat_to_watch`; `richGridRenderer` → `richItemRenderer` → `videoRenderer` or `lockupViewModel`; `continuationItemRenderer` token for the next page | Observe a real signed-in feed; confirm ad/Shorts exclusion and continuation shape locally |
 | Subscribe/unsubscribe | `subscription/subscribe`, `subscription/unsubscribe` | `channelIds`, endpoint parameters; reference uses different subscribe/unsubscribe parameters | Deliberate user action, response checked and channel state reread |
 | Like/unlike | `like/like`, `like/removelike` | Target and available endpoint parameters; interaction reference selects TV context | Deliberate user action and rating reconciliation; WEB compatibility not assumed |
 | Save/remove playlist item | `browse/edit_playlist` | `playlistId`, `ACTION_ADD_VIDEO` with `addedVideoId`; `ACTION_REMOVE_VIDEO` with item `setVideoId` | Editable playlist verified; reconcile by playlist item identity, including duplicate video IDs |
@@ -237,6 +238,28 @@ escalates automatically. Account captions/comments and private local collections
 remain unsupported. See [the implemented media boundary](account-media.md) for
 the actual handoff, cancellation semantics and synthetic-only validation.
 
+### Home recommendations (implemented, not qualified)
+
+`AccountClient::recommendations()` reads the signed-in `FEwhat_to_watch` feed
+through the same verified session, fixed-origin `browse` transport, generation
+checks, cancellation and expiry handling as subscriptions/playlists. Only the
+direct item arrays of `richGridRenderer` and continuation actions are read.
+Shelves (Shorts, news, posts), the topic-chip bar and nested navigation commands
+never become items or cursors. Items flagged by the shared promoted-renderer
+check or an ad badge, and Shorts, are omitted. Video IDs, channel IDs and
+artwork URLs are validated. Mixes/playlists and unknown shapes set `partial`.
+More than one distinct continuation token, an unknown page or more than 200
+items is an error. The cursor is bound to this feed and session generation.
+Capability reporting adds `recommendations`, marked verified for the session
+only after a successful read.
+
+The app submits this read only when a connected user opens Home or selects
+Refresh, Next page or the Recommended chip; see [local Home](local-home.md).
+Parser, client and worker tests use small synthetic fixtures. **No real account
+feed has been observed**: whether the live response matches these shapes,
+whether exclusion is complete and whether the feed is personalized as expected
+all remain unverified, pending an authorized human test.
+
 The central locked workspace test run on 2026-09-29 passed 81 tests with one
 opt-in Keychain test ignored, including eight account-worker regression tests
 and three local-library worker tests. Workspace clippy with `-D warnings`
@@ -250,7 +273,8 @@ synthetic/sanitized parser fixtures, never real session material or full private
 responses.
 
 An authorized local human test must cover: import failure and expiry; displayed
-identity and channel choice; real subscriptions/private playlists; separate
+identity and channel choice; real subscriptions/private playlists; the Home
+recommendation feed and its paging, including ad/Shorts exclusion; separate
 consent for each subscribe/like/save and inverse action; remote reconciliation;
 sign-out during each pending operation and authenticated playback; restart
 without account data reappearance; secret scans; vault denial; helper process

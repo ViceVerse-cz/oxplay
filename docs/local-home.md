@@ -4,7 +4,8 @@ Home now has a distinct local route. It opens at startup without a provider
 request and lists videos saved to local playlists, newest surviving playlist
 membership first. A video saved in several playlists appears once. Re-saving
 an existing membership updates its metadata without moving it to the top.
-History and account collections do not populate this feed. Playing a saved item
+History and account collections do not populate this Saved feed. A connected
+account can also view a separate Recommended feed; see below. Playing a saved item
 uses the normal guest resolver; connecting an account does not escalate it to
 authenticated playback.
 
@@ -33,6 +34,38 @@ collection pages. Navigation, new provider work and local-data clearing retire
 those tickets. Successful clear drops Home-derived rows even when they are the
 watch page's related list. No local SQL, filesystem or image decoding runs in
 Slint callbacks; there is no new production polling timer.
+
+## Account recommendations (connected accounts)
+
+Guests are unaffected: Home stays local and makes no remote Home request. With
+a verified YouTube account connected, Home shows two chips, **Recommended** and
+**Saved**. Recommended is the default for an explicit Home visit. Saved is the
+unchanged local feed above. The application reads the account's YouTube home
+feed only when the user opens Home, selects Refresh, Next page or the
+Recommended chip. A clean launch, a background event or a completed connection
+never reads it. A Saved choice is remembered until the account identity changes.
+
+Recommendations use the existing account worker and its single request slot
+(an active account operation reports Busy), request IDs, session generation and
+identity epoch. Rows go into the shared catalog/group model at 20 per page.
+Next page first uses rows already returned, then requests YouTube's
+continuation. Duplicate IDs are dropped, and at most 200 rows are kept in memory
+for one visit. Loading, empty and error states use fixed typed messages, never
+provider JSON or cookies. Sign-out, expiry and replacement import drop every
+account row and show Saved. Local-data clearing retires visible account rows.
+
+Selecting a recommendation uses the ordinary guest resolver, the same default
+as an account playlist row. It never escalates to account playback. Account
+rows are not captured as the watch page's related list. Their artwork is
+fetched without credentials from the reviewed image hosts and kept in memory
+only. It never enters the guest artwork disk cache.
+
+Synthetic unit tests cover the pager, source selection and the pure policy that
+limits reads to explicit connected visits. A headless compiled-UI test covers
+chip visibility and acknowledgement. **Not qualified:** no real account feed,
+native run or screenshot was used. Live response shapes, paging and exclusion
+completeness remain pending an authorized human test
+([account provider](account-provider.md)).
 
 ## Validation
 
