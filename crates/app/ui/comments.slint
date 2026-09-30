@@ -93,10 +93,10 @@ export component WatchDetails inherits Rectangle {
                     spacing: 20px;
                     for i in 3: Rectangle {
                         height: 68px; background: transparent;
-                        Rectangle { width: 36px; height: 36px; border-radius: 18px; background: Colors.raised; }
-                        Rectangle { x: 50px; y: 3px; width: min(150px, parent.width - 50px); height: 12px; border-radius: 3px; background: Colors.raised; }
-                        Rectangle { x: 50px; y: 28px; width: max(0px, parent.width - 70px); height: 12px; border-radius: 3px; background: Colors.raised; }
-                        Rectangle { x: 50px; y: 49px; width: max(0px, (parent.width - 50px) * 0.65); height: 12px; border-radius: 3px; background: Colors.raised; }
+                        Rectangle { x: 0px; y: 0px; width: 40px; height: 40px; border-radius: 20px; background: Colors.hover; }
+                        Rectangle { x: 56px; y: 4px; width: min(150px, parent.width - 56px); height: 12px; border-radius: 4px; background: Colors.hover; }
+                        Rectangle { x: 56px; y: 28px; width: max(0px, parent.width - 76px); height: 12px; border-radius: 4px; background: Colors.hover; }
+                        Rectangle { x: 56px; y: 49px; width: max(0px, (parent.width - 56px) * 0.65); height: 12px; border-radius: 4px; background: Colors.hover; }
                     }
                 }
                 if CommentsUi.rows.length > 0: VerticalLayout {

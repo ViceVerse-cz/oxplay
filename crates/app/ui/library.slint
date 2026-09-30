@@ -89,19 +89,21 @@ component HistoryItem inherits Rectangle {
     callback remove();
     private property <length> heading-height: item.day-heading == "" ? 0px : 36px;
     private property <length> image-width: narrow ? 128px : 176px;
+    private property <bool> pointer-focus;
     height: heading-height + (narrow ? 92px : 112px);
     Text { x: 4px; height: root.heading-height; text: root.item.day-heading; color: Colors.text; font-size: 18px; font-weight: 600; vertical-alignment: center; }
     entry := Rectangle {
         y: root.heading-height; height: parent.height - root.heading-height; width: parent.width;
         border-radius: 10px;
         background: history-touch.has-hover && root.enabled ? Colors.hover : transparent;
-        border-width: play-focus.has-focus ? 2px : 0px; border-color: Colors.focus;
+        border-width: play-focus.has-focus && !root.pointer-focus ? 2px : 0px; border-color: Colors.focus;
         play-focus := FocusScope {
             x: 0px; y: 0px; width: parent.width - 52px; height: parent.height;
             enabled: root.enabled; accessible-role: button; accessible-enabled: root.enabled;
             accessible-label: "Play " + root.item.title;
             key-pressed(event) => { if event.text == " " || event.text == Key.Return { root.open(); return accept; } return reject; }
-            history-touch := TouchArea { enabled: root.enabled; mouse-cursor: pointer; clicked => { play-focus.focus(); root.open(); } }
+            focus-lost => { root.pointer-focus = false; }
+            history-touch := TouchArea { enabled: root.enabled; mouse-cursor: pointer; clicked => { root.pointer-focus = true; play-focus.focus(); root.open(); } }
         }
         artwork := Rectangle {
             x: 4px; y: 6px; width: root.image-width; height: self.width * 9 / 16;

@@ -159,6 +159,26 @@ impl State {
             app.set_account_busy(false);
         }
     }
+    /// Home recommendations share the account worker, identity epoch and stale
+    /// result rejection used by subscription/playlist reads. Returns its ticket.
+    pub fn submit_recommendations(
+        &self,
+        app: &App,
+        cursor: Option<AccountCursor>,
+    ) -> Result<u64, String> {
+        if !app.get_account_connected() {
+            return Err("Connect and verify a YouTube account to see recommendations.".into());
+        }
+        let id = self
+            .worker
+            .submit(AccountRequest::Recommendations(cursor))
+            .map_err(|error| error.to_string())?;
+        self.pending_id.set(Some(id));
+        self.pending_kind.set(PendingKind::Other);
+        self.pending_identity_epoch.set(self.identity_epoch.get());
+        app.set_account_busy(true);
+        Ok(id)
+    }
     fn submit(&self, app: &App, request: AccountRequest) {
         if !app.get_account_connected()
             && !matches!(
@@ -264,6 +284,11 @@ impl State {
         );
     }
 }
+/// Identity loss clears every account-derived view, including Home rows.
+pub fn identity_lost(app: &App, state: &UiState) {
+    state.account_ui.clear_identity(app);
+    crate::home_ui::account_cleared(app, state);
+}
 fn capability(value: Capability) -> &'static str {
     match value {
         Capability::Verified => "verified",
@@ -273,10 +298,11 @@ fn capability(value: Capability) -> &'static str {
 }
 fn capabilities(c: &serein_youtube::account::AccountCapabilities) -> String {
     format!(
-        "Identity: {} · Subscriptions: {} · Playlists: {}\nSubscription writes: {} · Likes: {} · Playlist edits: {}\nAuthenticated extraction: {} · Channel switching: {}",
+        "Identity: {} · Subscriptions: {} · Playlists: {} · Home recommendations: {}\nSubscription writes: {} · Likes: {} · Playlist edits: {}\nAuthenticated extraction: {} · Channel switching: {}",
         capability(c.identity),
         capability(c.subscriptions),
         capability(c.playlists),
+        capability(c.recommendations),
         capability(c.subscription_writes),
         capability(c.likes),
         capability(c.playlist_writes),
@@ -338,7 +364,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         if !app.get_account_consent() || app.get_account_busy() {
             return;
         }
-        s.account_ui.clear_identity(&app);
+        identity_lost(&app, &s);
         crate::account_playback::clear(&app, &s);
         app.set_account_status(
             s.account_ui
@@ -362,7 +388,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             && !app.get_account_busy()
             && let Some(saved) = s.account_ui.saved.borrow().clone()
         {
-            s.account_ui.clear_identity(&app);
+            identity_lost(&app, &s);
             crate::account_playback::clear(&app, &s);
             app.set_account_status(
                 s.account_ui
@@ -378,7 +404,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
         let Some(app) = weak.upgrade() else { return };
         s.account_ui.stop_picker();
         crate::account_playback::clear(&app, &s);
-        s.account_ui.clear_identity(&app);
+        identity_lost(&app, &s);
         app.set_account_status(
             s.account_ui
                 .write_warning
@@ -578,6 +604,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             Ok(Response::Subscriptions(page)) => s.account_ui.publish(&app, page.items.into_iter().map(Item::Channel).collect(), page.next, page.partial),
             Ok(Response::Playlists(page)) => s.account_ui.publish(&app, page.items.into_iter().map(Item::Playlist).collect(), page.next, page.partial),
             Ok(Response::Playlist(contents)) => { s.account_ui.playlist_editable.set(contents.editable); s.account_ui.publish(&app, contents.page.items.into_iter().map(Item::Video).collect(), contents.page.next, contents.page.partial); }
+            Ok(Response::Recommendations(page)) => crate::home_ui::receive_recommendations(&app, &s, result.request_id, Ok(page)),
             Ok(Response::SubscriptionState(subscribed)) => app.set_account_status(if subscribed { "YouTube confirms this channel is subscribed." } else { "YouTube confirms this channel is not subscribed." }.into()),
             Ok(Response::Rating(liked)) => {
                 let current = s.current_video.borrow();
@@ -598,8 +625,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 app.set_account_status(s.account_ui.write_warning.status(forget_error.map(|e| format!("Disconnected, but saved credential removal needs another attempt: {e}")).unwrap_or_else(|| "Disconnected and saved credentials removed. Local collections were kept.".into())));
             }
             Err(error) => {
+                // Home owns its loading/error state for its own request ticket.
+                crate::home_ui::receive_recommendations(&app, &s, result.request_id, Err(error));
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::SessionExpired | serein_youtube::account::AccountError::IdentityNotVerified | serein_youtube::account::AccountError::StaleSession)) {
-                    s.account_ui.clear_identity(&app);
+                    identity_lost(&app, &s);
                     crate::account_playback::clear(&app, &s);
                 }
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::ReconciliationRequired)) { app.set_account_pending(true); }
@@ -630,6 +659,7 @@ fn is_private_read(result: &Result<Response, account::WorkerError>) -> bool {
         Ok(Response::Subscriptions(_)
             | Response::Playlists(_)
             | Response::Playlist(_)
+            | Response::Recommendations(_)
             | Response::SubscriptionState(_)
             | Response::Rating(_))
     )
@@ -688,6 +718,13 @@ mod tests {
     fn expired_identity_drops_read_publication_but_keeps_mutation_outcomes_and_errors() {
         assert!(is_private_read(&Ok(Response::Rating(true))));
         assert!(is_private_read(&Ok(Response::SubscriptionState(true))));
+        assert!(is_private_read(&Ok(Response::Recommendations(
+            serein_youtube::account::AccountPage {
+                items: Vec::new(),
+                next: None,
+                partial: false,
+            }
+        ))));
         assert!(!is_private_read(&Ok(Response::Mutation(
             MutationOutcome::Verified
         ))));

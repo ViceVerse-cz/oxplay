@@ -8,7 +8,7 @@ mod http;
 mod parser;
 pub use cookies::{MAX_COOKIE_BYTES, SessionCookies};
 use serde_json::{Value, json};
-use serein_core::{ChannelId, OperationContext, PlaylistId, VideoId};
+use serein_core::{ChannelId, OperationContext, PlaylistId, VideoId, VideoSummary};
 use std::{
     fmt,
     sync::{Arc, atomic::Ordering},
@@ -125,6 +125,7 @@ pub struct AccountCapabilities {
     pub identity: Capability,
     pub subscriptions: Capability,
     pub playlists: Capability,
+    pub recommendations: Capability,
     pub subscription_writes: Capability,
     pub likes: Capability,
     pub playlist_writes: Capability,
@@ -137,6 +138,7 @@ impl Default for AccountCapabilities {
             identity: Capability::ImplementedUnverified,
             subscriptions: Capability::ImplementedUnverified,
             playlists: Capability::ImplementedUnverified,
+            recommendations: Capability::ImplementedUnverified,
             subscription_writes: Capability::ImplementedUnverified,
             likes: Capability::ImplementedUnverified,
             playlist_writes: Capability::ImplementedUnverified,
@@ -181,6 +183,7 @@ enum PageKind {
     Subscriptions,
     Playlists,
     Playlist(String),
+    Recommendations,
 }
 #[derive(Clone)]
 pub struct AccountCursor {
@@ -515,6 +518,26 @@ impl AccountClient {
         self.control.check(operation)?;
         if let Some(s) = &mut self.session {
             s.info.capabilities.playlists = Capability::Verified;
+        }
+        Ok(page)
+    }
+    /// The signed-in YouTube home feed. Read only on an explicit user action;
+    /// promoted items and Shorts shelves are excluded before normalization.
+    pub fn recommendations(
+        &mut self,
+        cursor: Option<&AccountCursor>,
+        operation: &OperationContext,
+    ) -> Result<AccountPage<VideoSummary>, AccountError> {
+        let value = self.browse(
+            "FEwhat_to_watch",
+            cursor,
+            &PageKind::Recommendations,
+            operation,
+        )?;
+        let page = parser::recommendations(&value, operation.session_generation)?;
+        self.control.check(operation)?;
+        if let Some(s) = &mut self.session {
+            s.info.capabilities.recommendations = Capability::Verified;
         }
         Ok(page)
     }
@@ -1299,6 +1322,98 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         assert_eq!(
             client.http.fixture.as_ref().unwrap().calls.borrow().len(),
             1
+        );
+    }
+    // TEST FIXTURE: synthetic home-feed shape; no real account data.
+    fn recommendation_response(id: &str, token: Option<&str>) -> Value {
+        let mut contents = vec![json!({"richItemRenderer":{"content":{"videoRenderer":{
+            "videoId": id, "title": {"simpleText": "Synthetic recommendation"}}}}})];
+        if let Some(token) = token {
+            contents.push(json!({"continuationItemRenderer":{"continuationEndpoint":{"continuationCommand":{"token":token}}}}));
+        }
+        json!({"richGridRenderer":{"contents":contents}})
+    }
+    #[test]
+    fn recommendations_use_the_verified_session_and_scope_their_cursor() {
+        let mut client = fixture_client(vec![
+            Ok(identity_response()),
+            Ok(recommendation_response(
+                "abcdefghijk",
+                Some("synthetic-token"),
+            )),
+            Ok(
+                json!({"channelRenderer":{"channelId":"UCabcdefghijklmnopqrstuv"},
+                "continuationItemRenderer":{"continuationEndpoint":{"continuationCommand":{"token":"synthetic-sub"}}}}),
+            ),
+            Ok(recommendation_response("bcdefghijkl", None)),
+        ]);
+        assert_eq!(
+            client.connection().unwrap().capabilities.recommendations,
+            Capability::ImplementedUnverified
+        );
+        let first = client.recommendations(None, &context()).unwrap();
+        assert_eq!(first.items[0].id.as_str(), "abcdefghijk");
+        assert_eq!(
+            client.connection().unwrap().capabilities.recommendations,
+            Capability::Verified
+        );
+        let subscriptions = client.subscriptions(None, &context()).unwrap();
+        // A cursor from another collection cannot continue the home feed.
+        assert_eq!(
+            client
+                .recommendations(subscriptions.next.as_ref(), &context())
+                .err(),
+            Some(AccountError::InvalidInput)
+        );
+        let second = client
+            .recommendations(first.next.as_ref(), &context())
+            .unwrap();
+        assert_eq!(second.items[0].id.as_str(), "bcdefghijkl");
+        assert!(second.next.is_none());
+        assert_eq!(
+            &*client.http.fixture.as_ref().unwrap().calls.borrow(),
+            &["account/accounts_list", "browse", "browse", "browse"]
+        );
+        // Sign-out invalidates before transport; the retained cursor is stale.
+        client.control().invalidate();
+        assert_eq!(
+            client.recommendations(None, &context()).err(),
+            Some(AccountError::StaleSession)
+        );
+        let later = OperationContext {
+            request_id: 2,
+            session_generation: client.control().generation(),
+            cancel: CancellationToken::default(),
+        };
+        assert!(client.recommendations(first.next.as_ref(), &later).is_err());
+        assert_eq!(
+            client.http.fixture.as_ref().unwrap().calls.borrow().len(),
+            4
+        );
+    }
+    #[test]
+    fn guest_client_and_expired_session_never_read_recommendations() {
+        let mut guest = AccountClient::new(SessionControl::default()).unwrap();
+        assert_eq!(
+            guest.recommendations(None, &context()).err(),
+            Some(AccountError::IdentityNotVerified)
+        );
+        let mut client = fixture_client(vec![
+            Ok(identity_response()),
+            Ok(json!({"responseContext":{"mainAppWebResponseContext":{"loggedOut":true}}})),
+        ]);
+        assert_eq!(
+            client.recommendations(None, &context()).err(),
+            Some(AccountError::SessionExpired)
+        );
+        assert!(client.connection().is_none());
+        assert_eq!(
+            client.recommendations(None, &context()).err(),
+            Some(AccountError::SessionExpired)
+        );
+        assert_eq!(
+            client.http.fixture.as_ref().unwrap().calls.borrow().len(),
+            2
         );
     }
     #[test]

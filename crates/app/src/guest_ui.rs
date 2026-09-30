@@ -122,9 +122,20 @@ impl Presentation {
         self.acknowledged = true;
     }
 }
+/// Who produced the visible catalog rows. This selects artwork and related-list
+/// policy; it is never inferred from row contents.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Origin {
+    #[default]
+    Public,
+    LocalHome,
+    /// Signed-in YouTube home feed: memory-only artwork, never captured as the
+    /// guest related list and cleared with the account identity.
+    AccountHome,
+}
 #[derive(Default)]
 pub struct State {
-    local_home: Cell<bool>,
+    origin: Cell<Origin>,
     presentation: RefCell<Presentation>,
     items: RefCell<Vec<CatalogItem>>,
     current: RefCell<Option<Location>>,
@@ -150,13 +161,32 @@ impl State {
         Some(entry.location)
     }
     pub fn thumbnail_source(&self, row: usize) -> Option<crate::thumbnails::Source> {
-        thumbnail_source(self.items.borrow().get(row)?, self.local_home.get())
+        let items = self.items.borrow();
+        let item = items.get(row)?;
+        match self.origin.get() {
+            // Account-derived artwork is fetched without credentials and kept in
+            // memory only; it never populates the guest artwork disk cache.
+            Origin::AccountHome => match item {
+                CatalogItem::Video(video) => video
+                    .thumbnail_url
+                    .clone()
+                    .map(crate::thumbnails::Source::Remote),
+                _ => None,
+            },
+            origin => thumbnail_source(item, origin == Origin::LocalHome),
+        }
     }
     pub fn watch_snapshot(&self) -> (Vec<CatalogItem>, bool) {
-        (
-            self.items.borrow().iter().take(20).cloned().collect(),
-            self.local_home.get(),
-        )
+        match self.origin.get() {
+            Origin::AccountHome => (Vec::new(), false),
+            origin => (
+                self.items.borrow().iter().take(20).cloned().collect(),
+                origin == Origin::LocalHome,
+            ),
+        }
+    }
+    pub fn account_home(&self) -> bool {
+        self.origin.get() == Origin::AccountHome
     }
 }
 
@@ -420,7 +450,7 @@ pub fn resolution_finished(app: &App, state: &UiState, generation: u64) {
     }
 }
 pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
-    s.guest_ui.local_home.set(false);
+    s.guest_ui.origin.set(Origin::Public);
     s.guest_ui.presentation.borrow_mut().published();
     match page.header {
         CatalogHeader::Search => app.set_catalog_subtitle(
@@ -490,8 +520,48 @@ pub fn publish(app: &App, s: &UiState, page: CatalogPage) {
 /// Retire provider navigation and thumbnail generations before any local rows.
 pub fn begin_home(app: &App, state: &UiState) {
     clear_cached_catalog(app, state);
-    state.guest_ui.local_home.set(true);
+    state.guest_ui.origin.set(Origin::LocalHome);
     state.guest_ui.presentation.borrow_mut().published();
+}
+/// Retire provider navigation, thumbnails and any local rows before account rows.
+pub fn begin_account_home(app: &App, state: &UiState) {
+    clear_cached_catalog(app, state);
+    state.guest_ui.origin.set(Origin::AccountHome);
+    state.guest_ui.presentation.borrow_mut().published();
+}
+/// Replace the visible page with at most 20 account recommendation rows. The
+/// caller has already checked the account identity/request ticket.
+pub fn publish_account_home(
+    app: &App,
+    state: &UiState,
+    videos: &[serein_core::VideoSummary],
+) -> Result<(), &'static str> {
+    if videos.len() > crate::home_ui::RECOMMENDATION_PAGE
+        || videos
+            .iter()
+            .enumerate()
+            .any(|(i, video)| videos[..i].iter().any(|old| old.id == video.id))
+    {
+        return Err("YouTube returned an invalid recommendation page. Use Refresh to try again.");
+    }
+    let items: Vec<_> = videos.iter().cloned().map(CatalogItem::Video).collect();
+    let rows: Vec<_> = items.iter().map(row).collect();
+    // Retire row-indexed image work before changing model membership.
+    state.thumbnails.borrow_mut().replace(Vec::new());
+    state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_range.set((usize::MAX, usize::MAX));
+    state.guest_ui.origin.set(Origin::AccountHome);
+    state.guest_ui.current.borrow_mut().take();
+    state.guest_ui.next.borrow_mut().take();
+    state.guest_ui.items.replace(items);
+    crate::feed_focus::reset(app, state);
+    state.model.replace(rows);
+    state.groups.replace(&state.model);
+    app.invoke_reset_feed_scroll();
+    state.guest_ui.presentation.borrow_mut().published();
+    state.thumbnail_range.set((usize::MAX, usize::MAX));
+    app.invoke_refresh_visible();
+    Ok(())
 }
 
 /// Forget retained public catalog metadata and decoded images after explicit
@@ -499,7 +569,7 @@ pub fn begin_home(app: &App, state: &UiState) {
 /// The caller controls navigation; clearing never initiates a provider request.
 pub fn clear_cached_catalog(app: &App, state: &UiState) {
     crate::channel_avatar::clear_profile(app, state);
-    state.guest_ui.local_home.set(false);
+    state.guest_ui.origin.set(Origin::Public);
     state.thumbnails.borrow_mut().replace(Vec::new());
     state.thumbnail_attempted.borrow_mut().clear();
     state.thumbnail_range.set((usize::MAX, usize::MAX));
@@ -569,7 +639,7 @@ pub fn publish_home(
         state.thumbnail_attempted.borrow_mut().clear();
         state.thumbnail_range.set((usize::MAX, usize::MAX));
     }
-    state.guest_ui.local_home.set(true);
+    state.guest_ui.origin.set(Origin::LocalHome);
     // Model notifications can synchronously evaluate viewport bindings. Install
     // the matching source identities before any such callback can admit jobs.
     let old_items = state.guest_ui.items.replace(items);
@@ -640,7 +710,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 return;
             };
             if kind != RequestKind::Video {
-                state.guest_ui.local_home.set(false);
+                state.guest_ui.origin.set(Origin::Public);
             }
             crate::home_ui::cancel(&app, &state);
             let visible = state
@@ -1044,12 +1114,12 @@ mod tests {
     fn local_artwork_lookup_cannot_escalate_to_remote_even_with_a_stored_url() {
         let state = State::default();
         state.items.borrow_mut().push(artwork_video(1));
-        state.local_home.set(true);
+        state.origin.set(Origin::LocalHome);
         assert!(
             matches!(state.thumbnail_source(0), Some(crate::thumbnails::Source::CachedVideo(id)) if id.as_str() == "00000000001")
         );
         assert!(state.thumbnail_source(1).is_none());
-        state.local_home.set(false);
+        state.origin.set(Origin::Public);
         assert!(
             matches!(state.thumbnail_source(0), Some(crate::thumbnails::Source::RemoteGuestVideo { id, url }) if id.as_str() == "00000000001" && url == "https://i.ytimg.com/synthetic.jpg")
         );
@@ -1080,8 +1150,30 @@ mod tests {
             state.thumbnail_source(0),
             Some(crate::thumbnails::Source::Remote(_))
         ));
-        state.local_home.set(true);
+        state.origin.set(Origin::LocalHome);
         assert!(state.thumbnail_source(0).is_none());
+        state.origin.set(Origin::AccountHome);
+        assert!(state.thumbnail_source(0).is_none());
+    }
+    #[test]
+    fn account_home_artwork_is_memory_only_and_never_becomes_related_videos() {
+        let state = State::default();
+        state.items.borrow_mut().push(artwork_video(1));
+        state.origin.set(Origin::AccountHome);
+        assert!(state.account_home());
+        // Remote without a video identity cannot be written to the guest cache.
+        assert!(
+            matches!(state.thumbnail_source(0), Some(crate::thumbnails::Source::Remote(url)) if url == "https://i.ytimg.com/synthetic.jpg")
+        );
+        let (related, local_only) = state.watch_snapshot();
+        assert!(
+            related.is_empty(),
+            "account rows never enter the guest related list"
+        );
+        assert!(!local_only);
+        state.origin.set(Origin::Public);
+        assert_eq!(state.watch_snapshot().0.len(), 1);
+        assert!(!state.account_home());
     }
 
     #[test]

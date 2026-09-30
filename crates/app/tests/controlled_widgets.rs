@@ -723,3 +723,75 @@ fn history_removal_does_not_play_the_video_and_artwork_click_does() {
     assert_eq!(plays.get(), 1);
     assert_eq!(removes.get(), 1);
 }
+
+fn controls(app: &App, label: &str) -> usize {
+    ElementHandle::find_by_accessible_label(app, label)
+        .filter(|element| element.accessible_enabled().is_some())
+        .count()
+}
+fn absent(app: &App, label: &str) -> bool {
+    controls(app, label) == 0
+}
+
+#[test]
+fn home_source_chips_exist_only_for_a_connected_account_and_follow_rust_acknowledgement() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(true);
+    app.set_account_connected(false);
+    let requested = Rc::new(Cell::new(None));
+    let output = requested.clone();
+    app.on_home_source_changed(move |index| output.set(Some(index)));
+    settle();
+    // Guests keep the unchanged local Home: no account chips.
+    assert!(absent(&app, "Recommended") && absent(&app, "Saved"));
+    // The Home toolbar shortcut is in addition to any navigation entry.
+    let saved_shortcuts = controls(&app, "Local playlists");
+    assert!(saved_shortcuts >= 1);
+    app.set_account_connected(true);
+    app.set_home_source(1);
+    settle();
+    assert_eq!(
+        element(&app, "Recommended").accessible_checked(),
+        Some(true)
+    );
+    assert_eq!(element(&app, "Saved").accessible_checked(), Some(false));
+    assert_eq!(
+        controls(&app, "Local playlists"),
+        saved_shortcuts - 1,
+        "the local shortcut belongs to the Saved view"
+    );
+    element(&app, "Saved").invoke_accessible_default_action();
+    settle();
+    assert_eq!(requested.take(), Some(0));
+    // The chip reflects only the source Rust acknowledged.
+    assert_eq!(
+        element(&app, "Recommended").accessible_checked(),
+        Some(true)
+    );
+    app.set_home_source(0);
+    settle();
+    assert_eq!(element(&app, "Saved").accessible_checked(), Some(true));
+    assert_eq!(controls(&app, "Local playlists"), saved_shortcuts);
+    element(&app, "Recommended").invoke_accessible_default_action();
+    settle();
+    assert_eq!(requested.take(), Some(1));
+    // Another account operation or busy playback resolution blocks switching.
+    app.set_account_busy(true);
+    settle();
+    assert_eq!(
+        element(&app, "Recommended").accessible_enabled(),
+        Some(false)
+    );
+    element(&app, "Recommended").invoke_accessible_default_action();
+    app.set_account_busy(false);
+    app.set_busy(true);
+    settle();
+    element(&app, "Saved").invoke_accessible_default_action();
+    settle();
+    assert_eq!(requested.take(), None);
+    app.set_busy(false);
+    app.set_home_active(false);
+    settle();
+    assert!(absent(&app, "Recommended"), "chips are Home-only");
+}

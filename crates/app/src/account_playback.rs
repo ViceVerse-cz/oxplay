@@ -277,7 +277,7 @@ pub fn install(app: &App, state: &Rc<UiState>, lease: AccountPlaybackLease) {
 pub fn observe(app: &App, state: &Rc<UiState>) {
     if authorization(state).is_some_and(|lease| !lease.is_valid()) {
         clear(app, state);
-        state.account_ui.clear_identity(app);
+        crate::account_ui::identity_lost(app, state);
         state.account_ui.set_status(app, "The account session expired or was disconnected. Reconnect explicitly to play with this account.");
         app.set_status("Account playback stopped because its authorization ended.".into());
     }
@@ -635,7 +635,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
                 )
             ) {
                 clear(app, state);
-                state.account_ui.clear_identity(app);
+                crate::account_ui::identity_lost(app, state);
             }
             state.account_ui.set_status(app, error.to_string());
             app.set_status(error.to_string().into());
@@ -692,7 +692,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
                 // Initial extraction has no installed lease for observe() to see.
                 // Expiry during the worker-to-UI handoff must still clear identity.
                 clear(app, state);
-                state.account_ui.clear_identity(app);
+                crate::account_ui::identity_lost(app, state);
                 "The account session expired before playback could start. Reconnect explicitly."
             }
             InstallRejection::Clearing => {

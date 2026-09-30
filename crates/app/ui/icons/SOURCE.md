@@ -15,3 +15,5 @@ The picture-in-picture control uses the unchanged `icons/picture-in-picture-2.sv
 The retained `minus.svg`, `square.svg`, `copy.svg`, and `x.svg` also originate from this revision. Normal windows now use native system decorations. Theatre mode uses the unchanged `rectangle-horizontal.svg` from the same revision.
 
 Comment refresh uses unchanged `refresh-cw.svg` from the same pinned official Lucide revision, with its checksum and license retained.
+
+The guide's Explore shortcuts use unchanged `music.svg`, `gamepad-2.svg`, `newspaper.svg`, `trophy.svg` and `graduation-cap.svg`, and drop-down fields use unchanged `chevron-down.svg`, all copied byte-for-byte from `icons/` at this same pinned revision, with checksums added to `SHA256SUMS`.

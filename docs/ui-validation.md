@@ -464,3 +464,26 @@ Playback could not be presented in that capture session (display clock
 unavailable), so the transport over live video, the populated watch details and
 the related column still need visual confirmation with playback running.
 Screen-reader and keyboard traversal passes were not repeated.
+
+### Follow-up pass (2026-09-30)
+
+- Header returns to 48 px with 36 px search and 32 px account controls, all
+  vertically centred on the native header height.
+- `ChoiceField` replaces the std ComboBox under `ConfirmedChoice`: a rounded
+  tonal field with a `chevron-down` and an opaque rounded list popup. Arrow keys
+  select adjacent rows immediately on the field or in the open list, Return
+  opens, Return/Escape closes; `accessible-role: combobox`, value and expand
+  action are preserved, so the controlled-selector regressions still pass.
+- Focus rings are keyboard-only: `Action`, `ChoiceField`, `VideoCard` and history
+  rows suppress the ring when focus came from a pointer click.
+- Guide: "You" and "Explore" sections (Music, Gaming, News, Sports, Learning run
+  guest searches), scrolling when the window is short; the mini-guide is unchanged.
+- Catalog/Home loading shows a skeleton grid instead of the empty-state message.
+  Previous/Next page now follow the final feed row instead of floating above it.
+- Comment loading skeleton avatars are left-aligned with their text lines.
+
+New icons are unchanged Lucide files from the pinned revision (see
+`crates/app/ui/icons/SOURCE.md`). `cargo test --locked -p serein` passed
+(225 + 13). Native captures of guest search (dark), settings (dark; light at
+1000×760 with the mini-guide) were inspected; the open drop-down list, skeleton
+grid and keyboard-vs-pointer focus were not captured natively.
