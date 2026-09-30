@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Guest selection crosses an account boundary only after terminal media stop.
 use crate::{App, UiState, account_playback, caption_ui, comments_ui, load_remote, playback_ui};
-use serein_core::ResolvedPlayback;
+use oxplay_core::ResolvedPlayback;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
-pub fn failed_load(snapshot: &serein_media::Snapshot) -> bool {
+pub fn failed_load(snapshot: &oxplay_media::Snapshot) -> bool {
     snapshot.load_request_id != 0
         && (snapshot.failed_load_request_id == Some(snapshot.load_request_id)
             || (snapshot.active_load_request_id == snapshot.load_request_id
-                && snapshot.state == serein_media::PlaybackState::Failed))
+                && snapshot.state == oxplay_media::PlaybackState::Failed))
 }
 
 /// Availability describes the current failed guest file, independently of a
 /// concurrent resolver's busy state. The action rechecks all admission guards.
-pub fn can_retry(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) -> bool {
+pub fn can_retry(app: &App, state: &UiState, snapshot: &oxplay_media::Snapshot) -> bool {
     app.get_loaded()
         && !snapshot.stop_pending
         && failed_load(snapshot)
@@ -53,7 +53,7 @@ pub fn retry_failed(app: &App, state: &Rc<UiState>) -> bool {
     };
     let Some(quality) = i32::try_from(state.quality_index.get())
         .ok()
-        .and_then(serein_core::QualityCeiling::from_index)
+        .and_then(oxplay_core::QualityCeiling::from_index)
     else {
         return true;
     };
@@ -89,7 +89,7 @@ struct RetryState {
     blocked_load: Option<u64>,
 }
 impl RetryState {
-    fn failed(&mut self, generation: u64, load: u64, error: serein_core::ProviderError) {
+    fn failed(&mut self, generation: u64, load: u64, error: oxplay_core::ProviderError) {
         if self.attempt != Some((generation, load)) {
             return;
         }
@@ -104,8 +104,8 @@ impl RetryState {
 /// synchronous generation callbacks. Ordinary account work cannot enter here.
 pub fn retry_submitted(
     state: &UiState,
-    id: &serein_core::VideoId,
-    quality: serein_core::QualityCeiling,
+    id: &oxplay_core::VideoId,
+    quality: oxplay_core::QualityCeiling,
 ) {
     let snapshot = state.player.snapshot();
     if failed_load(&snapshot)
@@ -123,7 +123,7 @@ pub fn resolution_failed(
     app: &App,
     state: &UiState,
     generation: u64,
-    error: serein_core::ProviderError,
+    error: oxplay_core::ProviderError,
 ) {
     if state.worker.borrow().generation() != generation {
         return;
@@ -139,7 +139,7 @@ pub fn resolution_failed(
     app.set_can_retry_playback(can_retry(app, state, &snapshot));
 }
 
-fn retry_current(state: &UiState, id: &serein_core::VideoId) -> bool {
+fn retry_current(state: &UiState, id: &oxplay_core::VideoId) -> bool {
     let Some((generation, load)) = state.guest_playback.retry.borrow().attempt else {
         return true; // Ordinary initial selection, not recovery.
     };
@@ -163,8 +163,8 @@ fn reject_changed_retry(app: &App, state: &UiState) {
 struct Pending {
     generation: u64,
     item: Box<ResolvedPlayback>,
-    quality: serein_core::QualityCeiling,
-    start: serein_core::VideoStart,
+    quality: oxplay_core::QualityCeiling,
+    start: oxplay_core::VideoStart,
 }
 #[derive(Default)]
 pub struct State {
@@ -186,8 +186,8 @@ pub fn receive(
     app: &App,
     state: &Rc<UiState>,
     item: Box<ResolvedPlayback>,
-    quality: serein_core::QualityCeiling,
-    start: serein_core::VideoStart,
+    quality: oxplay_core::QualityCeiling,
+    start: oxplay_core::VideoStart,
 ) {
     if !item.guest || item.session_generation != 0 {
         state.focus_intent.cancel(crate::focus_intent::Scope::Guest(
@@ -236,7 +236,7 @@ pub fn receive(
         }
     });
 }
-pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &oxplay_media::Snapshot) {
     if state.guest_playback.pending.borrow().is_none() {
         return;
     }
@@ -254,8 +254,8 @@ fn publish(
     app: &App,
     state: &Rc<UiState>,
     mut item: ResolvedPlayback,
-    quality: serein_core::QualityCeiling,
-    start: serein_core::VideoStart,
+    quality: oxplay_core::QualityCeiling,
+    start: oxplay_core::VideoStart,
 ) {
     // Native watch-page values (when already received) replace the extractor's
     // details field by field; chapters, comments and refresh all see the merge.
@@ -326,8 +326,8 @@ fn publish(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serein_core::ProviderError;
-    use serein_media::{PlaybackState, Snapshot};
+    use oxplay_core::ProviderError;
+    use oxplay_media::{PlaybackState, Snapshot};
 
     #[test]
     fn only_the_current_loads_actual_terminal_failure_can_restart() {

@@ -16,10 +16,10 @@ remain open.
 Install the documented native prerequisites and build with the committed lock:
 
 ```sh
-cargo build --release --locked -p serein -p serein-network --bins
+cargo build --release --locked -p oxplay -p oxplay-network --bins
 python3 scripts/package_macos.py inspect --output artifacts/package-evidence
-python3 scripts/package_macos.py bundle --output artifacts/Serein-Development.app
-python3 scripts/package_macos.py bundle --bundle-helpers --output artifacts/Serein-WithHelpers.app
+python3 scripts/package_macos.py bundle --output artifacts/Oxplay-Development.app
+python3 scripts/package_macos.py bundle --bundle-helpers --output artifacts/Oxplay-WithHelpers.app
 ```
 
 Both commands require a fresh output path and refuse overwrites. `inspect`
@@ -30,9 +30,9 @@ verifies the resulting signature. The original application and Homebrew files
 are never rewritten. It does not download anything or silently resolve a new
 Cargo lock. Offline Cargo metadata must already be available.
 
-Use `--build` to make the tool build both `serein` and `serein-dns` in one
+Use `--build` to make the tool build both `oxplay` and `oxplay-dns` in one
 locked release invocation and select their executable paths from Cargo artifacts.
-The first-party DNS helper is always included at `Contents/Helpers/serein-dns`,
+The first-party DNS helper is always included at `Contents/Helpers/oxplay-dns`,
 independently of `--bundle-helpers`. Prebuilt mode requires both binaries;
 `--dns-helper` selects an explicit DNS executable. Without `--build`, the manifest explicitly marks the association between the prebuilt binary
 and the current source snapshot **unverified**. The binary hash, Git commit,
@@ -50,8 +50,8 @@ output inventories before making such a claim.
 
 ## Transient DNS helper packaging
 
-Current packaging includes the first-party `serein-dns` executable from
-`serein-network`. Both binaries use the same source snapshot and lockfile. The
+Current packaging includes the first-party `oxplay-dns` executable from
+`oxplay-network`. Both binaries use the same source snapshot and lockfile. The
 helper's actual Mach-O dependency graph contributes to the copied closure and
 minimum macOS version; the packager does not assume it links only system
 libraries. Relocation, individual ad-hoc signing, closure checks, final bundle
@@ -79,7 +79,7 @@ evidence below.
 ## Checkpoint `bc2e53f`: DNS helper and scoped playback bundle validation
 
 The detached, clean checkout at `bc2e53f6a3eb620dad52d4934a43869aadba8a5a`
-produced the new `artifacts/Serein-bc2e53f.app` using `--build --bundle-helpers`
+produced the new `artifacts/Oxplay-bc2e53f.app` using `--build --bundle-helpers`
 and a shared Cargo target directory. Both executable paths came from the locked
 build's Cargo artifacts. The app input SHA-256 was
 `6791c634802d1649b5d4ff26a7c5cfd6d3e1c334527a527760fe26233edcf874`;
@@ -91,7 +91,7 @@ association and a matching rebuild on this host, not independent reproducibility
 The package contains 175 original Mach-O inputs plus the generated yt-dlp
 launcher, 5,149 inventoried files totaling 324,873,582 bytes, and 226 archived
 application source files. Its load-command minimum remains macOS 27.0. Actual
-`otool -L` on bundled `serein-dns` reports only `libSystem.B.dylib` and
+`otool -L` on bundled `oxplay-dns` reports only `libSystem.B.dylib` and
 `libiconv.2.dylib` under `/usr/lib`. Python import/trust inspection, yt-dlp
 version, Deno version, Deno script, and the empty-input DNS helper probe all
 passed. Python reported 121 CA certificates and only the selected bundled
@@ -111,7 +111,7 @@ the engine; audible quality and A/V synchronization were not assessed.
 
 Both scoped HTTP sources were released: 21 validated ranges totaling 22,020,096
 bytes, with zero transport errors. Process sampling observed the bundled Python
-runtime and an app-owned `(serein-dns)` child; the DNS child exited before its
+runtime and an app-owned `(oxplay-dns)` child; the DNS child exited before its
 full path was sampled. The fixed validated bundle path, absence of overrides,
 and successful scoped requests jointly support helper discovery. This is not
 whole-process egress verification. There were no surviving tracked processes
@@ -165,7 +165,7 @@ its neighboring inventory without executing native tools, loading the app or
 extracting archives:
 
 ```sh
-python3 -B scripts/verify_package.py /path/to/Serein.app
+python3 -B scripts/verify_package.py /path/to/Oxplay.app
 python3 -B scripts/test_verify_package.py
 ```
 
@@ -200,7 +200,7 @@ files, supplied-digest mismatch, manifest/evidence/source mismatch, unsafe paths
 duplicate metadata, special files, internal/external/broken/directory symlinks,
 hard links, source archive traversal/link entries, modified helper resources and
 a file changed during verification. The eleven packaging tests also
-passed. The existing `Serein-helper-offline-gate.app` passed the read-only audit:
+passed. The existing `Oxplay-helper-offline-gate.app` passed the read-only audit:
 5,144 files, 317,758,059 bytes, and 170 archived application source files. Its
 inventory SHA-256 is
 `f9e9744f12923a49f96d2005ae6f9c82b51d8c2a20aba09768b93ed1af508695`.
@@ -301,7 +301,7 @@ stream URLs or raw provider JSON were retained in the evidence. An older test
 ID (`BaW_jenozKc`) correctly returned “video unavailable”; that failure was not
 reported as a successful extraction. Evidence is under
 `artifacts/helper-closure-validation/`. The helper prototype uses an older
-preserved application binary. A later `Serein-helper-offline-gate.app`, generated
+preserved application binary. A later `Oxplay-helper-offline-gate.app`, generated
 from frozen `6ccd0e8` production sources plus updated packaging scripts, passed
 the mandatory offline packager probes, including CA parsing (121 roots), all
 14 selected distributions and bundle-only import/native paths. The first gated
@@ -424,7 +424,7 @@ preserved release executable with SHA-256
 The parent build recorded that source checkpoint; the packaging tool did not
 rebuild it, so `prebuilt_source_association_verified` remains `false` rather
 than treating a matching file hash as proof of source correspondence.
-`artifacts/Serein-c77ebe91.app` contains 863 files totaling approximately
+`artifacts/Oxplay-c77ebe91.app` contains 863 files totaling approximately
 88.6 MiB, including the supplemental notices. Its inventory retains one
 missing Rust notice (`dispatch 0.2.0`), ten upstream policy review items,
 and no missing top-level native formula notice files. Presence of those
@@ -454,7 +454,7 @@ clean-machine operation, non-library resources, successful packaged extraction,
 and portable helper distribution remain unqualified.
 
 A second package from those same frozen inputs, placed under
-`artifacts/package-repeat/Serein-c77ebe91.app`, produced the same input
+`artifacts/package-repeat/Oxplay-c77ebe91.app`, produced the same input
 fingerprint and identical SHA-256/size records for all 863 files, including
 the ad-hoc signatures. `reproducibility.json` records the comparison. This
 demonstrates repeatable packaging of these already-built inputs on this host;

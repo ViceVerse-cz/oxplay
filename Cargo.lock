@@ -3542,6 +3542,99 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxplay"
+version = "0.1.0"
+dependencies = [
+ "i-slint-backend-testing",
+ "image",
+ "libc",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "oxplay-core",
+ "oxplay-media",
+ "oxplay-network",
+ "oxplay-storage",
+ "oxplay-youtube",
+ "reqwest",
+ "rfd",
+ "ring",
+ "slint",
+ "slint-build",
+ "tokio",
+ "webbrowser",
+ "zeroize",
+]
+
+[[package]]
+name = "oxplay-core"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "oxplay-media"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "glow",
+ "pkg-config",
+ "slint",
+]
+
+[[package]]
+name = "oxplay-network"
+version = "0.1.0"
+dependencies = [
+ "hickory-resolver",
+ "libc",
+ "oxplay-core",
+ "oxplay-youtube",
+ "reqwest",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "oxplay-storage"
+version = "0.1.0"
+dependencies = [
+ "chacha20poly1305",
+ "getrandom 0.4.3",
+ "libc",
+ "oxplay-core",
+ "rusqlite",
+ "security-framework",
+ "security-framework-sys",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "zeroize",
+]
+
+[[package]]
+name = "oxplay-youtube"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "cbc",
+ "httpdate",
+ "libc",
+ "oxplay-core",
+ "pbkdf2",
+ "reqwest",
+ "rusqlite",
+ "security-framework",
+ "serde_json",
+ "sha1",
+ "tempfile",
+ "tokio",
+ "url",
+ "zeroize",
+]
+
+[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4505,99 +4598,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serein"
-version = "0.1.0"
-dependencies = [
- "i-slint-backend-testing",
- "image",
- "libc",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "reqwest",
- "rfd",
- "ring",
- "serein-core",
- "serein-media",
- "serein-network",
- "serein-storage",
- "serein-youtube",
- "slint",
- "slint-build",
- "tokio",
- "webbrowser",
- "zeroize",
-]
-
-[[package]]
-name = "serein-core"
-version = "0.1.0"
-dependencies = [
- "tokio",
- "url",
-]
-
-[[package]]
-name = "serein-media"
-version = "0.1.0"
-dependencies = [
- "cc",
- "glow",
- "pkg-config",
- "slint",
-]
-
-[[package]]
-name = "serein-network"
-version = "0.1.0"
-dependencies = [
- "hickory-resolver",
- "libc",
- "reqwest",
- "serein-core",
- "serein-youtube",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "serein-storage"
-version = "0.1.0"
-dependencies = [
- "chacha20poly1305",
- "getrandom 0.4.3",
- "libc",
- "rusqlite",
- "security-framework",
- "security-framework-sys",
- "serde",
- "serde_json",
- "serein-core",
- "tempfile",
- "zeroize",
-]
-
-[[package]]
-name = "serein-youtube"
-version = "0.1.0"
-dependencies = [
- "aes",
- "cbc",
- "httpdate",
- "libc",
- "pbkdf2",
- "reqwest",
- "rusqlite",
- "security-framework",
- "serde_json",
- "serein-core",
- "sha1",
- "tempfile",
- "tokio",
- "url",
- "zeroize",
 ]
 
 [[package]]

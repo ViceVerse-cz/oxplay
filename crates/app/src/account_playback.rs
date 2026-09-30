@@ -5,8 +5,8 @@ use crate::{
     App, CaptionsUi, UiState,
     account::{AccountResponse, Response, WorkerError},
 };
-use serein_core::VideoId;
-use serein_youtube::{
+use oxplay_core::VideoId;
+use oxplay_youtube::{
     ResolutionPolicy,
     account::{AccountError, AccountPlaybackLease},
 };
@@ -41,7 +41,7 @@ struct RestartState {
 fn restart_delay(error: WorkerError, attempt: u8) -> Option<Duration> {
     match error {
         WorkerError::Resolver(error) if crate::guest_recovery::retryable(error) => {
-            Some(if error == serein_core::ProviderError::RateLimited {
+            Some(if error == oxplay_core::ProviderError::RateLimited {
                 Duration::from_secs(60)
             } else {
                 Duration::from_secs((2u64 << attempt.min(5)).min(60))
@@ -378,7 +378,7 @@ pub fn request_replacement(
 
 fn restart_identity(
     state: &UiState,
-    snapshot: &serein_media::Snapshot,
+    snapshot: &oxplay_media::Snapshot,
 ) -> Option<(VideoId, RestartScope)> {
     if !crate::guest_playback::failed_load(snapshot) || snapshot.stop_pending {
         return None;
@@ -399,14 +399,14 @@ fn restart_identity(
 }
 
 /// Account authority is retained even on failure. Never reinterpret it as guest.
-pub fn can_retry(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) -> bool {
+pub fn can_retry(app: &App, state: &UiState, snapshot: &oxplay_media::Snapshot) -> bool {
     app.get_loaded()
         && state.account_ui.can_playback(app)
         && restart_identity(state, snapshot)
             .is_some_and(|(_, scope)| state.account_playback.restart.borrow().available(scope))
 }
 
-pub fn retry_ready(state: &UiState, snapshot: &serein_media::Snapshot) -> bool {
+pub fn retry_ready(state: &UiState, snapshot: &oxplay_media::Snapshot) -> bool {
     restart_identity(state, snapshot).is_none_or(|(_, scope)| {
         state
             .account_playback
@@ -443,7 +443,7 @@ pub fn retry_failed(app: &App, state: &Rc<UiState>) -> bool {
     }
     let Some(quality) = i32::try_from(state.quality_index.get())
         .ok()
-        .and_then(serein_core::QualityCeiling::from_index)
+        .and_then(oxplay_core::QualityCeiling::from_index)
     else {
         return true;
     };
@@ -533,7 +533,7 @@ fn arm_restart_readiness(app: &App, state: &Rc<UiState>, scope: RestartScope, wa
     );
 }
 
-fn publish_retry(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
+fn publish_retry(app: &App, state: &UiState, snapshot: &oxplay_media::Snapshot) {
     app.set_can_retry_playback(
         can_retry(app, state, snapshot) || crate::guest_playback::can_retry(app, state, snapshot),
     );
@@ -777,7 +777,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
                     load,
                     session: job.session,
                 },
-                WorkerError::Resolver(serein_core::ProviderError::UnsupportedFormat),
+                WorkerError::Resolver(oxplay_core::ProviderError::UnsupportedFormat),
                 None,
             );
         }
@@ -798,7 +798,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     crate::rating_ui::clear(app, state);
     app.set_remote_video(true);
     let quality =
-        serein_core::QualityCeiling::from_height(job.policy.max_height).unwrap_or_default();
+        oxplay_core::QualityCeiling::from_height(job.policy.max_height).unwrap_or_default();
     app.set_quality_index(quality.index());
     state.quality_index.set(quality.index() as usize);
     crate::share_ui::clear(app, state);
@@ -819,7 +819,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
 }
 
 /// Called after draining engine events. No timer polls the native stop state.
-pub fn observe_stopped(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) -> bool {
+pub fn observe_stopped(app: &App, state: &Rc<UiState>, snapshot: &oxplay_media::Snapshot) -> bool {
     if snapshot.stop_pending {
         return false;
     }
@@ -929,7 +929,7 @@ mod tests {
 
     #[test]
     fn nonretryable_account_rejections_and_indefinite_cooldowns_stay_blocked() {
-        use serein_core::ProviderError;
+        use oxplay_core::ProviderError;
         let scope = RestartScope {
             load: 22,
             session: 6,

@@ -67,7 +67,7 @@ attachment is being hardened separately against queued FILE_LOADED events; rerun
 this test after that change. Local log: `artifacts/quality-native.log`.
 
 ```sh
-target/debug/serein --data-root /absolute/isolated-profile \
+target/debug/oxplay --data-root /absolute/isolated-profile \
   --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' \
   --quality-smoke-test --diagnostics
 ```

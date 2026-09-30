@@ -14,11 +14,11 @@ use crate::{
     innertube::GuestTransport,
     renderers::{self, Parsed},
 };
-use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelId, MAX_VIDEO_CHAPTERS, OperationContext, ProviderError, VideoDetails,
     VideoId,
 };
+use serde_json::{Value, json};
 use std::{collections::HashSet, time::Duration};
 
 /// Related rows kept from one `next` response (live pages carry ~26).

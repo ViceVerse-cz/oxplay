@@ -7,8 +7,8 @@
 //! superseded requests are dropped (which cancels their HTTP exchange). Query
 //! text is never logged or included in status/diagnostic output.
 use crate::{App, SearchSuggestion, SearchSuggestionsUi, UiState, library};
-use serein_core::ProviderError;
-use serein_storage::{MAX_SEARCH_HISTORY, normalize_search_query, search_query_key};
+use oxplay_core::ProviderError;
+use oxplay_storage::{MAX_SEARCH_HISTORY, normalize_search_query, search_query_key};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -174,7 +174,7 @@ impl Worker {
                 return;
             };
             runtime.block_on(async move {
-                let Ok(client) = serein_youtube::suggestions::client() else {
+                let Ok(client) = oxplay_youtube::suggestions::client() else {
                     return;
                 };
                 let mut cooldown: Option<Instant> = None;
@@ -201,7 +201,7 @@ impl Worker {
                                 current = receiver.borrow_and_update().as_ref().map(|query| (query.serial, query.text.clone()));
                                 continue;
                             }
-                            result = serein_youtube::suggestions::fetch(&client, &text) => result,
+                            result = oxplay_youtube::suggestions::fetch(&client, &text) => result,
                         }
                     };
                     if result == Err(ProviderError::RateLimited) && cooldown.is_none_or(|until| until <= Instant::now()) {
@@ -330,7 +330,7 @@ fn query(app: &App, state: &Rc<UiState>, text: &str) {
     let trimmed = text.trim().to_owned();
     if !remote_enabled(app, state)
         || !app.get_search_active()
-        || serein_youtube::suggestions::request_url(&trimmed).is_none()
+        || oxplay_youtube::suggestions::request_url(&trimmed).is_none()
     {
         s.worker.cancel();
         return;

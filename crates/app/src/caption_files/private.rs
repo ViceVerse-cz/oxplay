@@ -310,7 +310,7 @@ impl Directory {
         let live = reap(&self.root)?;
         if live > 1 {
             Err(
-                "Another running Serein instance still owns caption files. Close it and retry clearing local data.",
+                "Another running Oxplay instance still owns caption files. Close it and retry clearing local data.",
             )
         } else {
             Ok(())
@@ -331,7 +331,7 @@ mod tests {
     impl Profile {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!(
-                "serein-caption-cache-test-{}",
+                "oxplay-caption-cache-test-{}",
                 random_name().unwrap()
             ));
             std::fs::DirBuilder::new()
@@ -436,7 +436,7 @@ mod tests {
     #[test]
     fn cold_profile_is_private_and_enumeration_remains_bound_to_open_directory() {
         let profile = Profile::new();
-        let parent = profile.0.join("Serein");
+        let parent = profile.0.join("Oxplay");
         let directory = Directory::create(parent.join("captions")).unwrap();
         assert_eq!(std::fs::metadata(&parent).unwrap().mode() & 0o777, 0o700);
         assert_eq!(

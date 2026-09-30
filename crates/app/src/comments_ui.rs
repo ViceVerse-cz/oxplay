@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Bounded guest comments with one deferred initial request and explicit paging.
 use crate::{App, CommentRow, CommentsUi, UiState, catalog::Request, display_format};
-use serein_core::{ProviderError, VideoDetails, VideoId};
-use serein_youtube::comments::{CommentCursor, CommentPage};
+use oxplay_core::{ProviderError, VideoDetails, VideoId};
+use oxplay_youtube::comments::{CommentCursor, CommentPage};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},

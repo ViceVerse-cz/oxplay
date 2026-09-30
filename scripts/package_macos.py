@@ -26,7 +26,7 @@ import package_helpers
 
 ROOT = Path(__file__).resolve().parents[1]
 SYSTEM_PREFIXES = ("/System/Library/", "/usr/lib/")
-ID = "org.serein.desktop.development"
+ID = "cz.viceverse.oxplay"
 
 
 class PackagingError(Exception):
@@ -159,10 +159,10 @@ def cargo_graph(target: str) -> dict:
     metadata = json.loads(run("cargo", "metadata", "--locked", "--offline", "--format-version", "1", "--filter-platform", target))
     packages = {package["id"]: package for package in metadata["packages"]}
     nodes = {node["id"]: node for node in metadata["resolve"]["nodes"]}
-    root = next(package["id"] for package in packages.values() if package["name"] == "serein")
+    root = next(package["id"] for package in packages.values() if package["name"] == "oxplay")
     # `metadata.resolve` includes inactive optional dependencies. Cargo tree is
     # authoritative for both first-party executables' normal+build graph.
-    selected = run("cargo", "tree", "--locked", "--offline", "-p", "serein", "-p", "serein-network", "--target", target,
+    selected = run("cargo", "tree", "--locked", "--offline", "-p", "oxplay", "-p", "oxplay-network", "--target", target,
                    "-e", "normal,build", "--prefix", "depth", "--format", "{p}")
     by_name: dict[tuple[str, str], list[str]] = {}
     for key, package in packages.items():
@@ -420,19 +420,19 @@ def write_spdx(path: Path, manifest: dict, cargo: dict, native: dict[Path, dict]
                              if (parent / "LICENSES" / (reference + ".md")).is_file()), None)
         if license_path is None:
             raise PackagingError("A custom SPDX license reference lacks inspected license text")
-        extracted.append({"licenseId": reference, "extractedText": license_path.read_text(), "comment": "Upstream alternative license text preserved for declared SPDX expression; Serein selects Slint GPL-3.0-only, not this alternative."})
-    json_write(path, {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": "Serein development build inventory",
-                     "documentNamespace": f"https://serein.invalid/spdx/{manifest['input_fingerprint']}",
-                     "creationInfo": {"created": dt.datetime.fromtimestamp(epoch, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "creators": ["Tool: serein-package-macos.py"]},
+        extracted.append({"licenseId": reference, "extractedText": license_path.read_text(), "comment": "Upstream alternative license text preserved for declared SPDX expression; Oxplay selects Slint GPL-3.0-only, not this alternative."})
+    json_write(path, {"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT", "name": "Oxplay development build inventory",
+                     "documentNamespace": f"https://oxplay.invalid/spdx/{manifest['input_fingerprint']}",
+                     "creationInfo": {"created": dt.datetime.fromtimestamp(epoch, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "creators": ["Tool: oxplay-package-macos.py"]},
                      "packages": packages, "relationships": relationships, "hasExtractedLicensingInfos": extracted,
                      "comment": "Development inventory. Corresponding source, native resource closure and redistribution review remain incomplete. No platform approval is asserted."})
 
 
 def build_executables() -> dict[str, Path]:
     """Resolve both first-party executables from one locked Cargo invocation."""
-    messages = run("cargo", "build", "--locked", "--release", "-p", "serein",
-                   "-p", "serein-network", "--bins", "--message-format=json-render-diagnostics")
-    artifacts: dict[str, list[Path]] = {"serein": [], "serein-dns": []}
+    messages = run("cargo", "build", "--locked", "--release", "-p", "oxplay",
+                   "-p", "oxplay-network", "--bins", "--message-format=json-render-diagnostics")
+    artifacts: dict[str, list[Path]] = {"oxplay": [], "oxplay-dns": []}
     for line in messages.splitlines():
         if not line.startswith("{"):
             continue
@@ -449,7 +449,7 @@ def build_executables() -> dict[str, Path]:
 
 def validate_dns_helper(executable: Path) -> dict:
     """Malformed local input must fail before entering native DNS resolution."""
-    with tempfile.TemporaryDirectory(prefix="serein-dns-package-probe-") as directory:
+    with tempfile.TemporaryDirectory(prefix="oxplay-dns-package-probe-") as directory:
         result = subprocess.run([str(executable)], input=b"", stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, timeout=5, check=False,
                                 env={"PATH": "/usr/bin:/bin", "HOME": directory, "TMPDIR": directory},
@@ -473,11 +473,11 @@ def package(args: argparse.Namespace) -> None:
     files = source_files()
     fingerprint = source_fingerprint(files)
     if args.build:
-        if (args.binary != ROOT / "target/release/serein"
-                or args.dns_helper != ROOT / "target/release/serein-dns"):
+        if (args.binary != ROOT / "target/release/oxplay"
+                or args.dns_helper != ROOT / "target/release/oxplay-dns"):
             raise PackagingError("With --build, executables must be selected from Cargo's build result")
         executables = build_executables()
-        args.binary, args.dns_helper = executables["serein"], executables["serein-dns"]
+        args.binary, args.dns_helper = executables["oxplay"], executables["oxplay-dns"]
         if fingerprint != source_fingerprint(source_files()):
             raise PackagingError("Sources changed during compilation; retry from a stable tree")
     binary = args.binary.resolve(strict=True)
@@ -510,7 +510,7 @@ def package(args: argparse.Namespace) -> None:
     kegs |= {keg for path in native if (keg := keg_for(path))}
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH") or run("git", "show", "-s", "--format=%ct", "HEAD").strip())
     minimum = max((item["minimum_macos"] for item in native.values()), key=version_tuple)
-    stage = Path(tempfile.mkdtemp(prefix=".serein-package-", dir=output.parent))
+    stage = Path(tempfile.mkdtemp(prefix=".oxplay-package-", dir=output.parent))
     try:
         app = stage / output.name
         evidence = app / "Contents/Resources/BuildInfo" if args.command == "bundle" else app
@@ -526,8 +526,8 @@ def package(args: argparse.Namespace) -> None:
                     "media_certificate_resource": {"source": str(media_ca), "sha256": media_ca_hash,
                                                    "bundle_path": "Contents/Resources/Certificates/mozilla.pem",
                                                    "policy": "Immutable Mozilla source; host Keychain-merged trust excluded"},
-                    "first_party_helpers": [{"name": "serein-dns", "cargo_package": "serein-network",
-                                             "bundle_path": "Contents/Helpers/serein-dns",
+                    "first_party_helpers": [{"name": "oxplay-dns", "cargo_package": "oxplay-network",
+                                             "bundle_path": "Contents/Helpers/oxplay-dns",
                                              "source": sanitized(str(dns_helper)),
                                              "original_sha256": native[dns_helper]["sha256"],
                                              "source_build_performed": args.build,
@@ -621,7 +621,7 @@ def package(args: argparse.Namespace) -> None:
                 raise PackagingError("The media certificate resource changed during packaging")
             helper_directory = app / "Contents/Helpers"
             helper_directory.mkdir(parents=True)
-            destinations = {binary: macos / "serein", dns_helper: helper_directory / "serein-dns"}
+            destinations = {binary: macos / "oxplay", dns_helper: helper_directory / "oxplay-dns"}
             if helper_resources is not None:
                 for item in helper_resources["files"]:
                     source, destination = Path(item["source"]), app / item["target"]
@@ -671,8 +671,8 @@ def package(args: argparse.Namespace) -> None:
                 if changes:
                     run("install_name_tool", *changes, destination)
                 run("codesign", "--force", "--sign", "-", "--timestamp=none", destination)
-            copied = native_closure(macos / "serein")
-            native_closure(helper_directory / "serein-dns", copied)
+            copied = native_closure(macos / "oxplay")
+            native_closure(helper_directory / "oxplay-dns", copied)
             if helper_resources is not None:
                 native_closure(app / "Contents/Helpers/yt-dlp", copied)
                 for item in helper_resources["files"]:
@@ -682,10 +682,10 @@ def package(args: argparse.Namespace) -> None:
                 raise PackagingError("Relocated Mach-O closure still requires a non-system external library")
             version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
             with (app / "Contents/Info.plist").open("wb") as file:
-                plistlib.dump({"CFBundleExecutable": "serein", "CFBundleIdentifier": ID, "CFBundleName": "Serein Development", "CFBundleDisplayName": "Serein Development", "CFBundlePackageType": "APPL", "CFBundleShortVersionString": version, "CFBundleVersion": version, "LSMinimumSystemVersion": minimum, "NSHighResolutionCapable": True}, file, sort_keys=True)
+                plistlib.dump({"CFBundleExecutable": "oxplay", "CFBundleIdentifier": ID, "CFBundleName": "Oxplay Development", "CFBundleDisplayName": "Oxplay Development", "CFBundlePackageType": "APPL", "CFBundleShortVersionString": version, "CFBundleVersion": version, "LSMinimumSystemVersion": minimum, "NSHighResolutionCapable": True}, file, sort_keys=True)
             (app / "Contents/PkgInfo").write_bytes(b"APPL????")
             manifest["relocated_native_count"] = len(copied)
-            manifest["dns_helper_offline_validation"] = validate_dns_helper(helper_directory / "serein-dns")
+            manifest["dns_helper_offline_validation"] = validate_dns_helper(helper_directory / "oxplay-dns")
             if helper_resources is not None:
                 manifest["helper_offline_validation"] = package_helpers.validate_helpers(app, helper_resources, sys.modules[__name__])
         manifest["evidence_input_files"] = [{"path": str(file.relative_to(evidence)), "sha256": digest(file)}
@@ -694,7 +694,7 @@ def package(args: argparse.Namespace) -> None:
         json_write(evidence / "build-manifest.json", manifest)
         write_spdx(evidence / "sbom.spdx.json", manifest, cargo, native, helpers, epoch)
         helper_note = ("The exact Python/yt-dlp/EJS/Deno runtime and native helper modules are bundled; clean-machine qualification is still required." if helper_resources is not None else "Network operations still require the exact external Homebrew yt-dlp/Python/Deno inputs recorded in build-manifest.json.")
-        (evidence / "READ-ME-FIRST.txt").write_text("Serein development evidence; NOT a portable release.\nNative dylibs are relocated only in bundle mode. " + helper_note + "\nAd-hoc signed only; no Developer ID or notarization. Package redistribution and complete corresponding-source obligations remain unaudited.\nInspect docs/packaging.md in application-source.tar. No account credentials are included.\n")
+        (evidence / "READ-ME-FIRST.txt").write_text("Oxplay development evidence; NOT a portable release.\nNative dylibs are relocated only in bundle mode. " + helper_note + "\nAd-hoc signed only; no Developer ID or notarization. Package redistribution and complete corresponding-source obligations remain unaudited.\nInspect docs/packaging.md in application-source.tar. No account credentials are included.\n")
         if args.command == "bundle":
             run("codesign", "--force", "--sign", "-", "--timestamp=none", "--identifier", ID, app)
             run("codesign", "--verify", "--deep", "--strict", app)
@@ -712,8 +712,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("inspect", "bundle"))
     parser.add_argument("--output", type=Path, required=True, help="fresh evidence directory or .app path; never overwritten")
-    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/serein")
-    parser.add_argument("--dns-helper", type=Path, default=ROOT / "target/release/serein-dns", help="Exact first-party macOS DNS helper; always bundled")
+    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/oxplay")
+    parser.add_argument("--dns-helper", type=Path, default=ROOT / "target/release/oxplay-dns", help="Exact first-party macOS DNS helper; always bundled")
     parser.add_argument("--yt-dlp", type=Path, default=Path("/opt/homebrew/bin/yt-dlp"))
     parser.add_argument("--deno", type=Path, default=Path("/opt/homebrew/bin/deno"))
     parser.add_argument("--bundle-helpers", action="store_true", help="Include the exact reviewed installed Python/yt-dlp/EJS/Deno runtime")

@@ -235,7 +235,7 @@ throughput gate. Full sample arrays/provenance remain in `docs/evidence/`.
 ## Empty-shell measurement (completed)
 
 Release binary SHA256 `992f684ca0dd31b08c83101f1e67c5a16e819928001440c3d517eca8364cf37c`.
-Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/idle.json -- ./target/release/serein --quit-after 85`.
+Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/idle.json -- ./target/release/oxplay --quit-after 85`.
 Ten-second warm-up, 60 samples at one-second intervals, one process and no newly
 launched decoder service. Source/evidence provenance is in evidence/README.md.
 
@@ -283,7 +283,7 @@ Browser/energy baselines remain open.
 Application commit `463e67748e99ac288d8f765a2dfa3affad5da1ea`; release binary SHA256
 `982a0050b1fd2259a289c70467475599aa447b44300cf4c85a30d2fb0a7d0cd2`.
 Input fixture SHA256 `d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0`.
-Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/playback.json -- ./target/release/serein --local artifacts/local-1080p60.mp4 --quit-after 85`.
+Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/playback.json -- ./target/release/oxplay --local artifacts/local-1080p60.mp4 --quit-after 85`.
 
 | Metric | Mean | p95 | Peak |
 |---|---:|---:|---:|
@@ -303,7 +303,7 @@ not explain this result.
 
 ## Timing-lead investigation
 
-A controlled 15-second release A/B with `SEREIN_MEDIA_TIMING=1`:
+A controlled 15-second release A/B with `OXPLAY_MEDIA_TIMING=1`:
 
 | Requested lead | Render notifications / video draws | VO drops | Decoder drops | Aggregate mpv render submission time |
 |---|---:|---:|---:|---:|
@@ -330,12 +330,12 @@ display-clock differential is recorded separately above.
 
 The standalone fixture run also reported CoreAudio rejecting its mono channel
 layout and falling back to avfoundation. Since mpv derives video deadlines from
-the audio clock, `SEREIN_FORCE_STEREO=1` is a separate diagnostic that requests
+the audio clock, `OXPLAY_FORCE_STEREO=1` is a separate diagnostic that requests
 stereo output and records the observed `current-ao` property. This does not alter
 video resolution, frame rate, codec, or decoder. The stereo experiment did not switch the observed driver: `avfoundation`
 remained active, with 343 and 890 drops at the 10- and 25-second checkpoints
 (547/900 nominal frames). The ineffective stereo option was removed.
-A subsequent `SEREIN_DIAGNOSTIC_NULL_AUDIO=1` path selects mpv's timed null
+A subsequent `OXPLAY_DIAGNOSTIC_NULL_AUDIO=1` path selects mpv's timed null
 audio output to isolate the audio clock. It carries a persistent visible warning,
 produces no audible audio, and cannot pass the functional or optimized gate.
 
@@ -363,7 +363,7 @@ window state before sampling begins.
 
 Commit `7e4e81b`, binary SHA256
 `d3253b95619de9b015699c3312ea6f24ec9a153bac656fe323eb336e67ff7200`.
-Command: `SEREIN_MEDIA_TIMING=1 ./target/release/serein --local artifacts/local-1080p60.mp4 --diagnostics --quit-after 30`.
+Command: `OXPLAY_MEDIA_TIMING=1 ./target/release/oxplay --local artifacts/local-1080p60.mp4 --diagnostics --quit-after 30`.
 The newest callback-to-BeforeRendering delay averaged 0.863 ms across 728
 samples, with a 50.5 ms maximum; coalescing makes this a lower bound on queue
 age. Render starts averaged 14.3 ms after their frame deadlines. Warm VO drops
@@ -389,7 +389,7 @@ code/forced termination and rejects a failed or forcibly stopped application.
 
 Application commit `9bada8a`; release binary SHA256
 `7b1e68569a66e881910a0966126ed2d65293e46987fb41c3d9fd63223469bbf5`.
-Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/minimized-qualified.json -- ./target/release/serein --minimized --quit-after 85`.
+Command: `python3 scripts/measure.py --include-new-vt-services --output artifacts/minimized-qualified.json -- ./target/release/oxplay --minimized --quit-after 85`.
 Ten-second warm-up followed by 60 one-second samples. Winit reported minimized
 at five seconds and immediately before quit at 85.096 seconds, with no intervening
 unoccluded event. Exit code was zero and no forced termination occurred.
@@ -411,7 +411,7 @@ qualification remains open. Raw JSON and the window-state log are in evidence/.
 
 ## GPU execution diagnostic implementation
 
-`SEREIN_GPU_TIMING=1` now enables bounded asynchronous timestamp sampling around
+`OXPLAY_GPU_TIMING=1` now enables bounded asynchronous timestamp sampling around
 media rendering and subsequent Slint composition. See [gpu-timing.md](gpu-timing.md)
 for exact interval boundaries, unsupported/disjoint reporting, fixed query limits
 and why these intervals are not whole-frame scanout or GPU utilization. Default

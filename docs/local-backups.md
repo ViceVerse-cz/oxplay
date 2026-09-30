@@ -36,10 +36,10 @@ require their own platform validation; this is not a portable packaging claim.
 Five new synthetic tests cover abandoned staging, a destination created during
 copy, a WAL source restored without sidecars, private file modes and a racing
 symlink. The earlier consistent-snapshot/no-overwrite test is retained.
-After the measurement hold, `cargo fmt --package serein-storage` succeeded and
-`cargo test --locked -p serein-storage` passed all 26 enabled tests, including
+After the measurement hold, `cargo fmt --package oxplay-storage` succeeded and
+`cargo test --locked -p oxplay-storage` passed all 26 enabled tests, including
 the five new backup tests; the explicit Keychain test remained ignored. These
 checks include actual macOS staging and published-file permission assertions.
-`cargo clippy --locked -p serein-storage --all-targets -- -D warnings` also passed.
+`cargo clippy --locked -p oxplay-storage --all-targets -- -D warnings` also passed.
 Workspace integration checks remain separately coordinated. No real user
 library backup or restore was performed.

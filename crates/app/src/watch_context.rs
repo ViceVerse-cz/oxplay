@@ -5,14 +5,14 @@
 //! Account/private metadata never enters this model; the selected video's other
 //! fields remain owned by the existing playback/details adapters.
 use crate::{App, UiState, VideoRow, model::CatalogModel};
-use serein_core::{CatalogItem, VideoId, VideoSummary};
+use oxplay_core::{CatalogItem, VideoId, VideoSummary};
 use slint::Model;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
 };
 
-const MAX_RELATED_ROWS: usize = serein_youtube::watch::MAX_RELATED;
+const MAX_RELATED_ROWS: usize = oxplay_youtube::watch::MAX_RELATED;
 #[derive(Default)]
 pub struct State {
     pub model: Rc<CatalogModel<VideoRow>>,
@@ -164,7 +164,7 @@ pub fn clear(app: &App, state: &UiState) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serein_core::{ChannelId, ChannelSummary, PlaylistId, PlaylistSummary};
+    use oxplay_core::{ChannelId, ChannelSummary, PlaylistId, PlaylistSummary};
 
     fn video(n: u8) -> CatalogItem {
         CatalogItem::Video(VideoSummary {

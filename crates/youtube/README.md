@@ -17,8 +17,8 @@ The installed Homebrew yt-dlp reports `2026.08.19` (formula revision `2026.8.19_
 The explicit `guest_smoke` example prints only counts and stream characteristics. Real public search returned two pages of 20 videos. Resolution of the public Big Buck Bunny video `aqz-KE-bpKQ` returned 1920×1080 video, separate audio, and signed-URL expiry. This proves extraction, not actual player delivery, advertising behavior, or hardware decoding.
 
 ```
-cargo run --locked -p serein-youtube --example guest_smoke -- /opt/homebrew/bin/yt-dlp /opt/homebrew/bin/deno search 'Blender Big Buck Bunny'
-cargo run --locked -p serein-youtube --example guest_smoke -- /opt/homebrew/bin/yt-dlp /opt/homebrew/bin/deno resolve 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+cargo run --locked -p oxplay-youtube --example guest_smoke -- /opt/homebrew/bin/yt-dlp /opt/homebrew/bin/deno search 'Blender Big Buck Bunny'
+cargo run --locked -p oxplay-youtube --example guest_smoke -- /opt/homebrew/bin/yt-dlp /opt/homebrew/bin/deno resolve 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
 ```
 
 Routine tests are deterministic and network-independent. The live example is opt-in only and never reads browser profiles or imports account credentials.

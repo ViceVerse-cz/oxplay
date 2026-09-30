@@ -1,6 +1,6 @@
 # Stable admitted video target experiment
 
-Status: implemented behind explicit `SEREIN_STABLE_VIDEO_TARGET=1`, default off. Focused ownership tests and the finite native checks below have passed; broader native and resource qualification remain open. The ABBA below did not establish a repeatable performance improvement. Latest documented functional checkpoint 83a07b4; Slint pinned cf3b07d4917e6759a63b0c03913a2594ec653414, FemtoVG 0.27.0, installed libmpv 0.41/API 2.5. The default retains alternating-target behavior until functional and resource validation. `RenderStats.stable_video_target` records selection; `stable_target_draws`, `private_target_draws` and `target_publications` are bounded saturating counters of successful render outcomes.
+Status: implemented behind explicit `OXPLAY_STABLE_VIDEO_TARGET=1`, default off. Focused ownership tests and the finite native checks below have passed; broader native and resource qualification remain open. The ABBA below did not establish a repeatable performance improvement. Latest documented functional checkpoint 83a07b4; Slint pinned cf3b07d4917e6759a63b0c03913a2594ec653414, FemtoVG 0.27.0, installed libmpv 0.41/API 2.5. The default retains alternating-target behavior until functional and resource validation. `RenderStats.stable_video_target` records selection; `stable_target_draws`, `private_target_draws` and `target_publications` are bounded saturating counters of successful render outcomes.
 
 ## Narrow change
 
@@ -52,7 +52,7 @@ Keep target bytes/allocation counters and current dimension/aggregate limits unc
 3. Verify moving output, subtitle updates and controls with all current optional UI cache flags. No video-containing cached layer or colorize allowed.
 4. Same-binary off/on ABBA with matched clip, geometry, visible controls, decoder and display conditions. Record UI draws, actual media renders, dropped frames, process-tree CPU/RAM and target bytes separately. If useful, collect a separate short profile to verify native-wrapper import/cache invalidation disappears; profiler runs are not resource qualification.
 
-Primary source locations examined locally: .upstream/slint at the SHA above; /opt/homebrew/include/mpv/render{,_gl}.h; cached exact0.41 /tmp/serein-vo-libmpv.c and /tmp/serein-libmpv-gl.c; Cargo registry femtovg-0.27.0/src/lib.rs and renderer/opengl/gl_texture.rs. No vendor modifications.
+Primary source locations examined locally: .upstream/slint at the SHA above; /opt/homebrew/include/mpv/render{,_gl}.h; cached exact0.41 /tmp/oxplay-vo-libmpv.c and /tmp/oxplay-libmpv-gl.c; Cargo registry femtovg-0.27.0/src/lib.rs and renderer/opengl/gl_texture.rs. No vendor modifications.
 
 ## Finite native evidence at 83a07b4
 

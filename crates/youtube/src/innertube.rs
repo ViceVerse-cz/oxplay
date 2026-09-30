@@ -3,9 +3,9 @@
 //! Anonymous and fixed-origin: no cookies, no account headers, no redirects,
 //! proxies or retries, bounded responses and a local 429 cooldown. Stream
 //! unlocking stays with the supervised extractor; this never calls `player`.
+use oxplay_core::{OperationContext, ProviderError};
 use reqwest::Client;
 use serde_json::{Value, json};
-use serein_core::{OperationContext, ProviderError};
 use std::{
     sync::Mutex,
     time::{Duration, Instant},
@@ -49,7 +49,7 @@ impl GuestTransport {
             .timeout(Duration::from_secs(20))
             .connect_timeout(Duration::from_secs(8))
             .pool_max_idle_per_host(2)
-            .user_agent("Serein/0.1 (experimental native YouTube client)")
+            .user_agent("Oxplay/0.1 (experimental native YouTube client)")
             .build()
             .map_err(|_| ProviderError::Offline)?;
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -229,7 +229,7 @@ mod tests {
         OperationContext {
             request_id: 1,
             session_generation: 1,
-            cancel: serein_core::CancellationToken::default(),
+            cancel: oxplay_core::CancellationToken::default(),
         }
     }
 

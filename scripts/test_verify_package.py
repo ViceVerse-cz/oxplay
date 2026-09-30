@@ -19,7 +19,7 @@ class BundleFixture:
         self.inventory = root / "Synthetic.app.inventory.json"
         self.evidence = self.bundle / verifier.BUILD
         self.evidence.mkdir(parents=True)
-        binary = self.bundle / "Contents/MacOS/serein"
+        binary = self.bundle / "Contents/MacOS/oxplay"
         binary.parent.mkdir()
         binary.write_bytes(b"Synthetic fixture: never an executable")
         certificate = self.bundle / "Contents/Resources/Certificates/mozilla.pem"
@@ -73,19 +73,19 @@ class VerificationTests(unittest.TestCase):
         self.fixture = BundleFixture(self.root)
 
     def test_first_party_dns_helper_binds_original_input_and_final_inventory(self):
-        helper = self.fixture.bundle / "Contents/Helpers/serein-dns"
+        helper = self.fixture.bundle / "Contents/Helpers/oxplay-dns"
         helper.parent.mkdir()
         helper.write_bytes(b"Synthetic signed helper; never executed")
         original = "1" * 64
-        source = "/synthetic/target/release/serein-dns"
+        source = "/synthetic/target/release/oxplay-dns"
         self.fixture.manifest["native_inputs"] = {source: {"sha256": original}}
-        record = {"name": "serein-dns", "cargo_package": "serein-network",
-                  "bundle_path": "Contents/Helpers/serein-dns", "license": "GPL-3.0-or-later",
+        record = {"name": "oxplay-dns", "cargo_package": "oxplay-network",
+                  "bundle_path": "Contents/Helpers/oxplay-dns", "license": "GPL-3.0-or-later",
                   "original_sha256": original, "source": source, "source_build_performed": True}
         self.fixture.manifest["first_party_helpers"] = [record]
         self.fixture.write_manifest()
         self.assertEqual(self.fixture.verify()["integrity"], "passed")
-        for key, bad in (("bundle_path", "Contents/MacOS/serein"), ("source", "/unknown/input"),
+        for key, bad in (("bundle_path", "Contents/MacOS/oxplay"), ("source", "/unknown/input"),
                          ("original_sha256", "2" * 64), ("source_build_performed", "true")):
             with self.subTest(key=key):
                 previous = record[key]
@@ -114,7 +114,7 @@ class VerificationTests(unittest.TestCase):
         self.assertEqual(verifier.verify(moved, self.fixture.inventory)["files"], report["files"])
 
     def test_same_length_tamper_missing_and_extra_files_fail(self):
-        binary = self.fixture.bundle / "Contents/MacOS/serein"
+        binary = self.fixture.bundle / "Contents/MacOS/oxplay"
         original = binary.read_bytes()
         binary.write_bytes(b"X" * len(original))
         with self.assertRaisesRegex(verifier.VerificationError, "hash"):
@@ -156,10 +156,10 @@ class VerificationTests(unittest.TestCase):
             self.fixture.verify()
 
     def test_symlinks_internal_external_directory_and_broken_fail(self):
-        binary = self.fixture.bundle / "Contents/MacOS/serein"
+        binary = self.fixture.bundle / "Contents/MacOS/oxplay"
         external = self.root / "external"
         external.write_bytes(binary.read_bytes())
-        for target in (external, "missing", "Contents/MacOS", "Contents/MacOS/serein"):
+        for target in (external, "missing", "Contents/MacOS", "Contents/MacOS/oxplay"):
             link = self.fixture.bundle / "link"
             link.symlink_to(target)
             with self.subTest(target=target), self.assertRaisesRegex(verifier.VerificationError, "symlink"):
@@ -177,7 +177,7 @@ class VerificationTests(unittest.TestCase):
         with self.assertRaisesRegex(verifier.VerificationError, "Special"):
             self.fixture.verify()
         fifo.unlink()
-        binary = self.fixture.bundle / "Contents/MacOS/serein"
+        binary = self.fixture.bundle / "Contents/MacOS/oxplay"
         os.link(binary, self.root / "outside-hardlink")
         with self.assertRaisesRegex(verifier.VerificationError, "Hard-linked"):
             self.fixture.verify()
@@ -255,7 +255,7 @@ class VerificationTests(unittest.TestCase):
         original = verifier.Tree.data
 
         def mutate_after_hash(tree, path, limit):
-            (self.fixture.bundle / "Contents/MacOS/serein").write_bytes(b"Changed during verification")
+            (self.fixture.bundle / "Contents/MacOS/oxplay").write_bytes(b"Changed during verification")
             return original(tree, path, limit)
         with patch.object(verifier.Tree, "data", mutate_after_hash):
             with self.assertRaisesRegex(verifier.VerificationError, "changed during"):

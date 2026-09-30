@@ -50,7 +50,7 @@ class LocalSoakAnalysisTests(unittest.TestCase):
             (0, "sample_count", 3599), (0, "forced_termination", True),
             (0, "exit_code", 1), (0, "status", "incomplete"), (0, "warmup_seconds", 10),
             (1, "exit_code", 1), (1, "failure_type", "TimeoutError"),
-            (1, "observed_owned_processes_remaining", ["serein"]),
+            (1, "observed_owned_processes_remaining", ["oxplay"]),
             (1, "app_sha256", "c" * 64), (1, "source_revision", "c" * 40),
         ]
         for index, key, value in mutations:

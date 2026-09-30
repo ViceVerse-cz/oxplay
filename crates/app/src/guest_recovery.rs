@@ -2,8 +2,8 @@
 //! One explicit guest recovery action. Retains typed request parameters, never
 //! credentials, resolved media URLs, UI search text, or account operations.
 use crate::{App, UiState, catalog::Request};
-use serein_core::{ProviderError, QualityCeiling, VideoId};
-use serein_youtube::catalog::{CatalogCursor, CatalogRequest};
+use oxplay_core::{ProviderError, QualityCeiling, VideoId};
+use oxplay_youtube::catalog::{CatalogCursor, CatalogRequest};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::RefCell,
@@ -14,7 +14,7 @@ use std::{
 #[derive(Clone)]
 enum Target {
     Catalog(CatalogRequest, Option<CatalogCursor>),
-    Video(VideoId, QualityCeiling, serein_core::VideoStart),
+    Video(VideoId, QualityCeiling, oxplay_core::VideoStart),
 }
 impl Target {
     fn from_request(request: &Request) -> Option<Self> {
@@ -359,7 +359,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serein_youtube::{
+    use oxplay_youtube::{
         ResolutionPolicy,
         catalog::{ChannelTab, SearchKind},
     };
@@ -448,11 +448,11 @@ mod tests {
                 kind: SearchKind::Playlists,
             },
             CatalogRequest::Channel {
-                id: serein_core::ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap(),
+                id: oxplay_core::ChannelId::new("UCabcdefghijklmnopqrstuv").unwrap(),
                 tab: ChannelTab::Streams,
             },
             CatalogRequest::Playlist {
-                id: serein_core::PlaylistId::new("PLsynthetic").unwrap(),
+                id: oxplay_core::PlaylistId::new("PLsynthetic").unwrap(),
             },
         ];
         for request in requests {
@@ -482,7 +482,7 @@ mod tests {
     #[test]
     fn timestamp_retry_keeps_its_position_without_becoming_failed_file_restart() {
         let link =
-            serein_core::VideoLink::from_url("https://youtu.be/aqz-KE-bpKQ?t=1m30s").unwrap();
+            oxplay_core::VideoLink::from_url("https://youtu.be/aqz-KE-bpKQ?t=1m30s").unwrap();
         let quality = QualityCeiling::default();
         let target =
             Target::from_request(&Request::ResolveAt(link.id.clone(), quality, link.start))

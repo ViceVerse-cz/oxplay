@@ -4,9 +4,9 @@
 //! the account's YouTube recommendations through the account worker. No SQL,
 //! network or credentials here; guests never trigger a remote Home request.
 use crate::{App, UiState, account::WorkerError, library};
-use serein_core::VideoSummary;
-use serein_storage::{Page, PageCursor};
-use serein_youtube::account::{AccountCursor, AccountPage};
+use oxplay_core::VideoSummary;
+use oxplay_storage::{Page, PageCursor};
+use oxplay_youtube::account::{AccountCursor, AccountPage};
 use std::cell::{Cell, RefCell};
 
 /// Rows per visible recommendation page, matching the other catalogs.
@@ -697,7 +697,7 @@ mod tests {
         range
             .map(|index| VideoSummary {
                 metadata: None,
-                id: serein_core::VideoId::new(&format!("{index:011}")).unwrap(),
+                id: oxplay_core::VideoId::new(&format!("{index:011}")).unwrap(),
                 title: "Synthetic recommendation".into(),
                 channel: "Synthetic channel".into(),
                 channel_id: None,

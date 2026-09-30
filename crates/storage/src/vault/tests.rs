@@ -42,7 +42,7 @@ fn encrypted_roundtrip_nonce_rotation_and_key_deletion() {
     let directory = tempfile::tempdir().unwrap();
     let keys = MemoryKeys::default();
     let store = store(directory.path(), keys.clone());
-    let synthetic = b"SEREIN_SYNTHETIC_COOKIE_NOT_A_REAL_CREDENTIAL";
+    let synthetic = b"OXPLAY_SYNTHETIC_COOKIE_NOT_A_REAL_CREDENTIAL";
     assert!(store.load().unwrap().is_none());
     store.save(synthetic).unwrap();
     let before = std::fs::read(store.envelope_path()).unwrap();
@@ -219,11 +219,11 @@ fn macos_keychain_synthetic_roundtrip() {
     let _cleanup = Cleanup(profile.clone());
     let store = ProtectedSessionStore::new(directory.path().join("sessions"), profile).unwrap();
     store
-        .save(b"SEREIN_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL")
+        .save(b"OXPLAY_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL")
         .unwrap();
     assert_eq!(
         store.load().unwrap().unwrap().expose(),
-        b"SEREIN_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL"
+        b"OXPLAY_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL"
     );
     let before = std::fs::read(store.envelope_path()).unwrap();
     let reopened =
@@ -231,10 +231,10 @@ fn macos_keychain_synthetic_roundtrip() {
             .unwrap();
     assert_eq!(
         reopened.load().unwrap().unwrap().expose(),
-        b"SEREIN_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL"
+        b"OXPLAY_SYNTHETIC_KEYCHAIN_TEST_NO_USER_CREDENTIAL"
     );
     reopened
-        .save(b"SEREIN_SYNTHETIC_REPLACEMENT_SESSION")
+        .save(b"OXPLAY_SYNTHETIC_REPLACEMENT_SESSION")
         .unwrap();
     let after = std::fs::read(store.envelope_path()).unwrap();
     assert_eq!(
@@ -249,7 +249,7 @@ fn macos_keychain_synthetic_roundtrip() {
     );
     assert_eq!(
         store.load().unwrap().unwrap().expose(),
-        b"SEREIN_SYNTHETIC_REPLACEMENT_SESSION"
+        b"OXPLAY_SYNTHETIC_REPLACEMENT_SESSION"
     );
     store.delete().unwrap();
     assert!(!store.envelope_path().exists());

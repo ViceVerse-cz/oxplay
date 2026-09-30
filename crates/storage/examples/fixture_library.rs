@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit developer fixture generator; never linked into the application.
 //! Refuses an existing destination and never writes to a discovered user profile.
-use serein_core::{VideoId, VideoSummary};
-use serein_storage::LocalStore;
+use oxplay_core::{VideoId, VideoSummary};
+use oxplay_storage::LocalStore;
 use std::{fs::OpenOptions, path::PathBuf, time::Duration};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

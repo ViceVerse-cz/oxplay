@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Public channel artwork only; never infer identity artwork from a video image.
 use crate::YtDlp;
+use oxplay_core::{ChannelId, OperationContext, ProviderError};
 use serde_json::Value;
-use serein_core::{ChannelId, OperationContext, ProviderError};
 
 pub struct ChannelProfile {
     pub avatar_url: Option<String>,

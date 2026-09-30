@@ -13,11 +13,11 @@ pub use history::{
     normalize_search_query, search_query_key,
 };
 pub use library_transfer::{ImportSummary, MAX_TRANSFER_BYTES};
-use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
-use serein_core::{
+use oxplay_core::{
     ChannelId, PlaybackPreferences, PlaybackSpeed, Preferences, QualityCeiling, VideoId,
     VideoSummary,
 };
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::{fmt, path::Path, time::Duration};
 
 const SCHEMA_VERSION: u32 = 9;

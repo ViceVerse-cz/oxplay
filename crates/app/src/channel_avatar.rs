@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Two bounded public channel portraits: accepted watch creator and channel page.
 use crate::{App, UiState};
-use serein_core::{
+use oxplay_core::{
     CancellationToken, ChannelId, ChannelSummary, OperationContext, VideoId, VideoSummary,
 };
 use slint::ComponentHandle;

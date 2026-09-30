@@ -1,7 +1,7 @@
 # Browser baseline diagnostic
 
 `scripts/browser_baseline.py` is a development-only, headed Chrome for Testing
-harness. It is not shipped in Serein and is not a second application frontend.
+harness. It is not shipped in Oxplay and is not a second application frontend.
 Only the generated `artifacts/local-1080p60.mp4` fixture is admitted, in a fresh
 private automation profile. No personal browser profile is opened. The browser
 uses a CDP pipe rather than an exposed debugging TCP port.
@@ -78,7 +78,7 @@ selected player/source and decoder remained active. Playback advanced 5.143 s;
 308 total frames and zero dropped frames accumulated across approximately 5.142 s.
 
 This is **functional validation only**, not a performance gate or evidence that
-Serein is more efficient than a browser. It used only a five-second sample, an
+Oxplay is more efficient than a browser. It used only a five-second sample, an
 application build appeared in the host-other CPU record, and newly appearing VT
 services were not included in owned attribution. SPEC requires at least 60 seconds
 after warm-up and matched codec, dimensions, display, audio, power and helper

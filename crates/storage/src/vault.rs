@@ -16,11 +16,11 @@ use std::{
 use zeroize::Zeroizing;
 
 pub const MAX_SESSION_BYTES: usize = 4 * 1024 * 1024;
-const MAGIC: &[u8; 8] = b"SEREIN\0\x01";
+const MAGIC: &[u8; 8] = b"OXPLAY\0\x01";
 const HEADER_BYTES: usize = 8 + 16 + 24;
 const MAX_ENVELOPE_BYTES: usize = HEADER_BYTES + MAX_SESSION_BYTES + 16;
 const KEY_RECORD_BYTES: usize = 16 + 32;
-const SERVICE: &str = "org.serein.desktop.session-key.v1";
+const SERVICE: &str = "cz.viceverse.oxplay.session-key.v1";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VaultError {
@@ -317,7 +317,7 @@ impl ProtectedSessionStore {
             )
             .map_err(|_| VaultError::InvalidEnvelope)?;
         let mut temporary = tempfile::Builder::new()
-            .prefix(".serein-envelope-")
+            .prefix(".oxplay-envelope-")
             .tempfile_in(&self.directory)
             .map_err(|_| VaultError::StorageUnavailable)?;
         temporary
@@ -334,7 +334,7 @@ impl ProtectedSessionStore {
 
     fn lock(&self) -> Result<File> {
         ensure_private_directory(&self.directory)?;
-        let file = private_open(&self.directory.join(".serein-session.lock"), true)?;
+        let file = private_open(&self.directory.join(".oxplay-session.lock"), true)?;
         file.try_lock().map_err(|_| VaultError::InUse)?;
         Ok(file)
     }

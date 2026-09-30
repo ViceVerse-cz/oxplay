@@ -188,7 +188,7 @@ mod tests {
     #[test]
     fn file_options_keep_punctuated_companion_paths_scoped_across_replacement() {
         let fixture = Fixture(std::env::temp_dir().join(format!(
-                "serein-node-{}-{}",
+                "oxplay-node-{}-{}",
                 std::process::id(),
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)

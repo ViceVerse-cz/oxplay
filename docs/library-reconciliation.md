@@ -145,7 +145,7 @@ Repeat the functional diagnostic with a new absolute profile directory:
 
 ```sh
 cargo build --workspace --release --locked
-./target/release/serein --library-keyboard-smoke-test \
+./target/release/oxplay --library-keyboard-smoke-test \
   --data-root /absolute/path/new-keyboard-profile --ui-size 760x600 \
   --ui-theme light --snapshot /absolute/path/new-keyboard-profile/keyboard.png
 ```

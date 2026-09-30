@@ -1,11 +1,11 @@
 [package]
-name = "serein-network"
+name = "oxplay-network"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-serein-core = { path = "../core" }
+oxplay-core = { path = "../core" }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 tokio = { version = "1", features = ["rt", "time", "net", "sync", "macros"] }
 url = "2.5"
@@ -17,4 +17,4 @@ hickory-resolver = { version = "=0.26.3", default-features = false, features = [
 libc = "0.2"
 
 [dev-dependencies]
-serein-youtube = { path = "../youtube" }
+oxplay-youtube = { path = "../youtube" }

@@ -34,11 +34,11 @@ impl HelperPaths {
             Some(
                 bundled
                     .as_ref()
-                    .map(|directory| directory.join("serein-dns"))
+                    .map(|directory| directory.join("oxplay-dns"))
                     .or_else(|| {
                         executable
                             .parent()
-                            .map(|directory| directory.join("serein-dns"))
+                            .map(|directory| directory.join("oxplay-dns"))
                     })
                     .ok_or("The native DNS helper location is unavailable")?,
             )
@@ -87,7 +87,7 @@ impl HelperPaths {
             return Err("The native DNS helper path must be absolute");
         }
         let metadata = std::fs::metadata(path)
-            .map_err(|_| "The native DNS helper is unavailable; build or install serein-dns")?;
+            .map_err(|_| "The native DNS helper is unavailable; build or install oxplay-dns")?;
         if !metadata.is_file() {
             return Err("The native DNS helper must be a regular executable file");
         }
@@ -150,23 +150,23 @@ mod tests {
     #[test]
     fn missing_bundle_helpers_never_fall_back_to_host() {
         let paths = HelperPaths::discover(
-            Path::new("/nonexistent/Serein.app/Contents/MacOS/serein"),
+            Path::new("/nonexistent/Oxplay.app/Contents/MacOS/oxplay"),
             None,
             None,
         )
         .unwrap();
         assert_eq!(
             paths.yt_dlp,
-            Path::new("/nonexistent/Serein.app/Contents/Helpers/yt-dlp")
+            Path::new("/nonexistent/Oxplay.app/Contents/Helpers/yt-dlp")
         );
         assert_eq!(
             paths.deno,
-            Path::new("/nonexistent/Serein.app/Contents/Helpers/deno")
+            Path::new("/nonexistent/Oxplay.app/Contents/Helpers/deno")
         );
         assert_eq!(
             paths.media_ca.as_deref(),
             Some(Path::new(
-                "/nonexistent/Serein.app/Contents/Resources/Certificates/mozilla.pem"
+                "/nonexistent/Oxplay.app/Contents/Resources/Certificates/mozilla.pem"
             ))
         );
         assert!(paths.validate_media_ca().is_err());
@@ -175,7 +175,7 @@ mod tests {
             assert_eq!(
                 paths.dns_helper.as_deref(),
                 Some(Path::new(
-                    "/nonexistent/Serein.app/Contents/Helpers/serein-dns"
+                    "/nonexistent/Oxplay.app/Contents/Helpers/oxplay-dns"
                 ))
             );
             assert!(paths.validate_dns_helper().is_err());
@@ -184,14 +184,14 @@ mod tests {
 
     #[test]
     fn explicit_paths_override_only_the_selected_helper_and_must_be_absolute() {
-        let executable = Path::new("/Serein.app/Contents/MacOS/serein");
+        let executable = Path::new("/Oxplay.app/Contents/MacOS/oxplay");
         let paths =
             HelperPaths::discover(executable, Some("/reviewed/yt-dlp".into()), None).unwrap();
         assert_eq!(paths.yt_dlp, Path::new("/reviewed/yt-dlp"));
-        assert_eq!(paths.deno, Path::new("/Serein.app/Contents/Helpers/deno"));
+        assert_eq!(paths.deno, Path::new("/Oxplay.app/Contents/Helpers/deno"));
         assert!(HelperPaths::discover(executable, None, Some("deno".into())).is_err());
         let uppercase =
-            HelperPaths::discover(Path::new("/Renamed.APP/Contents/MacOS/serein"), None, None)
+            HelperPaths::discover(Path::new("/Renamed.APP/Contents/MacOS/oxplay"), None, None)
                 .unwrap();
         assert_eq!(
             uppercase.deno,
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn packaged_ca_must_be_a_nonempty_regular_resource() {
         let temporary = std::env::temp_dir().join(format!(
-            "serein-ca-resource-test-{}-{}",
+            "oxplay-ca-resource-test-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -210,7 +210,7 @@ mod tests {
                 .as_nanos()
         ));
         let paths = HelperPaths::discover(
-            &temporary.join("Serein.app/Contents/MacOS/serein"),
+            &temporary.join("Oxplay.app/Contents/MacOS/oxplay"),
             None,
             None,
         )
@@ -231,14 +231,14 @@ mod tests {
     #[test]
     fn native_dns_helper_uses_only_sibling_or_bundle_and_rejects_escape() {
         use std::os::unix::fs::{PermissionsExt, symlink};
-        let paths = HelperPaths::discover(Path::new("/reviewed/target/release/serein"), None, None)
+        let paths = HelperPaths::discover(Path::new("/reviewed/target/release/oxplay"), None, None)
             .unwrap();
         assert_eq!(
             paths.dns_helper.as_deref(),
-            Some(Path::new("/reviewed/target/release/serein-dns"))
+            Some(Path::new("/reviewed/target/release/oxplay-dns"))
         );
         let temporary = std::env::temp_dir().join(format!(
-            "serein-dns-path-test-{}-{}",
+            "oxplay-dns-path-test-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -246,7 +246,7 @@ mod tests {
                 .as_nanos()
         ));
         let paths = HelperPaths::discover(
-            &temporary.join("Serein.app/Contents/MacOS/serein"),
+            &temporary.join("Oxplay.app/Contents/MacOS/oxplay"),
             None,
             None,
         )

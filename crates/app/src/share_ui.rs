@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! User-initiated sharing contains only a canonical video ID and optional time.
 use crate::{App, UiState, account_playback};
-use serein_core::VideoId;
-use serein_media::Snapshot;
+use oxplay_core::VideoId;
+use oxplay_media::Snapshot;
 use slint::ComponentHandle;
 use std::{cell::RefCell, rc::Rc};
 

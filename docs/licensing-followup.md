@@ -112,7 +112,7 @@ local release fingerprints distinguish a real macOS dependency from an
 all-target inventory entry:
 
 ```text
-serein -> slint 1.19.0 -> i-slint-backend-winit 1.19.0
+oxplay -> slint 1.19.0 -> i-slint-backend-winit 1.19.0
        -> winit 0.30.13 -> objc2-foundation 0.2.2 [dispatch]
        -> dispatch 0.2.0
 ```

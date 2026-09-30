@@ -27,7 +27,7 @@ component GuideHeading inherits Rectangle {
     Text { x: 14px; width: parent.width - 14px; height: parent.height; text: root.text; color: Colors.text; font-size: 16px; font-weight: 700; vertical-alignment: center; }
 }
 export component App inherits Window {
-    title: root.picture-in-picture ? "Serein — Picture in picture" : "Serein";
+    title: root.picture-in-picture ? "Oxplay — Picture in picture" : "Oxplay";
     always-on-top: root.picture-in-picture;
     no-frame: root.window-borderless;
     in-out property <bool> window-borderless;
@@ -132,7 +132,7 @@ export component App inherits Window {
     changed native-overlay-open => { root.prepare-native-overlay(); }
     changed show-info => { root.prepare-native-overlay(); }
     changed loaded => { root.prepare-native-overlay(); }
-    // Indexes follow serein_core::QualityCeiling::ALL; 2 is the 1080p default.
+    // Indexes follow oxplay_core::QualityCeiling::ALL; 2 is the 1080p default.
     in-out property <int> quality-index: 2;
     in property <int> speed-index: 1;
     in property <int> default-quality-index: 2;
@@ -721,7 +721,7 @@ export component App inherits Window {
         Rectangle { x: root.header-leading-inset + 64px; y: (parent.height - self.height) / 2; width: 30px; height: 21px; border-radius: 6px; background: Colors.accent;
             Path { x: 11px; y: 6px; width: 9px; height: 9px; fill: #ffffff; viewbox-width: 9; viewbox-height: 9; commands: "M 0 0 L 9 4.5 L 0 9 Z"; }
         }
-        Text { x: root.header-leading-inset + 100px; y: 0; height: parent.height; width: 90px; text: "serein"; color: Colors.text; font-size: 20px; font-weight: 700; letter-spacing: -0.6px; vertical-alignment: center; }
+        Text { x: root.header-leading-inset + 100px; y: 0; height: parent.height; width: 90px; text: "oxplay"; color: Colors.text; font-size: 20px; font-weight: 700; letter-spacing: -0.6px; vertical-alignment: center; }
         search := SearchField {
             x: max(root.header-leading-inset + 220px, (root.width - self.width) / 2); y: (parent.height - self.height) / 2;
             width: min(640px, root.width - 420px - root.header-leading-inset); height: 36px;
@@ -929,7 +929,7 @@ export component App inherits Window {
             Text { text: "Applies to new videos. The current video's quality is controlled on its watch page. Above 1080p YouTube usually offers VP9 or AV1, which some machines cannot decode in hardware."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Privacy by default"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
+            Text { text: "Oxplay does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }
             ConfirmedToggle { text: "Show comments and load the first page automatically"; acknowledged-checked: CommentsUi.enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { CommentsUi.set-enabled(checked); } }
             Text { text: "Public comments load when you open a guest video. Turning this off cancels comment requests and hides comments. No account comments are fetched."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             ConfirmedToggle { text: "Keep watch history on this device"; acknowledged-checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { LibraryUi.history(checked); } }
@@ -947,7 +947,7 @@ export component App inherits Window {
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
-            Text { text: "About Serein"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+            Text { text: "About Oxplay"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             Text { text: "Independent, open-source software. Not affiliated with YouTube or Google. Experimental release; playback and platform validation are in progress. GPL-3.0-or-later."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { vertical-stretch: 1; }
         }
@@ -960,13 +960,13 @@ export component App inherits Window {
             Text { text: "Your YouTube account"; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 44px; }
             Text { text: root.account-connected ? root.account-identity : "You are browsing as a guest"; color: Colors.text; font-size: 20px; height: 32px; }
             if !root.account-connected: Text { text: "Sign in to see your recommendations, subscriptions and playlists. Public search and playback work without signing in."; color: Colors.muted; wrap: word-wrap; }
-            if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Serein is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Oxplay is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
             if !root.account-connected: CheckBox { text: "Remember this session and sign in automatically (protected storage)"; checked <=> root.account-remember; }
             // Sign in with your browser (macOS): import only YouTube/Google sign-in cookies.
             if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: Text { text: "Sign in with your browser"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: Text { text: "Serein reads only YouTube and Google sign-in cookies from the selected browser profile. macOS may ask for access to the browser's saved keys."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: Text { text: "Oxplay reads only YouTube and Google sign-in cookies from the selected browser profile. macOS may ask for access to the browser's saved keys."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: HorizontalLayout {
                 height: 42px; spacing: 12px;
                 ConfirmedChoice { accessible-label: "Browser to sign in with"; width: 280px; horizontal-stretch: 0; model: root.account-browsers; acknowledged-index: root.account-browser-index; enabled: !root.account-busy; choose(index) => { root.account-browser-index = index; } }
@@ -976,7 +976,7 @@ export component App inherits Window {
             if !root.account-connected && root.account-browser-supported && root.account-browsers.length == 0: Text { text: "No supported browser was found. Sign in to YouTube in Chrome, Brave, Edge, Arc, Vivaldi, Chromium, Firefox or Safari, or use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected && !root.account-browser-supported: Text { text: "Signing in directly from your browser is not supported on this platform yet. Use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: Text { text: "Other options"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            if !root.account-connected: Text { text: "If your browser isn't listed: sign in on YouTube in your browser, export that session with the guide, then select the exported file. Serein verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "If your browser isn't listed: sign in on YouTube in your browser, export that session with the guide, then select the exported file. Oxplay verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: HorizontalLayout {
                 height: 40px; spacing: 12px;
                 Action { label: "Sign in on YouTube"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-youtube(); } }
@@ -1010,7 +1010,7 @@ export component App inherits Window {
             }
             if root.account-more: Action { label: "Next page"; enabled: !root.account-busy; clicked => { root.account-next(); } }
             if !root.account-connected: Rectangle { vertical-stretch: 1; }
-            if root.account-connected || root.account-saved || root.account-forget-needed: Text { text: "Disconnect removes Serein's credentials and account data. Your local collections are kept. This does not sign you out of Google in your browser."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if root.account-connected || root.account-saved || root.account-forget-needed: Text { text: "Disconnect removes Oxplay's credentials and account data. Your local collections are kept. This does not sign you out of Google in your browser."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if root.account-connected || root.account-saved || root.account-busy || root.account-forget-needed: Action { label: "Disconnect and forget session"; clicked => { root.account-disconnect(); } }
         }
         }

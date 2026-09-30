@@ -86,7 +86,7 @@ class SourceReleaseTests(unittest.TestCase):
         self.assertFalse(metadata["platform_qualified"])
         self.assertFalse(metadata["complete_corresponding_source"])
         self.assertFalse(metadata["contains_binaries"])
-        prefix = "serein-v0.1.0-dev.1/"
+        prefix = "oxplay-v0.1.0-dev.1/"
         with tarfile.open(output / metadata["archive"], "r:gz") as archive:
             members = {member.name[len(prefix):]: member for member in archive if not member.isdir()}
             self.assertEqual(set(members), set(self.files))

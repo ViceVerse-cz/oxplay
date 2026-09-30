@@ -42,7 +42,7 @@ pub struct AmbientStats {
     pub busy_checks: u64,
     /// Readbacks dropped because sampling was disabled or the load changed.
     pub discarded: u64,
-    /// Wall-clock µs spent issuing/collecting, only with SEREIN_MEDIA_TIMING=1.
+    /// Wall-clock µs spent issuing/collecting, only with OXPLAY_MEDIA_TIMING=1.
     pub cpu_us: u64,
     pub failed: bool,
 }

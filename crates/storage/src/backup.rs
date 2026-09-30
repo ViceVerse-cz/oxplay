@@ -60,7 +60,7 @@ impl LocalStore {
             .filter(|path| !path.as_os_str().is_empty())
             .unwrap_or_else(|| Path::new("."));
         let mut builder = tempfile::Builder::new();
-        builder.prefix(".serein-backup-");
+        builder.prefix(".oxplay-backup-");
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -185,7 +185,7 @@ mod tests {
                 .unwrap()
                 .file_name()
                 .to_string_lossy()
-                .starts_with(".serein-backup-")
+                .starts_with(".oxplay-backup-")
         }));
     }
 

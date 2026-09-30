@@ -5,11 +5,11 @@
 //! Cursors are opaque: native ones carry a continuation token internally,
 //! extractor ones an application-owned offset. Neither is exposed by Debug.
 use crate::{YtDlp, guest_catalog, is_promoted, safe_thumbnail, summary};
-use serde_json::Value;
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelHandle, ChannelId, ChannelSummary, OperationContext, PlaylistId,
     PlaylistSummary, ProviderError,
 };
+use serde_json::Value;
 use url::Url;
 
 pub(crate) const PAGE_SIZE: usize = 20;
@@ -339,7 +339,7 @@ fn item(value: &Value) -> Result<CatalogItem, ProviderError> {
         .ok_or(ProviderError::MalformedOutput)?;
     if key == "Youtube" {
         let video = summary(value)?;
-        if serein_core::VideoId::from_url(raw_url)? != video.id {
+        if oxplay_core::VideoId::from_url(raw_url)? != video.id {
             return Err(ProviderError::MalformedOutput);
         }
         return Ok(CatalogItem::Video(video));
@@ -442,8 +442,8 @@ fn parse_page(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use oxplay_core::CancellationToken;
     use serde_json::json;
-    use serein_core::CancellationToken;
     fn video() -> Value {
         json!({"_type":"url","ie_key":"Youtube","url":"https://www.youtube.com/watch?v=abcdefghijk","id":"abcdefghijk","title":"Synthetic video","channel":"Synthetic channel"})
     }

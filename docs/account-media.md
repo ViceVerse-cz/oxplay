@@ -145,8 +145,8 @@ Run the focused provider tests with the locked workspace after any coordinated
 performance window. Account acceptance still requires an explicitly authorized
 local human test; capabilities remain implemented/unverified or unsupported.
 
-On 2026-09-29, `cargo test --locked -p serein-youtube` passed all 64 tests,
-and `cargo clippy --locked -p serein-youtube --all-targets -- -D warnings` passed.
+On 2026-09-29, `cargo test --locked -p oxplay-youtube` passed all 64 tests,
+and `cargo clippy --locked -p oxplay-youtube --all-targets -- -D warnings` passed.
 These checks used synthetic fixtures/helpers only and made no account requests.
 
 An earlier intermediate central locked check on 2026-09-29 passed **216 Rust tests** with

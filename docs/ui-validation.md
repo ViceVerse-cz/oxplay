@@ -9,10 +9,10 @@ video host, a related-result list, keyboard controls and fullscreen controls.
 
 ## Executed on macOS / Apple M1
 
-`cargo build --locked -p serein` passed. Two native guest searches used:
+`cargo build --locked -p oxplay` passed. Two native guest searches used:
 
 ```sh
-target/debug/serein --search 'Blender open movie' \
+target/debug/oxplay --search 'Blender open movie' \
   --snapshot artifacts/ui-browse-v3.png --quit-after 18
 ```
 
@@ -86,7 +86,7 @@ for every entry in `crates/app/ui/icons/SHA256SUMS`. Shared Slint components
 use semantic icon names and SVG images for navigation, player controls, the
 application badge, thumbnail placeholders and empty states; no font glyph is
 used as an icon. Full ISC and retained Feather MIT notices accompany the files.
-`cargo check --locked -p serein` passed with all updated SVG assets compiled
+`cargo check --locked -p oxplay` passed with all updated SVG assets compiled
 through Slint. Subsequent native captures verified Lucide rendering in the local
 library (dark) and account page (light, 760×600 logical pixels). Account/settings
 content now uses a ScrollView so narrow layouts retain access to lower controls.
@@ -95,19 +95,19 @@ storage choice and disabled import action without clipped text. It used an isola
 empty local profile; no consent was selected and no account request was performed.
 
 The library capture used an explicitly generated 10,000-row synthetic database
-under `artifacts/library-fixture/Serein`. All collection/row names visibly identify
+under `artifacts/library-fixture/Oxplay`. All collection/row names visibly identify
 the fixture. A 100-record page appeared in the virtualized list with a next-page
 action; this visual check is not a memory/scrolling budget pass. The generator is
 a development-only Cargo example and refuses an existing database destination.
 
-Reproduction (absolute data root; it owns only the `Serein` child):
+Reproduction (absolute data root; it owns only the `Oxplay` child):
 
 ```sh
-cargo run --locked -p serein-storage --example fixture_library -- \
-  /absolute/new-fixture/Serein/library.sqlite3
-target/debug/serein --data-root /absolute/new-fixture --ui-page library \
+cargo run --locked -p oxplay-storage --example fixture_library -- \
+  /absolute/new-fixture/Oxplay/library.sqlite3
+target/debug/oxplay --data-root /absolute/new-fixture --ui-page library \
   --ui-theme dark --snapshot /absolute/new-library.png --quit-after 18
-target/debug/serein --data-root /absolute/empty-profile --ui-page account \
+target/debug/oxplay --data-root /absolute/empty-profile --ui-page account \
   --ui-theme light --ui-size 760x600 --snapshot /absolute/new-account.png --quit-after 18
 ```
 
@@ -476,8 +476,8 @@ No hover animation was added (reduced motion is not yet observed). The video
 host keeps square corners so rounded clipping does not add a per-frame layer.
 Row geometry constants (card text band, 106 px related rows) are unchanged.
 
-Validation: `cargo build --locked -p serein`, `cargo fmt --all -- --check` and
-`cargo test --locked -p serein` (225 unit + 13 controlled-widget tests) passed.
+Validation: `cargo build --locked -p oxplay`, `cargo fmt --all -- --check` and
+`cargo test --locked -p oxplay` (225 unit + 13 controlled-widget tests) passed.
 Native `--snapshot` captures on the development Mac were inspected for home,
 guest search (dark 1320×860 and light 1000×760 mini-guide) and settings (light).
 Playback could not be presented in that capture session (display clock
@@ -503,7 +503,7 @@ Screen-reader and keyboard traversal passes were not repeated.
 - Comment loading skeleton avatars are left-aligned with their text lines.
 
 New icons are unchanged Lucide files from the pinned revision (see
-`crates/app/ui/icons/SOURCE.md`). `cargo test --locked -p serein` passed
+`crates/app/ui/icons/SOURCE.md`). `cargo test --locked -p oxplay` passed
 (225 + 13). Native captures of guest search (dark), settings (dark; light at
 1000×760 with the mini-guide) were inspected; the open drop-down list, skeleton
 grid and keyboard-vs-pointer focus were not captured natively.

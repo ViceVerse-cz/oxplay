@@ -18,7 +18,7 @@ import stat
 import subprocess
 import sys
 
-HEADER = "SEREIN_LIBRARY_RESOURCE_FIXTURE_V1\nitems=10000\nimages=30\n"
+HEADER = "OXPLAY_LIBRARY_RESOURCE_FIXTURE_V1\nitems=10000\nimages=30\n"
 MAX_IMAGE = 2 * 1024 * 1024
 
 
@@ -44,7 +44,7 @@ def prepare(root, clip, ffmpeg):
     # Deliberately no parents=True or exist_ok=True; existing files, symlinks,
     # directories and ordinary profiles are never reused or erased.
     root.mkdir(mode=0o700)
-    profile = root / "Serein"
+    profile = root / "Oxplay"
     profile.mkdir(mode=0o700)
     database = profile / "library.sqlite3"
     fd = os.open(database, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -118,7 +118,7 @@ def prepare(root, clip, ffmpeg):
         json.dump(evidence, stream, indent=2)
         stream.write("\n")
     # Written last: interrupted/failed preparation has no valid admission marker.
-    with private_text(root / ".serein-library-resource-fixture-v1") as stream:
+    with private_text(root / ".oxplay-library-resource-fixture-v1") as stream:
         stream.write(HEADER + "".join(rows))
         stream.flush()
         os.fsync(stream.fileno())

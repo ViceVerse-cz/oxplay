@@ -368,13 +368,13 @@ impl Player {
         // Diagnostic A/B control, never imported from mpv user configuration.
         // macOS uses the source-reviewed 50ms lead with display-clock gating.
         // Other unqualified platforms retain the initial zero-lead behavior.
-        let timing_lead_ms = match std::env::var("SEREIN_VIDEO_LEAD_MS") {
+        let timing_lead_ms = match std::env::var("OXPLAY_VIDEO_LEAD_MS") {
             Ok(value) => value
                 .parse::<u32>()
                 .ok()
                 .filter(|v| *v <= 100)
                 .ok_or_else(|| {
-                    MediaError("SEREIN_VIDEO_LEAD_MS must be an integer from 0 to 100".into())
+                    MediaError("OXPLAY_VIDEO_LEAD_MS must be an integer from 0 to 100".into())
                 })?,
             Err(std::env::VarError::NotPresent) => {
                 if cfg!(target_os = "macos") {
@@ -383,24 +383,24 @@ impl Player {
                     0
                 }
             }
-            Err(_) => return Err(MediaError("Invalid SEREIN_VIDEO_LEAD_MS value".into())),
+            Err(_) => return Err(MediaError("Invalid OXPLAY_VIDEO_LEAD_MS value".into())),
         };
-        let prepare_ms = match std::env::var("SEREIN_VIDEO_PREPARE_MS") {
+        let prepare_ms = match std::env::var("OXPLAY_VIDEO_PREPARE_MS") {
             Ok(value) => value
                 .parse::<u32>()
                 .ok()
                 .filter(|v| *v <= 16 && *v <= timing_lead_ms)
                 .ok_or_else(|| {
                     MediaError(
-                        "SEREIN_VIDEO_PREPARE_MS must be 0..16 and no greater than VIDEO_LEAD_MS"
+                        "OXPLAY_VIDEO_PREPARE_MS must be 0..16 and no greater than VIDEO_LEAD_MS"
                             .into(),
                     )
                 })?,
             Err(std::env::VarError::NotPresent) => 0,
-            Err(_) => return Err(MediaError("Invalid SEREIN_VIDEO_PREPARE_MS value".into())),
+            Err(_) => return Err(MediaError("Invalid OXPLAY_VIDEO_PREPARE_MS value".into())),
         };
         let diagnostic_silent_audio =
-            std::env::var_os("SEREIN_DIAGNOSTIC_NULL_AUDIO").is_some_and(|v| v == "1");
+            std::env::var_os("OXPLAY_DIAGNOSTIC_NULL_AUDIO").is_some_and(|v| v == "1");
         if diagnostic_silent_audio {
             eprintln!(
                 "DIAGNOSTIC: timed null audio output, no audible audio; this run cannot pass playback acceptance"
@@ -411,7 +411,7 @@ impl Player {
         // inaccurate AO delay, with a 1–2 second response to abrupt A/V offsets.
         // Diagnostic only: frame-rate-dependent smoothing requires A/V testing.
         let autosync_factor =
-            if std::env::var_os("SEREIN_DIAGNOSTIC_AUTOSYNC").is_some_and(|v| v == "1") {
+            if std::env::var_os("OXPLAY_DIAGNOSTIC_AUTOSYNC").is_some_and(|v| v == "1") {
                 30
             } else {
                 0
@@ -435,7 +435,7 @@ impl Player {
                 due: AtomicBool::new(false),
                 count: AtomicU64::new(0),
                 render_count: AtomicU64::new(0),
-                timing_origin: std::env::var_os("SEREIN_MEDIA_TIMING")
+                timing_origin: std::env::var_os("OXPLAY_MEDIA_TIMING")
                     .is_some_and(|v| v == "1")
                     .then(std::time::Instant::now),
                 callback_time_ns: AtomicU64::new(0),
@@ -2333,7 +2333,7 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-                "serein-mute-{}-{}.wav",
+                "oxplay-mute-{}-{}.wav",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -2724,7 +2724,7 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-            "serein-pause-intent-{}-{}.wav", std::process::id(),
+            "oxplay-pause-intent-{}-{}.wav", std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
         )));
         std::fs::write(&fixture.0, silent_wav()).unwrap();
@@ -2857,7 +2857,7 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-                "serein-pause-eof-{}-{}.wav",
+                "oxplay-pause-eof-{}-{}.wav",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -2944,7 +2944,7 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-            "serein-stop-{}-{}.wav", std::process::id(),
+            "oxplay-stop-{}-{}.wav", std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
         )));
         std::fs::write(&fixture.0, silent_wav()).unwrap();
@@ -3022,7 +3022,7 @@ mod tests {
             }
         }
         let fixture = Fixture(std::env::temp_dir().join(format!(
-                "serein-frame-fence-{}-{}.avi",
+                "oxplay-frame-fence-{}-{}.avi",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

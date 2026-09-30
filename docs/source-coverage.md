@@ -15,7 +15,7 @@ before relying on these associations.
 
 ```sh
 python3 -B scripts/source_coverage.py \
-  --evidence artifacts/Serein-bc2e53f.app/Contents/Resources/BuildInfo \
+  --evidence artifacts/Oxplay-bc2e53f.app/Contents/Resources/BuildInfo \
   --output artifacts/source-coverage-bc2e53f.json
 python3 -B scripts/test_source_coverage.py
 ```
@@ -96,7 +96,7 @@ the label validator now permits the required `@` while still rejecting path
 separators, with a regression assertion. No successful report was written by
 that failed attempt.
 
-The actual audit of the unchanged `Serein-bc2e53f.app` developer artifact hashed
+The actual audit of the unchanged `Oxplay-bc2e53f.app` developer artifact hashed
 43,995,665 bytes, below its 256 MiB budget. Of 334 selected Cargo packages,
 314 registry archive checksums matched, 14 Git dependencies had matching local
 checkout HEADs but unverified worktrees, and six workspace crates were associated
@@ -209,7 +209,7 @@ file-write limit. These failed attempts produced no qualified source export.
 
 ## Executed immutable-tree export — 2026-09-29
 
-The explicit exporter ran twice against the existing `Serein-bc2e53f.app`
+The explicit exporter ran twice against the existing `Oxplay-bc2e53f.app`
 evidence, creating separate ignored directories. Both runs independently read
 the local object database and produced byte-identical public manifests and
 archives. The 14 selected Git packages share locked Slint revision

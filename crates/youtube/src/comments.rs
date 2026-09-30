@@ -4,10 +4,10 @@
 //! reviewed yt-dlp extraction remains the fallback, whose offset pages replay
 //! the prefix rather than continue remotely.
 use crate::{YtDlp, innertube::GuestTransport, watch};
-use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     ChannelId, CommentSummary, OperationContext, ProviderError, VideoDetails, VideoId,
 };
+use serde_json::{Value, json};
 use std::{collections::HashMap, sync::Arc};
 
 const PAGE_SIZE: usize = 20;

@@ -4,8 +4,8 @@
 //! is read without a write, and changed only by an explicit click that sends
 //! one reconciled mutation. YouTube publishes no dislike count.
 use crate::{App, UiState, display_format};
-use serein_core::VideoId;
-use serein_youtube::account::{AccountMutation, MutationOutcome, VideoRating};
+use oxplay_core::VideoId;
+use oxplay_youtube::account::{AccountMutation, MutationOutcome, VideoRating};
 use std::cell::{Cell, RefCell};
 
 #[derive(Clone)]

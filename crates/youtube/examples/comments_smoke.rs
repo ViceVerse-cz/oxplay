@@ -4,9 +4,9 @@
 //! resolve/comment paths. Logs only counts, dates and timings, never comment
 //! text, author identities, tokens or media URLs.
 //!
-//! `cargo run --locked -p serein-youtube --example comments_smoke -- [--native-only] [VIDEO_ID...]`
-use serein_core::{CancellationToken, OperationContext, VideoId};
-use serein_youtube::{YtDlp, comments, innertube::GuestTransport, watch};
+//! `cargo run --locked -p oxplay-youtube --example comments_smoke -- [--native-only] [VIDEO_ID...]`
+use oxplay_core::{CancellationToken, OperationContext, VideoId};
+use oxplay_youtube::{YtDlp, comments, innertube::GuestTransport, watch};
 use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

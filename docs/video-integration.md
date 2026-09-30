@@ -280,8 +280,8 @@ Reproduce the local functional slice with:
 
 ```sh
 scripts/generate-fixture.sh
-cargo run --locked -p serein -- --local artifacts/local-1080p60.mp4 --subtitle artifacts/local.srt --smoke-test
-cargo test --locked -p serein-media
+cargo run --locked -p oxplay -- --local artifacts/local-1080p60.mp4 --subtitle artifacts/local.srt --smoke-test
+cargo test --locked -p oxplay-media
 ```
 
 Use the actual binary/package name in Cargo.toml if it changes. Live URL/search
@@ -311,7 +311,7 @@ samples waiting for the render callback; GL-state-query overhead is consequently
 not established as the dominant cause. Decode contention, event/display timing,
 and system scheduling need controlled isolation.
 
-`SEREIN_MEDIA_TIMING=1` enables bounded aggregate wall-time counters for GL-state
+`OXPLAY_MEDIA_TIMING=1` enables bounded aggregate wall-time counters for GL-state
 save, `mpv_render_context_update`, mpv drawing, and GL-state restoration, plus
 maximum mpv draw time. There are no per-frame logs or pixel reads. Totals and
 sample count appear in the existing `RenderStats` output at teardown. Timing is
@@ -347,11 +347,11 @@ In mpv 0.41.0 `vo.c:vo_is_ready_for_frame`, `video-timing-offset` determines how
 early the core may queue a frame. `vo.c:render_frame` drops a late frame before
 calling `draw_frame`, hence before the application gets its render notification.
 The initial zero-offset choice leaves no scheduling headroom. A controlled
-`SEREIN_VIDEO_LEAD_MS=50` diagnostic (bounded 0–100 ms; default was zero in that experiment)
+`OXPLAY_VIDEO_LEAD_MS=50` diagnostic (bounded 0–100 ms; default was zero in that experiment)
 re-enables headroom while retaining nonblocking rendering. The first A/B version
 presented without deadline scheduling and could show video early; those results
 must not be treated as an A/V synchronization pass. With
-`SEREIN_MEDIA_TIMING=1`, next-frame deadline offsets are recorded as aggregate
+`OXPLAY_MEDIA_TIMING=1`, next-frame deadline offsets are recorded as aggregate
 and maximum early/late microseconds.
 
 Timestamp warning: the installed mpv 0.41.0 `render.h` describes
@@ -399,8 +399,8 @@ lead path passes its functional/pacing validation.
 
 Four media tests, including deadline rounding, clock-unit rejection and actual
 libmpv initialization/async controls, passed with
-`cargo test --locked -p serein-media`. Media clippy passed with
-`cargo clippy --locked -p serein-media --all-targets -- -D warnings` after the
+`cargo test --locked -p oxplay-media`. Media clippy passed with
+`cargo clippy --locked -p oxplay-media --all-targets -- -D warnings` after the
 scheduled path was added. These unit checks do not substitute for the pending
 native A/V, pause/seek/minimize and warm steady-state measurements.
 
@@ -414,9 +414,9 @@ the dominant pacing problem.
 
 The mpv source renders the GPU work **before** its optional wait for target
 presentation time. Waiting until the target to begin all GL work therefore
-adds predictable latency. `SEREIN_VIDEO_PREPARE_MS=8` is a subsequent opt-in
+adds predictable latency. `OXPLAY_VIDEO_PREPARE_MS=8` is a subsequent opt-in
 diagnostic allowance to start up to 8 ms before the true target; allowed values
-are 0–16 ms and no greater than `SEREIN_VIDEO_LEAD_MS`. The true target remains
+are 0–16 ms and no greater than `OXPLAY_VIDEO_LEAD_MS`. The true target remains
 the reference for early/late counters. Both defaults were zero in that experiment, and this
 allowance does not establish precise presentation or A/V synchronization.
 A more exact adapter can prepare a bounded set of persistent GPU targets early
@@ -455,7 +455,7 @@ a 50 ms preparation pipeline. The active implementation retains its persistent
 pair and then-zero-lead default. The later macOS clock candidate is described above. No experimental ring runs by default or is compiled
 from the evidence patch.
 
-`SEREIN_MEDIA_TIMING=1` additionally records the newest engine render callback's
+`OXPLAY_MEDIA_TIMING=1` additionally records the newest engine render callback's
 monotonic timestamp and its arrival at BeforeRendering. Coalesced callbacks make
 this a lower bound on the age of pending work. The callback performs only an
 optional clock read, atomic stores, and the existing coalesced wake; it never
@@ -601,7 +601,7 @@ it does not qualify color accuracy, all writing systems, spoken A/V sync,
 automatic YouTube captions or the other platforms.
 
 ```sh
-target/debug/serein --local /ABSOLUTE/local-1080p60.mp4 --subtitle /ABSOLUTE/fixture.vtt --ui-size 1100x760 --ui-theme dark --snapshot /ABSOLUTE/glyphs.png --diagnostics --quit-after 18 --data-root /ABSOLUTE/ISOLATED/ROOT
+target/debug/oxplay --local /ABSOLUTE/local-1080p60.mp4 --subtitle /ABSOLUTE/fixture.vtt --ui-size 1100x760 --ui-theme dark --snapshot /ABSOLUTE/glyphs.png --diagnostics --quit-after 18 --data-root /ABSOLUTE/ISOLATED/ROOT
 ```
 
 ## Cross-file display admission and terminal stop (2026-09-29)

@@ -2,7 +2,7 @@
 
 ## Optional range timing
 
-`SEREIN_HTTP_TIMING=1` enables fixed-size per-source aggregates. One summary is
+`OXPLAY_HTTP_TIMING=1` enables fixed-size per-source aggregates. One summary is
 printed when the last source clone, reader, and active measurement release the
 shared allocation. No URL, host, header, offset, source identifier, or error
 message enters the diagnostic structure or output. Read-triggered and
@@ -32,7 +32,7 @@ This is an implementation in progress, not a whole-process network-policy pass.
 The direct libmpv path remains separately identified. Authenticated playback is
 not enabled by this work.
 
-`serein-network` owns a guest-only HTTPS range reader with an allocation-only
+`oxplay-network` owns a guest-only HTTPS range reader with an allocation-only
 open and a local, nonblocking seek operation. Its lazy current-thread HTTP runtime
 and socket/body work run on the media demux thread. On macOS, native DNS runs in
 the bounded helper described below; other targets retain their unqualified
@@ -125,9 +125,9 @@ full media content were not retained. This exercises the reader directly, not
 native libmpv playback or whole-process egress qualification.
 
 ```sh
-cargo clippy --locked -p serein-network --all-targets -- -D warnings
-cargo test --locked -p serein-network native_resolution_and_cancellation_close_the_owned_socket -- --ignored --nocapture
-cargo run --locked -p serein-network --example public_range -- 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+cargo clippy --locked -p oxplay-network --all-targets -- -D warnings
+cargo test --locked -p oxplay-network native_resolution_and_cancellation_close_the_owned_socket -- --ignored --nocapture
+cargo run --locked -p oxplay-network --example public_range -- 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
 ```
 
 ## Embedded native check
@@ -148,7 +148,7 @@ active and cannot explain initial latency. The later release check below records
 debug startup delay is not declared fixed by waiting longer.
 
 ```sh
-target/debug/serein --scoped-media --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' --ui-size 1100x760 --diagnostics --quit-after 60 --data-root /ABSOLUTE/ISOLATED/ROOT
+target/debug/oxplay --scoped-media --url 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' --ui-size 1100x760 --diagnostics --quit-after 60 --data-root /ABSOLUTE/ISOLATED/ROOT
 ```
 
 
@@ -156,7 +156,7 @@ target/debug/serein --scoped-media --url 'https://www.youtube.com/watch?v=aqz-KE
 
 At commit `b1f4074defcb36371c7bc8cd25966474d8e6d0d5`, release binary SHA-256
 `62e90c91af4d382b1d6e3cf942660977e627f1f9a52d6274b0a0a595b71a6c8a`
-ran the same public guest video with `SEREIN_HTTP_TIMING=1`, `--scoped-media`,
+ran the same public guest video with `OXPLAY_HTTP_TIMING=1`, `--scoped-media`,
 `--diagnostics`, and `--quit-after 60`. It exited successfully. The five-second
 checkpoint observed VideoToolbox H.264 1920×1080 at 60 fps, Opus/AVFoundation,
 and media position 2.583 seconds. At 8.728 seconds the window became occluded;
@@ -181,7 +181,7 @@ no whole-process CPU/RSS or A/V synchronization measurement was collected.
 ## Bounded macOS DNS helper
 
 Current scoped-transport code moves all native DNS-SD calls into the first-party
-`serein-dns` executable. `NetworkConfig::new` validates an explicitly supplied
+`oxplay-dns` executable. `NetworkConfig::new` validates an explicitly supplied
 absolute helper path without filesystem I/O; the app validates that executable
 before opening its UI. It never discovers a helper through PATH. The default
 direct-media path does not need this experimental transport's helper.

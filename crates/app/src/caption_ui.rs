@@ -4,7 +4,7 @@ use crate::{
     App, CaptionsUi, UiState, caption_files,
     catalog::{CaptionError, Request},
 };
-use serein_core::{ResolvedPlayback, SubtitleTrack, VideoId};
+use oxplay_core::{ResolvedPlayback, SubtitleTrack, VideoId};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -185,13 +185,13 @@ pub fn receive(
             .set_status(error.to_string().into()),
     }
 }
-pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &UiState, snapshot: &oxplay_media::Snapshot) {
     let s = &state.caption_ui;
     let ended = matches!(
         snapshot.state,
-        serein_media::PlaybackState::Ended
-            | serein_media::PlaybackState::Failed
-            | serein_media::PlaybackState::Idle
+        oxplay_media::PlaybackState::Ended
+            | oxplay_media::PlaybackState::Failed
+            | oxplay_media::PlaybackState::Idle
     );
     if s.retire_after
         .get()
@@ -235,7 +235,7 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
         && snapshot.active_load_request_id == s.load_baseline.get().1
         && matches!(
             snapshot.state,
-            serein_media::PlaybackState::Playing | serein_media::PlaybackState::Paused
+            oxplay_media::PlaybackState::Playing | oxplay_media::PlaybackState::Paused
         )
     {
         s.reload_after.set(None);
@@ -305,7 +305,7 @@ pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
 // Only the media barrier can acknowledge Off: it drains older sub-adds,
 // waits for the exact Off command and queries fresh native sid. An earlier
 // observed Off is insufficient, even if the property has not changed.
-fn off_completion(request: (u64, u64), snapshot: &serein_media::Snapshot) -> Option<bool> {
+fn off_completion(request: (u64, u64), snapshot: &oxplay_media::Snapshot) -> Option<bool> {
     let (load, token) = request;
     if load == 0
         || snapshot.load_request_id != load
@@ -319,7 +319,7 @@ fn off_completion(request: (u64, u64), snapshot: &serein_media::Snapshot) -> Opt
         .filter(|(reply, _)| *reply == token)
         .map(|(_, succeeded)| succeeded)
 }
-fn off_load_failed(baseline: (u64, u64), snapshot: &serein_media::Snapshot) -> bool {
+fn off_load_failed(baseline: (u64, u64), snapshot: &oxplay_media::Snapshot) -> bool {
     // keep-open EOF retains the actual native entry and accepts Off. An
     // END_FILE unload clears playback_restarted; keep that terminal path and
     // all failed/replaced/stopped loads subject to the ordinary retirement rule.
@@ -328,20 +328,20 @@ fn off_load_failed(baseline: (u64, u64), snapshot: &serein_media::Snapshot) -> b
         && snapshot.active_load_request_id == baseline.1
         && snapshot.failed_load_request_id != Some(baseline.1)
         && !snapshot.stop_pending
-        && snapshot.state == serein_media::PlaybackState::Ended
+        && snapshot.state == oxplay_media::PlaybackState::Ended
         && snapshot.playback_restarted;
     selection_load_failed(baseline, snapshot) && !retained_eof
 }
-fn selection_load_failed(baseline: (u64, u64), snapshot: &serein_media::Snapshot) -> bool {
+fn selection_load_failed(baseline: (u64, u64), snapshot: &oxplay_media::Snapshot) -> bool {
     snapshot.failed_load_request_id == Some(baseline.1)
         || snapshot.load_request_id != baseline.1
         || (snapshot.active_load_request_id == baseline.1
             && snapshot.file_starts > baseline.0
             && matches!(
                 snapshot.state,
-                serein_media::PlaybackState::Ended
-                    | serein_media::PlaybackState::Failed
-                    | serein_media::PlaybackState::Idle
+                oxplay_media::PlaybackState::Ended
+                    | oxplay_media::PlaybackState::Failed
+                    | oxplay_media::PlaybackState::Idle
             ))
 }
 
@@ -522,12 +522,12 @@ impl Smoke {
                     35 => {
                         assert!(!ui.get_busy() && ui.get_selected() == 1 && snapshot.subtitle_id.is_some(), "cached selection was not observed");
                         before_quality.set(snapshot.file_loads);
-                        app.invoke_quality(serein_core::QualityCeiling::P720.index());
+                        app.invoke_quality(oxplay_core::QualityCeiling::P720.index());
                     }
                     _ => {
                         assert!(!app.get_busy() && !ui.get_busy(), "quality/caption work did not finish");
                         assert!(snapshot.file_loads > before_quality.get(), "quality did not load a new media file");
-                        assert_eq!(state.quality_index.get(), serein_core::QualityCeiling::P720.index() as usize);
+                        assert_eq!(state.quality_index.get(), oxplay_core::QualityCeiling::P720.index() as usize);
                         assert!(snapshot.paused && snapshot.height <= 720, "quality change lost pause or ceiling");
                         assert!(snapshot.subtitle_id.is_some() && ui.get_selected() == 1, "caption selection was not reattached after quality change");
                         assert_eq!(s.cache.borrow().len(), 1, "quality change duplicated caption cache");
@@ -557,10 +557,10 @@ mod tests {
     use super::*;
     #[test]
     fn off_acknowledgement_requires_exact_completed_barrier_not_old_sid() {
-        let mut snapshot = serein_media::Snapshot {
+        let mut snapshot = oxplay_media::Snapshot {
             load_request_id: 42,
             active_load_request_id: 42,
-            state: serein_media::PlaybackState::Paused,
+            state: oxplay_media::PlaybackState::Paused,
             subtitle_id: None,
             subtitle_selection_observed: true,
             subtitle_updates: 9,
@@ -598,11 +598,11 @@ mod tests {
     #[test]
     fn only_off_can_finish_at_retained_eof_but_never_after_native_unload() {
         let baseline = (4, 42);
-        let mut snapshot = serein_media::Snapshot {
+        let mut snapshot = oxplay_media::Snapshot {
             file_starts: 5,
             load_request_id: 42,
             active_load_request_id: 42,
-            state: serein_media::PlaybackState::Ended,
+            state: oxplay_media::PlaybackState::Ended,
             playback_restarted: true,
             ..Default::default()
         };
@@ -635,11 +635,11 @@ mod tests {
     }
     #[test]
     fn terminal_loading_detection_is_bound_to_the_actual_load_request() {
-        let mut snapshot = serein_media::Snapshot {
+        let mut snapshot = oxplay_media::Snapshot {
             file_starts: 4,
             load_request_id: 42,
             active_load_request_id: 41,
-            state: serein_media::PlaybackState::Failed,
+            state: oxplay_media::PlaybackState::Failed,
             error: Some("previous failure".into()),
             ..Default::default()
         };
@@ -651,18 +651,18 @@ mod tests {
             "stale request failure must not abort the new selection"
         );
         snapshot.active_load_request_id = 42;
-        snapshot.state = serein_media::PlaybackState::Buffering;
+        snapshot.state = oxplay_media::PlaybackState::Buffering;
         assert!(!selection_load_failed((4, 42), &snapshot));
         for terminal in [
-            serein_media::PlaybackState::Ended,
-            serein_media::PlaybackState::Failed,
-            serein_media::PlaybackState::Idle,
+            oxplay_media::PlaybackState::Ended,
+            oxplay_media::PlaybackState::Failed,
+            oxplay_media::PlaybackState::Idle,
         ] {
             snapshot.state = terminal;
             assert!(selection_load_failed((4, 42), &snapshot));
         }
         snapshot.file_starts = 4;
-        snapshot.state = serein_media::PlaybackState::Playing;
+        snapshot.state = oxplay_media::PlaybackState::Playing;
         snapshot.failed_load_request_id = Some(42);
         assert!(
             selection_load_failed((4, 42), &snapshot),

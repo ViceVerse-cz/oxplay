@@ -124,7 +124,7 @@ fn step(
                 || snapshot.audio_sample_rate != 48000
                 || snapshot.diagnostic_silent_audio
                 || snapshot.paused
-                || !matches!(snapshot.state, serein_media::PlaybackState::Playing)
+                || !matches!(snapshot.state, oxplay_media::PlaybackState::Playing)
                 || !snapshot.mute_observed
                 || snapshot.muted
                 || !app.get_mute_known()
@@ -213,7 +213,7 @@ fn step(
             {
                 return Err("fullscreen did not reserve its shared Slint control strip");
             }
-            if snapshot.paused || !matches!(snapshot.state, serein_media::PlaybackState::Playing) {
+            if snapshot.paused || !matches!(snapshot.state, oxplay_media::PlaybackState::Playing) {
                 return Err("resume did not restore observed playback");
             }
             app.invoke_toggle_pause();

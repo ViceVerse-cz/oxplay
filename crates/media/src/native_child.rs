@@ -71,11 +71,11 @@ pub struct NativeChildStats {
     pub visible: bool,
 }
 unsafe extern "C" {
-    fn serein_child_is_main() -> i32;
-    fn serein_child_create(parent: *mut c_void) -> *mut c_void;
-    fn serein_child_context(surface: *mut c_void) -> *mut c_void;
-    fn serein_child_window_number(surface: *mut c_void, number: *mut i64) -> i32;
-    fn serein_child_geometry(
+    fn oxplay_child_is_main() -> i32;
+    fn oxplay_child_create(parent: *mut c_void) -> *mut c_void;
+    fn oxplay_child_context(surface: *mut c_void) -> *mut c_void;
+    fn oxplay_child_window_number(surface: *mut c_void, number: *mut i64) -> i32;
+    fn oxplay_child_geometry(
         surface: *mut c_void,
         x: f64,
         y: f64,
@@ -88,15 +88,15 @@ unsafe extern "C" {
         pw: *mut i32,
         ph: *mut i32,
     ) -> i32;
-    fn serein_child_hidden(surface: *mut c_void, hidden: i32) -> i32;
-    fn serein_child_flush(surface: *mut c_void) -> i32;
-    fn serein_child_destroy(surface: *mut c_void);
+    fn oxplay_child_hidden(surface: *mut c_void, hidden: i32) -> i32;
+    fn oxplay_child_flush(surface: *mut c_void) -> i32;
+    fn oxplay_child_destroy(surface: *mut c_void);
     fn CGLGetCurrentContext() -> *mut c_void;
     fn CGLSetCurrentContext(context: *mut c_void) -> i32;
     fn dlsym(handle: *mut c_void, name: *const c_char) -> *mut c_void;
 }
 fn main_thread() -> Result<()> {
-    if unsafe { serein_child_is_main() } == 1 {
+    if unsafe { oxplay_child_is_main() } == 1 {
         Ok(())
     } else {
         Err(MediaError(
@@ -133,7 +133,7 @@ impl Drop for Surface {
     fn drop(&mut self) {
         let _restore = CurrentContext::capture();
         unsafe {
-            serein_child_destroy(self.0.as_ptr());
+            oxplay_child_destroy(self.0.as_ptr());
         }
     }
 }
@@ -175,11 +175,11 @@ impl NativeChildPresenter {
         }
         let _restore = CurrentContext::capture();
         let surface = Surface(
-            NonNull::new(unsafe { serein_child_create(ns_view.as_ptr()) }).ok_or_else(|| {
+            NonNull::new(unsafe { oxplay_child_create(ns_view.as_ptr()) }).ok_or_else(|| {
                 MediaError("Cannot create experimental native video surface".into())
             })?,
         );
-        let cgl = NonNull::new(unsafe { serein_child_context(surface.0.as_ptr()) })
+        let cgl = NonNull::new(unsafe { oxplay_child_context(surface.0.as_ptr()) })
             .ok_or_else(|| MediaError("Native video surface has no CGL context".into()))?;
         let _current = CurrentContext::set(cgl)?;
         let gl = unsafe {
@@ -271,7 +271,7 @@ impl NativeChildPresenter {
         let _restore = CurrentContext::capture();
         let mut number = 0i64;
         native_ok(
-            unsafe { serein_child_window_number(self.surface.0.as_ptr(), &mut number) },
+            unsafe { oxplay_child_window_number(self.surface.0.as_ptr(), &mut number) },
             "Native child owning window number is unavailable",
         )?;
         u32::try_from(number)
@@ -294,7 +294,7 @@ impl NativeChildPresenter {
         main_thread()?;
         let _restore = CurrentContext::capture();
         native_ok(
-            unsafe { serein_child_hidden(self.surface.0.as_ptr(), 1) },
+            unsafe { oxplay_child_hidden(self.surface.0.as_ptr(), 1) },
             "Cannot hide native video child",
         )?;
         self.stats.visible = false;
@@ -330,7 +330,7 @@ impl NativeChildPresenter {
         let (mut width, mut height) = (0, 0);
         native_ok(
             unsafe {
-                serein_child_geometry(
+                oxplay_child_geometry(
                     self.surface.0.as_ptr(),
                     v.x,
                     v.y,
@@ -481,7 +481,7 @@ impl NativeChildPresenter {
         self.stats.renders += 1;
         let start = Instant::now();
         native_ok(
-            unsafe { serein_child_flush(self.surface.0.as_ptr()) },
+            unsafe { oxplay_child_flush(self.surface.0.as_ptr()) },
             "Flush native video surface",
         )?;
         let elapsed = start.elapsed().as_micros() as u64;
@@ -489,7 +489,7 @@ impl NativeChildPresenter {
         self.stats.max_flush_us = self.stats.max_flush_us.max(elapsed);
         if !self.stats.visible {
             native_ok(
-                unsafe { serein_child_hidden(self.surface.0.as_ptr(), 0) },
+                unsafe { oxplay_child_hidden(self.surface.0.as_ptr(), 0) },
                 "Reveal native video surface",
             )?;
         }

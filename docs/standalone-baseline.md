@@ -71,7 +71,7 @@ command in the [harness README](../tools/media-baseline/README.md):
 ```sh
 python3 scripts/measure.py --warmup 10 --seconds 60 --include-new-vt-services \
   --output artifacts/standalone-mode6.json -- \
-  /tmp/serein-media-baseline "$PWD/artifacts/local-1080p60.mp4" 85 0 0.05 0 6 692 389
+  /tmp/oxplay-media-baseline "$PWD/artifacts/local-1080p60.mp4" 85 0 0.05 0 6 692 389
 ```
 
 Source HEAD at measurement was `e1725dfe8c844ac32258beda5cc4d9a3fd3df8c4`, with the

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! One provider operation. Optional artwork yields to foreground work.
-use serein_core::{CancellationToken, ProviderError};
+use oxplay_core::{CancellationToken, ProviderError};
 use std::sync::{Condvar, Mutex};
 
 struct Active {

@@ -11,7 +11,7 @@ pub struct State {
 fn context(
     app: &App,
     state: &UiState,
-    snapshot: &serein_media::Snapshot,
+    snapshot: &oxplay_media::Snapshot,
 ) -> Option<(u64, Option<u64>)> {
     if !app.get_loaded()
         || app.get_page() != 2
@@ -22,7 +22,7 @@ fn context(
         || snapshot.failed_load_request_id == Some(snapshot.load_request_id)
         || matches!(
             snapshot.state,
-            serein_media::PlaybackState::Idle | serein_media::PlaybackState::Failed
+            oxplay_media::PlaybackState::Idle | oxplay_media::PlaybackState::Failed
         )
         || snapshot.load_request_id == 0
         || snapshot.load_request_id != snapshot.active_load_request_id
@@ -44,7 +44,7 @@ fn context(
         lease.map(|lease| lease.generation()),
     ))
 }
-pub fn observe(app: &App, state: &UiState, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &UiState, snapshot: &oxplay_media::Snapshot) {
     let current = context(app, state, snapshot);
     let ui = app.global::<JumpUi>();
     if ui.get_available() != current.is_some() {

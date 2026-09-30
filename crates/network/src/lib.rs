@@ -12,13 +12,13 @@ pub use dns_process::run_helper;
 mod access_tests;
 mod policy;
 mod timing;
+use oxplay_core::MediaTrack;
 use reqwest::{
     Client, StatusCode,
     header::{
         CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_RANGE, ETAG, HeaderMap, LAST_MODIFIED, LOCATION,
     },
 };
-use serein_core::MediaTrack;
 use std::{
     fmt,
     future::Future,
@@ -281,7 +281,7 @@ impl Session {
                 .timeout(DEADLINE)
                 .pool_max_idle_per_host(1)
                 .pool_idle_timeout(Duration::from_secs(15))
-                .user_agent("Serein/0.1")
+                .user_agent("Oxplay/0.1")
                 .build()
                 .map_err(|_| Error::Transport)?
         };
@@ -674,7 +674,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let (mut reader, cancel) = source.open();
         assert!(reader.session.is_none());
@@ -762,7 +762,7 @@ mod tests {
             headers,
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -800,7 +800,7 @@ mod tests {
                 headers: HeaderMap::new(),
                 timing: None,
                 access: None,
-                config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+                config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
             };
             let result = runtime().block_on(fetch_range_with_policy(
                 &Client::builder().no_proxy().build().unwrap(),
@@ -842,7 +842,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -876,7 +876,7 @@ mod tests {
                 headers: HeaderMap::new(),
                 timing: None,
                 access: None,
-                config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+                config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
             };
             let (mut reader, _) = source.open();
             reader.session = Some(Session {
@@ -898,7 +898,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -918,7 +918,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let (mut reader, _) = source.open();
         reader.total = Some(100_000);
@@ -946,7 +946,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/serein-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
         };
         let (mut reader, cancel) = source.open();
         reader.session = Some(Session {

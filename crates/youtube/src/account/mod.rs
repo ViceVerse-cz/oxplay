@@ -11,8 +11,8 @@ mod ephemeral;
 mod http;
 mod parser;
 pub use cookies::{MAX_COOKIE_BYTES, SessionCookies};
+use oxplay_core::{ChannelId, OperationContext, PlaylistId, VideoId, VideoSummary};
 use serde_json::{Value, json};
-use serein_core::{ChannelId, OperationContext, PlaylistId, VideoId, VideoSummary};
 use std::{
     fmt,
     sync::{Arc, atomic::Ordering},
@@ -76,7 +76,7 @@ impl fmt::Display for AccountError {
         Self::Busy=>"Another account operation is active.",
         Self::BrowserUnsupported=>"Signing in from a browser is not supported yet on this platform or for this browser. Use the session file import instead.",
         Self::BrowserUnavailable=>"That browser profile's YouTube sign-in could not be read. Make sure the browser is installed and you are signed in to YouTube in it.",
-        Self::BrowserPermissionDenied=>"Serein needs permission to read the selected browser's data. For Safari, grant Serein Full Disk Access in System Settings > Privacy & Security, then try again. For Chrome and other Chromium browsers, allow the keychain access prompt.",
+        Self::BrowserPermissionDenied=>"Oxplay needs permission to read the selected browser's data. For Safari, grant Oxplay Full Disk Access in System Settings > Privacy & Security, then try again. For Chrome and other Chromium browsers, allow the keychain access prompt.",
     })
     }
 }
@@ -84,7 +84,7 @@ impl std::error::Error for AccountError {}
 #[derive(Debug)]
 pub enum AuthenticatedResolveError {
     Account(AccountError),
-    Resolver(serein_core::ProviderError),
+    Resolver(oxplay_core::ProviderError),
 }
 impl From<AccountError> for AuthenticatedResolveError {
     fn from(error: AccountError) -> Self {
@@ -124,7 +124,7 @@ impl SessionControl {
 /// Successful explicit account extraction plus revocable session authority.
 /// URLs remain redacted domain values; the lease contains no credentials.
 pub struct AuthorizedPlayback {
-    pub playback: serein_core::ResolvedPlayback,
+    pub playback: oxplay_core::ResolvedPlayback,
     pub authorization: AccountPlaybackLease,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -367,7 +367,7 @@ impl AccountClient {
             session.expire();
             return Err(AccountError::SessionExpired.into());
         }
-        if matches!(result, Err(serein_core::ProviderError::RateLimited)) {
+        if matches!(result, Err(oxplay_core::ProviderError::RateLimited)) {
             self.http.limit_requests(None);
         }
         let playback = result.map_err(AuthenticatedResolveError::Resolver)?;
@@ -866,7 +866,7 @@ fn mutation_request(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serein_core::CancellationToken;
+    use oxplay_core::CancellationToken;
     fn context() -> OperationContext {
         OperationContext {
             request_id: 1,

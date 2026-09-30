@@ -43,7 +43,7 @@ video renders no frames, so sampling stops and the last colours remain.
 GPU memory: four small targets (128×72 … 16×9, ~48 KiB) plus a 576-byte
 buffer, allocated on first use and freed with the presenter. `RenderStats`
 (printed as `render stats` at exit) reports issued/delivered/discarded samples,
-busy fence checks and, with `SEREIN_MEDIA_TIMING=1`, CPU time spent.
+busy fence checks and, with `OXPLAY_MEDIA_TIMING=1`, CPU time spent.
 
 A low-resolution `screenshot-raw` was rejected: it asks mpv to render or copy a
 frame on its own thread, returns a full-size image through the client API and

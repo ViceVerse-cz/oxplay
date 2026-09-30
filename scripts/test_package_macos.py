@@ -32,14 +32,14 @@ class PackagingBoundaryTests(unittest.TestCase):
         def artifact(name, kind="bin"):
             return json.dumps({"reason": "compiler-artifact", "target": {"name": name, "kind": [kind]},
                                "executable": "/synthetic/" + name})
-        records = [artifact("serein"), artifact("serein-dns"), artifact("ignored")]
+        records = [artifact("oxplay"), artifact("oxplay-dns"), artifact("ignored")]
         with patch.object(packaging, "run", return_value="\n".join(records)) as command:
             binaries = packaging.build_executables()
-            self.assertEqual(set(binaries), {"serein", "serein-dns"})
+            self.assertEqual(set(binaries), {"oxplay", "oxplay-dns"})
             self.assertIn("--locked", command.call_args.args)
-            self.assertIn("serein-network", command.call_args.args)
+            self.assertIn("oxplay-network", command.call_args.args)
             self.assertIn("--bins", command.call_args.args)
-        for malformed in ([records[0]], records + [records[1]], [records[0], artifact("serein-dns", "example")]):
+        for malformed in ([records[0]], records + [records[1]], [records[0], artifact("oxplay-dns", "example")]):
             with self.subTest(records=malformed), patch.object(packaging, "run", return_value="\n".join(malformed)):
                 with self.assertRaises(packaging.PackagingError):
                     packaging.build_executables()
@@ -48,7 +48,7 @@ class PackagingBoundaryTests(unittest.TestCase):
         import subprocess
         result = subprocess.CompletedProcess([], 2, b"", b"")
         with patch.object(packaging.subprocess, "run", return_value=result) as command:
-            report = packaging.validate_dns_helper(Path("/synthetic/Serein.app/Contents/Helpers/serein-dns"))
+            report = packaging.validate_dns_helper(Path("/synthetic/Oxplay.app/Contents/Helpers/oxplay-dns"))
             self.assertFalse(report["network_requested"])
             self.assertFalse(report["cancellation_and_system_dns_qualified"])
             options = command.call_args.kwargs
@@ -58,7 +58,7 @@ class PackagingBoundaryTests(unittest.TestCase):
         for code, stdout, stderr in ((0, b"", b""), (2, b"leak", b""), (2, b"", b"leak")):
             with patch.object(packaging.subprocess, "run", return_value=subprocess.CompletedProcess([], code, stdout, stderr)):
                 with self.assertRaises(packaging.PackagingError):
-                    packaging.validate_dns_helper(Path("/synthetic/serein-dns"))
+                    packaging.validate_dns_helper(Path("/synthetic/oxplay-dns"))
 
     def test_ca_notices_bind_original_source_and_license_to_exact_public_bundle(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -110,11 +110,11 @@ class PackagingBoundaryTests(unittest.TestCase):
                     packaging.ca_notice_evidence(keg, root / "bad-header")
 
     def test_helper_runtime_validation_rejects_host_imports_and_trust_paths(self):
-        root = Path('/synthetic/Serein.app')
+        root = Path('/synthetic/Oxplay.app')
         audit = {'prefix': str(root / 'runtime'), 'certificate_file': str(root / 'ca.pem'),
                  'paths': [str(root / 'packages')], 'modules': {'builtin': None, 'module': str(root / 'module.py')}}
         package_helpers.validate_runtime_paths(audit, root, packaging)
-        for key, value in [('certificate_file', '/opt/homebrew/etc/ca-certificates/cert.pem'), ('prefix', '/synthetic/Serein.app-evil/runtime')]:
+        for key, value in [('certificate_file', '/opt/homebrew/etc/ca-certificates/cert.pem'), ('prefix', '/synthetic/Oxplay.app-evil/runtime')]:
             with self.assertRaises(packaging.PackagingError):
                 package_helpers.validate_runtime_paths(audit | {key: value}, root, packaging)
         with self.assertRaises(packaging.PackagingError):
@@ -192,7 +192,7 @@ class PackagingBoundaryTests(unittest.TestCase):
             (root / "Frameworks").mkdir()
             library = root / "Frameworks/libsynthetic.dylib"
             library.write_bytes(b"synthetic path fixture; never executed")
-            executable = root / "serein"
+            executable = root / "oxplay"
             self.assertEqual(packaging.resolve_load("@rpath/libsynthetic.dylib", executable, executable,
                                                     ["@loader_path/Frameworks"]), library.resolve())
             with self.assertRaises(packaging.PackagingError):

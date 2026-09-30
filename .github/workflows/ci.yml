@@ -102,23 +102,23 @@ jobs:
         id: mpv-cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: ${{ runner.temp }}/serein-mpv-0.41.0
+          path: ${{ runner.temp }}/oxplay-mpv-0.41.0
           key: libmpv-${{ runner.os }}-${{ runner.arch }}-0.41.0-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}-${{ steps.native.outputs.hash }}
           # No partial restore: the installed native ABI must match this inventory.
 
       - name: Build verified Linux libmpv source
         if: runner.os == 'Linux' && steps.mpv-cache.outputs.cache-hit != 'true'
         timeout-minutes: 20
-        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/serein-mpv-0.41.0"
+        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/oxplay-mpv-0.41.0"
 
       - name: Select isolated Linux libmpv
         if: runner.os == 'Linux'
         run: |
-          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/serein-mpv-0.41.0/lib/pkgconfig" >> "$GITHUB_ENV"
-          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/serein-mpv-0.41.0/lib" >> "$GITHUB_ENV"
-          PKG_CONFIG_PATH="$RUNNER_TEMP/serein-mpv-0.41.0/lib/pkgconfig" pkg-config --atleast-version=2.5 mpv
-          PKG_CONFIG_PATH="$RUNNER_TEMP/serein-mpv-0.41.0/lib/pkgconfig" pkg-config --modversion mpv
-          sha256sum "$RUNNER_TEMP/serein-mpv-0.41.0/lib/libmpv.so.2"
+          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/oxplay-mpv-0.41.0/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/oxplay-mpv-0.41.0/lib" >> "$GITHUB_ENV"
+          PKG_CONFIG_PATH="$RUNNER_TEMP/oxplay-mpv-0.41.0/lib/pkgconfig" pkg-config --atleast-version=2.5 mpv
+          PKG_CONFIG_PATH="$RUNNER_TEMP/oxplay-mpv-0.41.0/lib/pkgconfig" pkg-config --modversion mpv
+          sha256sum "$RUNNER_TEMP/oxplay-mpv-0.41.0/lib/libmpv.so.2"
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2

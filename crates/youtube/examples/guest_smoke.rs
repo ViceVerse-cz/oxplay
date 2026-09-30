@@ -1,6 +1,6 @@
 //! Explicit opt-in network smoke. Outputs counts/status only, never signed URLs or titles.
-use serein_core::{CancellationToken, OperationContext, VideoId};
-use serein_youtube::YtDlp;
+use oxplay_core::{CancellationToken, OperationContext, VideoId};
+use oxplay_youtube::YtDlp;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let binary = args

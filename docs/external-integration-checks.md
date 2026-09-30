@@ -47,7 +47,7 @@ trusted-chain/wrong-host attempts. No certificate is installed in a trust store.
 The test uses the production `Player::new_with_ca_file` and native URL-loading
 path, with explicit null audio/video outputs and a silent generated WAV. It does
 not need a window, hardware decoder, browser, extractor, account, or external
-HTTP service. Ambient proxy and `SEREIN_*` variables are removed from the Cargo
+HTTP service. Ambient proxy and `OXPLAY_*` variables are removed from the Cargo
 child environment; the fixture then supplies only its explicit loopback inputs.
 
 The Rust check has a 12-second outcome deadline per attempt. Its wrapper uses
@@ -78,7 +78,7 @@ python3 -m unittest discover -s scripts -p test_media_tls_harness.py
 ## Synthetic macOS Keychain
 
 ```sh
-cargo test --locked --offline -p serein-storage vault::tests::macos_keychain_synthetic_roundtrip -- --ignored --exact --test-threads=1
+cargo test --locked --offline -p oxplay-storage vault::tests::macos_keychain_synthetic_roundtrip -- --ignored --exact --test-threads=1
 ```
 
 Requires macOS and access to the user's local login Keychain. The OS may present
@@ -102,14 +102,14 @@ and deletion, not login, identity verification, expiry, or account acceptance.
 The original ignored smoke is deliberately renamed to describe its actual scope:
 
 ```sh
-cargo test --locked --offline -p serein-network dns_macos::tests::native_resolution_and_query_drop_close_the_owned_socket -- --ignored --exact --test-threads=1
+cargo test --locked --offline -p oxplay-network dns_macos::tests::native_resolution_and_query_drop_close_the_owned_socket -- --ignored --exact --test-threads=1
 ```
 
 It contacts the configured system resolver for `example.com`, checks returned
 addresses with the production public-address policy, and verifies that dropping
 an owned DNS-SD query closes its descriptor. It runs the primitive **inside the
 test process**, whereas current macOS media runs it in the supervised first-party
-`serein-dns` executable. Its async three-second deadline does not bound a
+`oxplay-dns` executable. Its async three-second deadline does not bound a
 synchronously stuck native DNS initialization call. Run it under an external
 process supervisor when collecting evidence; do not call this a production
 helper-cancellation test.
@@ -117,7 +117,7 @@ helper-cancellation test.
 The new complementary check uses Cargo's exact built executable path:
 
 ```sh
-cargo test --locked --offline -p serein-network --test dns_helper live_system_dns_helper_returns_bounded_public_protocol -- --ignored --exact --test-threads=1
+cargo test --locked --offline -p oxplay-network --test dns_helper live_system_dns_helper_returns_bounded_public_protocol -- --ignored --exact --test-threads=1
 ```
 
 It launches the actual helper with a cleared environment, no arguments, and only

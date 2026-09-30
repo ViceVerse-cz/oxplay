@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! One lazily constructed guest/account extractor, including its concurrency and
 //! rate-limit state. Construction and cloning perform no filesystem or network I/O.
-use serein_core::ProviderError;
-use serein_youtube::{YtDlp, innertube::GuestTransport};
+use oxplay_core::ProviderError;
+use oxplay_youtube::{YtDlp, innertube::GuestTransport};
 use std::{
     path::PathBuf,
     sync::{Arc, OnceLock},

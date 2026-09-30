@@ -15,14 +15,14 @@ pub struct RenderStats {
     pub ui_draws: u64,
     pub target_allocations: u64,
     pub target_bytes: u64,
-    /// Explicit experiment; false unless SEREIN_STABLE_VIDEO_TARGET=1.
+    /// Explicit experiment; false unless OXPLAY_STABLE_VIDEO_TARGET=1.
     pub stable_video_target: bool,
     pub stable_target_draws: u64,
     pub private_target_draws: u64,
     /// Successful renders selected for publication from next; not displayed
     /// pixels, GPU completion, or proof that the compositor presented them.
     pub target_publications: u64,
-    /// Enabled only with SEREIN_MEDIA_TIMING=1. Totals are wall-clock µs.
+    /// Enabled only with OXPLAY_MEDIA_TIMING=1. Totals are wall-clock µs.
     pub timing_samples: u64,
     pub gl_save_us: u64,
     pub mpv_update_us: u64,
@@ -229,7 +229,7 @@ impl GlPresenter {
                     .into(),
             ));
         }
-        let gpu_mode = std::env::var_os("SEREIN_GPU_TIMING");
+        let gpu_mode = std::env::var_os("OXPLAY_GPU_TIMING");
         let gpu_timing = if gpu_mode
             .as_ref()
             .is_some_and(|v| v == "1" || v == "ui-elapsed")
@@ -304,7 +304,7 @@ impl GlPresenter {
             *player.inner.presentation_clock.borrow_mut() = Some(clock);
         }
         player.inner.renderer_attached.set(true);
-        let measure_timing = std::env::var_os("SEREIN_MEDIA_TIMING").is_some_and(|v| v == "1");
+        let measure_timing = std::env::var_os("OXPLAY_MEDIA_TIMING").is_some_and(|v| v == "1");
         Ok(Self {
             player: player.clone(),
             gl: gl.clone(),
@@ -312,7 +312,7 @@ impl GlPresenter {
             targets: PublicationPair::default(),
             retired: Vec::with_capacity(2),
             stats: RenderStats {
-                stable_video_target: std::env::var_os("SEREIN_STABLE_VIDEO_TARGET")
+                stable_video_target: std::env::var_os("OXPLAY_STABLE_VIDEO_TARGET")
                     .is_some_and(|value| value == "1"),
                 ..RenderStats::default()
             },

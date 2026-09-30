@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     // Primitive-only check: production calls this implementation inside the
-    // supervised serein-dns process, not directly from the application runtime.
+    // supervised oxplay-dns process, not directly from the application runtime.
     #[ignore = "Explicit DNS-SD primitive smoke: resolves example.com in-process; no HTTP/account; production helper checked separately"]
     fn native_resolution_and_query_drop_close_the_owned_socket() {
         let runtime = tokio::runtime::Builder::new_current_thread()

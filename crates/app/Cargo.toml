@@ -1,16 +1,16 @@
 [package]
-name = "serein"
+name = "oxplay"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 slint.workspace = true
-serein-core = { path = "../core" }
-serein-youtube = { path = "../youtube" }
-serein-media = { path = "../media" }
-serein-network = { path = "../network" }
-serein-storage = { path = "../storage" }
+oxplay-core = { path = "../core" }
+oxplay-youtube = { path = "../youtube" }
+oxplay-media = { path = "../media" }
+oxplay-network = { path = "../network" }
+oxplay-storage = { path = "../storage" }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 tokio = { version = "1", features = ["rt", "time", "net", "sync", "macros"] }
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }

@@ -23,7 +23,7 @@ the transport to the bottom removes the former caption-clear gap: overlap with
 native subtitles while controls are visible still needs visual qualification.
 
 
-The player’s picture-in-picture button or **P** turns the existing Serein window
+The player’s picture-in-picture button or **P** turns the existing Oxplay window
 into a compact borderless floating player. Play/pause, seek, elapsed time, mute,
 captions and playback settings remain available inside the video. The video
 background invokes the native window manager after a left-drag threshold. **P**, **Escape**, the return button or closing the compact window
@@ -120,7 +120,7 @@ To repeat with an existing local clip and a fresh isolated profile:
 
 ```sh
 cargo build --locked
-./target/debug/serein --pip-smoke-test \
+./target/debug/oxplay --pip-smoke-test \
   --local /absolute/path/clip.mp4 --subtitle /absolute/path/captions.srt \
   --data-root /absolute/path/new-profile --ui-size 900x650 \
   --snapshot /absolute/path/new-pip.png

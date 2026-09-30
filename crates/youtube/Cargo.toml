@@ -1,11 +1,11 @@
 [package]
-name = "serein-youtube"
+name = "oxplay-youtube"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-serein-core = { path = "../core" }
+oxplay-core = { path = "../core" }
 serde_json = "1"
 url = "2.5"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }

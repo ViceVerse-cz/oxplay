@@ -38,7 +38,7 @@ os.environ["PYCRYPTODOME_DISABLE_GMP"] = "1"
 # -I -S excludes environment, user site, site initialization and all .pth execution.
 root = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(root / "Python" / "packages"))
-if sys.argv[1:] == ["--serein-runtime-audit"]:
+if sys.argv[1:] == ["--oxplay-runtime-audit"]:
     import importlib
     import importlib.metadata
     import json
@@ -116,20 +116,20 @@ def validate_runtime_paths(audit: dict, bundle: Path, api) -> None:
 def validate_helpers(bundle: Path, plan: dict, api) -> dict:
     """Execute offline probes before publishing; fail closed on host fallback."""
     results = {}
-    with tempfile.TemporaryDirectory(prefix='serein-helper-audit-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='oxplay-helper-audit-') as temporary:
         environment = {'PATH': '/usr/bin:/bin', 'LANG': 'en_US.UTF-8',
                        'HOME': temporary, 'DENO_DIR': str(Path(temporary) / 'deno'),
                        'DENO_NO_UPDATE_CHECK': '1', 'DYLD_PRINT_LIBRARIES': '1',
-                       'PYTHONHOME': '/nonexistent/serein-untrusted-python',
-                       'PYTHONPATH': '/nonexistent/serein-untrusted-packages'}
+                       'PYTHONHOME': '/nonexistent/oxplay-untrusted-python',
+                       'PYTHONPATH': '/nonexistent/oxplay-untrusted-packages'}
         commands = {
-            'python': [str(bundle / 'Contents/Helpers/yt-dlp'), '--serein-runtime-audit'],
+            'python': [str(bundle / 'Contents/Helpers/yt-dlp'), '--oxplay-runtime-audit'],
             'yt_dlp_version': [str(bundle / 'Contents/Helpers/yt-dlp'), '--ignore-config', '--no-config-locations', '--no-plugin-dirs', '--version'],
             'deno_version': [str(bundle / 'Contents/Helpers/deno'), '--version'],
             'deno_script': [str(bundle / 'Contents/Helpers/deno'), 'run', '--ext=js', '--no-prompt', '--no-config', '--no-remote', '--no-npm', '--no-lock', '--no-code-cache', '-'],
         }
         for name, command in commands.items():
-            program = "console.log('serein-offline-runtime-check')" if name == 'deno_script' else None
+            program = "console.log('oxplay-offline-runtime-check')" if name == 'deno_script' else None
             result = subprocess.run(command, input=program, cwd='/', env=environment, capture_output=True, text=True, timeout=45)
             if result.returncode or len(result.stdout) > 128 * 1024 or len(result.stderr) > 2 * 1024 * 1024:
                 raise api.PackagingError('A bundled helper failed its isolated offline runtime probe: ' + name)

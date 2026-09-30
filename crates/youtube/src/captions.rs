@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Selected-only guest timedtext access. Signed addresses never enter diagnostics.
 use crate::{RateLimit, YtDlp};
+use oxplay_core::{CaptionUrl, OperationContext, ProviderError, SubtitleTrack, VideoId};
 use serde_json::Value;
-use serein_core::{CaptionUrl, OperationContext, ProviderError, SubtitleTrack, VideoId};
 use std::time::{Duration, SystemTime};
 const MAX_TRACKS: usize = 64;
 const MAX_CAPTION_BYTES: usize = 2 * 1024 * 1024;
@@ -131,7 +131,7 @@ impl YtDlp {
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(10))
             .pool_max_idle_per_host(0)
-            .user_agent("Serein/0.1 (experimental native YouTube client)")
+            .user_agent("Oxplay/0.1 (experimental native YouTube client)")
             .build()
             .map_err(|_| ProviderError::Offline)?;
         let runtime = tokio::runtime::Builder::new_current_thread()

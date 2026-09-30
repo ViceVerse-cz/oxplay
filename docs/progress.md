@@ -16,10 +16,10 @@ account rows never become the related list, and sign-out clears them. See
 [account provider](account-provider.md#home-recommendations-implemented-not-qualified).
 Validation: `cargo fmt --all -- --check` and
 `cargo clippy --locked --workspace --all-targets -- -D warnings` passed.
-`cargo build --locked -p serein` passed. With `--no-fail-fast`,
+`cargo build --locked -p oxplay` passed. With `--no-fail-fast`,
 `cargo test --locked --workspace` passed 494 tests with 4 ignored. This includes
 new synthetic parser, client, worker, pager and compiled-UI chip tests. One
-unchanged `serein-media` test failed in this environment: local libmpv rejected
+unchanged `oxplay-media` test failed in this environment: local libmpv rejected
 its synthetic y4m fixture (engine error -17). That crate and its inputs are
 untouched by this change. No real account feed, native run or screenshot was
 used, so account qualification (AC-08 scope) remains pending.
@@ -44,7 +44,7 @@ cached thumbnails. It makes no artwork network request, retains bounded typed
 rows and releases images on viewport/surface changes. Play/Remove targets are
 separate and keyboard accessible.
 
-Validation: `cargo test -p serein --test controlled_widgets --locked` passed all
+Validation: `cargo test -p oxplay --test controlled_widgets --locked` passed all
 13 tests, including header/search centering, bounded creator action geometry,
 comment-setting acknowledgement/rollback and history artwork/removal hit separation.
 Two focused comments tests, one history formatting test, two sanitized provider
@@ -94,7 +94,7 @@ until acknowledgement. The focused compiled-UI tests cover inside mouse clicks,
 busy/rollback, keyboard Back/Escape, video/control hit separation, PiP dragging,
 mini-player geometry/data retention and both creator hit targets. These are
 headless shared-UI tests, not native rendering, decoder or live-account evidence.
-Validation on macOS: `cargo test -p serein --test controlled_widgets --locked`
+Validation on macOS: `cargo test -p oxplay --test controlled_widgets --locked`
 passed 10 focused tests (0 failures); `cargo fmt --all -- --check`,
 `cargo clippy --workspace --all-targets --locked -- -D warnings`, and
 `cargo build --workspace --locked` passed. `git diff --check` passed.
@@ -525,7 +525,7 @@ application exited cleanly. Five new deterministic retry regressions pass;
 actual failed-stream-to-success native recovery remains pending. No performance
 or usage measurement was run after the user's instruction to pause them.
 The locked release build of source `50822c1` completed successfully; the updated
-executable is `target/release/serein`. Earlier source `ea237f0` also passed its
+executable is `target/release/oxplay`. Earlier source `ea237f0` also passed its
 locked release build. These are runnable development releases, not distribution
 or cross-platform qualification.
 

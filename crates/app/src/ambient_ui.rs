@@ -6,7 +6,7 @@
 //! frames that already publish a new video image, so the glow adds no redraws
 //! of its own while playing and freezes (keeping its colours) while paused.
 use crate::{App, UiState};
-use serein_media::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, GlPresenter};
+use oxplay_media::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, GlPresenter};
 use slint::{ComponentHandle, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode};
 use std::{
     cell::RefCell,
@@ -456,7 +456,7 @@ mod tests {
     }
 
     /// Opt-in release microbenchmark of the per-update CPU work:
-    /// `cargo test --release -p serein ambient_ui::tests::update_cost -- --ignored --nocapture`
+    /// `cargo test --release -p oxplay ambient_ui::tests::update_cost -- --ignored --nocapture`
     #[test]
     #[ignore = "timing microbenchmark; run explicitly in release"]
     fn update_cost() {

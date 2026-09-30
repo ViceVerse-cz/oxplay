@@ -4,7 +4,7 @@ use crate::{
     AccountRow, App, UiState,
     account::{self, AccountRequest, Persistence, Response},
 };
-use serein_youtube::account::{
+use oxplay_youtube::account::{
     AccountChannel, AccountCursor, AccountMutation, AccountPlaylist, AccountPlaylistItem,
     BrowserKind, Capability, InstalledBrowser, MutationOutcome,
 };
@@ -24,15 +24,15 @@ enum Item {
 enum Scope {
     Subscriptions,
     Playlists,
-    Playlist(serein_core::PlaylistId),
+    Playlist(oxplay_core::PlaylistId),
 }
 #[derive(Clone)]
 struct RatingTarget {
-    video: serein_core::VideoId,
+    video: oxplay_core::VideoId,
     generation: u64,
 }
 impl RatingTarget {
-    fn matches(&self, video: Option<&serein_core::VideoId>, generation: u64) -> bool {
+    fn matches(&self, video: Option<&oxplay_core::VideoId>, generation: u64) -> bool {
         video == Some(&self.video) && self.generation == generation
     }
 }
@@ -128,7 +128,7 @@ impl State {
             picker.abort();
         }
     }
-    pub fn video_title(&self, id: &serein_core::VideoId) -> Option<String> {
+    pub fn video_title(&self, id: &oxplay_core::VideoId) -> Option<String> {
         self.items.borrow().iter().find_map(|item| match item {
             Item::Video(video) if &video.video_id == id => Some(video.title.clone()),
             _ => None,
@@ -143,8 +143,8 @@ impl State {
     pub fn submit_playback(
         &self,
         app: &App,
-        id: serein_core::VideoId,
-        policy: serein_youtube::ResolutionPolicy,
+        id: oxplay_core::VideoId,
+        policy: oxplay_youtube::ResolutionPolicy,
         selection_generation: u64,
     ) -> Result<(), String> {
         if !self.can_playback(app) {
@@ -325,7 +325,7 @@ fn capability(value: Capability) -> &'static str {
         Capability::Unsupported => "unsupported",
     }
 }
-fn capabilities(c: &serein_youtube::account::AccountCapabilities) -> String {
+fn capabilities(c: &oxplay_youtube::account::AccountCapabilities) -> String {
     format!(
         "Identity: {} · Subscriptions: {} · Playlists: {} · Home recommendations: {}\nSubscription writes: {} · Likes: {} · Playlist edits: {}\nAuthenticated extraction: {} · Channel switching: {}",
         capability(c.identity),
@@ -416,7 +416,7 @@ pub fn refresh_browsers(app: &App, state: &UiState) {
     app.set_account_browser_supported(cfg!(target_os = "macos"));
     // An in-flight sign-in already captured its target; the choice is disabled
     // while busy, so refreshing here cannot redirect it.
-    let choices = browser_choices(serein_youtube::account::detect_browsers());
+    let choices = browser_choices(oxplay_youtube::account::detect_browsers());
     let previous = browser_sign_in_target(
         app.get_account_browser_index(),
         &state.account_ui.browser_entries.borrow(),
@@ -793,11 +793,11 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 if kind == PendingKind::Connection { s.account_ui.launch_restore.set(false); }
                 // Home owns its loading/error state for its own request ticket.
                 crate::home_ui::receive_recommendations(&app, &s, result.request_id, Err(error));
-                if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::SessionExpired | serein_youtube::account::AccountError::IdentityNotVerified | serein_youtube::account::AccountError::StaleSession)) {
+                if matches!(error, account::WorkerError::Account(oxplay_youtube::account::AccountError::SessionExpired | oxplay_youtube::account::AccountError::IdentityNotVerified | oxplay_youtube::account::AccountError::StaleSession)) {
                     identity_lost(&app, &s);
                     crate::account_playback::clear(&app, &s);
                 }
-                if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::ReconciliationRequired)) { app.set_account_pending(true); }
+                if matches!(error, account::WorkerError::Account(oxplay_youtube::account::AccountError::ReconciliationRequired)) { app.set_account_pending(true); }
                 // A failed rating write rolls back; an unconfirmed one stays unknown.
                 if kind == PendingKind::Mutation { crate::rating_ui::finished(&app, &s, Err(result.unconfirmed_mutation || app.get_account_pending())); }
                 app.set_account_status(s.account_ui.write_warning.status(error.to_string()));
@@ -915,7 +915,7 @@ mod tests {
     }
     #[test]
     fn browser_choices_label_profiles_and_retain_the_selection() {
-        use serein_youtube::account::BrowserProfile;
+        use oxplay_youtube::account::BrowserProfile;
         let profile = |id: &str, name: &str| BrowserProfile {
             id: id.to_owned(),
             display_name: name.to_owned(),
@@ -991,8 +991,8 @@ mod tests {
     }
     #[test]
     fn a_rating_result_cannot_cross_video_or_account_selection() {
-        let first = serein_core::VideoId::new("aaaaaaaaaaa").unwrap();
-        let second = serein_core::VideoId::new("bbbbbbbbbbb").unwrap();
+        let first = oxplay_core::VideoId::new("aaaaaaaaaaa").unwrap();
+        let second = oxplay_core::VideoId::new("bbbbbbbbbbb").unwrap();
         let pending = RatingTarget {
             video: first.clone(),
             generation: 7,
@@ -1005,11 +1005,11 @@ mod tests {
     #[test]
     fn expired_identity_drops_read_publication_but_keeps_mutation_outcomes_and_errors() {
         assert!(is_private_read(&Ok(Response::Rating(
-            serein_youtube::account::VideoRating::Like
+            oxplay_youtube::account::VideoRating::Like
         ))));
         assert!(is_private_read(&Ok(Response::SubscriptionState(true))));
         assert!(is_private_read(&Ok(Response::Recommendations(
-            serein_youtube::account::AccountPage {
+            oxplay_youtube::account::AccountPage {
                 items: Vec::new(),
                 next: None,
                 partial: false,
@@ -1022,10 +1022,10 @@ mod tests {
             MutationOutcome::NeedsReconciliation
         ))));
         assert!(!is_private_read(&Err(account::WorkerError::Account(
-            serein_youtube::account::AccountError::SessionExpired
+            oxplay_youtube::account::AccountError::SessionExpired
         ))));
         assert!(!is_private_read(&Err(account::WorkerError::Account(
-            serein_youtube::account::AccountError::ReconciliationRequired
+            oxplay_youtube::account::AccountError::ReconciliationRequired
         ))));
     }
 }

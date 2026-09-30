@@ -138,7 +138,7 @@ IOPMLib.h documents that this assertion does not wake an already sleeping
 screen, override a closed lid, or prevent explicit sleep. The implementation
 uses IOPMAssertionCreateWithName/IOPMAssertionRelease, level 255, scoped to the
 media owner; Snapshot exposes `prevents_display_sleep` for lifecycle checks.
-A later native run validated the assertion: pmset named `Serein video playback`
+A later native run validated the assertion: pmset named `Oxplay video playback`
 and reported PreventUserIdleDisplaySleep=1 during Playing; at the hidden/paused
 stage it was 0, and after teardown it remained 0. Snapshot agreed. Paused seek,
 resize/fullscreen, subtitles and restoration passed in that run. Initial-sleep

@@ -75,7 +75,7 @@ def reap_group(process):
 
 @contextlib.contextmanager
 def fixture_directory(commands):
-    directory = Path(tempfile.mkdtemp(prefix="serein-tls-"))
+    directory = Path(tempfile.mkdtemp(prefix="oxplay-tls-"))
     try:
         yield directory
     finally:
@@ -196,7 +196,7 @@ def main():
     try:
         with fixture_directory(commands) as directory:
             openssl(commands, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-sha256", "-days", "1",
-                    "-subj", "/CN=Serein disposable fixture CA", "-keyout", str(directory / "ca.key"),
+                    "-subj", "/CN=Oxplay disposable fixture CA", "-keyout", str(directory / "ca.key"),
                     "-out", str(directory / "ca.pem"))
             good = certificate(commands, directory, "good", "IP:127.0.0.1")
             bad_host = certificate(commands, directory, "mismatched-host", "DNS:invalid.fixture.test")
@@ -205,12 +205,12 @@ def main():
                   server(*bad_host) as (bad_url, bad_requests)):
                 env = os.environ.copy()
                 for key in list(env):
-                    if key.lower().endswith("_proxy") or key.startswith("SEREIN_"):
+                    if key.lower().endswith("_proxy") or key.startswith("OXPLAY_"):
                         del env[key]
-                env.update(SEREIN_TLS_FIXTURE_GOOD=good_url, SEREIN_TLS_FIXTURE_UNTRUSTED=untrusted_url,
-                           SEREIN_TLS_FIXTURE_MISMATCH=bad_url,
-                           SEREIN_TLS_FIXTURE_CA=str(directory / "ca.pem"))
-                commands.run(["cargo", "test", "--locked", "--offline", "-p", "serein-media",
+                env.update(OXPLAY_TLS_FIXTURE_GOOD=good_url, OXPLAY_TLS_FIXTURE_UNTRUSTED=untrusted_url,
+                           OXPLAY_TLS_FIXTURE_MISMATCH=bad_url,
+                           OXPLAY_TLS_FIXTURE_CA=str(directory / "ca.pem"))
+                commands.run(["cargo", "test", "--locked", "--offline", "-p", "oxplay-media",
                     "tls_tests::synthetic_loopback_certificate_and_hostname_verification", "--",
                     "--ignored", "--exact", "--test-threads=1"], env=env, timeout=180)
                 if not good_requests or untrusted_requests or bad_requests:

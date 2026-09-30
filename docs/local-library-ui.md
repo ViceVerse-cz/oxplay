@@ -71,7 +71,7 @@ functional evidence does not qualify these newly added controls.
 
 The surrounding controls can scroll at the minimum window size; the nested row ListView keeps its own bounded viewport. Native visual/keyboard validation of the new page remains to be recorded separately from compilation and worker tests. There is no claim that these source-level bounds alone prove the large-library performance gate.
 
-Validation on the available macOS host: `cargo check --locked -p serein` passed; `cargo test --locked -p serein library` passed all four focused tests (worker paging/mutations, history opt-in/local clear, explicit safe transfer destinations, bounded backward navigation); `cargo clippy --locked -p serein --all-targets -- -D warnings` passed. These tests use synthetic local data and do not connect a YouTube account.
+Validation on the available macOS host: `cargo check --locked -p oxplay` passed; `cargo test --locked -p oxplay library` passed all four focused tests (worker paging/mutations, history opt-in/local clear, explicit safe transfer destinations, bounded backward navigation); `cargo clippy --locked -p oxplay --all-targets -- -D warnings` passed. These tests use synthetic local data and do not connect a YouTube account.
 
 ## History presentation correction
 

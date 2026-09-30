@@ -142,8 +142,8 @@ def release(repo: Path, tag: str | None, output: Path) -> dict:
     entries = tracked_files(repo, revision)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.mkdir(mode=0o700, exist_ok=False)
-    archive_name = f"serein-{tag}-source.tar.gz"
-    prefix = f"serein-{tag}/"
+    archive_name = f"oxplay-{tag}-source.tar.gz"
+    prefix = f"oxplay-{tag}/"
     # Staging stays inside our new output directory. No user file or existing
     # release is overwritten; failed output remains visible for inspection.
     with tempfile.TemporaryDirectory(prefix=".source-", dir=output) as temporary:
@@ -170,7 +170,7 @@ def release(repo: Path, tag: str | None, output: Path) -> dict:
         "scope": "Describes the source archive only. Exact tracked application repository at the recorded commit; excludes untracked working files and separately fetched dependency/native/helper builds",
     }
     (output / "release.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    notes = f"""# Serein {tag} — preview
+    notes = f"""# Oxplay {tag} — preview
 
 This is a prerelease from commit `{revision}`, workspace version
 `{version}`, with the committed Rust toolchain recorded in `release.json`.
@@ -178,10 +178,10 @@ It is not a production release or a platform-qualified application download.
 
 The source archive contains no binaries. The release also carries development
 builds compiled by CI from this exact commit: an Apple Silicon macOS app bundle
-(`serein-{tag}-macOS-ARM64.zip`) and an experimental Linux x86_64 tarball
-(`serein-{tag}-Linux-X64.tar.gz`). They are unsigned (the macOS bundle is ad-hoc
+(`oxplay-{tag}-macOS-ARM64.zip`) and an experimental Linux x86_64 tarball
+(`oxplay-{tag}-Linux-X64.tar.gz`). They are unsigned (the macOS bundle is ad-hoc
 signed only, not notarized), not clean-machine qualified, and macOS will quarantine
-the download: run `xattr -dr com.apple.quarantine Serein.app` after unzipping.
+the download: run `xattr -dr com.apple.quarantine Oxplay.app` after unzipping.
 The Linux build needs system FFmpeg/GL libraries and `yt-dlp`; native X11 and
 Wayland playback are unvalidated, and Windows is not built. Build prerequisites and
 current limitations are documented in `README.md`, `docs/dependencies.md` and

@@ -13,11 +13,11 @@ use crate::{
     innertube::GuestTransport,
     renderers::{self, Parsed, text},
 };
-use serde_json::{Value, json};
-use serein_core::{
+use oxplay_core::{
     CatalogItem, ChannelHandle, ChannelId, ChannelSummary, OperationContext, PlaylistId,
     PlaylistSummary, ProviderError,
 };
+use serde_json::{Value, json};
 use std::{collections::HashSet, sync::Arc};
 
 /// Continuation requests one page may issue to fill 20 rows after filtering.
@@ -819,7 +819,7 @@ mod tests {
     //! no real video, channel, playlist, token or session data.
     use super::*;
     use crate::YtDlp;
-    use serein_core::CancellationToken;
+    use oxplay_core::CancellationToken;
 
     const OWNER: &str = "UCsyntheticchannel000001";
     const OTHER: &str = "UCsyntheticchannel000002";

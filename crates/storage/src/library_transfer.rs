@@ -11,7 +11,7 @@ const MAX_SUBSCRIPTIONS: usize = 10_000;
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Transfer {
-    serein_local_library_version: u32,
+    oxplay_local_library_version: u32,
     subscriptions: Vec<Subscription>,
     playlists: Vec<Playlist>,
 }
@@ -51,7 +51,7 @@ impl LocalStore {
     pub fn export_library_json(&self) -> Result<Vec<u8>> {
         let snapshot = self.connection.unchecked_transaction()?;
         let mut transfer = Transfer {
-            serein_local_library_version: TRANSFER_VERSION,
+            oxplay_local_library_version: TRANSFER_VERSION,
             subscriptions: Vec::new(),
             playlists: Vec::new(),
         };
@@ -150,7 +150,7 @@ impl LocalStore {
         }
         let transfer: Transfer =
             serde_json::from_slice(bytes).map_err(|_| StorageError::InvalidInput)?;
-        if transfer.serein_local_library_version != TRANSFER_VERSION
+        if transfer.oxplay_local_library_version != TRANSFER_VERSION
             || transfer.playlists.len() > MAX_PLAYLISTS
             || transfer.subscriptions.len() > MAX_SUBSCRIPTIONS
         {

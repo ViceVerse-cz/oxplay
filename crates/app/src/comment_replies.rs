@@ -10,8 +10,8 @@
 //! so extractor-fallback pages never offer a toggle. Reply portraits reuse the
 //! comment avatar pipeline through a second, separately bounded instance.
 use crate::{CommentReply, CommentRow, comment_avatars::Avatars, display_format};
-use serein_core::{CancellationToken, CommentSummary, OperationContext, ProviderError, VideoId};
-use serein_youtube::comments::{REPLY_PAGE_SIZE, ReplyCursor, ReplyPage};
+use oxplay_core::{CancellationToken, CommentSummary, OperationContext, ProviderError, VideoId};
+use oxplay_youtube::comments::{REPLY_PAGE_SIZE, ReplyCursor, ReplyPage};
 use slint::{Model, ModelRc, SharedString, VecModel};
 use std::{
     cell::{Cell, RefCell},
@@ -86,7 +86,7 @@ impl Worker {
                     cancel: job.cancel.clone(),
                 };
                 let result = resolver.native_on_worker().and_then(|transport| {
-                    serein_youtube::comments::native_replies(
+                    oxplay_youtube::comments::native_replies(
                         &transport,
                         &job.video,
                         &job.cursor,

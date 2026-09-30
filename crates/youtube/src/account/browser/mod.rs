@@ -26,7 +26,7 @@ mod safari;
 #[cfg(test)]
 mod tests;
 
-/// A browser Serein knows how to read a YouTube session from on macOS. Other
+/// A browser Oxplay knows how to read a YouTube session from on macOS. Other
 /// platforms compile but report the feature as not supported yet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BrowserKind {
@@ -349,7 +349,7 @@ impl TempDb {
 /// files. The temp copy is removed on drop.
 fn copy_locked_sqlite(db: &Path) -> Result<TempDb, AccountError> {
     let dir = tempfile::Builder::new()
-        .prefix("serein-browser-")
+        .prefix("oxplay-browser-")
         .tempdir()
         .map_err(|_| AccountError::BrowserUnavailable)?;
     let target = dir.path().join("Cookies.sqlite");

@@ -7,7 +7,7 @@
 //! position, so existing worker and watch-loading generations reject stale
 //! results exactly as for any other selection.
 use crate::{App, TabsUi, UiState, WatchTab};
-use serein_core::{CatalogItem, VideoId};
+use oxplay_core::{CatalogItem, VideoId};
 use slint::{ComponentHandle, Model, Timer, TimerMode, VecModel};
 use std::{
     cell::{Cell, RefCell},
@@ -368,7 +368,7 @@ fn start(app: &App, state: &Rc<UiState>, index: usize) {
         .submit(crate::catalog::Request::ResolveAt(
             tab.id.clone(),
             quality,
-            serein_core::VideoStart::from_seconds(tab.position),
+            oxplay_core::VideoStart::from_seconds(tab.position),
         ));
     let generation = state.worker.borrow().generation();
     crate::watch_loading::guest_begin(app, state, generation, &tab.id);
@@ -462,7 +462,7 @@ fn switch(app: &App, state: &Rc<UiState>, index: usize) {
 }
 
 /// Called from the media update with each drained snapshot.
-pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot) {
+pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &oxplay_media::Snapshot) {
     let Some((token, position)) = snapshot.resume_position_reply else {
         return;
     };
@@ -568,7 +568,7 @@ pub fn selected(app: &App, state: &UiState, id: &VideoId) {
 }
 
 /// Hook: accepted guest metadata for the presented video.
-pub fn accepted(app: &App, state: &UiState, video: &serein_core::VideoSummary) {
+pub fn accepted(app: &App, state: &UiState, video: &oxplay_core::VideoSummary) {
     state
         .watch_tabs
         .tabs

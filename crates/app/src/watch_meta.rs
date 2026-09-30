@@ -6,8 +6,8 @@
 //! comments continuation. Any failure keeps the existing fallbacks: the
 //! extractor's resolved details and the captured guest-page related rows.
 use crate::{App, UiState};
-use serein_core::{CancellationToken, OperationContext, ProviderError, ResolvedPlayback, VideoId};
-use serein_youtube::{comments::CommentCursor, watch::WatchPage};
+use oxplay_core::{CancellationToken, OperationContext, ProviderError, ResolvedPlayback, VideoId};
+use oxplay_youtube::{comments::CommentCursor, watch::WatchPage};
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -64,7 +64,7 @@ impl State {
                     cancel: job.cancel.clone(),
                 };
                 let page = resolver.native_on_worker().and_then(|transport| {
-                    serein_youtube::watch::watch_page(&transport, &job.video, &operation)
+                    oxplay_youtube::watch::watch_page(&transport, &job.video, &operation)
                 });
                 if !job.cancel.is_cancelled() {
                     *out.lock().unwrap_or_else(|e| e.into_inner()) =
@@ -148,7 +148,7 @@ impl State {
     }
     fn hint(
         &self,
-        video: &serein_core::VideoSummary,
+        video: &oxplay_core::VideoSummary,
     ) -> Option<crate::channel_avatar::NativeProfile> {
         let page = self.page_for(&video.id)?;
         (page.channel_id.is_some() && page.channel_id == video.channel_id).then(|| {
@@ -199,7 +199,7 @@ pub fn comment_start(state: &UiState, video: &VideoId) -> Option<CommentCursor> 
 /// Public creator portrait/subscriber count for the resolved channel only.
 pub fn channel_hint(
     state: &UiState,
-    video: &serein_core::VideoSummary,
+    video: &oxplay_core::VideoSummary,
 ) -> Option<crate::channel_avatar::NativeProfile> {
     state.watch_meta.hint(video)
 }
@@ -270,7 +270,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serein_core::{ChannelId, MediaTrack, MediaUrl, VideoDetails, VideoSummary};
+    use oxplay_core::{ChannelId, MediaTrack, MediaUrl, VideoDetails, VideoSummary};
 
     /// No worker thread, network or event loop: the mailbox is inspected directly.
     fn idle() -> State {

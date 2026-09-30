@@ -54,7 +54,7 @@ platform-specific transitive crates still belong in the distribution inventory.
 The application integration status belongs in progress.md; a working storage
 crate alone does not prove the shared local-library or account acceptance gates.
 
-The browser-session sign-in path (2026-09-30) adds, to `serein-youtube`, cookie
+The browser-session sign-in path (2026-09-30) adds, to `oxplay-youtube`, cookie
 decryption and database crates whose fetched manifests declare permissive
 expressions: `aes 0.9.3`, `cbc 0.2.1` and `pbkdf2 0.12.2` (`MIT OR Apache-2.0`),
 their newly pulled transitive RustCrypto crates `cipher 0.5.2`,
@@ -209,7 +209,7 @@ use `LGPL-2.1-or-later.txt` and `LICENCE`; the collector preserves those spellin
 
 The media-network addition was audited separately on 2026-09-29. The current
 macOS application normal/build graph has **334** packages versus 333 in the
-`6ccd0e8` helper bundle: the sole addition is workspace crate `serein-network`
+`6ccd0e8` helper bundle: the sole addition is workspace crate `oxplay-network`
 under the application's GPL-3.0-or-later declaration. No new third-party package
 is selected for this macOS artifact; reqwest, Tokio, URL and libc were already
 in its graph. This was checked using locked, offline Cargo metadata/tree for
@@ -286,7 +286,7 @@ This closes that specific missing-text/source-evidence item, while PEM conversio
 reproduction and the broader distribution review remain outstanding.
 
 
-The first-party `serein-dns` helper is built from `crates/network` under the
+The first-party `oxplay-dns` helper is built from `crates/network` under the
 workspace's GPL-3.0-or-later declaration. The package source archive includes its
 supervisor, protocol and native adapter. Its native closure and both executable
 Cargo build roots are included in the packaging inventory; final signed helper

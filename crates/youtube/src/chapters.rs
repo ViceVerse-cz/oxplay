@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Optional extractor chapters: discard an invalid set, never invent ranges.
+use oxplay_core::{MAX_VIDEO_CHAPTERS, ProviderError, VideoChapter};
 use serde_json::Value;
-use serein_core::{MAX_VIDEO_CHAPTERS, ProviderError, VideoChapter};
 use std::time::Duration;
 
 fn seconds(value: &Value) -> Result<Duration, ProviderError> {

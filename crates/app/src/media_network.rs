@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! The only bridge between the HTTP policy layer and the media callback ABI.
-use serein_core::ResolvedPlayback;
-use serein_media::{
+use oxplay_core::ResolvedPlayback;
+use oxplay_media::{
     Player,
     streams::{OpenedStream, StreamCancel, StreamError, StreamFactory, StreamReader, StreamResult},
 };
-use serein_network::{AccessLease, Cancellation, HttpReader, HttpSource, NetworkConfig};
-use serein_youtube::account::AccountPlaybackLease;
+use oxplay_network::{AccessLease, Cancellation, HttpReader, HttpSource, NetworkConfig};
+use oxplay_youtube::account::AccountPlaybackLease;
 use std::{future::Future, pin::Pin, sync::Arc};
 
 struct Factory(HttpSource);
@@ -22,20 +22,20 @@ impl AccessLease for AccountAccess {
         Box::pin(self.0.revoked())
     }
 }
-fn error(value: serein_network::Error) -> StreamError {
+fn error(value: oxplay_network::Error) -> StreamError {
     match value {
-        serein_network::Error::Cancelled | serein_network::Error::AccessRevoked => {
+        oxplay_network::Error::Cancelled | oxplay_network::Error::AccessRevoked => {
             StreamError::Cancelled
         }
-        serein_network::Error::Policy | serein_network::Error::InvalidResponse => {
+        oxplay_network::Error::Policy | oxplay_network::Error::InvalidResponse => {
             StreamError::InvalidData
         }
-        serein_network::Error::Unsupported | serein_network::Error::HttpStatus(_) => {
+        oxplay_network::Error::Unsupported | oxplay_network::Error::HttpStatus(_) => {
             StreamError::Unsupported
         }
-        serein_network::Error::Timeout
-        | serein_network::Error::Transport
-        | serein_network::Error::DnsConfiguration => StreamError::Transport,
+        oxplay_network::Error::Timeout
+        | oxplay_network::Error::Transport
+        | oxplay_network::Error::DnsConfiguration => StreamError::Transport,
     }
 }
 impl StreamCancel for Cancel {

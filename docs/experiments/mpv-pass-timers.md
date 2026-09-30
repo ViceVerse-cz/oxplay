@@ -174,7 +174,7 @@ names such as `clang++`, hashes their resolved binaries, and records SDK setting
 plus bounded receipt-selected headers/libraries/pkg-config metadata. Both plans
 use one patched source tree, the same environment and fixed build options; only
 the isolated build/prefix/sysconf directories and timer boolean differ. An outer
-Serein Git repository is excluded from patch discovery. No complete Homebrew
+Oxplay Git repository is excluded from patch discovery. No complete Homebrew
 superenv or bottle reproduction is implied.
 
 `provenance.json` uses source/package labels and hashes. `command-plan.json` and
@@ -184,7 +184,7 @@ buildable success. Executing the plan requires configure/compile/install timeout
 source/tool/native checks before and after both builds, and comparison of effective
 Meson options/dependencies; the local paired executor below performed those checks.
 Actual loaded-library path and
-hash verification in both mpv and Serein remains mandatory before functional or
+hash verification in both mpv and Oxplay remains mandatory before functional or
 ABBA runs. Prepared inputs alone are not successful builds or playback evidence.
 
 ## Actual isolated paired builds — 2026-09-29
@@ -441,7 +441,7 @@ counting and incomplete GPU/unified-memory accounting remain limitations.
 WindowServer appeared in all60 host observations per run, at mean
 30.755/32.229/32.066/30.704% CPU; coreaudiod was
 7.151/7.219/7.220/7.151%. These shared services sit outside the application
-aggregate and cannot be attributed exclusively to Serein. Their direction
+aggregate and cannot be attributed exclusively to Oxplay. Their direction
 also prevents equating the8.304-point app reduction with equal whole-system
 or energy savings. Other-host CPU means were55.941/56.895/55.583/55.267%, with
 peaks81.928/83.577/88.642/81.151%. No cargo/rustc entry appeared in the bounded

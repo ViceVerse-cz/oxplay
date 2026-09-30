@@ -13,11 +13,11 @@ mod renderers;
 pub mod suggestions;
 mod supervisor;
 pub mod watch;
-use serde_json::Value;
-use serein_core::{
+use oxplay_core::{
     ChannelId, MediaTrack, MediaUrl, OperationContext, OriginHeaders, ProviderError,
     ResolvedPlayback, VideoId, VideoSummary,
 };
+use serde_json::Value;
 use std::{
     path::{Path, PathBuf},
     sync::{Mutex, OnceLock},
@@ -279,7 +279,7 @@ impl YtDlp {
             .items
             .into_iter()
             .filter_map(|item| match item {
-                serein_core::CatalogItem::Video(video) => Some(video),
+                oxplay_core::CatalogItem::Video(video) => Some(video),
                 _ => None,
             })
             .collect();

@@ -39,9 +39,9 @@ class Preparation(unittest.TestCase):
                 process.return_value.wait.return_value = 1
                 with self.assertRaises(ValueError):
                     PREPARER.prepare(root, clip, clip)
-            self.assertFalse((root / ".serein-library-resource-fixture-v1").exists())
+            self.assertFalse((root / ".oxplay-library-resource-fixture-v1").exists())
             self.assertEqual(root.stat().st_mode & 0o777, 0o700)
-            database = root / "Serein/library.sqlite3"
+            database = root / "Oxplay/library.sqlite3"
             self.assertEqual(database.stat().st_mode & 0o777, 0o600)
             with sqlite3.connect(database) as connection:
                 self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 4)

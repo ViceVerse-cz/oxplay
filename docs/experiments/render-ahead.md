@@ -7,9 +7,9 @@ presenter was unchanged. The complete media-only change against commit `3846416`
 is preserved in [render-ahead.patch](render-ahead.patch); this patch is evidence,
 not an enabled production feature.
 
-The 30-second local 1080p60 audible trial used `SEREIN_RENDER_AHEAD=1`,
-`SEREIN_VIDEO_LEAD_MS=50`, `SEREIN_VIDEO_PREPARE_MS=0`, and
-`SEREIN_MEDIA_TIMING=1`. `hwdec-current` remained VideoToolbox. Between the
+The 30-second local 1080p60 audible trial used `OXPLAY_RENDER_AHEAD=1`,
+`OXPLAY_VIDEO_LEAD_MS=50`, `OXPLAY_VIDEO_PREPARE_MS=0`, and
+`OXPLAY_MEDIA_TIMING=1`. `hwdec-current` remained VideoToolbox. Between the
 10-second and 25-second checkpoints, VO drops increased from 192 to 469:
 277 / 900 expected frames, or 30.8%. There were 1,226 GPU preparations and 1,226
 texture publications over the run, with three allocated targets (12,513,600

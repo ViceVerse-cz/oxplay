@@ -2,8 +2,8 @@
 //! Anonymous, viewport-scoped images. Guest video artwork has a bounded cache.
 //! No cookies, proxy inheritance,
 //! redirects, or UI-thread decoding. At most four requests and eight ready images.
-use serein_core::VideoId;
-use serein_storage::artwork::{ArtworkCache, CacheLimit};
+use oxplay_core::VideoId;
+use oxplay_storage::artwork::{ArtworkCache, CacheLimit};
 use std::{
     io::Cursor,
     path::PathBuf,
@@ -818,7 +818,7 @@ mod tests {
     fn disabled_artwork_writer_is_skipped_and_enabled_writer_still_persists() {
         use std::os::unix::fs::DirBuilderExt;
         let path = std::env::temp_dir().join(format!(
-            "serein-artwork-encoding-test-{}",
+            "oxplay-artwork-encoding-test-{}",
             std::process::id(),
         ));
         std::fs::DirBuilder::new()
@@ -859,7 +859,7 @@ mod tests {
             }
         }
         let directory = Directory(std::env::temp_dir().join(format!(
-            "serein-artwork-worker-test-{}-{}",
+            "oxplay-artwork-worker-test-{}-{}",
             std::process::id(),
             SERIAL.fetch_add(1, Ordering::SeqCst),
         )));
