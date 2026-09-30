@@ -852,3 +852,44 @@ fn key_text(app: &App, text: &str) {
         .dispatch_event_with_result(WindowEvent::KeyReleased { text })
         .unwrap();
 }
+
+#[test]
+fn paginated_grid_keeps_end_and_rapid_navigation_inside_the_thumbnail_viewport() {
+    let app = app();
+    app.set_page(0);
+    app.set_has_more(true);
+    let columns = app.get_columns().max(1) as usize;
+    let rows: Vec<_> = (0..100)
+        .map(|index| VideoRow {
+            kind: "Video".into(),
+            title: format!("Card {index}").into(),
+            id: index.to_string().into(),
+            ..Default::default()
+        })
+        .collect();
+    let groups: Vec<_> = rows
+        .chunks(columns)
+        .enumerate()
+        .map(|(index, rows)| VideoGroup {
+            start: (index * columns) as i32,
+            items: Rc::new(slint::VecModel::from(rows.to_vec())).into(),
+        })
+        .collect();
+    app.set_videos(Rc::new(slint::VecModel::from(rows)).into());
+    app.set_groups(Rc::new(slint::VecModel::from(groups)).into());
+    for target in [99, 98, 99, 0, 99] {
+        app.invoke_reveal_feed_item(target);
+        settle();
+        // Traverse the real compiled card trees so virtualized layout runs.
+        let card = element(&app, &format!("Video, Card {target}, "));
+        assert!(card.accessible_enabled().unwrap());
+        assert!(app.get_feed_thumbnail_first() <= target);
+        assert!(app.get_feed_thumbnail_end() > target);
+        assert!(app.get_feed_thumbnail_end() - app.get_feed_thumbnail_first() < 30);
+        let offscreen = if target == 0 { 99 } else { 0 };
+        assert!(
+            ElementHandle::find_by_accessible_label(&app, &format!("Video, Card {offscreen}, "))
+                .all(|element| element.accessible_enabled().is_none())
+        );
+    }
+}

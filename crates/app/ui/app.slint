@@ -748,14 +748,16 @@ export component App inherits Window {
             Rectangle { horizontal-stretch: 1; }
             Text { text: !root.home-active ? "Guest browsing" : root.account-connected ? "" : "Saved on this device"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
         }
-        feed := ListView {
+        feed := ScrollView {
             y: browse.toolbar-y + 56px; width: parent.width; height: parent.height - self.y;
             horizontal-scrollbar-policy: always-off;
-            // Paging lives after the final row, so it is reached by scrolling to
-            // the end instead of floating over the grid.
+            content-width: self.visible-width;
+            content-height: root.groups.length * root.row-height + (root.has-more || root.has-previous ? 64px : 0px);
+            // Explicit positions keep the taller paging footer out of ListView's
+            // estimated row height. Only near-viewport rows instantiate cards.
             for group[row] in root.groups: Rectangle {
-                height: root.row-height + (row == root.groups.length - 1 && (root.has-more || root.has-previous) ? 64px : 0px);
-                HorizontalLayout {
+                y: row * root.row-height; width: feed.visible-width; height: root.row-height;
+                if row >= root.first-row && row < root.last-row: HorizontalLayout {
                     y: 0px; height: root.row-height;
                     spacing: 20px; padding-bottom: 20px;
                     for item[index] in group.items: VideoCard {
@@ -772,11 +774,11 @@ export component App inherits Window {
                     }
                     if group.items.length < root.columns: Rectangle { horizontal-stretch: root.columns - group.items.length; }
                 }
-                if row == root.groups.length - 1 && (root.has-more || root.has-previous): HorizontalLayout {
-                    y: root.row-height + 4px; height: 36px; spacing: 8px; alignment: center;
-                    Action { icon-name: "chevron-left"; label: "Previous page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
-                    Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
-                }
+            }
+            if root.groups.length > 0 && (root.has-more || root.has-previous): HorizontalLayout {
+                y: root.groups.length * root.row-height + 4px; height: 36px; spacing: 8px; alignment: center;
+                Action { icon-name: "chevron-left"; label: "Previous page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
+                Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
             }
         }
         // Placeholder grid while a catalog or Home page is actually loading.
