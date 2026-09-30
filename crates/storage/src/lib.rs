@@ -20,7 +20,7 @@ use serein_core::{
 };
 use std::{fmt, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 8;
+const SCHEMA_VERSION: u32 = 9;
 pub const MAX_PAGE_SIZE: u32 = 100;
 pub const MAX_PLAYLIST_FILTER_BYTES: usize = 256;
 const MAX_TEXT_BYTES: usize = 1024;
@@ -693,6 +693,9 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     }
     if version < 8 {
         tx.execute_batch(include_str!("schema_v8.sql"))?;
+    }
+    if version < 9 {
+        tx.execute_batch(include_str!("schema_v9.sql"))?;
     }
     tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     tx.commit()?;

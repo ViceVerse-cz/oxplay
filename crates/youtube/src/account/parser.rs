@@ -310,34 +310,53 @@ pub(super) fn subscription_state(value: &Value, id: &ChannelId) -> Result<bool, 
     }
     Ok(states[0])
 }
-pub(super) fn rating(value: &Value) -> Result<bool, AccountError> {
-    let mut states = Vec::new();
+pub(super) fn rating(value: &Value) -> Result<VideoRating, AccountError> {
+    const NONE: u8 = 1;
+    const LIKE: u8 = 2;
+    const DISLIKE: u8 = 4;
+    // Every observation narrows the candidate set. A lone untoggled legacy
+    // button leaves two candidates and is reported as unsupported rather than
+    // guessed; conflicting observations empty the set.
+    let mut candidates = NONE | LIKE | DISLIKE;
+    let mut observed = false;
     for (key, item) in nodes(value)? {
-        if key == "toggleButtonRenderer"
-            && item
-                .pointer("/defaultIcon/iconType")
-                .and_then(Value::as_str)
-                == Some("LIKE")
-            && let Some(state) = item.get("isToggled").and_then(Value::as_bool)
+        let allowed = if key == "toggleButtonRenderer"
+            && let Some(toggled) = item.get("isToggled").and_then(Value::as_bool)
         {
-            states.push(state);
-        }
-        if key == "likeButtonViewModel"
+            match (
+                item.pointer("/defaultIcon/iconType")
+                    .and_then(Value::as_str),
+                toggled,
+            ) {
+                (Some("LIKE"), true) => LIKE,
+                (Some("LIKE"), false) => NONE | DISLIKE,
+                (Some("DISLIKE"), true) => DISLIKE,
+                (Some("DISLIKE"), false) => NONE | LIKE,
+                _ => continue,
+            }
+        } else if key == "likeButtonViewModel"
             && let Some(state) = item
                 .pointer("/likeStatusEntity/likeStatus")
                 .and_then(Value::as_str)
         {
             match state {
-                "LIKE" => states.push(true),
-                "INDIFFERENT" | "DISLIKE" => states.push(false),
-                _ => {}
+                "LIKE" => LIKE,
+                "DISLIKE" => DISLIKE,
+                "INDIFFERENT" => NONE,
+                _ => continue,
             }
-        }
+        } else {
+            continue;
+        };
+        observed = true;
+        candidates &= allowed;
     }
-    if states.is_empty() || states.iter().any(|s| *s != states[0]) {
-        return Err(AccountError::UnsupportedResponse);
+    match (observed, candidates) {
+        (true, NONE) => Ok(VideoRating::None),
+        (true, LIKE) => Ok(VideoRating::Like),
+        (true, DISLIKE) => Ok(VideoRating::Dislike),
+        _ => Err(AccountError::UnsupportedResponse),
     }
-    Ok(states[0])
 }
 pub(super) fn action_rejected(value: &Value) -> bool {
     value.get("error").is_some()
@@ -727,6 +746,32 @@ mod tests {
         ] {
             assert_eq!(duration_text(invalid), None, "{invalid}");
         }
+    }
+    #[test]
+    fn rating_distinguishes_like_dislike_and_indifferent_and_rejects_conflicts() {
+        let status = |value: &str| json!({"likeButtonViewModel": {"likeStatusEntity": {"likeStatus": value}}});
+        let toggle = |icon: &str, toggled: bool| json!({"toggleButtonRenderer": {"defaultIcon": {"iconType": icon}, "isToggled": toggled}});
+        assert_eq!(rating(&status("LIKE")), Ok(VideoRating::Like));
+        assert_eq!(rating(&status("DISLIKE")), Ok(VideoRating::Dislike));
+        assert_eq!(rating(&status("INDIFFERENT")), Ok(VideoRating::None));
+        assert_eq!(
+            rating(&json!([toggle("LIKE", false), toggle("DISLIKE", true)])),
+            Ok(VideoRating::Dislike)
+        );
+        assert_eq!(
+            rating(&json!([toggle("LIKE", false), toggle("DISLIKE", false)])),
+            Ok(VideoRating::None)
+        );
+        // Legacy and view-model shapes must agree.
+        assert_eq!(
+            rating(&json!([toggle("LIKE", false), status("DISLIKE")])),
+            Ok(VideoRating::Dislike)
+        );
+        assert!(rating(&json!([toggle("LIKE", true), status("INDIFFERENT")])).is_err());
+        assert!(rating(&json!([status("LIKE"), status("DISLIKE")])).is_err());
+        // An untoggled like button alone cannot tell "none" from "dislike".
+        assert!(rating(&toggle("LIKE", false)).is_err());
+        assert!(rating(&status("UNKNOWN")).is_err());
     }
     #[test]
     fn missing_state_is_not_false_reconciliation() {

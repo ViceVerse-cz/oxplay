@@ -68,7 +68,7 @@ and [Utils.ts](https://github.com/LuanRT/YouTube.js/blob/bad89d2657e88f907011655
 | Account playlists | `browse` | `browseId=FEplaylist_aggregation`; individual playlist browse ID starts with `VL` | Distinguish owned/editable/saved playlists; verify private reads locally |
 | Home recommendations | `browse` | `browseId=FEwhat_to_watch`; `richGridRenderer` → `richItemRenderer` → `videoRenderer` or `lockupViewModel`; `continuationItemRenderer` token for the next page | Observe a real signed-in feed; confirm ad/Shorts exclusion and continuation shape locally |
 | Subscribe/unsubscribe | `subscription/subscribe`, `subscription/unsubscribe` | `channelIds`, endpoint parameters; reference uses different subscribe/unsubscribe parameters | Deliberate user action, response checked and channel state reread |
-| Like/unlike | `like/like`, `like/removelike` | Target and available endpoint parameters; interaction reference selects TV context | Deliberate user action and rating reconciliation; WEB compatibility not assumed |
+| Like/dislike/remove rating | `like/like`, `like/dislike`, `like/removelike` | Target and available endpoint parameters; interaction reference selects TV context; `removelike` clears either rating | Deliberate user action and tri-state (like/dislike/none) rating reconciliation; WEB compatibility not assumed |
 | Save/remove playlist item | `browse/edit_playlist` | `playlistId`, `ACTION_ADD_VIDEO` with `addedVideoId`; `ACTION_REMOVE_VIDEO` with item `setVideoId` | Editable playlist verified; reconcile by playlist item identity, including duplicate video IDs |
 
 The table is grounded in [AccountManager](https://github.com/LuanRT/YouTube.js/blob/bad89d2657e88f907011655f199fba9fb615c339/src/core/managers/AccountManager.ts),
@@ -191,6 +191,16 @@ uncertain outcomes require a separate reconciliation action. Playlist checks
 preserve exact item IDs and reject incomplete snapshots. Delegated-channel
 switching remains unsupported. Provider fixture tests use synthetic credentials
 and responses; these do not establish compatibility with a real account.
+
+Ratings are tri-state (like, dislike, none). The watch page shows a joined
+like/dislike pill with the public like count for everyone; the former explicit
+“Check like” step is gone. For a connected identity the app reads the rating
+once per video load when the single account slot is idle (a busy slot defers
+it to the next idle wake), and each Like/Dislike click submits one reconciled
+write: the same button again sends `like/removelike`. The pill shows the
+requested state and a ±1 like-count adjustment optimistically while both
+buttons are disabled; a definite failure rolls back, and an unconfirmed outcome
+shows no rating until explicit reconciliation. YouTube exposes no dislike count.
 
 If verification after a write loses authentication, reconciliation now returns
 the terminal identity error. This clears the connected UI and revokes account

@@ -17,3 +17,5 @@ The retained `minus.svg`, `square.svg`, `copy.svg`, and `x.svg` also originate f
 Comment refresh uses unchanged `refresh-cw.svg` from the same pinned official Lucide revision, with its checksum and license retained.
 
 The guide's Explore shortcuts use unchanged `music.svg`, `gamepad-2.svg`, `newspaper.svg`, `trophy.svg` and `graduation-cap.svg`, and drop-down fields use unchanged `chevron-down.svg`, all copied byte-for-byte from `icons/` at this same pinned revision, with checksums added to `SHA256SUMS`.
+
+The watch-page rating control uses unchanged `thumbs-up.svg` and `thumbs-down.svg`, fetched byte-for-byte from `icons/` at this same pinned revision (raw.githubusercontent.com, 2026-09-30), with checksums added to `SHA256SUMS`.

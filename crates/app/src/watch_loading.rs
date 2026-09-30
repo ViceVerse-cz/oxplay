@@ -61,7 +61,7 @@ fn begin(app: &App, state: &Rc<UiState>, scope: Scope, title: &str, channel: &st
     app.set_video_texture(slint::Image::default());
     app.set_video_title(title.into());
     app.set_video_channel(channel.into());
-    app.set_rating_known(false);
+    crate::rating_ui::clear(app, state);
     app.set_playback_status("".into());
     app.set_playback_failed(false);
     app.set_can_retry_playback(false);

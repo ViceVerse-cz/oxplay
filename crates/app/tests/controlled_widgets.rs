@@ -174,6 +174,11 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
     let attempted = Rc::new(Cell::new(None));
     let output = attempted.clone();
     app.on_quality(move |index| output.set(Some(index)));
+    let p1080 = serein_core::QualityCeiling::P1080.index();
+    let p720 = serein_core::QualityCeiling::P720.index();
+    // The Slint defaults must match the core default before Rust hydrates them.
+    assert_eq!(app.get_quality_index(), p1080);
+    assert_eq!(app.get_default_quality_index(), p1080);
     settle();
     element(&app, "Playback settings").invoke_accessible_default_action();
     settle();
@@ -183,8 +188,21 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
     element(&app, "Maximum quality Up to 720p")
         .mock_single_click(slint::platform::PointerEventButton::Left);
     settle();
-    assert_eq!(attempted.get(), Some(1));
-    assert_eq!(app.get_quality_index(), 0);
+    assert_eq!(attempted.get(), Some(p720));
+    assert_eq!(app.get_quality_index(), p1080);
+    for (label, index) in [
+        (
+            "Up to 2160p (4K)",
+            serein_core::QualityCeiling::P2160.index(),
+        ),
+        ("Up to 1440p", serein_core::QualityCeiling::P1440.index()),
+    ] {
+        element(&app, &format!("Maximum quality {label}"))
+            .mock_single_click(slint::platform::PointerEventButton::Left);
+        settle();
+        assert_eq!(attempted.get(), Some(index));
+        assert_eq!(app.get_quality_index(), p1080);
+    }
     assert_eq!(
         element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
         Some(true)
@@ -199,14 +217,20 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
         element(&app, "Maximum quality Up to 480p").accessible_enabled(),
         Some(false)
     );
-    app.set_quality_index(1);
+    app.set_quality_index(p720);
     app.set_busy(false);
     settle();
     assert_eq!(
         element(&app, "Maximum quality Up to 720p").accessible_item_selected(),
         Some(true)
     );
-    app.set_quality_index(0);
+    app.set_quality_index(serein_core::QualityCeiling::P2160.index());
+    settle();
+    assert_eq!(
+        element(&app, "Maximum quality Up to 2160p (4K)").accessible_item_selected(),
+        Some(true)
+    );
+    app.set_quality_index(p1080);
     settle();
     assert_eq!(
         element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
@@ -467,6 +491,73 @@ fn creator_avatar_and_name_share_one_keyboard_accessible_channel_action() {
         .mock_single_click(slint::platform::PointerEventButton::Left);
     settle();
     assert_eq!(opens.get(), 2, "Unavailable creator must not navigate");
+}
+
+#[test]
+fn rating_pill_shows_the_public_count_to_guests_and_rates_only_when_connected() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    app.set_watch_like_count("1.2K".into());
+    let clicks = Rc::new(std::cell::RefCell::new(Vec::new()));
+    let output = clicks.clone();
+    app.on_account_rating(move |like| output.borrow_mut().push(like));
+    settle();
+    // The former explicit read step no longer exists.
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Check YouTube account like")
+            .next()
+            .is_none()
+    );
+    let like = element(&app, "Like on YouTube · 1.2K likes");
+    let dislike = element(&app, "Dislike on YouTube");
+    assert_eq!(like.accessible_enabled(), Some(false));
+    assert_eq!(dislike.accessible_enabled(), Some(false));
+    like.mock_single_click(slint::platform::PointerEventButton::Left);
+    dislike.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(clicks.borrow().is_empty(), "guests cannot rate");
+
+    app.set_account_connected(true);
+    settle();
+    element(&app, "Like on YouTube · 1.2K likes")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Dislike on YouTube")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(*clicks.borrow(), [true, false]);
+
+    // Rust owns the confirmed/optimistic state and the adjusted count.
+    app.set_rating_known(true);
+    app.set_account_liked(true);
+    app.set_watch_like_count("1.3K".into());
+    settle();
+    let liked = element(&app, "Remove like on YouTube · 1.3K likes");
+    assert_eq!(liked.accessible_checked(), Some(true));
+    assert_eq!(
+        element(&app, "Dislike on YouTube").accessible_checked(),
+        Some(false)
+    );
+    app.set_account_liked(false);
+    app.set_account_disliked(true);
+    settle();
+    assert_eq!(
+        element(&app, "Remove dislike on YouTube").accessible_checked(),
+        Some(true)
+    );
+    // A pending write disables both halves.
+    app.set_account_busy(true);
+    settle();
+    assert_eq!(
+        element(&app, "Remove dislike on YouTube").accessible_enabled(),
+        Some(false)
+    );
+    // Without a public count the like half is icon-only.
+    app.set_watch_like_count("".into());
+    app.set_account_busy(false);
+    settle();
+    element(&app, "Like on YouTube");
 }
 
 #[test]

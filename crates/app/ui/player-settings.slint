@@ -19,10 +19,10 @@ export component PlayerSettingsPanel inherits Rectangle {
     callback close();
     private property <int> section;
     private property <[string]> speeds: ["0.5×", "Normal", "1.5×", "2×"];
-    private property <[string]> qualities: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"];
+    private property <[string]> qualities: ["Up to 2160p (4K)", "Up to 1440p", "Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"];
     private property <string> current-speed: root.speed-index >= 0 && root.speed-index < root.speeds.length ? root.speeds[root.speed-index] : "Unknown";
     private property <string> current-quality: root.quality-index >= 0 && root.quality-index < root.qualities.length ? root.qualities[root.quality-index] : "Unknown";
-    preferred-height: root.section == 2 ? 336px : root.section == 1 ? 256px : root.remote-video ? 296px : 336px;
+    preferred-height: root.section == 2 ? 424px : root.section == 1 ? 256px : root.remote-video ? 296px : 336px;
     background: Colors.dialog;
     border-width: 1px; border-color: Colors.border; border-radius: 16px;
     forward-focus: header-action;
@@ -89,7 +89,7 @@ export component PlayerSettingsPanel inherits Rectangle {
             }
         }
         if root.section == 2: VerticalLayout {
-            x: 8px; y: 64px; width: parent.width - 16px; height: 256px;
+            x: 8px; y: 64px; width: parent.width - 16px; height: 348px;
             spacing: 4px;
             for item[index] in root.qualities: Action {
                 height: 40px; label: item; selectable: true;

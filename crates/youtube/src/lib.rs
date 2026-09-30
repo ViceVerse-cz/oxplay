@@ -46,6 +46,9 @@ pub struct SearchPage {
 pub struct ResolutionPolicy {
     pub max_height: u16,
     /// At equal resolution and frame rate, prefer H.264. Never reduce either to get H.264.
+    /// With yt-dlp's limited `vcodec:h264` sort, codecs above H.264 then rank
+    /// nearest-first (HEVC, VP9, VP9.2, AV1), so 1440p/2160p usually resolve to
+    /// SDR VP9 when YouTube offers it; no codec is filtered out.
     pub prefer_h264: bool,
 }
 impl Default for ResolutionPolicy {
@@ -618,6 +621,28 @@ mod tests {
         let args = ResolutionPolicy::default().arguments().unwrap();
         assert!(args[1].contains("height<=1080"));
         assert_eq!(args[3], "height,fps,vcodec:h264");
+        // Above 1080p YouTube rarely offers H.264. The selector must not filter
+        // by codec, and height stays ahead of the codec preference so a 4K
+        // ceiling yields VP9/AV1 rather than falling back to 1080p H.264.
+        for height in [1440, 2160] {
+            let args = ResolutionPolicy {
+                max_height: height,
+                prefer_h264: true,
+            }
+            .arguments()
+            .unwrap();
+            assert!(args[1].contains(&format!("height<={height}]")));
+            assert!(!args[1].contains("vcodec") && !args[1].contains("ext="));
+            assert!(args[3].starts_with("height,fps,"));
+        }
+        assert!(
+            ResolutionPolicy {
+                max_height: 2161,
+                prefer_h264: true
+            }
+            .arguments()
+            .is_err()
+        );
         assert!(
             ResolutionPolicy {
                 max_height: 0,

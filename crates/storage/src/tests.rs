@@ -405,7 +405,7 @@ fn every_supported_playback_default_survives_reopen_and_clear_resets_it() {
 #[test]
 fn playback_storage_constraints_and_decode_reject_invalid_values() {
     let store = LocalStore::in_memory().unwrap();
-    for height in [-1, 0, 145, 2160] {
+    for height in [-1, 0, 145, 1081, 4320] {
         assert!(
             store
                 .connection
@@ -1189,6 +1189,69 @@ fn v8_migration_preserves_v7_data_and_defaults_remote_suggestions_on() {
         store
             .record_search("synthetic migrated query", SystemTime::now())
             .unwrap()
+    );
+}
+
+#[test]
+fn v9_migration_preserves_saved_quality_and_admits_higher_ceilings() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("v8.sqlite3");
+    {
+        let connection = Connection::open(&path).unwrap();
+        for schema in [
+            include_str!("schema_v1.sql"),
+            include_str!("schema_v2.sql"),
+            include_str!("schema_v3.sql"),
+            include_str!("schema_v4.sql"),
+            include_str!("schema_v5.sql"),
+            include_str!("schema_v6.sql"),
+            include_str!("schema_v7.sql"),
+            include_str!("schema_v8.sql"),
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+        assert!(
+            connection
+                .execute("UPDATE local_preferences SET quality_height=2160", [])
+                .is_err()
+        );
+        connection.execute_batch("UPDATE local_preferences SET quality_height=480,speed_millis=1500,local_history=1; PRAGMA user_version=8;
+            INSERT INTO local_history(video_id,title,channel_name,position_seconds,watched_at) VALUES ('00000000001','Synthetic migrated title','Synthetic channel',5,CAST(strftime('%s','now') AS INTEGER));").unwrap();
+    }
+    let mut store = LocalStore::open(&path).unwrap();
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
+    let mut prefs = store.preferences().unwrap();
+    assert_eq!(prefs.playback.quality, QualityCeiling::P480);
+    assert_eq!(prefs.playback.speed, PlaybackSpeed::OneAndHalf);
+    assert!(prefs.privacy.local_history);
+    for quality in [QualityCeiling::P2160, QualityCeiling::P1440] {
+        prefs.playback.quality = quality;
+        store.set_preferences(prefs).unwrap();
+        assert_eq!(store.preferences().unwrap().playback.quality, quality);
+    }
+    assert!(
+        store
+            .connection
+            .execute("UPDATE local_preferences SET quality_height=1081", [])
+            .is_err()
+    );
+    // Replacing the column keeps the table and its history-clearing trigger.
+    let history = |store: &LocalStore| {
+        store
+            .connection
+            .query_row("SELECT count(*) FROM local_history", [], |row| {
+                row.get::<_, i64>(0)
+            })
+            .unwrap()
+    };
+    assert_eq!(history(&store), 1);
+    prefs.privacy.local_history = false;
+    store.set_preferences(prefs).unwrap();
+    assert_eq!(history(&store), 0);
+    store.clear_local_data().unwrap();
+    assert_eq!(
+        store.preferences().unwrap().playback.quality,
+        QualityCeiling::P1080
     );
 }
 

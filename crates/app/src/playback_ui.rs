@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Event-driven stream replacement. A fresh native position reply is required
 //! before a replacement can load; hidden controls are not a playback clock.
-use crate::{App, QUALITY_HEIGHTS, UiState, account_playback, caption_ui, catalog, load_remote};
+use crate::{App, UiState, account_playback, caption_ui, catalog, load_remote};
 use serein_core::{RefreshBudget, ResolvedPlayback};
 use serein_youtube::account::{AccountPlaybackLease, AuthorizedPlayback};
 use slint::{ComponentHandle, Timer, TimerMode};
@@ -305,7 +305,7 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
             state,
             &request.video_id,
             serein_youtube::ResolutionPolicy {
-                max_height: QUALITY_HEIGHTS[state.quality_index.get()],
+                max_height: crate::active_quality(state).height(),
                 prefer_h264: true,
             },
             true,
@@ -320,7 +320,7 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
         .submit(catalog::Request::ResolveQuality(
             request.video_id,
             serein_youtube::ResolutionPolicy {
-                max_height: QUALITY_HEIGHTS[state.quality_index.get()],
+                max_height: crate::active_quality(state).height(),
                 prefer_h264: true,
             },
         ));
@@ -505,18 +505,12 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot
             } else {
                 caption_ui::metadata(app, state, &pending.item, true);
             }
-            let index = QUALITY_HEIGHTS
-                .iter()
-                .position(|height| *height == pending.height)
-                .unwrap_or(0);
-            state.quality_index.set(index);
-            app.set_quality_index(index as i32);
+            let quality =
+                serein_core::QualityCeiling::from_height(pending.height).unwrap_or_default();
+            state.quality_index.set(quality.index() as usize);
+            app.set_quality_index(quality.index());
             let saved = pending.reason != Reason::Quality
-                || crate::library_ui::save_quality(
-                    app,
-                    state,
-                    serein_core::QualityCeiling::ALL[index],
-                );
+                || crate::library_ui::save_quality(app, state, quality);
             crate::chapters_ui::install(app, state, &pending.item);
             remember(app, state, &pending.item);
             app.set_status(

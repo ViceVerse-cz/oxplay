@@ -522,12 +522,12 @@ impl Smoke {
                     35 => {
                         assert!(!ui.get_busy() && ui.get_selected() == 1 && snapshot.subtitle_id.is_some(), "cached selection was not observed");
                         before_quality.set(snapshot.file_loads);
-                        app.invoke_quality(1);
+                        app.invoke_quality(serein_core::QualityCeiling::P720.index());
                     }
                     _ => {
                         assert!(!app.get_busy() && !ui.get_busy(), "quality/caption work did not finish");
                         assert!(snapshot.file_loads > before_quality.get(), "quality did not load a new media file");
-                        assert_eq!(state.quality_index.get(), 1);
+                        assert_eq!(state.quality_index.get(), serein_core::QualityCeiling::P720.index() as usize);
                         assert!(snapshot.paused && snapshot.height <= 720, "quality change lost pause or ceiling");
                         assert!(snapshot.subtitle_id.is_some() && ui.get_selected() == 1, "caption selection was not reattached after quality change");
                         assert_eq!(s.cache.borrow().len(), 1, "quality change duplicated caption cache");

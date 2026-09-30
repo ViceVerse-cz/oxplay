@@ -380,7 +380,7 @@ fn selected_video(app: &App, state: &Rc<UiState>, path: PathBuf) {
     app.set_video_texture(slint::Image::default());
     app.set_video_title("".into());
     app.set_video_channel("".into());
-    app.set_rating_known(false);
+    crate::rating_ui::clear(app, state);
     if let Err(error) = state.player.stop() {
         finish(app, state, &error.to_string());
         return;
