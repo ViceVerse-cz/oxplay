@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Create an exact committed source preview, never a binary/product release."""
+"""Create the exact committed source archive attached to every release.
+
+The release workflow runs this on the commit the release tag points at: the
+planned head for nightlies, or the version commit for production releases.
+"""
 from __future__ import annotations
 
 import argparse
@@ -43,12 +47,19 @@ def git(repo: Path, *arguments: str) -> bytes:
     return result.stdout
 
 
-def validate_tag(tag: str, version: str) -> None:
+def validate_tag(tag: str, version: str) -> str:
+    """Return the tag's channel. Stable and local preview tags must match the
+    committed version; nightly manifests are versioned at build time only."""
     number = r"(?:0|[1-9][0-9]*)"
     require(re.fullmatch(rf"{number}\.{number}\.{number}", version) is not None,
             "Workspace version must be an unqualified numeric version")
+    if tag == f"v{version}":
+        return "production"
+    if re.fullmatch(rf"v{number}\.{number}\.{number}-nightly\.[0-9]{{8}}\.{number}", tag):
+        return "nightly"
     require(re.fullmatch(rf"v{re.escape(version)}-(dev|alpha|beta|rc)\.{number}", tag) is not None,
-            "Tag must match the workspace version and use dev, alpha, beta or rc with a numeric suffix")
+            "Tag must be v<version>, a nightly tag or v<version>-dev|alpha|beta|rc.N")
+    return "preview"
 
 
 def next_tag(version: str, tags: list[str], channel: str = "dev") -> str:
@@ -127,15 +138,16 @@ def digest(path: Path) -> str:
     return checksum.hexdigest()
 
 
-def release(repo: Path, tag: str | None, output: Path) -> dict:
-    revision = git(repo, "rev-parse", "--verify", "HEAD^{commit}").decode("ascii").strip()
+def release(repo: Path, tag: str | None, output: Path, revision: str = "HEAD") -> dict:
+    require(re.fullmatch(r"HEAD|[0-9a-f]{40}|[0-9a-f]{64}", revision) is not None, "Invalid source revision")
+    revision = git(repo, "rev-parse", "--verify", f"{revision}^{{commit}}").decode("ascii").strip()
     require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision) is not None, "Invalid source revision")
     manifest = tomllib.loads(git(repo, "show", f"{revision}:Cargo.toml").decode("utf-8"))
     version = manifest["workspace"]["package"]["version"]
     require(isinstance(version, str), "Workspace version is missing")
     if tag is None:
         tag = next_tag(version, git(repo, "tag", "--list").decode("utf-8").split())
-    validate_tag(tag, version)
+    channel = validate_tag(tag, version)
     toolchain = tomllib.loads(git(repo, "show", f"{revision}:rust-toolchain.toml").decode("utf-8"))["toolchain"]
     require(isinstance(toolchain, dict) and isinstance(toolchain.get("channel"), str),
             "Committed Rust toolchain is missing")
@@ -160,49 +172,21 @@ def release(repo: Path, tag: str | None, output: Path) -> dict:
             with gzip.GzipFile(filename="", mode="wb", fileobj=destination, mtime=0) as compressed:
                 shutil.copyfileobj(source, compressed, length=1024 * 1024)
     metadata = {
-        "schema": 1, "tag": tag, "revision": revision, "version": version,
-        "toolchain": toolchain, "source_only": True, "prerelease": True,
-        "production_qualified": False, "platform_qualified": False,
-        "contains_binaries": False, "dependency_sources_bundled": False,
-        "complete_corresponding_source": False,
+        "schema": 1, "tag": tag, "channel": channel, "revision": revision, "version": version,
+        "build_version": tag[1:], "toolchain": toolchain, "source_only": True,
+        "prerelease": channel != "production", "production_qualified": False,
+        "platform_qualified": False, "contains_binaries": False,
+        "dependency_sources_bundled": False, "complete_corresponding_source": False,
         "archive": archive_name, "archive_sha256": digest(output / archive_name),
         "tracked_files": len(entries),
-        "scope": "Describes the source archive only. Exact tracked application repository at the recorded commit; excludes untracked working files and separately fetched dependency/native/helper builds",
+        "scope": ("Describes the source archive only. Exact tracked application repository at the recorded commit; "
+                  "excludes untracked working files and separately fetched dependency/native/helper builds. "
+                  "Nightly binaries carry build_version in their manifests, set at build time"),
     }
     (output / "release.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    notes = f"""# Oxplay {tag} — preview
-
-This is a prerelease from commit `{revision}`, workspace version
-`{version}`, with the committed Rust toolchain recorded in `release.json`.
-It is not a production release or a platform-qualified application download.
-
-The source archive contains no binaries. The release also carries development
-builds compiled by CI from this exact commit: an Apple Silicon macOS app bundle
-(`oxplay-{tag}-macOS-ARM64.zip`) and an experimental Linux x86_64 tarball
-(`oxplay-{tag}-Linux-X64.tar.gz`). They are unsigned (the macOS bundle is ad-hoc
-signed only, not notarized), not clean-machine qualified, and macOS will quarantine
-the download: run `xattr -dr com.apple.quarantine Oxplay.app` after unzipping.
-The Linux build needs system FFmpeg/GL libraries and `yt-dlp`; native X11 and
-Wayland playback are unvalidated, and Windows is not built. Build prerequisites and
-current limitations are documented in `README.md`, `docs/dependencies.md` and
-`docs/platform-matrix.md` in the source.
-The archive contains the exact tracked repository, including its lockfile,
-workflow/toolchain files and retained license notices. Untracked local files,
-credentials and separately downloaded build inputs are not included.
-
-Original application code is GPL-3.0-or-later; Slint's selected framework route
-is GPL-3.0-only. Existing third-party files retain their own terms. This source
-preview does not clear native/helper redistribution, complete dependency
-corresponding-source obligations, signing/notarization or product acceptance
-gates. See `docs/licensing.md` and `docs/packaging.md` for the recorded gaps.
-
-`SHA256SUMS` covers every asset attached to this release.
-Checksums provide integrity only when obtained through a trusted channel; they
-are not a code signature or evidence that the software passed runtime testing.
-"""
-    (output / "RELEASE_NOTES.md").write_text(notes, encoding="utf-8")
-    names = sorted([archive_name, "release.json", "RELEASE_NOTES.md"])
-    (output / "SHA256SUMS").write_text("".join(f"{digest(output / name)}  {name}\n" for name in names), encoding="ascii")
+    names = sorted([archive_name, "release.json"])
+    (output / "SHA256SUMS.txt").write_text("".join(f"{digest(output / name)}  {name}\n" for name in names),
+                                           encoding="ascii")
     return metadata
 
 
@@ -216,17 +200,18 @@ def github_output(path: Path, metadata: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tag", help="Prerelease tag; defaults to the next unused v<version>-dev.N")
+    parser.add_argument("--tag", help="Release tag; defaults to the next unused v<version>-dev.N preview tag")
+    parser.add_argument("--revision", default="HEAD", help="Full commit ID to archive (default HEAD)")
     parser.add_argument("--output", required=True, type=Path, help="Fresh directory; never overwritten")
     parser.add_argument("--github-output", type=Path)
     args = parser.parse_args()
     try:
-        metadata = release(ROOT, args.tag, args.output)
+        metadata = release(ROOT, args.tag, args.output, args.revision)
         if args.github_output is not None:
             github_output(args.github_output, metadata)
     except (ReleaseError, OSError, ValueError, KeyError, TypeError, UnicodeError,
             subprocess.SubprocessError, tarfile.TarError):
-        print("Source preview creation failed; check committed manifests, prerelease tag and fresh output path.", file=sys.stderr)
+        print("Source archive creation failed; check committed manifests, tag, revision and fresh output path.", file=sys.stderr)
         return 1
     print(json.dumps({name: metadata[name] for name in ("revision", "tag", "archive")}, sort_keys=True))
     return 0
