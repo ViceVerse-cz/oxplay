@@ -201,7 +201,8 @@ def helper_plan(inputs: dict, api) -> dict:
             continue
         selected[name] = package
     if selected.keys() != RUNTIME_PACKAGES:
-        raise api.PackagingError('Reviewed Python helper dependency set is incomplete')
+        raise api.PackagingError('Reviewed Python helper dependency set is incomplete; missing: '
+                                 + ', '.join(sorted(RUNTIME_PACKAGES - selected.keys())))
     for package in selected.values():
         if not package['installed_files']:
             raise api.PackagingError('A selected Python package has no inventoried runtime files')

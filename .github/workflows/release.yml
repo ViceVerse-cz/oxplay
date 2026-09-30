@@ -82,6 +82,9 @@ jobs:
           HOMEBREW_NO_ANALYTICS: '1'
         run: |
           test "$(uname -m)" = arm64
+          # Runner images ship a stale formula index; the reviewed helper
+          # dependency set needs the current yt-dlp formula revision.
+          brew update
           brew install mpv pkgconf yt-dlp
           pkg-config --atleast-version=2.5 mpv
           test -x /opt/homebrew/bin/yt-dlp
