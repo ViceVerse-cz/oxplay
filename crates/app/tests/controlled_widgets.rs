@@ -922,3 +922,150 @@ fn clipped_transport_background_does_not_keep_offscreen_clock_controls_active() 
     settle();
     assert!(app.get_progress_visible());
 }
+
+fn modified_key(app: &App, modifiers: &[Key], text: &str) {
+    for modifier in modifiers {
+        let modifier: SharedString = (*modifier).into();
+        app.window()
+            .dispatch_event(WindowEvent::KeyPressed { text: modifier });
+    }
+    key_text(app, text);
+    for modifier in modifiers.iter().rev() {
+        let modifier: SharedString = (*modifier).into();
+        app.window()
+            .dispatch_event(WindowEvent::KeyReleased { text: modifier });
+    }
+}
+
+#[test]
+fn watch_tab_strip_routes_switch_close_background_open_and_shortcuts() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    let ui = app.global::<TabsUi>();
+    let events = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = events.clone();
+    ui.on_activate(move |index| output.borrow_mut().push(format!("activate {index}")));
+    let output = events.clone();
+    ui.on_close(move |index| output.borrow_mut().push(format!("close {index}")));
+    let output = events.clone();
+    ui.on_cycle(move |forward| output.borrow_mut().push(format!("cycle {forward}")));
+    let output = events.clone();
+    ui.on_close_active(move || output.borrow_mut().push("close-active".into()));
+    let output = events.clone();
+    ui.on_open(move |surface, index| output.borrow_mut().push(format!("open {surface} {index}")));
+    ui.set_tabs(
+        Rc::new(slint::VecModel::from(vec![
+            WatchTab {
+                title: "TEST FIXTURE first tab".into(),
+                channel: "TEST FIXTURE creator".into(),
+                active: true,
+            },
+            WatchTab {
+                title: "TEST FIXTURE second tab".into(),
+                ..WatchTab::default()
+            },
+        ]))
+        .into(),
+    );
+    ui.set_active_index(0);
+    settle();
+    // Rust decides visibility; a hidden strip reserves no header space.
+    assert!(absent(&app, "TEST FIXTURE second tab"));
+    let video_y = app.get_video_window_y();
+    ui.set_strip_visible(true);
+    settle();
+    assert_eq!(app.get_native_header_height(), 48.);
+    assert!((app.get_video_window_y() - video_y - 36.).abs() < 1.);
+    let first = element(&app, "TEST FIXTURE first tab, TEST FIXTURE creator");
+    assert_eq!(first.accessible_item_selected(), Some(true));
+    element(&app, "TEST FIXTURE second tab")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Close tab: TEST FIXTURE second tab")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    first.mock_single_click(slint::platform::PointerEventButton::Middle);
+    settle();
+    assert_eq!(
+        events.take(),
+        ["activate 1", "close 1", "close 0"].map(String::from)
+    );
+
+    // Ctrl+Tab / Ctrl+Shift+Tab cycle and Cmd/Ctrl+W closes the active tab,
+    // even while an editor has focus.
+    app.invoke_focus_browse();
+    modified_key(&app, &[Key::Control], "\t");
+    modified_key(&app, &[Key::Control, Key::Shift], "\t");
+    app.invoke_focus_search();
+    modified_key(&app, &[Key::Control], "w");
+    settle();
+    assert_eq!(
+        events.take(),
+        ["cycle true", "cycle false", "close-active"].map(String::from)
+    );
+    // Fullscreen/PiP hide the strip, and its shortcuts stay inactive there.
+    app.set_fullscreen_active(true);
+    settle();
+    assert!(absent(&app, "TEST FIXTURE second tab"));
+    app.invoke_focus_browse();
+    modified_key(&app, &[Key::Control], "w");
+    app.set_fullscreen_active(false);
+
+    // Cards open videos in a background tab by middle click or Ctrl/Cmd+click;
+    // a plain click still selects in the current tab.
+    app.set_page(0);
+    app.set_home_active(false);
+    let rows = vec![
+        VideoRow {
+            kind: "Video".into(),
+            title: "TEST FIXTURE card".into(),
+            id: "fixtureCard".into(),
+            ..VideoRow::default()
+        },
+        VideoRow {
+            kind: "Channel".into(),
+            title: "TEST FIXTURE channel".into(),
+            id: "fixtureChan".into(),
+            ..VideoRow::default()
+        },
+    ];
+    app.set_videos(Rc::new(slint::VecModel::from(rows.clone())).into());
+    app.set_groups(
+        Rc::new(slint::VecModel::from(vec![VideoGroup {
+            start: 0,
+            items: Rc::new(slint::VecModel::from(rows)).into(),
+        }]))
+        .into(),
+    );
+    let selected = Rc::new(Cell::new(0));
+    let output = selected.clone();
+    app.on_select_video(move |_| output.set(output.get() + 1));
+    settle();
+    let card = element(&app, "Video, TEST FIXTURE card, ");
+    card.mock_single_click(slint::platform::PointerEventButton::Middle);
+    app.window().dispatch_event(WindowEvent::KeyPressed {
+        text: Key::Control.into(),
+    });
+    card.mock_single_click(slint::platform::PointerEventButton::Left);
+    app.window().dispatch_event(WindowEvent::KeyReleased {
+        text: Key::Control.into(),
+    });
+    settle();
+    assert_eq!(selected.get(), 0);
+    card.mock_single_click(slint::platform::PointerEventButton::Left);
+    // Channels and playlists are not watch tabs.
+    element(&app, "Channel, TEST FIXTURE channel, ")
+        .mock_single_click(slint::platform::PointerEventButton::Middle);
+    settle();
+    assert_eq!(selected.get(), 1);
+    assert_eq!(events.take(), ["open 0 0", "open 0 0"].map(String::from));
+    // The same action is offered from the card's context menu.
+    card.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    ElementHandle::find_by_accessible_label(&app, "Open in new tab")
+        .next()
+        .expect("context menu item")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(selected.get(), 1);
+    assert_eq!(events.take(), ["open 0 0"].map(String::from));
+}
