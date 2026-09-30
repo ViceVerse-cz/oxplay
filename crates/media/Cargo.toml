@@ -8,6 +8,9 @@ license = "GPL-3.0-or-later"
 slint.workspace = true
 glow = "0.18"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Power"] }
+
 [build-dependencies]
 pkg-config = "0.3"
 cc = "=1.5.1"

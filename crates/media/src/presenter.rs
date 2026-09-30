@@ -747,6 +747,9 @@ impl Drop for GlPresenter {
         }
         self.player.inner.renderer_attached.set(false);
         self.player.inner.wake.frame.store(false, Ordering::Release);
+        // Without a presenter no video is visible; release at teardown.
+        #[cfg(windows)]
+        self.player.inner.display_request.update(false);
     }
 }
 

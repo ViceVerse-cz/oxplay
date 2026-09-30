@@ -3581,6 +3581,7 @@ dependencies = [
  "glow",
  "pkg-config",
  "slint",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

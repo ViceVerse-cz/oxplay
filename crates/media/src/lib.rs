@@ -25,6 +25,8 @@ pub mod streams;
 mod subtitle_off;
 #[cfg(test)]
 mod tls_tests;
+#[cfg(windows)]
+mod windows_power;
 pub use presenter::{GlPresenter, RenderStats};
 use std::{
     cell::{Cell, RefCell},
@@ -289,6 +291,8 @@ struct Inner {
     renderer_attached: Cell<bool>,
     #[cfg(target_os = "macos")]
     presentation_clock: RefCell<Option<macos::PresentationClock>>,
+    #[cfg(windows)]
+    display_request: windows_power::DisplayRequest,
     pending_commands: Cell<usize>,
     pause_intent: RefCell<pause_intent::PauseIntent>,
     pending_loads: Cell<usize>,
@@ -455,6 +459,8 @@ impl Player {
             renderer_attached: Cell::new(false),
             #[cfg(target_os = "macos")]
             presentation_clock: RefCell::new(None),
+            #[cfg(windows)]
+            display_request: windows_power::DisplayRequest::default(),
             pending_commands: Cell::new(0),
             pause_intent: RefCell::default(),
             pending_loads: Cell::new(0),
@@ -2085,6 +2091,16 @@ impl Player {
                 .borrow()
                 .as_ref()
                 .is_some_and(|clock| clock.prevents_display_sleep());
+        }
+        // Like the macOS assertion, only an attached video presenter with
+        // observed unpaused playback keeps the display awake.
+        #[cfg(windows)]
+        {
+            snapshot.prevents_display_sleep = self.inner.display_request.update(
+                self.inner.renderer_attached.get()
+                    && !snapshot.paused
+                    && snapshot.state == PlaybackState::Playing,
+            );
         }
         self.advance_subtitle_off();
         snapshot.wakeups = self.inner.wake.count.load(Ordering::Relaxed);
