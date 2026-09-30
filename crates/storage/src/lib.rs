@@ -14,13 +14,13 @@ pub use history::{
 };
 pub use library_transfer::{ImportSummary, MAX_TRANSFER_BYTES};
 use oxplay_core::{
-    ChannelId, PlaybackPreferences, PlaybackSpeed, Preferences, QualityCeiling, VideoId,
+    ChannelId, GlowSize, PlaybackPreferences, PlaybackSpeed, Preferences, QualityCeiling, VideoId,
     VideoSummary,
 };
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::{fmt, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 9;
+const SCHEMA_VERSION: u32 = 10;
 pub const MAX_PAGE_SIZE: u32 = 100;
 pub const MAX_PLAYLIST_FILTER_BYTES: usize = 256;
 const MAX_TEXT_BYTES: usize = 1024;
@@ -527,8 +527,8 @@ impl LocalStore {
     }
 
     pub fn preferences(&self) -> Result<LocalPreferences> {
-        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis,thumbnail_cache_mib,comments_enabled,search_suggestions FROM local_preferences WHERE id=1",[],|row| {
-            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?,row.get::<_,i64>(9)?,row.get::<_,i64>(10)?,row.get::<_,i64>(11)?))
+        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis,thumbnail_cache_mib,comments_enabled,search_suggestions,ambient_mode,glow_size FROM local_preferences WHERE id=1",[],|row| {
+            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?,row.get::<_,i64>(9)?,row.get::<_,i64>(10)?,row.get::<_,i64>(11)?,row.get::<_,i64>(12)?,row.get::<_,i32>(13)?))
         }).optional()?.ok_or(StorageError::CorruptData)?;
         Ok(LocalPreferences {
             privacy: values.0,
@@ -542,6 +542,12 @@ impl LocalStore {
             playback: PlaybackPreferences {
                 quality: QualityCeiling::from_height(values.3).ok_or(StorageError::CorruptData)?,
                 speed: PlaybackSpeed::from_millis(values.4).ok_or(StorageError::CorruptData)?,
+                ambient_mode: match values.8 {
+                    0 => false,
+                    1 => true,
+                    _ => return Err(StorageError::CorruptData),
+                },
+                glow_size: GlowSize::from_index(values.9).ok_or(StorageError::CorruptData)?,
             },
             comments_enabled: match values.6 {
                 0 => false,
@@ -569,7 +575,7 @@ impl LocalStore {
             Theme::Light => "light",
             Theme::Dark => "dark",
         };
-        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9,thumbnail_cache_mib=?10,comments_enabled=?11,search_suggestions=?12 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis(),prefs.thumbnail_cache_mib,prefs.comments_enabled,prefs.search_suggestions])?;
+        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9,thumbnail_cache_mib=?10,comments_enabled=?11,search_suggestions=?12,ambient_mode=?13,glow_size=?14 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis(),prefs.thumbnail_cache_mib,prefs.comments_enabled,prefs.search_suggestions,prefs.playback.ambient_mode,prefs.playback.glow_size.index()])?;
         Ok(())
     }
 
@@ -696,6 +702,9 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     }
     if version < 9 {
         tx.execute_batch(include_str!("schema_v9.sql"))?;
+    }
+    if version < 10 {
+        tx.execute_batch(include_str!("schema_v10.sql"))?;
     }
     tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     tx.commit()?;

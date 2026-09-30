@@ -384,7 +384,11 @@ fn every_supported_playback_default_survives_reopen_and_clear_resets_it() {
     for quality in QualityCeiling::ALL {
         for speed in PlaybackSpeed::ALL {
             let prefs = LocalPreferences {
-                playback: PlaybackPreferences { quality, speed },
+                playback: PlaybackPreferences {
+                    quality,
+                    speed,
+                    ..Default::default()
+                },
                 ..Default::default()
             };
             LocalStore::open(&path)
@@ -1253,6 +1257,59 @@ fn v9_migration_preserves_saved_quality_and_admits_higher_ceilings() {
         store.preferences().unwrap().playback.quality,
         QualityCeiling::P1080
     );
+}
+
+#[test]
+fn v10_migration_defaults_ambient_glow_and_persists_changes() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("v9.sqlite3");
+    {
+        let connection = Connection::open(&path).unwrap();
+        for schema in [
+            include_str!("schema_v1.sql"),
+            include_str!("schema_v2.sql"),
+            include_str!("schema_v3.sql"),
+            include_str!("schema_v4.sql"),
+            include_str!("schema_v5.sql"),
+            include_str!("schema_v6.sql"),
+            include_str!("schema_v7.sql"),
+            include_str!("schema_v8.sql"),
+            include_str!("schema_v9.sql"),
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+        connection
+            .execute_batch(
+                "UPDATE local_preferences SET quality_height=720,speed_millis=2000; PRAGMA user_version=9;",
+            )
+            .unwrap();
+    }
+    let mut store = LocalStore::open(&path).unwrap();
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
+    let mut prefs = store.preferences().unwrap();
+    // Existing playback defaults survive; the glow is on and one step above small.
+    assert_eq!(prefs.playback.quality, QualityCeiling::P720);
+    assert_eq!(prefs.playback.speed, PlaybackSpeed::Double);
+    assert!(prefs.playback.ambient_mode);
+    assert_eq!(prefs.playback.glow_size, GlowSize::Medium);
+    for size in GlowSize::ALL {
+        prefs.playback.ambient_mode = size != GlowSize::Medium;
+        prefs.playback.glow_size = size;
+        store.set_preferences(prefs).unwrap();
+        let read = store.preferences().unwrap();
+        assert_eq!(read.playback, prefs.playback);
+    }
+    for corrupt in [
+        "UPDATE local_preferences SET glow_size=4",
+        "UPDATE local_preferences SET glow_size=-1",
+        "UPDATE local_preferences SET ambient_mode=2",
+    ] {
+        assert!(store.connection.execute(corrupt, []).is_err(), "{corrupt}");
+    }
+    store.clear_local_data().unwrap();
+    let cleared = store.preferences().unwrap().playback;
+    assert!(cleared.ambient_mode);
+    assert_eq!(cleared.glow_size, GlowSize::Medium);
 }
 
 #[test]

@@ -442,6 +442,16 @@ pub fn save_quality(app: &App, state: &UiState, quality: oxplay_core::QualityCei
     prefs.playback.quality = quality;
     save_preferences(app, state, prefs)
 }
+pub fn save_ambient_mode(app: &App, state: &UiState, enabled: bool) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.playback.ambient_mode = enabled;
+    save_preferences(app, state, prefs)
+}
+pub fn save_glow_size(app: &App, state: &UiState, size: oxplay_core::GlowSize) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.playback.glow_size = size;
+    save_preferences(app, state, prefs)
+}
 pub fn save_speed(app: &App, state: &UiState, speed: oxplay_core::PlaybackSpeed) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.speed = speed;
@@ -1387,6 +1397,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                         app.set_theme(theme_index(desired_preferences(&s).theme));
                     }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
+                    crate::playback_preferences::sync_ambient(&app, &s);
                     app.global::<LibraryUi>()
                         .set_history_enabled(s.preferences.get().privacy.local_history);
                     status(&app, if latest && write.value.playback != s.preferences.get().playback {
@@ -1407,6 +1418,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     // override a session-only diagnostic appearance.
                     if theme_changed { app.set_theme(theme_index(desired_preferences(&s).theme)); }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
+                    crate::playback_preferences::sync_ambient(&app, &s);
                     app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
                     status(
@@ -2012,6 +2024,23 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
+    app.on_ambient_mode_changed(move |enabled| {
+        let Some(app) = weak.upgrade() else { return };
+        save_ambient_mode(&app, &s, enabled);
+        // The controls show the admitted value, even after a rejected write.
+        crate::playback_preferences::sync_ambient(&app, &s);
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_glow_size_changed(move |index| {
+        let Some(app) = weak.upgrade() else { return };
+        if let Some(size) = oxplay_core::GlowSize::from_index(index) {
+            save_glow_size(&app, &s, size);
+        }
+        crate::playback_preferences::sync_ambient(&app, &s);
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
     app.on_thumbnail_cache_changed(move |index| {
         let Some(app) = weak.upgrade() else { return };
         if let Some(mib) = thumbnail_cache_mib(index) {
@@ -2458,6 +2487,7 @@ mod tests {
             playback: oxplay_core::PlaybackPreferences {
                 quality: oxplay_core::QualityCeiling::P720,
                 speed: oxplay_core::PlaybackSpeed::OneAndHalf,
+                ..Default::default()
             },
             ..Default::default()
         };

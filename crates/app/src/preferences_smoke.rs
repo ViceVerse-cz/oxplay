@@ -102,7 +102,11 @@ fn assert_values(
     speed: PlaybackSpeed,
     volume: u8,
 ) {
-    let expected = PlaybackPreferences { quality, speed };
+    let expected = PlaybackPreferences {
+        quality,
+        speed,
+        ..Default::default()
+    };
     assert!(state.playback_preferences.ready());
     assert_eq!(
         state.preferences.get().playback,

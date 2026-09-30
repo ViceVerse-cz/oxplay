@@ -1299,3 +1299,92 @@ fn ambient_mode_toggle_and_glow_scope_follow_the_watch_page() {
         assert!(app.get_ambient_active(), "{label} restored");
     }
 }
+
+#[test]
+fn glow_size_is_chosen_beside_ambient_mode_and_reported_for_saving() {
+    let app = app();
+    app.set_theme(2);
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    settle();
+    assert_eq!(app.get_glow_size(), 1, "medium by default, one above small");
+    let toggled = Rc::new(Cell::new(None));
+    let output = toggled.clone();
+    app.on_ambient_mode_changed(move |on| output.set(Some(on)));
+    let chosen = Rc::new(Cell::new(None));
+    let output = chosen.clone();
+    app.on_glow_size_changed(move |index| output.set(Some(index)));
+    element(&app, "Playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Ambient mode").invoke_accessible_default_action();
+    settle();
+    assert_eq!(toggled.get(), Some(false));
+    assert!(
+        !element(&app, "Ambient glow size: Medium")
+            .accessible_enabled()
+            .unwrap_or(true),
+        "size is inert while the glow is off"
+    );
+    element(&app, "Ambient mode").invoke_accessible_default_action();
+    settle();
+    assert_eq!(toggled.get(), Some(true));
+    element(&app, "Ambient glow size: Medium").invoke_accessible_default_action();
+    settle();
+    element(&app, "Glow size Extra large").invoke_accessible_default_action();
+    settle();
+    assert_eq!(chosen.get(), Some(3));
+    assert_eq!(app.get_glow_size(), 3);
+    // Back in the list, the row shows the new size.
+    element(&app, "Back to playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Ambient glow size: Extra large");
+}
+
+#[test]
+fn search_results_drop_their_title_block_but_channel_and_playlist_keep_theirs() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    app.set_catalog_title("Results for “synthetic”".into());
+    app.set_catalog_subtitle("Public YouTube results · synthetic".into());
+    let headers = |app: &App| {
+        settle();
+        ElementHandle::find_by_accessible_label(app, "Results for “synthetic”").count()
+            + ElementHandle::find_by_accessible_label(app, "Public YouTube results · synthetic")
+                .count()
+    };
+    app.set_guest_scope(0);
+    assert_eq!(headers(&app), 0, "search has no title or description");
+    // The result-type toolbar stays available.
+    element(&app, "Search result type");
+    app.set_guest_scope(1);
+    assert!(headers(&app) > 0, "channel keeps its header");
+    app.set_guest_scope(2);
+    assert!(headers(&app) > 0, "playlist keeps its header");
+    app.set_guest_scope(0);
+    assert_eq!(headers(&app), 0);
+}
+
+#[test]
+fn play_pause_acknowledgement_holds_before_it_fades() {
+    let app = app();
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    settle();
+    assert!(!app.get_play_flash_visible());
+    element(&app, "Play").invoke_accessible_default_action();
+    settle();
+    assert!(app.get_play_flash_visible());
+    for _ in 0..4 {
+        mock_elapsed_time(Duration::from_millis(100));
+        slint::platform::update_timers_and_animations();
+    }
+    assert!(app.get_play_flash_visible(), "still held after 400 ms");
+    for _ in 0..2 {
+        mock_elapsed_time(Duration::from_millis(100));
+        slint::platform::update_timers_and_animations();
+    }
+    assert!(!app.get_play_flash_visible(), "fade starts after the hold");
+}
