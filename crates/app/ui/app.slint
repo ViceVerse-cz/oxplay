@@ -43,7 +43,7 @@ export component App inherits Window {
     in property <string> window-appearance-status;
     callback window-appearance-changed();
     private property <bool> chrome-translucent: root.window-translucent && root.window-translucency-available && !root.video-only;
-    private property <brush> chrome-background: Colors.canvas;
+    private property <brush> chrome-background: root.ambient-shown ? transparent : Colors.canvas;
     changed chrome-translucent => { Colors.translucent = root.chrome-translucent; }
     changed window-translucent => { root.window-appearance-changed(); }
     changed window-blur-enabled => { root.window-appearance-changed(); }
@@ -301,6 +301,9 @@ export component App inherits Window {
     out property <bool> mini-player-active: root.loaded && !root.watching && !root.video-only && !root.native-video-child;
     out property <bool> video-visible: root.watching || root.mini-player-active;
     private property <bool> compact-video: root.video-only || root.mini-player-active;
+    // Top margin inside the watch scroll content: content scrolls up to the
+    // header instead of being cut off a fixed gap below it.
+    private property <length> watch-inset: root.compact-video ? 0px : 20px;
     callback picture-in-picture-toggle();
     callback exit-picture-in-picture();
     public function focus-video-mode() { focus.focus(); }
@@ -323,7 +326,7 @@ export component App inherits Window {
         && !root.video-only && !root.native-video-child && !root.watch-loading && root.watch-load-error == "" && !root.playback-failed;
     // Sampling runs only while some part of the glow can be on screen.
     out property <bool> ambient-active: root.ambient-shown
-        && root.video-window-y + root.video-height * 42 / 36 > root.top-height
+        && root.video-window-y + root.video-height * 42 / 36 > 0px
         && root.video-window-y - root.video-height * 6 / 36 < root.height;
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
@@ -353,8 +356,8 @@ export component App inherits Window {
     // Positive intersection of thumbnail rectangles with the feed viewport.
     // Unlike first-row/last-row, this excludes prefetch and text-only rows.
     // Window occlusion and physical display clipping remain host observations.
-    out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y + feed.visible-height) / row-height)) * columns) : 0;
-    out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - (row-height - 100px)) / row-height) + 1) * columns) : 0;
+    out property <int> feed-thumbnail-end: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(videos.length, max(0, ceil((-feed.content-y - feed-inset + feed.visible-height) / row-height)) * columns) : 0;
+    out property <int> feed-thumbnail-first: page == 0 && feed.visible-width > 0px && feed.visible-height > 0px ? min(feed-thumbnail-end, max(0, floor((-feed.content-y - feed-inset - (row-height - 100px)) / row-height) + 1) * columns) : 0;
     private property <bool> watching: page == 2;
     private property <length> sidebar-width: video-only || theatre-active ? 0px : expanded-sidebar && root.width >= 1100px ? 200px : 56px;
     private property <bool> guide-compact: root.sidebar-width < 100px;
@@ -362,9 +365,12 @@ export component App inherits Window {
     // Watch tabs extend the header with one slim strip only when useful.
     private property <length> tab-strip-height: !video-only && TabsUi.strip-visible ? 36px : 0px;
     private property <length> top-height: root.header-height + root.tab-strip-height;
+    // Top margin inside the feed scroll content, so cards scroll up to the
+    // toolbar instead of being cut off a fixed gap below it.
+    private property <length> feed-inset: 20px;
     private property <length> row-height: ((feed.visible-width - (columns - 1) * 20px) / columns) * 9 / 16 + 100px;
-    private property <int> first-row: max(0, floor(-feed.content-y / row-height) - 1);
-    private property <int> last-row: min(groups.length, ceil((-feed.content-y + feed.visible-height) / row-height) + 1);
+    private property <int> first-row: max(0, floor((-feed.content-y - feed-inset) / row-height) - 1);
+    private property <int> last-row: min(groups.length, ceil((-feed.content-y - feed-inset + feed.visible-height) / row-height) + 1);
     private property <length> related-clip-top: max(0px, -watch.content-y - related.y);
     private property <length> related-clip-bottom: min(related.visible-height, watch.visible-height - watch.content-y - related.y);
     private property <bool> related-in-view: root.watching && !root.video-only && related-clip-bottom > related-clip-top;
@@ -467,10 +473,11 @@ export component App inherits Window {
         else if surface == 1 { related-parking.focus(); }
     }
     public function reveal-feed-item(index: int) {
+        // Rows start after feed-inset; revealing keeps that margin above a card.
         let top = floor(index / root.columns) * root.row-height;
         if top + feed.content-y < 0px { feed.content-y = -top; }
-        if top + root.row-height + feed.content-y > feed.visible-height {
-            feed.content-y = min(0px, feed.visible-height - top - root.row-height);
+        if root.feed-inset + top + root.row-height + feed.content-y > feed.visible-height {
+            feed.content-y = min(0px, feed.visible-height - root.feed-inset - top - root.row-height);
         }
         root.refresh-visible();
     }
@@ -490,33 +497,28 @@ export component App inherits Window {
         }
         root.refresh-visible();
     }
+    // While the glow shows, this one canvas spans the header and guide too and
+    // their own backgrounds turn transparent (chrome-background), so the glow
+    // can reach under them without stacking two translucent tints.
     Rectangle {
-        x: root.sidebar-width; y: root.top-height;
+        x: root.ambient-shown ? 0px : root.sidebar-width; y: root.ambient-shown ? 0px : root.top-height;
         width: root.width - self.x; height: root.height - self.y;
         background: Colors.canvas;
     }
-    // Ambient glow: directly above the page canvas and below every other
-    // element, clipped to the page area. The 76×48 image's central 64×36
-    // texels sit exactly behind the video host (see ambient_ui.rs); bilinear
+    // Ambient glow: directly above the canvas and below every other element,
+    // including the header and guide. The 76×48 image's central 64×36 texels
+    // sit exactly behind the video host (see ambient_ui.rs); bilinear
     // upscaling of the pre-blurred image keeps it soft. A leaf Image with
     // opacity uses global alpha, not an offscreen layer.
-    Rectangle {
-        x: root.sidebar-width; y: root.top-height;
-        width: root.width - self.x; height: root.height - self.y;
+    Image {
         visible: root.ambient-shown;
-        clip: true;
-        Image {
-            x: root.video-window-x - root.sidebar-width - root.video-width * 6 / 64;
-            y: root.video-window-y - root.top-height - root.video-height * 6 / 36;
-            width: root.video-width * 76 / 64; height: root.video-height * 48 / 36;
-            source: root.ambient-image;
-            image-fit: fill; image-rendering: smooth;
-            opacity: root.ambient-ready ? 1 : 0;
-            animate opacity { duration: 600ms; easing: ease-in-out; }
-        }
-        // Fade into the guide and header edges instead of cutting the glow.
-        Rectangle { x: 0px; y: 0px; width: 32px; height: parent.height; background: @linear-gradient(90deg, Colors.canvas 0%, Colors.canvas.with-alpha(0) 100%); }
-        Rectangle { x: 0px; y: 0px; width: parent.width; height: 24px; background: @linear-gradient(180deg, Colors.canvas 0%, Colors.canvas.with-alpha(0) 100%); }
+        x: root.video-window-x - root.video-width * 6 / 64;
+        y: root.video-window-y - root.video-height * 6 / 36;
+        width: root.video-width * 76 / 64; height: root.video-height * 48 / 36;
+        source: root.ambient-image;
+        image-fit: fill; image-rendering: smooth;
+        opacity: root.ambient-ready ? 1 : 0;
+        animate opacity { duration: 600ms; easing: ease-in-out; }
     }
     osd-timer := Timer {
         interval: 900ms; running: false;
@@ -780,7 +782,7 @@ export component App inherits Window {
     }
     browse := Rectangle {
         x: root.sidebar-width + 24px; y: root.top-height + 16px;
-        width: root.width - self.x - 24px; height: root.height - self.y - 16px;
+        width: root.width - self.x - 24px; height: root.height - self.y;
         visible: root.page == 0;
         private property <bool> channel-header: root.guest-scope == 1;
         // Home has no title block; its toolbar row starts at the top.
@@ -799,7 +801,7 @@ export component App inherits Window {
             focus-lost => { root.feed-parking-lost(); }
             key-pressed(event) => {
                 let command = CatalogKeys.command(event);
-                let index = root.feed-focus-target >= 0 ? root.feed-focus-target : min(root.videos.length - 1, max(0, floor(-feed.content-y / root.row-height) * root.columns));
+                let index = root.feed-focus-target >= 0 ? root.feed-focus-target : min(root.videos.length - 1, max(0, floor((-feed.content-y - root.feed-inset) / root.row-height) * root.columns));
                 if command >= 0 && root.feed-key(0, index, command) { return accept; }
                 root.feed-focus-cancel();
                 return reject;
@@ -822,14 +824,14 @@ export component App inherits Window {
             Text { text: !root.home-active ? "Guest browsing" : root.account-connected ? "" : "Saved on this device"; color: Colors.muted; font-size: 13px; vertical-alignment: center; }
         }
         feed := ScrollView {
-            y: browse.toolbar-y + 56px; width: parent.width; height: parent.height - self.y;
+            y: browse.toolbar-y + 36px; width: parent.width; height: parent.height - self.y;
             horizontal-scrollbar-policy: always-off;
             content-width: self.visible-width;
-            content-height: root.groups.length * root.row-height + (root.has-more || root.has-previous ? 64px : 0px);
+            content-height: root.feed-inset + root.groups.length * root.row-height + (root.has-more || root.has-previous ? 64px : 0px) + 16px;
             // Explicit positions keep the taller paging footer out of ListView's
             // estimated row height. Only near-viewport rows instantiate cards.
             for group[row] in root.groups: Rectangle {
-                y: row * root.row-height; width: feed.visible-width; height: root.row-height;
+                y: root.feed-inset + row * root.row-height; width: feed.visible-width; height: root.row-height;
                 if row >= root.first-row && row < root.last-row: HorizontalLayout {
                     y: 0px; height: root.row-height;
                     spacing: 20px; padding-bottom: 20px;
@@ -850,7 +852,7 @@ export component App inherits Window {
                 }
             }
             if root.groups.length > 0 && (root.has-more || root.has-previous): HorizontalLayout {
-                y: root.groups.length * root.row-height + 4px; height: 36px; spacing: 8px; alignment: center;
+                y: root.feed-inset + root.groups.length * root.row-height + 4px; height: 36px; spacing: 8px; alignment: center;
                 Action { icon-name: "chevron-left"; label: "Previous page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-previous; clicked => { root.guest-previous(); } }
                 Action { icon-name: "chevron-right"; label: root.busy ? "Loading…" : "Next page"; variant: ActionVariant.secondary; height: 36px; width: 150px; horizontal-stretch: 0; enabled: !root.native-video-child && !root.busy && !root.home-loading && root.has-more; clicked => { root.more(); } }
             }
@@ -861,7 +863,7 @@ export component App inherits Window {
             private property <length> card-width: (self.width - (root.columns - 1) * 20px) / root.columns;
             for cell in root.columns * 3: Rectangle {
                 x: mod(cell, root.columns) * (parent.card-width + 20px);
-                y: floor(cell / root.columns) * root.row-height;
+                y: root.feed-inset + floor(cell / root.columns) * root.row-height;
                 width: parent.card-width; height: root.row-height - 20px;
                 Rectangle { x: 0px; y: 0px; width: parent.width; height: parent.width * 9 / 16; border-radius: 12px; background: Colors.hover; }
                 Rectangle { x: 4px; y: parent.width * 9 / 16 + 14px; width: parent.width * 0.86; height: 14px; border-radius: 4px; background: Colors.hover; }
@@ -1016,16 +1018,16 @@ export component App inherits Window {
     // One persistent host; scrolling moves the existing image, never the player.
     watch := ScrollView {
         x: root.video-only ? 0px : root.mini-player-active ? root.width - self.width - 20px : root.sidebar-width + 28px;
-        y: root.video-only ? 0px : root.mini-player-active ? root.height - self.height - 20px : root.top-height + 20px;
+        y: root.video-only ? 0px : root.mini-player-active ? root.height - self.height - 20px : root.top-height;
         width: root.video-only ? root.width : root.mini-player-active ? min(380px, root.width - root.sidebar-width - 48px) : root.width - root.sidebar-width - 56px;
-        height: root.video-only ? root.height : root.mini-player-active ? self.width * 9 / 16 : root.height - root.top-height - 40px;
+        height: root.video-only ? root.height : root.mini-player-active ? self.width * 9 / 16 : root.height - root.top-height;
         visible: root.video-visible;
         horizontal-scrollbar-policy: always-off;
         // Keep wheel/trackpad and focus-driven scrolling without painting a
         // native scrollbar over the video or inline transport.
         vertical-scrollbar-policy: always-off;
         content-width: self.visible-width;
-        content-height: root.compact-video ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 16px, related.y + related.height + (root.wide-related ? 0px : 16px)));
+        content-height: root.compact-video ? self.visible-height : max(self.visible-height, max(watch-details.y + watch-details.height + 36px, related.y + related.height + (root.wide-related ? 0px : 36px)));
         changed content-y => {
             if root.compact-video && self.content-y != 0px { self.content-y = 0px; }
         }
@@ -1037,7 +1039,7 @@ export component App inherits Window {
         // Persistent video host: navigation/control changes never reconstruct media.
         video := Rectangle {
             x: 0px;
-            y: 0px;
+            y: root.watch-inset;
             width: root.compact-video ? watch.visible-width : watch.visible-width - (root.wide-related ? 368px : 0px);
             height: root.compact-video ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : root.theatre-active ? min(self.width * 9 / 16, max(240px, watch.visible-height * 0.82)) : self.width * 9 / 16;
             visible: root.video-visible;
@@ -1237,7 +1239,7 @@ export component App inherits Window {
             busy: root.busy;
             page-loaded => {
                 if root.watching && !root.video-only && root.remote-video && !root.account-playback-active && CommentsUi.has-loaded {
-                    watch.content-y = max(min(0px, watch.visible-height - watch.content-height), -(watch-details.y + watch-details.comments-y));
+                    watch.content-y = max(min(0px, watch.visible-height - watch.content-height), root.watch-inset - (watch-details.y + watch-details.comments-y));
                 }
             }
         }
@@ -1259,9 +1261,9 @@ export component App inherits Window {
         }
         related := ListView {
             x: root.wide-related ? video.x + video.width + 24px : video.x;
-            y: root.wide-related ? 0px : watch-details.y + watch-details.height + 20px;
+            y: root.wide-related ? root.watch-inset : watch-details.y + watch-details.height + 20px;
             width: root.wide-related ? watch.visible-width - self.x : video.width;
-            height: root.wide-related ? watch.visible-height : max(318px, watch.visible-height * 0.65);
+            height: root.wide-related ? watch.visible-height - root.watch-inset : max(318px, watch.visible-height * 0.65);
             visible: root.watching && !root.video-only;
             horizontal-scrollbar-policy: always-off;
             // Opt-in experiment: cache each virtualized related card independently.

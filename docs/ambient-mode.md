@@ -62,11 +62,11 @@ each edge — about 60–100 px in the default window, ~120 px in a large
 theatre view. Slint scales the image with bilinear filtering; since the image is
 already blurred, this stays soft.
 
-The glow image is drawn directly above the page canvas and below every other
-element, clipped to the page area, so it never covers the header, guide,
-controls, text or popups. Short canvas-coloured gradients fade it into the
-guide and header edges. With a translucent window those gradients slightly
-darken the page edge while the glow is visible.
+The glow image is drawn directly above the canvas and below every other
+element, so it never covers controls, text or popups. It reaches under the
+header, tab strip and guide: while it shows, one canvas spans the whole window
+and those chrome surfaces paint no background of their own, so the colour is
+identical without the glow and a translucent window gets a single tint.
 
 Colour updates are applied only in BeforeRendering calls that already publish a
 new video frame, and at most ~24 times per second; there is no timer or
