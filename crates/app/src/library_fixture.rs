@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit developer fixture capability. Remote metadata cannot create one.
 //! Admission happens before the UI; compressed bytes are read only by the image worker.
+// Unix-only diagnostic: other targets compile the fail-closed entry points.
+#![cfg_attr(
+    not(unix),
+    allow(dead_code, unused_imports, unused_variables, unreachable_code)
+)]
 use std::{
     fs::File,
     io::{self, Read},

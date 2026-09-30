@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Finite offline collection-window callbacks against a newly created private
 //! database. No helper, media, account or resource-measurement admission.
+// Unix-only diagnostic: other targets compile the fail-closed entry points.
+#![cfg_attr(
+    not(unix),
+    allow(dead_code, unused_imports, unused_variables, unreachable_code)
+)]
 use crate::{App, LibraryUi, UiState};
 use oxplay_storage::{LocalPlaylistId, LocalStore};
 use slint::{ComponentHandle, Model, Timer, TimerMode};

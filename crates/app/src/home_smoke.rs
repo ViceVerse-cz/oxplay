@@ -2,6 +2,11 @@
 //! Explicit offline functional exercise. Fixture creation runs before the UI;
 //! all later database operations use the ordinary library worker. Synthetic
 //! identifiers never enter a provider or player request.
+// Unix-only diagnostic: other targets compile the fail-closed entry points.
+#![cfg_attr(
+    not(unix),
+    allow(dead_code, unused_imports, unused_variables, unreachable_code)
+)]
 use crate::{App, LibraryUi, UiState, home_ui, library};
 use oxplay_core::{VideoId, VideoSummary};
 use oxplay_storage::{

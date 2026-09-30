@@ -8,7 +8,7 @@ use oxplay_storage::{
     PlaylistWindow, PlaylistWindowPage, StorageError, vault::SessionProfile,
 };
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::{Read, Write},
     path::{Path, PathBuf},
     sync::mpsc,
@@ -558,7 +558,7 @@ fn atomic_export(path: &Path, bytes: &[u8], overwrite: bool) -> oxplay_storage::
             std::fs::remove_file(&temporary).map_err(|_| StorageError::Unavailable)?;
         }
         #[cfg(unix)]
-        File::open(&parent)
+        std::fs::File::open(&parent)
             .and_then(|directory| directory.sync_all())
             .map_err(|_| StorageError::Unavailable)?;
         Ok(())
@@ -929,7 +929,7 @@ mod tests {
         }
         assert_eq!(std::fs::read_dir(&directory.0).unwrap().count(), 2);
         // Oversized sparse files are rejected before allocating their contents.
-        File::create(&path)
+        std::fs::File::create(&path)
             .unwrap()
             .set_len(MAX_TRANSFER_BYTES as u64 + 1)
             .unwrap();

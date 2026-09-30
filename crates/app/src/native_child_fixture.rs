@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Admission for one previously measured synthetic MP4, not an egress sandbox.
+// Unix-only diagnostic: other targets compile the fail-closed entry points.
+#![cfg_attr(
+    not(unix),
+    allow(dead_code, unused_imports, unused_variables, unreachable_code)
+)]
 use std::{
     fs::File,
     io::{self, Read, Write},

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Explicit offline preference/restart diagnostic; never loads provider content.
+// Unix-only diagnostic: other targets compile the fail-closed entry points.
+#![cfg_attr(
+    not(unix),
+    allow(dead_code, unused_imports, unused_variables, unreachable_code)
+)]
 use crate::{App, LibraryUi, UiState, playback_preferences};
 use oxplay_core::{PlaybackPreferences, PlaybackSpeed, QualityCeiling};
 use slint::ComponentHandle;
