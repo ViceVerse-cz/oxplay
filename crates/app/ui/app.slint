@@ -313,6 +313,18 @@ export component App inherits Window {
     out property <length> video-height: video.height;
     out property <length> video-window-x: watch.x + video.x;
     out property <length> video-window-y: watch.y + watch.content-y + video.y;
+    // Ambient mode ("Filmové osvětlení"): session preference, on by default.
+    // Rust publishes the glow image (ambient_ui.rs) and fades it in with
+    // ambient-ready. The glow is only drawn on the watch page, dark theme.
+    in-out property <bool> ambient-mode: true;
+    in property <image> ambient-image;
+    in property <bool> ambient-ready;
+    private property <bool> ambient-shown: root.ambient-mode && Colors.dark && root.watching && root.loaded
+        && !root.video-only && !root.native-video-child && !root.watch-loading && root.watch-load-error == "" && !root.playback-failed;
+    // Sampling runs only while some part of the glow can be on screen.
+    out property <bool> ambient-active: root.ambient-shown
+        && root.video-window-y + root.video-height * 42 / 36 > root.top-height
+        && root.video-window-y - root.video-height * 6 / 36 < root.height;
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
     out property <int> visible-related-count: max(0, related-last - related-first);
@@ -482,6 +494,29 @@ export component App inherits Window {
         x: root.sidebar-width; y: root.top-height;
         width: root.width - self.x; height: root.height - self.y;
         background: Colors.canvas;
+    }
+    // Ambient glow: directly above the page canvas and below every other
+    // element, clipped to the page area. The 76×48 image's central 64×36
+    // texels sit exactly behind the video host (see ambient_ui.rs); bilinear
+    // upscaling of the pre-blurred image keeps it soft. A leaf Image with
+    // opacity uses global alpha, not an offscreen layer.
+    Rectangle {
+        x: root.sidebar-width; y: root.top-height;
+        width: root.width - self.x; height: root.height - self.y;
+        visible: root.ambient-shown;
+        clip: true;
+        Image {
+            x: root.video-window-x - root.sidebar-width - root.video-width * 6 / 64;
+            y: root.video-window-y - root.top-height - root.video-height * 6 / 36;
+            width: root.video-width * 76 / 64; height: root.video-height * 48 / 36;
+            source: root.ambient-image;
+            image-fit: fill; image-rendering: smooth;
+            opacity: root.ambient-ready ? 1 : 0;
+            animate opacity { duration: 600ms; easing: ease-in-out; }
+        }
+        // Fade into the guide and header edges instead of cutting the glow.
+        Rectangle { x: 0px; y: 0px; width: 32px; height: parent.height; background: @linear-gradient(90deg, Colors.canvas 0%, Colors.canvas.with-alpha(0) 100%); }
+        Rectangle { x: 0px; y: 0px; width: parent.width; height: 24px; background: @linear-gradient(180deg, Colors.canvas 0%, Colors.canvas.with-alpha(0) 100%); }
     }
     osd-timer := Timer {
         interval: 900ms; running: false;
@@ -658,6 +693,7 @@ export component App inherits Window {
                 volume-level: root.volume-level; speed-index: root.speed-index; quality-index: root.quality-index;
                 speed-busy: root.speed-busy; quality-busy: root.busy; remote-video: root.remote-video;
                 subtitle-available: root.local-subtitle-available && !root.local-file-busy;
+                ambient-mode <=> root.ambient-mode;
                 volume(value) => { root.volume(value); }
                 speed(index) => { root.speed((index + 1) * 0.5); }
                 quality(index) => { root.quality(index); }

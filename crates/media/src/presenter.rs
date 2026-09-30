@@ -40,6 +40,8 @@ pub struct RenderStats {
     pub callback_latency_us: u64,
     pub max_callback_latency_us: u64,
     pub gpu: crate::GpuTimingStats,
+    /// Ambient-mode colour sampling; all zero unless the host enables it.
+    pub ambient: crate::AmbientStats,
 }
 // The host may borrow displayed until the next published image replaces it.
 // Private frames and private-target resize must only touch next. The opt-in
@@ -91,14 +93,14 @@ impl<T> PublicationPair<T> {
         }
     }
 }
-struct Target {
+pub(crate) struct Target {
     texture: glow::NativeTexture,
-    fbo: glow::NativeFramebuffer,
-    width: u32,
-    height: u32,
+    pub(crate) fbo: glow::NativeFramebuffer,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
 }
 impl Target {
-    unsafe fn create(gl: &glow::Context, width: u32, height: u32) -> Result<Self> {
+    pub(crate) unsafe fn create(gl: &glow::Context, width: u32, height: u32) -> Result<Self> {
         unsafe {
             let texture = gl.create_texture().map_err(MediaError)?;
             let fbo = match gl.create_framebuffer() {
@@ -163,7 +165,7 @@ impl Target {
             })
         }
     }
-    unsafe fn delete(self, gl: &glow::Context) {
+    pub(crate) unsafe fn delete(self, gl: &glow::Context) {
         unsafe {
             gl.delete_framebuffer(self.fbo);
             gl.delete_texture(self.texture);
@@ -192,6 +194,8 @@ pub struct GlPresenter {
     deadline_timer: slint::Timer,
     scheduled_deadline: Option<i64>,
     gpu_timing: Option<crate::gpu_timing::GpuTiming>,
+    ambient: crate::ambient::AmbientSampler,
+    ambient_enabled: bool,
 }
 impl GlPresenter {
     /// # Safety
@@ -300,6 +304,7 @@ impl GlPresenter {
             *player.inner.presentation_clock.borrow_mut() = Some(clock);
         }
         player.inner.renderer_attached.set(true);
+        let measure_timing = std::env::var_os("SEREIN_MEDIA_TIMING").is_some_and(|v| v == "1");
         Ok(Self {
             player: player.clone(),
             gl: gl.clone(),
@@ -312,7 +317,7 @@ impl GlPresenter {
                 ..RenderStats::default()
             },
             graphics_info,
-            measure_timing: std::env::var_os("SEREIN_MEDIA_TIMING").is_some_and(|v| v == "1"),
+            measure_timing,
             timing_lead_ms: player.inner.snapshot.borrow().timing_lead_ms,
             prepare_ms: player.inner.snapshot.borrow().prepare_ms,
             pending_frame: None,
@@ -321,6 +326,8 @@ impl GlPresenter {
             deadline_timer: slint::Timer::default(),
             scheduled_deadline: None,
             gpu_timing,
+            ambient: crate::ambient::AmbientSampler::new(measure_timing),
+            ambient_enabled: false,
         })
     }
     pub fn graphics_info(&self) -> &str {
@@ -333,7 +340,25 @@ impl GlPresenter {
             .as_ref()
             .map(|g| g.stats())
             .unwrap_or_default();
+        stats.ambient = self.ambient.stats();
         stats
+    }
+    /// Ambient-mode colour sampling. Off by default; the host enables it only
+    /// while the glow is actually shown. Costs nothing while disabled.
+    pub fn set_ambient_sampling(&mut self, enabled: bool) {
+        if enabled && !self.ambient_enabled {
+            self.ambient.rearm();
+        }
+        self.ambient_enabled = enabled;
+    }
+    /// Newest colour summary, at most one per sample (≤4 Hz while playing).
+    pub fn take_ambient_sample(&mut self) -> Option<crate::AmbientSample> {
+        self.ambient.take()
+    }
+    /// Native load identity observed by the latest render call; lets the host
+    /// retire colours of a replaced video before any new sample exists.
+    pub fn observed_load_request(&self) -> u64 {
+        self.observed_load
     }
     /// # Safety
     /// Call only in BeforeRendering on the original window/context. Assign any
@@ -350,6 +375,16 @@ impl GlPresenter {
         if let Some(gpu) = &mut self.gpu_timing {
             unsafe {
                 gpu.begin_frame();
+            }
+        }
+        if self.ambient.has_pending() {
+            // Non-blocking fence check; reads 576 bytes once the GPU is done.
+            unsafe {
+                if self.ambient_enabled {
+                    self.ambient.collect(&self.gl);
+                } else {
+                    self.ambient.discard(&self.gl);
+                }
             }
         }
         let result = unsafe { self.render_video(width, height, allow_publication) };
@@ -550,6 +585,7 @@ impl GlPresenter {
             .targets
             .render_target(frame_target)
             .expect("target allocated above");
+        let source_fbo = target.fbo;
         let mut fbo = ffi::Fbo {
             fbo: target.fbo.0.get() as i32,
             width: width as i32,
@@ -582,6 +618,23 @@ impl GlPresenter {
             self.stats.mpv_render_us += elapsed;
             self.stats.max_mpv_render_us = self.stats.max_mpv_render_us.max(elapsed);
             self.stats.timing_samples += 1;
+        }
+        // Private startup frames are never shown, so they never tint the glow.
+        if self.ambient_enabled && frame_target != FrameTarget::Private {
+            let now = std::time::Instant::now();
+            if self.ambient.due(now, load) {
+                let rect = {
+                    let snapshot = self.player.inner.snapshot.borrow();
+                    crate::ambient::content_rect(width, height, snapshot.width, snapshot.height)
+                };
+                // Still inside the saved/reset state. A failure only disables
+                // ambient sampling; playback and publication are unaffected.
+                if let Err(error) =
+                    unsafe { self.ambient.sample(&self.gl, source_fbo, rect, load, now) }
+                {
+                    eprintln!("ambient sampling disabled: {error}");
+                }
+            }
         }
         let stage = self.measure_timing.then(std::time::Instant::now);
         drop(state);
@@ -662,6 +715,8 @@ impl Drop for GlPresenter {
         // own non-nestable elapsed queries. The owning GL context is current.
         self.gpu_timing.take();
         self.deadline_timer.stop();
+        // Ambient objects are never left bound; the owning context is current.
+        unsafe { self.ambient.delete(&self.gl) };
         #[cfg(target_os = "macos")]
         self.player.inner.presentation_clock.borrow_mut().take();
         self.player.inner.wake.due.store(false, Ordering::Release);

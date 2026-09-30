@@ -24,6 +24,15 @@ adds no performance or resource measurements. All earlier results retain their
 recorded binary/source scope; these additions do not pass or change any budget.
 Performance testing was deferred for that feature batch.
 
+[Ambient mode](ambient-mode.md) is on by default and adds work to watch-page
+playback: at most 4 Hz, four small GPU blits of the rendered target and a
+fenced 576-byte readback (one synchronous read per load), plus a CPU glow
+update of 52 µs median (release microbenchmark, M1) at most ~24 Hz while
+colours are changing. It adds no timer, no frame copy and no redraws beyond
+two 600 ms fades per video change. No whole-app resource sample includes it
+yet; playback CPU/RSS results above predate it, and new playback samples
+should record whether ambient mode was on. No budget was changed.
+
 
 Numbers in SPEC remain contract targets/ceilings, not results. Reference host:
 Apple M1 (7 GPU cores), 16 GiB, macOS 27.0, built-in 2560×1600 Retina, AC power,
