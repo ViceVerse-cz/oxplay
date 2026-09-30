@@ -809,15 +809,8 @@ export component App inherits Window {
         VerticalLayout { width: parent.visible-width; min-height: parent.visible-height; spacing: 14px;
             Text { text: "Your YouTube account"; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 44px; }
             Text { text: root.account-connected ? root.account-identity : "You are browsing as a guest"; color: Colors.text; font-size: 20px; height: 32px; }
-            if !root.account-connected: Text { text: "Connect a browser session to read and manage your YouTube subscriptions and playlists. Public search and playback work without connecting."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: Text { text: "Sign in to see your recommendations, subscriptions and playlists. Public search and playback work without signing in."; color: Colors.muted; wrap: word-wrap; }
             if !root.account-connected: Text { text: "Session cookies are sensitive account credentials. YouTube can associate authenticated activity with your account. Unofficial clients may stop working and may put your account at risk. Serein is not approved by YouTube or Google."; color: Colors.muted; wrap: word-wrap; }
-            if !root.account-connected: Text { text: "1. Sign in with your Google account on YouTube in your browser.\n2. Export that YouTube session using the guide below.\n3. Select the exported file here. Serein verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
-            if !root.account-connected: HorizontalLayout {
-                height: 40px; spacing: 12px;
-                Action { label: "Sign in on YouTube"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-youtube(); } }
-                Action { label: "Cookie export guide"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-export-guide(); } }
-                Rectangle { horizontal-stretch: 1; }
-            }
             if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
             if !root.account-connected: CheckBox { text: "Remember this session and sign in automatically (protected storage)"; checked <=> root.account-remember; }
@@ -833,6 +826,13 @@ export component App inherits Window {
             if !root.account-connected && root.account-browser-supported && root.account-browsers.length == 0: Text { text: "No supported browser was found. Sign in to YouTube in Chrome, Brave, Edge, Arc, Vivaldi, Chromium, Firefox or Safari, or use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected && !root.account-browser-supported: Text { text: "Signing in directly from your browser is not supported on this platform yet. Use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: Text { text: "Other options"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+            if !root.account-connected: Text { text: "If your browser isn't listed: sign in on YouTube in your browser, export that session with the guide, then select the exported file. Serein verifies your account before connecting."; color: Colors.muted; wrap: word-wrap; }
+            if !root.account-connected: HorizontalLayout {
+                height: 40px; spacing: 12px;
+                Action { label: "Sign in on YouTube"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-youtube(); } }
+                Action { label: "Cookie export guide"; variant: ActionVariant.secondary; width: 180px; horizontal-stretch: 0; clicked => { root.open-export-guide(); } }
+                Rectangle { horizontal-stretch: 1; }
+            }
             if !root.account-connected: HorizontalLayout {
                 height: 42px; spacing: 12px;
                 Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; variant: ActionVariant.secondary; width: 240px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
