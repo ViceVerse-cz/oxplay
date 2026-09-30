@@ -1,4 +1,4 @@
-# CI and source previews
+# CI and releases
 
 Latest feature checkpoint: `6b3729b46e8ff6ac250307084aa5a21a5677e5f9`
 adds channel handles, local playlist search and explicit watch-link sharing.
@@ -95,69 +95,193 @@ is not in this build matrix while its native integration remains unfinished.
 See [platform matrix](platform-matrix.md) and [progress](progress.md).
 
 Actions use verified full commit IDs. Workflow tokens default to read-only
-repository access; only the final release job can write repository contents.
-Checkout does not retain Git credentials. Tests and compilation run before
-that job, with no write token. The other Oxplay application's workflow informed
-the release job structure; its unrelated dependencies and signing/packaging
-pipeline are not used here.
+repository access; only the release workflow's `publish` job (and the Pages
+deploy job, when configured) can write. Checkout never retains Git credentials.
 
-## Create a preview release
+## Releases: nightly and production channels
 
-Run **Release (manual)** on `main`. Leave the tag empty to use the next unused
-`v<version>-dev.N`, or supply one such as `v0.1.0-dev.2`. Allowed suffixes are
-`dev`, `alpha`, `beta` and `rc`, followed by a numeric component. The base version
-must match `[workspace.package].version` in the committed `Cargo.toml`. Stable tags
-are intentionally rejected while release qualification is incomplete. The workflow
-does not change versions; make any version update in a reviewed commit first.
+The release pipeline is modelled on the reference project's
+(`~/Code/Serein`): one manually dispatched workflow with a **nightly** and a
+**production** channel, a reusable Linux package workflow, an optional signed
+package repository workflow, and a Homebrew cask kept in this repository.
 
-Jobs, following the structure of the other Oxplay application's release pipeline
-(plan, build matrix, publish):
+| Workflow | Trigger | Purpose |
+| --- | --- | --- |
+| [`release.yml`](../.github/workflows/release.yml) | manual (`workflow_dispatch`): `channel`, `dry_run` | plan, build every platform, publish |
+| [`linux-packages.yml`](../.github/workflows/linux-packages.yml) | called by the release; PRs touching packaging; manual | deb, rpm, Arch, AppImage, tarball |
+| [`package-repositories.yml`](../.github/workflows/package-repositories.yml) | called by the release when configured; manual | signed apt/dnf/pacman repositories on GitHub Pages |
+| [`ci.yml`](../.github/workflows/ci.yml) | called by the release as its `checks` gate | tests, Clippy, release build |
 
-1. **source** resolves the tag and archives the exact checked-out commit.
-2. **checks** runs the same CI workflow in parallel with the builds.
-3. **macos** (`macos-26`, ARM64) installs Homebrew mpv and yt-dlp, runs
-   `scripts/package_macos.py bundle --build --bundle-helpers`, audits the result with
-   `scripts/verify_package.py` and zips it with `ditto`.
-4. **linux** (`ubuntu-24.04`, x86_64) builds the locked release binary against the
-   isolated mpv 0.41.0 and `scripts/ci/package-linux.sh` tars it with that libmpv.
-5. **publish** runs only when every job passed. It verifies the source checksums,
-   regenerates `SHA256SUMS` across all assets, creates the tag and a **prerelease**
-   (never `latest`). It is a draft unless **publish** was ticked.
+### Run a release
 
-Assets: `oxplay-<tag>-source.tar.gz`, `oxplay-<tag>-macOS-ARM64.zip` with its
-`.inventory.json`, `oxplay-<tag>-Linux-X64.tar.gz`, `release.json`,
-`RELEASE_NOTES.md` and `SHA256SUMS`. Unlike the other application, no Apple
-secrets are required because nothing is Developer ID signed or notarized: the macOS
-bundle is ad-hoc signed and quarantined on download (`xattr -dr com.apple.quarantine
-Oxplay.app`). The pipeline adds no conventional-commit versioning, nightly channel,
-Windows build or package repositories. Draft assets expire from Actions storage
-after 14 days; the attached release assets remain.
+Open **Actions → Release (manual) → Run workflow** on `main`, choose the
+channel and leave **dry_run** off. Publishing refuses any other branch.
+Tick **dry_run** (allowed on any branch) to build, package and assemble the
+complete release, including the source archive, checksums and notes, without
+creating a commit, tag, release, cask update or repository deploy; its
+`release-preview` artifact and step summary show what would be published.
 
-The tag creation fails if a tag already exists; no existing tag or release is
-overwritten. If tagging succeeds but release creation fails, inspect that run and
-the tag before recovery. A non-main dispatch skips all release work, and a failed
-CI or build job prevents tag and release creation.
+### Versions and notes
 
-For a local source preview from a committed checkout:
+[`scripts/release.py`](../scripts/release.py) is a standard-library port of the
+reference project's semantic-release planner:
+
+- The next stable version comes from the commits since the last stable
+  `vX.Y.Z` tag: `feat` → minor, `fix`/`perf`/`revert` → patch, `!` or
+  `BREAKING CHANGE:` → major; `docs`, `chore`, `ci`, `build`, `test`, `style`
+  and `refactor` alone do not release. **Adaptation:** a subject that is not a
+  conventional header counts as a patch, because this history is plain English.
+- With no stable tag yet, the first stable release is the committed workspace
+  version (`0.1.0`), not semantic-release's `1.0.0`. Prerelease tags such as
+  `v0.1.0-dev.2` and nightly tags never count as releases.
+- Nightly: `X.Y.Z-nightly.YYYYMMDD.RUN` (the *next* stable version, UTC date,
+  workflow run number), tag `vX.Y.Z-nightly.YYYYMMDD.RUN` on the planned
+  commit. Each run creates a new GitHub prerelease, never `latest`; old
+  nightlies are not replaced or pruned. No version commit is made.
+- Production: `X.Y.Z`. `publish` creates one `chore(release): X.Y.Z [skip ci]`
+  commit (workspace `Cargo.toml`, `Cargo.lock`, `Casks/oxplay.rb`) on top of the
+  planned commit through the Git data API and fast-forwards `main`
+  (`force: false`); if `main` moved while packages built, the release stops
+  before tagging. Tag `vX.Y.Z` points at that commit; the release is `latest`.
+- Notes group Features, Bug Fixes, Performance, Reverts, breaking changes and
+  (adaptation) plain-subject "Changes", with authors, PR links and a
+  "New Contributors" section. Nightly notes cover changes since the nearest
+  release of either channel; production notes since the last stable release.
+  A Downloads section states which platforms, helpers and signing were used.
+- `prepare` applies the planned version to every workspace-versioned package
+  in `Cargo.toml`/`Cargo.lock` and hands them to all builds as the
+  `release-manifests` artifact, so `--locked` builds carry the release version.
+  Builds and the source archive fail if the plan or channel changes.
+
+### Jobs
+
+1. **prepare** (read-only): release tooling tests, plan, manifest version,
+   detection of optional repository credentials.
+2. **checks**: the complete CI workflow.
+3. **build** matrix: `macos-26` (ARM64) runs the existing
+   `package_macos.py bundle --build --bundle-helpers` (Homebrew libmpv plus the
+   reviewed bundled Python/yt-dlp/EJS/Deno runtime), signs and notarizes when
+   configured, refreshes the inventory, runs `verify_package.py` and zips with
+   `ditto`. `windows-latest` (x86_64) fetches the pinned libmpv, yt-dlp and Deno,
+   generates `MPV_DIR/mpv.lib`, builds `oxplay.exe` with a static CRT, stages the
+   portable zip and builds the per-user NSIS `-Setup.exe`.
+4. **linux**: `linux-packages.yml` (below).
+5. **publish** (only write job; skipped in dry runs) / **preview** (dry runs):
+   production version commit, source archive of the tagged commit
+   ([`release_source.py`](../scripts/release_source.py)), `SHA256SUMS.txt` over
+   every asset, notes, then a draft release that becomes visible once every
+   asset uploaded. Nightlies then commit the updated cask (`[skip ci]`).
+6. **repositories**: `package-repositories.yml` when `PACKAGE_SIGNING_KEY` and
+   `PACKAGE_SIGNING_FINGERPRINT` are configured.
+
+`concurrency` allows one publishing release at a time (dry runs queue per
+branch) and never cancels a running release. Rust caches are read by release
+jobs and saved only from `main`.
+
+### Assets
+
+| Asset | Contents |
+| --- | --- |
+| `oxplay-<tag>-macOS-ARM64.zip` (+ `.inventory.json`) | `Oxplay.app` with relocated libmpv closure, bundled helper runtime and build evidence |
+| `oxplay-<tag>-Windows-X64.zip`, `-Windows-X64-Setup.exe` | `oxplay.exe`, `libmpv-2.dll`, `yt-dlp.exe`, `deno.exe`, notices |
+| `oxplay-<tag>-Linux-ubuntu-24.04-oxplay_<ver>_amd64.deb` | private libmpv 0.41 in `/usr/lib/oxplay` |
+| `oxplay-<tag>-Linux-fedora-44-oxplay-<ver>.x86_64.rpm` | Fedora's libmpv |
+| `oxplay-<tag>-Linux-arch-oxplay-<ver>-x86_64.pkg.tar.zst` | Arch's libmpv |
+| `oxplay-<tag>-Linux-X64.AppImage` (+ `.zsync`), `-Linux-X64.tar.gz` | libmpv with its non-system closure |
+| `oxplay-<tag>-source.tar.gz`, `release.json` | exact tracked source of the tagged commit |
+| `SHA256SUMS.txt` | every asset above |
+
+Package layouts, helper selection and library bundling are described in
+[packaging](packaging.md#release-packages-by-platform).
+
+### Optional secrets and settings
+
+Nothing is required for a release. Without the settings below, releases still
+publish: the macOS app stays ad-hoc signed and repository publishing is skipped.
+
+| Name | Kind | Enables |
+| --- | --- | --- |
+| `MACOS_CERTIFICATE_BASE64` | secret | Developer ID Application certificate + private key (`.p12`, base64) |
+| `MACOS_CERTIFICATE_PASSWORD` | secret | password of that `.p12` |
+| `MACOS_SIGNING_IDENTITY` | secret | full `Developer ID Application: Name (TEAMID)` |
+| `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_SPECIFIC_PASSWORD` | secrets | notarization |
+| `PACKAGE_SIGNING_KEY` | secret | ASCII-armored private GPG key for apt/dnf/pacman repositories |
+| `PACKAGE_SIGNING_FINGERPRINT` | variable | that key's full fingerprint |
+
+Signing runs only when all six Mac secrets exist. It uses an ephemeral keychain
+removed afterwards, masks the generated keychain password and prints no secret
+([`sign-release.sh`](../packaging/macos/sign-release.sh), with an offline
+regression in `test_sign_release.sh`). Repository deploys also need
+**Settings → Pages → Source: GitHub Actions**. The production commit and the
+nightly cask commit are pushed with `GITHUB_TOKEN`; a branch protection rule
+on `main` must allow GitHub Actions to push (or the job fails before tagging).
+
+### Pinned inputs
+
+Third-party downloads are pinned by URL, size bound and SHA-256 in
+[`scripts/fetch_pinned.py`](../scripts/fetch_pinned.py): yt-dlp 2026.08.19 and
+Deno 2.9.7 (the same versions as the macOS Homebrew route), the
+`shinchiro/mpv-winbuild-cmake` `20260928` mpv-dev archive, appimagetool 1.9.1,
+type2-runtime 20251108 and rustup-init 1.29.1. mpv 0.41.0 source is pinned in
+`scripts/ci/install-mpv-linux.sh`. Update a pin (and `packaging/licenses/`)
+only in a reviewed commit using the upstream digest. shinchiro prunes old
+builds; if the pinned archive disappears the Windows job fails closed until the
+pin is updated. Homebrew (macOS) and distribution packages (Fedora/Arch/Ubuntu
+build dependencies, NSIS via Chocolatey 3.11) are verified by their package
+managers but float with those repositories.
+
+### Recovery
+
+A failure before `publish` changes nothing. If the production commit reached
+`main` but the release failed, either finish it with the same tag manually or
+revert that commit; a rerun plans the next version from the last stable tag.
+An existing tag is never reused or moved.
+
+### Linux packages workflow
+
+`linux-packages.yml` also runs on pull requests that touch packaging:
+
+- **Ubuntu 24.04 runner**: builds mpv 0.41.0 from the verified source (cached
+  with the same key scheme as CI), builds `oxplay` once, then the `.deb` (via
+  `dpkg-shlibdeps`, private `libmpv.so.2` with `RUNPATH=$ORIGIN`) and the
+  AppImage/tarball, and runs the synthetic signed-apt regression.
+- **fedora:44 and archlinux containers**: an unprivileged user installs the
+  pinned rustup-init and the checked-in toolchain, builds against the
+  distribution libmpv (client API ≥ 2.5 enforced) and builds/inspects the
+  rpm or Arch package.
+
+Every package is inspected before upload: metadata, dependencies, payload file
+set and bytes, modes and owners, no maintainer scripts, desktop entry
+validation and an `ldd` closure check. Nothing is installed or launched.
+
+### Differences from the reference pipeline
+
+Adapted: the planner is Python instead of Bun + semantic-release (plain commit
+subjects are patches; the first release uses the workspace version); Mac
+signing is optional instead of required and signs the nested helper closure;
+Linux deb/AppImage bundle libmpv; the Linux distribution set is Ubuntu 24.04,
+Fedora 44 and Arch; Windows is x86_64 only; a source archive is attached
+(GPL); a `dry_run` input exists. Skipped: Flatpak (needs offline Cargo
+vendoring and an mpv/FFmpeg module), openSUSE (its official FFmpeg lacks common
+codecs), Windows ARM64 and macOS x86_64 (no qualified inputs), and the in-app
+AppImage/Windows updater the reference project ships.
+
+For a local source archive from a committed checkout:
 
 ```sh
-python3 scripts/release_source.py --output /tmp/oxplay-source-preview
-cd /tmp/oxplay-source-preview
-shasum -a 256 -c SHA256SUMS
+python3 scripts/release_source.py --output /tmp/oxplay-source
+cd /tmp/oxplay-source && shasum -a 256 -c SHA256SUMS.txt
 ```
 
-The output directory must not already exist. Local generation makes no network
-requests and does not create a tag or release. Workflow dispatch must be explicit;
-normal pushes never publish release assets.
+### Release blockers
 
-## Binary release blockers
-
-The uploaded binaries are development builds, not release approval. Developer ID
-signing, notarization, clean-machine portability, complete native/helper notices and
-corresponding-source coverage remain incomplete. The Linux tarball is experimental
-and depends on system FFmpeg and yt-dlp. Linux/X11, native Wayland and Windows need
-independent runtime validation. See [packaging](packaging.md),
-[licensing](licensing.md) and [source coverage](source-coverage.md).
+Releases remain experimental builds, not qualified products. Without the Mac
+secrets the app is ad-hoc signed and quarantined on download; Windows and Linux
+binaries are unsigned (SmartScreen will warn). Clean-machine portability,
+complete native/helper notices and corresponding source for libmpv/FFmpeg
+builds remain open, and Linux/X11, Wayland and Windows playback need runtime
+validation. See [packaging](packaging.md), [licensing](licensing.md) and
+[source coverage](source-coverage.md).
 
 ## Initial repository snapshot
 
