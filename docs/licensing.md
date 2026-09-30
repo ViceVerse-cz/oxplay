@@ -66,6 +66,13 @@ already-listed `tempfile`, macOS `security-framework` and `sha1`. No previously 
 Apache-2.0 texts of these packages in the distribution inventory; adopting aes
 0.9 does not alter the application's GPL-3.0-or-later route.
 
+The video-card menu's clipboard writes add a direct application edge to
+`arboard 3.6.1` (`MIT OR Apache-2.0`), already locked through the Slint Winit
+backend, with its `image-data` feature. That feature newly locks `tiff 0.11.3`
+and `fax 0.2.7` (both MIT, per their fetched manifests) and enables image's
+TIFF/BMP/PNG codecs for arboard's per-platform clipboard formats. Preserve their
+MIT/Apache-2.0 texts in the distribution inventory.
+
 ## Actual development media/helper build
 
 These are locally installed Homebrew development dependencies, not a vetted
