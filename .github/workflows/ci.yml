@@ -152,3 +152,72 @@ jobs:
           It does not qualify native X11/Wayland/macOS presentation, hardware decoding,
           accessibility, accounts, resource budgets or a portable distribution bundle.
           EOF
+
+  windows:
+    name: Windows x86_64 MSVC build and tests
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select checked-in Rust toolchain
+        run: |
+          rustup show
+          rustc --version --verbose
+          cargo --version
+
+      - name: Cache pinned libmpv development archive
+        id: mpv-cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ runner.temp }}/oxplay-mpv-dev
+          key: libmpv-dev-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/install-mpv-windows.sh') }}
+
+      - name: Fetch verified libmpv development archive
+        if: steps.mpv-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: bash scripts/ci/install-mpv-windows.sh "$RUNNER_TEMP/oxplay-mpv-dev"
+
+      - name: Select libmpv through MPV_DIR
+        run: |
+          cat "$RUNNER_TEMP/oxplay-mpv-dev/ci-source.txt"
+          sha256sum "$RUNNER_TEMP/oxplay-mpv-dev/libmpv-2.dll"
+          echo "MPV_DIR=$(cygpath -w "$RUNNER_TEMP/oxplay-mpv-dev")" >> "$GITHUB_ENV"
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: production-windows-${{ hashFiles('scripts/ci/install-mpv-windows.sh') }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          cache-on-failure: true
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint locked production features
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Run automated Rust tests
+        # Same scope as the Unix jobs: ignored account/network/credential-store
+        # probes stay ignored and media unit tests use null outputs. The media
+        # build script places libmpv-2.dll on the Cargo test/run PATH.
+        run: cargo test --workspace --locked
+
+      - name: Build locked production workspace
+        run: cargo build --workspace --release --locked
+
+      - name: State qualification scope
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          This job checks formatting, strict Clippy, automated tests and release compilation
+          for x86_64-pc-windows-msvc against the pinned libmpv development archive.
+          It does not open a native window or qualify Windows presentation, hardware decoding,
+          accessibility, accounts, resource budgets or a portable distribution bundle.
+          Python packaging/audit tools are not run here; they require Unix process supervision.
+          EOF
