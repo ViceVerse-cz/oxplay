@@ -697,15 +697,22 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 app.set_busy(true);
                 app.set_status("Resolving selected content stream…".into());
             }
-            Ok(Input::Catalog(request)) => load(
-                &app,
-                &s,
-                Location {
-                    request,
-                    cursor: None,
-                },
-                true,
-            ),
+            Ok(Input::Catalog(request)) => {
+                // Only plain-text searches become search history; links and
+                // channel handles open content and are never remembered.
+                if let CatalogRequest::Search { query, .. } = &request {
+                    crate::search_suggestions::record(&app, &s, query);
+                }
+                load(
+                    &app,
+                    &s,
+                    Location {
+                        request,
+                        cursor: None,
+                    },
+                    true,
+                )
+            }
             Err(error) => app.set_status(error.to_string().into()),
         }
     });

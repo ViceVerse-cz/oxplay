@@ -512,6 +512,141 @@ fn shared_header_centers_controls_and_bounds_the_creator_hit_region() {
     );
 }
 
+fn search_text(app: &App) -> String {
+    ElementHandle::find_by_accessible_label(app, "Search YouTube")
+        .find(|element| {
+            element.accessible_role() == Some(i_slint_backend_testing::AccessibleRole::TextInput)
+        })
+        .and_then(|element| element.accessible_value())
+        .expect("search editor")
+        .to_string()
+}
+
+#[test]
+fn search_suggestions_open_below_the_field_with_keyboard_preview_removal_and_click() {
+    let app = app();
+    app.window().set_size(slint::LogicalSize::new(1440., 900.));
+    let ui = app.global::<SearchSuggestionsUi>();
+    let queries = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = queries.clone();
+    ui.on_query(move |text| output.borrow_mut().push(text.into()));
+    let removed = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = removed.clone();
+    ui.on_remove(move |text| output.borrow_mut().push(text.into()));
+    let closes = Rc::new(Cell::new(0));
+    let output = closes.clone();
+    ui.on_closed(move || output.set(output.get() + 1));
+    let searched = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = searched.clone();
+    app.on_search(move |text| output.borrow_mut().push(text.into()));
+    ui.set_rows(
+        Rc::new(slint::VecModel::from(vec![
+            SearchSuggestion {
+                text: "TEST FIXTURE book".into(),
+                prefix: "TEST FIXTURE book".into(),
+                rest: "".into(),
+                history: true,
+            },
+            SearchSuggestion {
+                text: "TEST FIXTURE lang".into(),
+                prefix: "".into(),
+                rest: "TEST FIXTURE lang".into(),
+                history: false,
+            },
+        ]))
+        .into(),
+    );
+    settle();
+    // The testing query skips invisible elements, so a missing panel is closed.
+    let panel = || ElementHandle::find_by_element_id(&app, "App::suggestions").next();
+    assert!(panel().is_none(), "Closed until the field is focused");
+    app.invoke_focus_search();
+    settle();
+    assert!(app.get_search_active());
+    assert_eq!(
+        *queries.borrow(),
+        [""],
+        "Focus asks for current suggestions"
+    );
+    let search = ElementHandle::find_by_element_id(&app, "App::search")
+        .next()
+        .unwrap();
+    let panel = || {
+        ElementHandle::find_by_element_id(&app, "App::suggestions")
+            .next()
+            .filter(|panel| panel.size().height > 0.)
+    };
+    let open = panel().expect("open below the focused field");
+    assert_eq!(open.size().height, 2. * 36. + 16.);
+    assert_eq!(open.size().width, search.size().width);
+    assert_eq!(open.absolute_position().x, search.absolute_position().x);
+    assert_eq!(
+        open.absolute_position().y,
+        search.absolute_position().y + search.size().height + 4.
+    );
+    // Arrow keys preview rows in the field and wrap back to the typed text.
+    key(&app, Key::DownArrow);
+    assert_eq!(search_text(&app), "TEST FIXTURE book");
+    key(&app, Key::DownArrow);
+    assert_eq!(search_text(&app), "TEST FIXTURE lang");
+    key(&app, Key::DownArrow);
+    assert_eq!(search_text(&app), "");
+    key(&app, Key::UpArrow);
+    assert_eq!(search_text(&app), "TEST FIXTURE lang");
+    assert_eq!(queries.borrow().len(), 1, "Previews are not edits");
+    // Escape closes only the panel; focus stays in the editor.
+    key(&app, Key::Escape);
+    settle();
+    assert!(panel().is_none());
+    assert!(app.get_search_active());
+    assert_eq!(closes.get(), 1);
+    key(&app, Key::DownArrow);
+    settle();
+    assert!(panel().is_some(), "Down reopens the panel");
+    element(&app, "Remove TEST FIXTURE book from search history")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(*removed.borrow(), ["TEST FIXTURE book"]);
+    assert!(searched.borrow().is_empty());
+    assert!(app.get_search_active(), "Removal keeps focus in the editor");
+    element(&app, "Search suggestion: TEST FIXTURE lang")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(*searched.borrow(), ["TEST FIXTURE lang"]);
+    assert_eq!(search_text(&app), "TEST FIXTURE lang");
+    assert!(panel().is_none(), "Submission closes the panel");
+    // Blur closes it as well, even without a dismissal.
+    app.invoke_focus_browse();
+    settle();
+    assert!(!app.get_search_active());
+    ui.set_dismissed(false);
+    settle();
+    assert!(panel().is_none());
+    assert_eq!(closes.get(), 3);
+}
+
+#[test]
+fn youtube_suggestion_setting_uses_acknowledgement() {
+    let app = app();
+    // Tall enough that the privacy section is inside the Settings viewport.
+    app.window().set_size(slint::LogicalSize::new(1000., 2000.));
+    app.set_page(3);
+    let ui = app.global::<SearchSuggestionsUi>();
+    let attempted = Rc::new(Cell::new(None));
+    let output = attempted.clone();
+    ui.on_set_youtube_enabled(move |enabled| output.set(Some(enabled)));
+    settle();
+    let label = "Show search suggestions from YouTube";
+    assert_eq!(element(&app, label).accessible_checked(), Some(true));
+    element(&app, label).mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(attempted.get(), Some(false));
+    assert!(ui.get_youtube_enabled(), "Unacknowledged setting stays on");
+    ui.set_youtube_enabled(false);
+    settle();
+    assert_eq!(element(&app, label).accessible_checked(), Some(false));
+}
+
 #[test]
 fn comments_setting_uses_acknowledgement_and_supports_rollback() {
     let app = app();

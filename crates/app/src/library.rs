@@ -94,7 +94,14 @@ pub enum Request {
     RecordHistory(VideoSummary, Duration),
     HistoryRetention(u16),
     DeleteHistory(VideoId),
+    /// Clears watch and submitted-search history together.
     ClearHistory,
+    /// Stored only while the persisted history opt-in is true (rechecked in SQL).
+    RecordSearch(String),
+    DeleteSearch(String),
+    SearchHistory {
+        ticket: u64,
+    },
     /// Only user-selected files; neither operation discovers files automatically.
     Import(PathBuf),
     Export {
@@ -133,6 +140,12 @@ pub enum Response {
         result: Result<Page<VideoSummary>, String>,
     },
     HistoryRecorded(bool),
+    /// A search-history write finished; it never refreshes library views.
+    SearchHistoryWritten,
+    SearchHistory {
+        ticket: u64,
+        result: Result<Vec<String>, String>,
+    },
     Imported(ImportSummary),
     Exported,
     BackedUp,
@@ -166,7 +179,17 @@ impl Worker {
                 } else {
                     None
                 };
-                let background = matches!(&request, Request::RecordHistory(_, _));
+                let background = matches!(
+                    &request,
+                    Request::RecordHistory(_, _)
+                        | Request::RecordSearch(_)
+                        | Request::DeleteSearch(_)
+                );
+                let search_read = if let Request::SearchHistory { ticket } = &request {
+                    Some(*ticket)
+                } else {
+                    None
+                };
                 let clearing = matches!(&request, Request::ClearLocalData);
                 let saving = if let Request::Save(save) = &request {
                     Some(save.serial)
@@ -193,7 +216,12 @@ impl Worker {
                     Err(error) => Err(*error),
                 }
                 .unwrap_or_else(|e| {
-                    if let Some(ticket) = organization {
+                    if let Some(ticket) = search_read {
+                        Response::SearchHistory {
+                            ticket,
+                            result: Err(e.to_string()),
+                        }
+                    } else if let Some(ticket) = organization {
                         Response::Organization {
                             ticket,
                             result: Err(e.to_string()),
@@ -383,6 +411,20 @@ fn handle(store: &mut LocalStore, request: Request) -> serein_storage::Result<Re
             store.clear_history()?;
             Ok(Response::Saved)
         }
+        Request::RecordSearch(query) => {
+            store.record_search(&query, SystemTime::now())?;
+            Ok(Response::SearchHistoryWritten)
+        }
+        Request::DeleteSearch(query) => {
+            store.delete_search(&query)?;
+            Ok(Response::SearchHistoryWritten)
+        }
+        Request::SearchHistory { ticket } => Ok(Response::SearchHistory {
+            ticket,
+            result: store
+                .search_history(SystemTime::now())
+                .map_err(|error| error.to_string()),
+        }),
         Request::Import(path) => {
             let bytes = read_selected_import(&path)?;
             Ok(Response::Imported(store.import_library_json(&bytes)?))
@@ -961,6 +1003,85 @@ mod tests {
                 .0
                 .is_empty()
         );
+    }
+    #[test]
+    fn search_history_requests_honor_opt_in_and_both_clear_flows_delete_it() {
+        let mut store = LocalStore::in_memory().unwrap();
+        let read = |store: &mut LocalStore, ticket| {
+            let Response::SearchHistory {
+                ticket: actual,
+                result: Ok(queries),
+            } = handle(store, Request::SearchHistory { ticket }).unwrap()
+            else {
+                panic!("correlated search history expected")
+            };
+            assert_eq!(actual, ticket);
+            queries
+        };
+        assert!(matches!(
+            handle(&mut store, Request::RecordSearch("synthetic query".into())).unwrap(),
+            Response::SearchHistoryWritten
+        ));
+        assert!(read(&mut store, 1).is_empty(), "history is off by default");
+        let mut preferences = store.preferences().unwrap();
+        preferences.privacy.local_history = true;
+        handle(
+            &mut store,
+            Request::Preferences(PreferenceWrite {
+                id: 1,
+                value: preferences,
+            }),
+        )
+        .unwrap();
+        for query in ["synthetic query", "Synthetic Query", "synthetic other"] {
+            handle(&mut store, Request::RecordSearch(query.into())).unwrap();
+        }
+        assert_eq!(read(&mut store, 2), ["synthetic other", "Synthetic Query"]);
+        handle(&mut store, Request::DeleteSearch("synthetic other".into())).unwrap();
+        assert_eq!(read(&mut store, 3), ["Synthetic Query"]);
+        assert!(matches!(
+            handle(&mut store, Request::ClearHistory).unwrap(),
+            Response::Saved
+        ));
+        assert!(read(&mut store, 4).is_empty());
+        handle(&mut store, Request::RecordSearch("synthetic again".into())).unwrap();
+        assert_eq!(read(&mut store, 5), ["synthetic again"]);
+        handle(&mut store, Request::ClearLocalData).unwrap();
+        assert!(read(&mut store, 6).is_empty());
+        // A URL is rejected as a background write, not stored.
+        preferences.privacy.local_history = true;
+        store.set_preferences(preferences).unwrap();
+        assert_eq!(
+            handle(
+                &mut store,
+                Request::RecordSearch("https://www.youtube.com/watch?v=aqz-KE-bpKQ".into())
+            )
+            .err(),
+            Some(StorageError::InvalidInput)
+        );
+        assert!(read(&mut store, 7).is_empty());
+    }
+    #[test]
+    fn failed_initialization_keeps_search_history_ticket_and_background_writes() {
+        let directory = TestDirectory::new();
+        let non_directory = directory.0.join("file");
+        std::fs::write(&non_directory, b"not a directory").unwrap();
+        let (wake, received) = mpsc::channel();
+        let worker = Worker::new(non_directory.join("library.sqlite3"), move || {
+            let _ = wake.send(());
+        });
+        assert!(worker.submit(Request::RecordSearch("synthetic".into())));
+        assert!(worker.submit(Request::SearchHistory { ticket: 9 }));
+        received.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(matches!(worker.take(), Some(Response::BackgroundError(_))));
+        received.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(matches!(
+            worker.take(),
+            Some(Response::SearchHistory {
+                ticket: 9,
+                result: Err(_)
+            })
+        ));
     }
     #[test]
     fn failed_initialization_answers_clear_with_its_own_terminal_response() {

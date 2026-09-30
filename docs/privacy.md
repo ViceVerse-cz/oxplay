@@ -23,7 +23,11 @@ required. Offline launch must show the shell/local library without network
 requests; this remains an acceptance test rather than an inferred guarantee.
 
 User-requested search, metadata, thumbnails, subtitles and playback cause
-requests to their providers. yt-dlp and libmpv make requests independently of a
+requests to their providers. **Search suggestions from YouTube** are on by
+default at the product owner's request. While the search field is focused, typed
+text (not URL-like input) is sent to `suggestqueries-clients6.youtube.com` after
+a short pause, without cookies. The Settings toggle turns this off; local search
+history then still works. See [search suggestions](search-suggestions.md). yt-dlp and libmpv make requests independently of a
 Rust HTTP client. Helpers and JavaScript challenge runtimes belong to the
 application's measured process tree. The project does not claim strict proxy
 coverage until egress, redirects, DNS, helper behavior and failures are tested
@@ -47,7 +51,10 @@ or ad beacons by default; that does not guarantee account history is unaffected.
 ## Data and credentials
 
 Local subscriptions/playlists are distinct from YouTube account collections.
-Connecting must not upload them. Local-history storage APIs require opt-in and provide retention and deletion;
+Connecting must not upload them. Submitted plain-text searches are stored only with the local-history opt-in.
+Otherwise they are kept in memory for the session. They share its retention,
+and disabling history, Clear history and Clear local data delete them.
+Local-history storage APIs require opt-in and provide retention and deletion;
 complete UI controls remain subject to the implementation progress report. Metadata and thumbnail caches
 can reveal interests even when history is off, so bounded caches and clear-local-
 data controls are required. Signed media URLs are transient secrets and must not

@@ -1,0 +1,140 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Colors } from "components.slint";
+
+export struct SearchSuggestion {
+    // Complete query that is previewed and submitted.
+    text: string,
+    // Typed portion in normal weight; the completion is bold, like YouTube.
+    prefix: string,
+    rest: string,
+    // Local search history (removable) versus a YouTube completion.
+    history: bool,
+}
+
+// Rust owns rows, persistence and remote request scheduling. The header owns
+// highlight/preview state so arrow keys never wait for a callback.
+export global SearchSuggestionsUi {
+    in property <[SearchSuggestion]> rows;
+    // Acknowledged persisted preference for remote completions.
+    in property <bool> youtube-enabled: true;
+    in-out property <int> highlighted: -1;
+    // What the user actually typed; restored when the highlight leaves the list.
+    in-out property <string> typed;
+    in-out property <bool> dismissed;
+    // Edited or focused text. Rust answers by replacing rows.
+    callback query(string);
+    // Remove one local history suggestion.
+    callback remove(string);
+    // Blur, Escape or submission: cancel pending remote work.
+    callback closed();
+    callback set-youtube-enabled(bool);
+    // Remote worker completion handoff on the event loop.
+    callback wake();
+}
+
+export component SearchSuggestions inherits Rectangle {
+    // Search field state supplied by the host.
+    in property <bool> field-focused;
+    in property <string> field-text;
+    // Host-level admission, e.g. not in video-only or native-child modes.
+    in property <bool> allowed: true;
+    out property <bool> open: root.field-focused && root.allowed && !SearchSuggestionsUi.dismissed && SearchSuggestionsUi.rows.length > 0;
+    private property <length> row-height: 36px;
+    private property <length> inset: 8px;
+    // Replace the field text without an edit (no new query is scheduled).
+    callback preview(string);
+    // Submit this exact text as a search.
+    callback activate(string);
+    public function edited() {
+        SearchSuggestionsUi.typed = root.field-text;
+        SearchSuggestionsUi.highlighted = -1;
+        SearchSuggestionsUi.dismissed = false;
+        SearchSuggestionsUi.query(root.field-text);
+    }
+    public function close() {
+        SearchSuggestionsUi.highlighted = -1;
+        SearchSuggestionsUi.dismissed = true;
+        SearchSuggestionsUi.closed();
+    }
+    // Returns true when the key was consumed. Only call while the field is focused.
+    public function key(text: string) -> bool {
+        if text == Key.Escape {
+            if !root.open { return false; }
+            root.close();
+            return true;
+        }
+        if text != Key.DownArrow && text != Key.UpArrow { return false; }
+        if SearchSuggestionsUi.rows.length == 0 || !root.allowed { return false; }
+        if !root.open {
+            // Reopen after Escape without moving the highlight.
+            SearchSuggestionsUi.dismissed = false;
+            return true;
+        }
+        SearchSuggestionsUi.highlighted = text == Key.DownArrow
+            ? (SearchSuggestionsUi.highlighted + 1 >= SearchSuggestionsUi.rows.length ? -1 : SearchSuggestionsUi.highlighted + 1)
+            : (SearchSuggestionsUi.highlighted < 0 ? SearchSuggestionsUi.rows.length - 1 : SearchSuggestionsUi.highlighted - 1);
+        root.preview(SearchSuggestionsUi.highlighted < 0 ? SearchSuggestionsUi.typed : SearchSuggestionsUi.rows[SearchSuggestionsUi.highlighted].text);
+        return true;
+    }
+    changed field-focused => {
+        if root.field-focused {
+            root.edited();
+        } else {
+            SearchSuggestionsUi.highlighted = -1;
+            SearchSuggestionsUi.closed();
+        }
+    }
+    visible: root.open;
+    height: root.open ? SearchSuggestionsUi.rows.length * root.row-height + 2 * root.inset : 0px;
+    background: Colors.dialog;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: Colors.border;
+    drop-shadow-blur: 16px;
+    drop-shadow-offset-y: 4px;
+    drop-shadow-color: Colors.dark ? #00000080 : #00000030;
+    // Absorbs presses on the panel padding so they never reach content below.
+    TouchArea { width: parent.width; height: parent.height; }
+    for row[index] in SearchSuggestionsUi.rows: Rectangle {
+        x: 0px; y: root.inset + index * root.row-height;
+        width: parent.width; height: root.row-height;
+        background: index == SearchSuggestionsUi.highlighted ? Colors.pressed : select.has-hover ? Colors.hover : transparent;
+        // Not a focus stop: clicking must leave keyboard focus in the field.
+        select := TouchArea {
+            width: parent.width - (row.history ? 44px : 0px); height: parent.height;
+            mouse-cursor: pointer;
+            accessible-role: button;
+            accessible-enabled: true;
+            accessible-label: (row.history ? "Search history: " : "Search suggestion: ") + row.text;
+            accessible-action-default => { root.activate(row.text); }
+            clicked => { root.activate(row.text); }
+        }
+        Image {
+            x: 16px; y: (parent.height - self.height) / 2; width: 18px; height: 18px;
+            source: row.history ? @image-url("icons/rotate-ccw-clock.svg") : @image-url("icons/search.svg");
+            colorize: Colors.muted;
+        }
+        HorizontalLayout {
+            x: 48px; width: max(0px, parent.width - self.x - (row.history ? 52px : 16px)); height: parent.height;
+            if row.prefix != "": Text { text: row.prefix; color: Colors.text; font-size: 15px; vertical-alignment: center; horizontal-stretch: 0; overflow: elide; }
+            Text { text: row.rest; color: Colors.text; font-size: 15px; font-weight: 700; vertical-alignment: center; horizontal-stretch: 1; overflow: elide; }
+        }
+        if row.history: Rectangle {
+            x: parent.width - 40px; y: (parent.height - self.height) / 2; width: 32px; height: 32px;
+            border-radius: 16px;
+            background: remove.pressed ? Colors.strong : remove.has-hover ? Colors.hover : transparent;
+            remove := TouchArea {
+                mouse-cursor: pointer;
+                accessible-role: button;
+                accessible-enabled: true;
+                accessible-label: "Remove " + row.text + " from search history";
+                accessible-action-default => { SearchSuggestionsUi.remove(row.text); }
+                clicked => { SearchSuggestionsUi.remove(row.text); }
+            }
+            Image {
+                x: 8px; y: 8px; width: 16px; height: 16px;
+                source: @image-url("icons/x.svg"); colorize: Colors.muted;
+            }
+        }
+    }
+}
