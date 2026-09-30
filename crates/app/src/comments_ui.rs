@@ -21,8 +21,20 @@ pub struct State {
     auto_requested: Cell<bool>,
     reveal_page: Cell<bool>,
     owner: RefCell<Weak<UiState>>,
+    // Created in `bind`, where the application handle exists.
+    avatars: RefCell<Option<crate::comment_avatars::Avatars>>,
+    /// Portrait URLs of the rows currently published, in row order.
+    avatar_urls: RefCell<Vec<Option<String>>>,
 }
 impl State {
+    /// Retire portraits for the page being replaced or removed. Late results are
+    /// dropped by generation, so a stale page can never decorate a new one.
+    fn retire_avatars(&self) {
+        self.avatar_urls.borrow_mut().clear();
+        if let Some(avatars) = self.avatars.borrow().as_ref() {
+            avatars.cancel();
+        }
+    }
     fn supersede(&self, generation: u64) -> bool {
         if self
             .auto_generation
@@ -65,6 +77,7 @@ fn set_details(
     s.reveal_page.set(false);
     *s.video.borrow_mut() = guest_comments.then(|| video.clone());
     s.pending.set(None);
+    s.retire_avatars();
     s.rows.set_vec(Vec::new());
     s.cursor.borrow_mut().take();
     s.next.borrow_mut().take();
@@ -134,6 +147,7 @@ pub fn sync_preferences(app: &App, state: &UiState) {
         state.comments_ui.auto_load.stop();
         state.comments_ui.auto_generation.set(None);
         cancel_owned(app, state);
+        state.comments_ui.retire_avatars();
         state.comments_ui.rows.set_vec(Vec::new());
         state.comments_ui.auto_requested.set(false);
         ui.set_has_loaded(false);
@@ -205,6 +219,7 @@ pub fn clear_local(app: &App, state: &UiState) {
     s.auto_requested.set(false);
     cancel_owned(app, state);
     s.video.borrow_mut().take();
+    s.retire_avatars();
     s.rows.set_vec(Vec::new());
     s.cursor.borrow_mut().take();
     s.next.borrow_mut().take();
@@ -246,6 +261,7 @@ fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
         .comments_ui
         .pending
         .set(Some(state.worker.borrow().generation()));
+    state.comments_ui.retire_avatars();
     state.comments_ui.rows.set_vec(Vec::new());
     state.comments_ui.next.borrow_mut().take();
     let ui = app.global::<CommentsUi>();
@@ -275,10 +291,13 @@ pub fn publish(
     match result {
         Ok(page) if page.video == video => {
             ui.set_has_loaded(true);
-            let rows = page
-                .comments
+            let comments: Vec<_> = page.comments.into_iter().take(20).collect();
+            let urls: Vec<Option<String>> = comments
+                .iter()
+                .map(|comment| comment.author_thumbnail_url.clone())
+                .collect();
+            let rows = comments
                 .into_iter()
-                .take(20)
                 .map(|comment| CommentRow {
                     author: comment
                         .author
@@ -293,10 +312,22 @@ pub fn publish(
                         .into(),
                     creator: comment.author_is_uploader,
                     content: comment.text.into(),
+                    avatar: slint::Image::default(),
+                    avatar_ready: false,
                 })
                 .collect::<Vec<_>>();
             let empty = rows.is_empty();
+            state.comments_ui.retire_avatars();
             state.comments_ui.rows.set_vec(rows);
+            if let Some(avatars) = state.comments_ui.avatars.borrow().as_ref() {
+                avatars.request(
+                    urls.iter()
+                        .enumerate()
+                        .filter_map(|(row, url)| Some((row, url.clone()?)))
+                        .collect(),
+                );
+            }
+            *state.comments_ui.avatar_urls.borrow_mut() = urls;
             *state.comments_ui.next.borrow_mut() = page.next;
             ui.set_next(state.comments_ui.next.borrow().is_some());
             ui.set_previous(!state.comments_ui.previous.borrow().is_empty());
@@ -329,6 +360,46 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let ui = app.global::<CommentsUi>();
     ui.set_rows(state.comments_ui.rows.clone().into());
     ui.set_enabled(true);
+    let weak = app.as_weak();
+    *state.comments_ui.avatars.borrow_mut() =
+        Some(crate::comment_avatars::Avatars::new(move || {
+            let _ =
+                weak.upgrade_in_event_loop(|app| app.global::<CommentsUi>().invoke_avatar_wake());
+        }));
+    let owner = Rc::downgrade(state);
+    ui.on_avatar_wake(move || {
+        let Some(state) = owner.upgrade() else { return };
+        let ready = state
+            .comments_ui
+            .avatars
+            .borrow()
+            .as_ref()
+            .map(|avatars| avatars.take())
+            .unwrap_or_default();
+        for ready in ready {
+            // The row must still be the one whose portrait URL was requested.
+            let Some(mut row) = slint::Model::row_data(&*state.comments_ui.rows, ready.row) else {
+                continue;
+            };
+            if state
+                .comments_ui
+                .avatar_urls
+                .borrow()
+                .get(ready.row)
+                .is_none_or(|url| url.is_none())
+            {
+                continue;
+            }
+            let buffer = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
+                ready.pixels.as_raw(),
+                ready.pixels.width(),
+                ready.pixels.height(),
+            );
+            row.avatar = slint::Image::from_rgba8(buffer);
+            row.avatar_ready = true;
+            slint::Model::set_row_data(&*state.comments_ui.rows, ready.row, row);
+        }
+    });
     let weak = app.as_weak();
     let owner = Rc::downgrade(state);
     state

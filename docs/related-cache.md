@@ -145,3 +145,13 @@ bytes passed a bounded URL/path/credential-marker scan and were unchanged. The
 static text-row fixture does not qualify real thumbnail churn, focus/hover,
 scrolling, resize/DPI, minimize/restore, retained-layer release, energy, perceptual
 A/V synchronization or the soak gate.
+
+## Related list membership
+
+The watch page's related list is captured from the current guest page. Channel
+rows (the creator's own channel included) are excluded because the creator already
+has a dedicated action beside the title; videos and playlists remain. Related row
+indices are positions in the filtered list, which is also what selection and feed
+focus resolve, and decoded images are reused from the browsing model only when the
+item identity still matches.
+

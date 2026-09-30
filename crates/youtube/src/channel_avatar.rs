@@ -74,7 +74,8 @@ fn avatar(value: &Value, id: &ChannelId) -> Result<Option<String>, ProviderError
     Ok(original.or(Some(uncropped)).and_then(safe_avatar))
 }
 
-fn safe_avatar(value: &str) -> Option<String> {
+/// Shared public-portrait URL policy (channel profiles and comment authors).
+pub(crate) fn safe_avatar(value: &str) -> Option<String> {
     if value.len() > 4096 {
         return None;
     }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { Colors, Action, ActionVariant } from "components.slint";
-export struct CommentRow { author: string, metadata: string, likes: string, creator: bool, content: string }
+export struct CommentRow { author: string, metadata: string, likes: string, creator: bool, content: string, avatar: image, avatar-ready: bool }
 export global CommentsUi {
     in property <string> description;
     in property <string> description-preview;
@@ -21,6 +21,8 @@ export global CommentsUi {
     callback page(bool);
     callback cancel();
     callback set-enabled(bool);
+    // Coalesced worker handoff for decoded author avatars.
+    callback avatar-wake();
 }
 // At most 20 comments are instantiated. Explicit pagination replaces that
 // finite page; initial background publication preserves watch-page scrolling.
@@ -106,8 +108,12 @@ export component WatchDetails inherits Rectangle {
                         background: transparent;
                         Rectangle {
                             x: 0px; y: 0px; width: 40px; height: 40px;
-                            background: Colors.hover; border-radius: 20px;
-                            Image {
+                            background: Colors.hover; border-radius: 20px; clip: true;
+                            if item.avatar-ready: Image {
+                                x: 0px; y: 0px; width: parent.width; height: parent.height;
+                                source: item.avatar; image-fit: cover;
+                            }
+                            if !item.avatar-ready: Image {
                                 x: 9px; y: 9px; width: 22px; height: 22px;
                                 source: @image-url("icons/circle-user-round.svg"); colorize: Colors.muted;
                             }

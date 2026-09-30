@@ -12,6 +12,7 @@ mod clear_smoke;
 mod cli;
 mod clock_ui;
 mod collection_window_smoke;
+mod comment_avatars;
 mod comments_ui;
 mod controls_ui;
 mod decode_warning;
@@ -54,6 +55,7 @@ mod save_smoke;
 mod search_suggestions;
 mod share_ui;
 mod soak_smoke;
+mod thumbnail_retention;
 mod thumbnails;
 mod watch_context;
 mod watch_loading;
@@ -113,6 +115,7 @@ struct UiState {
     thumbnail_range: Cell<(usize, usize)>,
     thumbnail_surface: Cell<i32>,
     thumbnail_attempted: RefCell<std::collections::HashSet<usize>>,
+    thumbnail_retained: RefCell<thumbnail_retention::Retention<slint::Image>>,
     library: library::Worker,
     library_ui: library_ui::State,
     search_suggestions: search_suggestions::State,
@@ -506,6 +509,7 @@ fn switch_thumbnail_surface(state: &UiState, surface: i32) {
     }
     state.thumbnails.borrow_mut().replace(Vec::new());
     state.thumbnail_attempted.borrow_mut().clear();
+    state.thumbnail_retained.borrow_mut().clear();
     state.thumbnail_range.set((usize::MAX, usize::MAX));
     if previous == 2 {
         library_ui::release_thumbnails(state, 0..0);
@@ -580,13 +584,44 @@ fn viewport(app: &App, state: &UiState, first: usize, end: usize, visible: Optio
         .thumbnail_attempted
         .borrow_mut()
         .retain(|row| (first..end).contains(row));
-    for row in 0..len {
-        if !(first..end).contains(&row)
-            && let Some(mut item) = model.row_data(row)
+    // Release rows outside the window, nearest-to-the-window last, into the
+    // small bounded retention so an immediate scroll back repaints at once.
+    let released: Vec<usize> = (0..first.min(len))
+        .chain((end.min(len)..len).rev())
+        .collect();
+    for row in released {
+        if let Some(mut item) = model.row_data(row)
             && item.thumbnail_ready
         {
+            state.thumbnail_retained.borrow_mut().put(
+                thumbnail_retention::key(&item.kind, &item.id),
+                item.thumbnail.clone(),
+            );
             item.thumbnail = slint::Image::default();
             item.thumbnail_ready = false;
+            model.set_row_data(row, item.clone());
+            if surface == 0 {
+                state.groups.update(row, item);
+            }
+        }
+    }
+    for row in first..end.min(len) {
+        if state.thumbnail_attempted.borrow().contains(&row) {
+            continue;
+        }
+        let Some(mut item) = model.row_data(row) else {
+            continue;
+        };
+        if item.thumbnail_ready {
+            continue;
+        }
+        let retained = state
+            .thumbnail_retained
+            .borrow_mut()
+            .take(&thumbnail_retention::key(&item.kind, &item.id));
+        if let Some(image) = retained {
+            item.thumbnail = image;
+            item.thumbnail_ready = true;
             model.set_row_data(row, item.clone());
             if surface == 0 {
                 state.groups.update(row, item);
@@ -1092,6 +1127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         thumbnail_range: Cell::new((usize::MAX, usize::MAX)),
         thumbnail_surface: Cell::new(-1),
         thumbnail_attempted: RefCell::new(std::collections::HashSet::new()),
+        thumbnail_retained: RefCell::new(thumbnail_retention::Retention::default()),
         library,
         library_ui: library_ui::State::default(),
         search_suggestions: search_suggestions::State::new(suggestions),
