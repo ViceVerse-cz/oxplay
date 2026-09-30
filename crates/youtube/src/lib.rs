@@ -8,8 +8,10 @@ mod channel_avatar;
 mod chapters;
 pub mod comments;
 pub mod innertube;
+mod renderers;
 pub mod suggestions;
 mod supervisor;
+pub mod watch;
 use serde_json::Value;
 use serein_core::{
     ChannelId, MediaTrack, MediaUrl, OperationContext, OriginHeaders, ProviderError,

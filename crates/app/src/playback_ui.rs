@@ -173,6 +173,26 @@ pub fn selected(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
     crate::chapters_ui::install(app, state, item);
     remember(app, state, item);
 }
+/// Late native watch-page metadata for the accepted guest item: replace its
+/// details in place and reinstall chapters for the same native load. Returns
+/// the new details, or `None` when the accepted item is not that guest video.
+pub fn upgrade_guest_details(
+    app: &App,
+    state: &Rc<UiState>,
+    video: &serein_core::VideoId,
+    merge: impl FnOnce(&ResolvedPlayback) -> serein_core::VideoDetails,
+) -> Option<serein_core::VideoDetails> {
+    let item = {
+        let mut current = state.playback_ui.current.borrow_mut();
+        let item = current
+            .as_mut()
+            .filter(|item| item.guest && item.session_generation == 0 && item.video.id == *video)?;
+        item.details = merge(item);
+        item.clone()
+    };
+    crate::chapters_ui::install(app, state, &item);
+    Some(item.details)
+}
 fn remember(app: &App, state: &Rc<UiState>, item: &ResolvedPlayback) {
     let s = &state.playback_ui;
     s.expiry.stop();
@@ -308,7 +328,9 @@ pub fn maybe_refresh(app: &App, state: &Rc<UiState>) {
     app.set_busy(true);
     app.set_status("Refreshing an expiring guest stream… Current playback continues.".into());
 }
-pub fn resolved(app: &App, state: &Rc<UiState>, item: Box<ResolvedPlayback>, height: u16) {
+pub fn resolved(app: &App, state: &Rc<UiState>, mut item: Box<ResolvedPlayback>, height: u16) {
+    // A quality/expiry re-resolve keeps the accepted native watch metadata.
+    crate::watch_meta::merge_into(state, &mut item);
     let s = &state.playback_ui;
     let generation = state.worker.borrow().generation();
     let reason = if s.refresh_job.take() == Some(generation) {

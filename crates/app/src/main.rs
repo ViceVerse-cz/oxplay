@@ -59,6 +59,7 @@ mod thumbnail_retention;
 mod thumbnails;
 mod watch_context;
 mod watch_loading;
+mod watch_meta;
 mod window_chrome;
 use catalog::{Response, Worker};
 use model::CatalogModel;
@@ -76,6 +77,7 @@ struct UiState {
     window_chrome: Rc<window_chrome::Controller>,
     watch_loading: watch_loading::State,
     watch_context: watch_context::State,
+    watch_meta: watch_meta::State,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -1085,12 +1087,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = weak.upgrade_in_event_loop(|app| app.global::<SearchSuggestionsUi>().invoke_wake());
     });
     let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
+    let watch_meta = watch_meta::State::new(app.as_weak(), resolver.clone());
     let account_ui =
         account_ui::State::new(app.as_weak(), account_directory, resolver, restore_account);
     let state = Rc::new(UiState {
         window_chrome,
         watch_loading: watch_loading::State::default(),
         watch_context: watch_context::State::default(),
+        watch_meta,
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -1415,6 +1419,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     caption_ui::bind(&app, &state);
     caption_cache::bind(&app, &state);
     channel_avatar::bind(&app, &state);
+    watch_meta::bind(&app, &state);
     let weak = app.as_weak();
     let s = Rc::downgrade(&state);
     app.on_channel_avatar_context_changed(move || {

@@ -111,64 +111,68 @@ impl Worker {
                     job
                 };
                 let provider = resolver.get_on_worker();
-                let response = match &provider {
-                    Ok(provider) => match request {
-                        Request::Catalog(request, cursor) => provider
-                            .catalog(&request, cursor.as_ref(), &op)
-                            .map(|page| Response::Catalog(Box::new(page))),
-                        Request::Comments(id, cursor) => Ok(Response::Comments(
+                let response = match (&provider, request) {
+                    // Native InnerTube comments first; the extractor is only the
+                    // fallback, so a missing helper does not block native reads.
+                    (_, Request::Comments(id, cursor)) => {
+                        let native = resolver.native_on_worker().ok();
+                        Ok(Response::Comments(
                             id.clone(),
-                            provider.comments(&id, cursor.as_ref(), &op),
-                        )),
-                        Request::Caption(id, index, track, files) => {
-                            let result = provider
-                                .caption(&track, &id, &op)
-                                .map_err(CaptionError::Provider)
-                                .and_then(|data| {
-                                    if op.cancel.is_cancelled() {
-                                        return Err(CaptionError::Provider(
-                                            ProviderError::Cancelled,
-                                        ));
-                                    }
-                                    files
-                                        .create(data.as_bytes())
-                                        .map_err(CaptionError::PrivateFile)
-                                });
-                            Ok(Response::Caption(id, index, result))
-                        }
-                        Request::Resolve(id, quality) => provider
-                            .resolve_with_policy(
+                            serein_youtube::comments::guest_comments(
+                                native.as_deref(),
+                                provider.as_deref().ok(),
                                 &id,
-                                ResolutionPolicy {
-                                    max_height: quality.height(),
-                                    prefer_h264: true,
-                                },
+                                cursor.as_ref(),
                                 &op,
-                            )
-                            .map(|r| Response::Resolved(Box::new(r), quality, Default::default())),
-                        Request::ResolveAt(id, quality, start) => provider
-                            .resolve_with_policy(
-                                &id,
-                                ResolutionPolicy {
-                                    max_height: quality.height(),
-                                    prefer_h264: true,
-                                },
-                                &op,
-                            )
-                            .map(|r| Response::Resolved(Box::new(r), quality, start)),
-                        Request::ResolveQuality(id, policy) => provider
-                            .resolve_with_policy(&id, policy, &op)
-                            .map(|r| Response::QualityResolved(Box::new(r), policy.max_height)),
-                    },
-                    Err(e) => match request {
-                        Request::Comments(id, _) => Ok(Response::Comments(id, Err(*e))),
-                        Request::Caption(id, index, _, _) => Ok(Response::Caption(
-                            id,
-                            index,
-                            Err(CaptionError::Provider(*e)),
-                        )),
-                        _ => Err(*e),
-                    },
+                            ),
+                        ))
+                    }
+                    (Ok(provider), Request::Catalog(request, cursor)) => provider
+                        .catalog(&request, cursor.as_ref(), &op)
+                        .map(|page| Response::Catalog(Box::new(page))),
+                    (Ok(provider), Request::Caption(id, index, track, files)) => {
+                        let result = provider
+                            .caption(&track, &id, &op)
+                            .map_err(CaptionError::Provider)
+                            .and_then(|data| {
+                                if op.cancel.is_cancelled() {
+                                    return Err(CaptionError::Provider(ProviderError::Cancelled));
+                                }
+                                files
+                                    .create(data.as_bytes())
+                                    .map_err(CaptionError::PrivateFile)
+                            });
+                        Ok(Response::Caption(id, index, result))
+                    }
+                    (Ok(provider), Request::Resolve(id, quality)) => provider
+                        .resolve_with_policy(
+                            &id,
+                            ResolutionPolicy {
+                                max_height: quality.height(),
+                                prefer_h264: true,
+                            },
+                            &op,
+                        )
+                        .map(|r| Response::Resolved(Box::new(r), quality, Default::default())),
+                    (Ok(provider), Request::ResolveAt(id, quality, start)) => provider
+                        .resolve_with_policy(
+                            &id,
+                            ResolutionPolicy {
+                                max_height: quality.height(),
+                                prefer_h264: true,
+                            },
+                            &op,
+                        )
+                        .map(|r| Response::Resolved(Box::new(r), quality, start)),
+                    (Ok(provider), Request::ResolveQuality(id, policy)) => provider
+                        .resolve_with_policy(&id, policy, &op)
+                        .map(|r| Response::QualityResolved(Box::new(r), policy.max_height)),
+                    (Err(e), Request::Caption(id, index, _, _)) => Ok(Response::Caption(
+                        id,
+                        index,
+                        Err(CaptionError::Provider(*e)),
+                    )),
+                    (Err(e), _) => Err(*e),
                 };
                 if !op.cancel.is_cancelled() {
                     *out.lock().unwrap() = Some((op.request_id, response));

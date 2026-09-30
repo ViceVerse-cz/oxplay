@@ -12,6 +12,12 @@ and accepts only artwork tied to the extractor's explicit `avatar_uncropped`
 entry. Channel banners and video thumbnails are not identity pictures. The
 original cropped rendition of the same avatar is preferred when available.
 
+When the native InnerTube `next` watch page (see [comments](comments.md)) has
+already returned the owner portrait for the same resolved channel ID, the worker
+uses that exact-host `yt3` URL and subscriber count and skips the yt-dlp channel
+metadata run; otherwise the run below remains the fallback. Channel pages still
+use the extractor.
+
 The metadata contract was inspected in the installed official yt-dlp 2026.8.19
 `YoutubeTabIE._extract_metadata_from_tabs` and `_real_extract` source. Unknown
 metadata shapes yield the icon fallback. This is source inspection, not a claim

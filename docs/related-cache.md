@@ -148,10 +148,31 @@ A/V synchronization or the soak gate.
 
 ## Related list membership
 
-The watch page's related list is captured from the current guest page. Channel
-rows (the creator's own channel included) are excluded because the creator already
-has a dedicated action beside the title; videos and playlists remain. Related row
-indices are positions in the filtered list, which is also what selection and feed
-focus resolve, and decoded images are reused from the browsing model only when the
-item identity still matches.
+The watch page's related list is the real watch-next list from the native
+InnerTube `next` response (`secondaryResults`), read on its own worker in
+parallel with stream resolution for accepted public guest selections. Until it
+arrives, or if it fails or yields no videos, the list captured from the current
+guest page remains as the fallback (a related selection keeps the list it was
+chosen from until its own watch-next list arrives).
 
+Current guest responses (observed 2026-09-30) contain 20 to 26
+`lockupViewModel` rows of `LOCKUP_CONTENT_TYPE_VIDEO` and one related
+continuation; `compactVideoRenderer` rows are also accepted through the same
+renderer normalization the account feed uses. Known promotions and ad-badged
+rows, Shorts (`reelWatchEndpoint`, `reelShelfRenderer`, `shortsLockupViewModel`),
+mixes/playlists (non-video lockups, `compactRadioRenderer`,
+`compactPlaylistRenderer`), movies, channels, chip clouds and continuation rows
+never become items; the selected video and duplicates are dropped. At most 30
+rows are kept and the related continuation is not followed. Unknown rows are
+skipped and reported as partial. IDs are validated by the core constructors;
+thumbnails keep only reviewed `i.ytimg.com`-family HTTPS artwork through the
+existing thumbnail pipeline, and unsafe artwork drops the image, not the row.
+
+Channel rows (the creator's own channel included) are excluded because the
+creator already has a dedicated action beside the title. Related row indices are
+positions in the published list, which is also what selection and feed focus
+resolve. Replacing the captured list with the native one is an explicit catalog
+replacement: feed focus resets (as documented in related-focus.md), thumbnail
+jobs are retired only if the related surface owns the shared thumbnail worker,
+and a decoded image already shown is reused only when the row kind and item
+identity match.

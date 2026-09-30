@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Bounded guest comments using the reviewed yt-dlp extraction implementation.
-//! Offset pages replay the prefix; they are not remote continuation tokens.
-use crate::YtDlp;
-use serde_json::Value;
+//! Bounded guest comments. The native path reads the public InnerTube `next`
+//! comments continuation directly (real remote continuation tokens); the
+//! reviewed yt-dlp extraction remains the fallback, whose offset pages replay
+//! the prefix rather than continue remotely.
+use crate::{YtDlp, innertube::GuestTransport, watch};
+use serde_json::{Value, json};
 use serein_core::{
     ChannelId, CommentSummary, OperationContext, ProviderError, VideoDetails, VideoId,
 };
+use std::{collections::HashMap, sync::Arc};
 
 const PAGE_SIZE: usize = 20;
 const MAX_COMMENTS: usize = 200;
@@ -15,8 +18,30 @@ pub struct CommentCursor {
     generation: u64,
     offset: usize,
     // Prefix replay must preserve every previously published identity, not just
-    // the page boundary. Arc keeps UI Back-stack cursor clones inexpensive.
-    prefix_ids: std::sync::Arc<[String]>,
+    // the page boundary. Arc keeps UI Back-stack cursor clones inexpensive. For
+    // native cursors these are the published IDs used to drop repeats.
+    prefix_ids: Arc<[String]>,
+    /// Native InnerTube continuation; `None` identifies an extractor replay cursor.
+    token: Option<Arc<str>>,
+}
+impl CommentCursor {
+    /// First native page from a watch page's comments-section continuation.
+    pub(crate) fn native_start(video: VideoId, generation: u64, token: String) -> Self {
+        Self {
+            video,
+            generation,
+            offset: 0,
+            prefix_ids: Arc::from([]),
+            token: Some(token.into()),
+        }
+    }
+    pub fn video(&self) -> &VideoId {
+        &self.video
+    }
+    /// True for a native continuation (as opposed to extractor prefix replay).
+    pub fn is_native(&self) -> bool {
+        self.token.is_some()
+    }
 }
 pub struct CommentPage {
     pub video: VideoId,
@@ -67,7 +92,8 @@ impl YtDlp {
             Some(c)
                 if c.video == *video
                     && c.generation == operation.session_generation
-                    && c.offset < MAX_COMMENTS =>
+                    && c.offset < MAX_COMMENTS
+                    && c.token.is_none() =>
             {
                 c.offset
             }
@@ -97,13 +123,7 @@ fn parse_comment(value: &Value) -> Result<CommentSummary, ProviderError> {
     let id = value
         .get("id")
         .and_then(Value::as_str)
-        .filter(|id| {
-            !id.is_empty()
-                && id.len() <= 256
-                && id
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
-        })
+        .filter(|id| valid_id(id))
         .ok_or(ProviderError::MalformedOutput)?;
     if value.get("parent").and_then(Value::as_str) != Some("root") {
         return Err(ProviderError::MalformedOutput);
@@ -178,6 +198,7 @@ fn parse_page(
                 .iter()
                 .map(|comment| comment.id.clone())
                 .collect(),
+            token: None,
         })
     } else {
         None
@@ -190,6 +211,340 @@ fn parse_page(
         limit_reached: more && end >= MAX_COMMENTS,
     })
 }
+fn valid_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 256
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
+}
+
+/// Guest comments: native InnerTube first, the supervised extractor as the
+/// fallback. A first page (no cursor, or a native start cursor) falls back to
+/// the extractor on unsupported/malformed native responses; later pages keep
+/// the path their cursor came from, so a native continuation never silently
+/// turns into a differently ordered replay. No credentials are ever consulted.
+pub fn guest_comments(
+    native: Option<&GuestTransport>,
+    extractor: Option<&YtDlp>,
+    video: &VideoId,
+    cursor: Option<&CommentCursor>,
+    operation: &OperationContext,
+) -> Result<CommentPage, ProviderError> {
+    if let Some(cursor) = cursor.filter(|c| c.token.is_none()) {
+        return extractor.ok_or(ProviderError::HelperUnavailable)?.comments(
+            video,
+            Some(cursor),
+            operation,
+        );
+    }
+    let first = cursor.is_none_or(|c| c.offset == 0);
+    let result = match native {
+        Some(transport) => native_comments(transport, video, cursor, operation),
+        None => Err(ProviderError::ExtractorFailed),
+    };
+    match (result, extractor) {
+        (Err(error), Some(extractor)) if first && watch::fallback_eligible(error) => {
+            extractor.comments(video, None, operation)
+        }
+        (result, _) => result,
+    }
+}
+
+/// One native page. Without a cursor, the watch page is requested first to
+/// obtain the comments-section continuation; the default sort is Top.
+pub fn native_comments(
+    transport: &GuestTransport,
+    video: &VideoId,
+    cursor: Option<&CommentCursor>,
+    operation: &OperationContext,
+) -> Result<CommentPage, ProviderError> {
+    let (token, offset, seen): (Arc<str>, usize, Arc<[String]>) = match cursor {
+        None => {
+            let page = transport.post("next", watch::request(video), operation)?;
+            watch::check_video(&page, video)?;
+            (
+                watch::comment_section_token(&page)?.into(),
+                0,
+                Arc::from([]),
+            )
+        }
+        Some(c)
+            if c.video == *video
+                && c.generation == operation.session_generation
+                && c.offset < MAX_COMMENTS =>
+        {
+            let token = c.token.clone().ok_or(ProviderError::InvalidInput)?;
+            (token, c.offset, c.prefix_ids.clone())
+        }
+        Some(_) => return Err(ProviderError::InvalidInput),
+    };
+    let value = transport.post("next", json!({"continuation": &*token}), operation)?;
+    if operation.cancel.is_cancelled() {
+        return Err(ProviderError::Cancelled);
+    }
+    parse_native_page(&value, video, offset, &seen, operation.session_generation)
+}
+
+const MAX_CONTINUATION_ITEMS: usize = 100;
+const MAX_MUTATIONS: usize = 2_000;
+
+fn parse_native_page(
+    value: &Value,
+    video: &VideoId,
+    offset: usize,
+    seen: &Arc<[String]>,
+    generation: u64,
+) -> Result<CommentPage, ProviderError> {
+    let endpoints = value
+        .get("onResponseReceivedEndpoints")
+        .and_then(Value::as_array)
+        .ok_or(ProviderError::MalformedOutput)?;
+    if endpoints.len() > 8 {
+        return Err(ProviderError::OutputTooLarge);
+    }
+    let mut items = Vec::new();
+    for endpoint in endpoints {
+        for action in [
+            "reloadContinuationItemsCommand",
+            "appendContinuationItemsAction",
+        ] {
+            if let Some(list) = endpoint
+                .get(action)
+                .and_then(|action| action.get("continuationItems"))
+            {
+                items.extend(list.as_array().ok_or(ProviderError::MalformedOutput)?);
+            }
+        }
+        if items.len() > MAX_CONTINUATION_ITEMS {
+            return Err(ProviderError::OutputTooLarge);
+        }
+    }
+    let mut entities: HashMap<&str, &Value> = HashMap::new();
+    if let Some(mutations) = value.pointer("/frameworkUpdates/entityBatchUpdate/mutations") {
+        let mutations = mutations.as_array().ok_or(ProviderError::MalformedOutput)?;
+        if mutations.len() > MAX_MUTATIONS {
+            return Err(ProviderError::OutputTooLarge);
+        }
+        for mutation in mutations {
+            if let (Some(key), Some(payload)) = (
+                mutation.get("entityKey").and_then(Value::as_str),
+                mutation.get("payload"),
+            ) {
+                entities.insert(key, payload);
+            }
+        }
+    }
+    let mut comments: Vec<CommentSummary> = Vec::new();
+    let mut tokens = std::collections::HashSet::new();
+    let (mut recognized, mut threads, mut disabled) = (false, 0usize, false);
+    for item in &items {
+        let parsed = if let Some(thread) = item.get("commentThreadRenderer") {
+            threads += 1;
+            thread
+                .pointer("/commentViewModel/commentViewModel")
+                .map(|model| view_model_comment(model, &entities))
+                .or_else(|| {
+                    thread
+                        .pointer("/comment/commentRenderer")
+                        .map(legacy_comment)
+                })
+        } else if let Some(model) = item.get("commentViewModel") {
+            threads += 1;
+            Some(view_model_comment(model, &entities))
+        } else if let Some(renderer) = item.get("commentRenderer") {
+            threads += 1;
+            Some(legacy_comment(renderer))
+        } else if let Some(next) = item.get("continuationItemRenderer") {
+            recognized = true;
+            let raw = next
+                .pointer("/continuationEndpoint/continuationCommand/token")
+                .or_else(|| {
+                    next.pointer("/button/buttonRenderer/command/continuationCommand/token")
+                })
+                .ok_or(ProviderError::MalformedOutput)?;
+            tokens.insert(watch::token(raw).ok_or(ProviderError::MalformedOutput)?);
+            None
+        } else if item.get("commentsHeaderRenderer").is_some() {
+            recognized = true;
+            None
+        } else if item.get("messageRenderer").is_some() {
+            recognized = true;
+            disabled = true;
+            None
+        } else {
+            None // Unknown rows are skipped; an all-unknown page is rejected below.
+        };
+        // A thread whose entity is missing or malformed is skipped, not invented.
+        if let Some(Ok(comment)) = parsed
+            && !seen.contains(&comment.id)
+            && comments.iter().all(|c| c.id != comment.id)
+        {
+            comments.push(comment);
+        }
+    }
+    if tokens.len() > 1 {
+        return Err(ProviderError::MalformedOutput);
+    }
+    if threads > 0 && comments.is_empty() && seen.is_empty() {
+        return Err(ProviderError::MalformedOutput);
+    }
+    if !recognized && threads == 0 {
+        if items.is_empty() && offset > 0 {
+            // A finished continuation may legitimately return nothing.
+            return Ok(CommentPage {
+                video: video.clone(),
+                comments: Vec::new(),
+                next: None,
+                limit_reached: false,
+            });
+        }
+        return Err(ProviderError::MalformedOutput);
+    }
+    if disabled && threads == 0 && offset == 0 {
+        return Err(ProviderError::Unavailable);
+    }
+    // YouTube serves 20 top-level threads per continuation; the published page
+    // stays within the existing 20-row contract.
+    comments.truncate(PAGE_SIZE);
+    let end = offset + comments.len();
+    let token = tokens.into_iter().next();
+    // A page consisting only of already-published comments means the remote
+    // stream is looping; stop rather than follow it indefinitely.
+    let more = token.is_some() && !comments.is_empty();
+    let next = match token {
+        Some(token) if more && end < MAX_COMMENTS => Some(CommentCursor {
+            video: video.clone(),
+            generation,
+            offset: end,
+            prefix_ids: seen
+                .iter()
+                .cloned()
+                .chain(comments.iter().map(|comment| comment.id.clone()))
+                .collect(),
+            token: Some(token.into()),
+        }),
+        _ => None,
+    };
+    Ok(CommentPage {
+        video: video.clone(),
+        comments,
+        next,
+        limit_reached: more && end >= MAX_COMMENTS,
+    })
+}
+
+fn bounded(value: Option<&str>, limit: usize) -> Option<String> {
+    value.and_then(|value| watch::clean(value, limit))
+}
+
+/// Modern shape: the thread's `commentViewModel` names entity keys whose
+/// `commentEntityPayload` (and optional toolbar state) carry the comment.
+fn view_model_comment(
+    model: &Value,
+    entities: &HashMap<&str, &Value>,
+) -> Result<CommentSummary, ProviderError> {
+    let payload = model
+        .get("commentKey")
+        .and_then(Value::as_str)
+        .and_then(|key| entities.get(key))
+        .and_then(|payload| payload.get("commentEntityPayload"))
+        .ok_or(ProviderError::MalformedOutput)?;
+    let properties = payload
+        .get("properties")
+        .ok_or(ProviderError::MalformedOutput)?;
+    let id = properties
+        .get("commentId")
+        .and_then(Value::as_str)
+        .filter(|id| valid_id(id))
+        .ok_or(ProviderError::MalformedOutput)?;
+    if model
+        .get("commentId")
+        .and_then(Value::as_str)
+        .is_some_and(|model_id| model_id != id)
+        || properties
+            .get("replyLevel")
+            .and_then(Value::as_u64)
+            .unwrap_or(0)
+            != 0
+    {
+        return Err(ProviderError::MalformedOutput);
+    }
+    let author = payload.get("author");
+    let toolbar = payload.get("toolbar");
+    Ok(CommentSummary {
+        id: id.to_owned(),
+        author: bounded(
+            author
+                .and_then(|a| a.get("displayName"))
+                .and_then(Value::as_str),
+            200,
+        ),
+        author_id: author
+            .and_then(|a| a.get("channelId"))
+            .and_then(Value::as_str)
+            .and_then(|id| ChannelId::new(id).ok()),
+        text: bounded(
+            properties
+                .pointer("/content/content")
+                .and_then(Value::as_str),
+            10_000,
+        )
+        .ok_or(ProviderError::MalformedOutput)?,
+        published_text: bounded(properties.get("publishedTime").and_then(Value::as_str), 100),
+        like_count: ["likeCountNotliked", "likeCountA11y"]
+            .iter()
+            .find_map(|key| {
+                toolbar
+                    .and_then(|t| t.get(*key))
+                    .and_then(Value::as_str)
+                    .and_then(watch::count)
+            }),
+        author_is_uploader: author
+            .and_then(|a| a.get("isCreator"))
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        author_thumbnail_url: author
+            .and_then(|a| a.get("avatarThumbnailUrl"))
+            .or_else(|| payload.pointer("/avatar/image/sources/0/url"))
+            .and_then(Value::as_str)
+            .and_then(crate::channel_avatar::safe_avatar),
+    })
+}
+
+/// Legacy `commentRenderer` shape (still accepted when no entities are sent).
+fn legacy_comment(renderer: &Value) -> Result<CommentSummary, ProviderError> {
+    let id = renderer
+        .get("commentId")
+        .and_then(Value::as_str)
+        .filter(|id| valid_id(id))
+        .ok_or(ProviderError::MalformedOutput)?;
+    let text = |key: &str, limit| {
+        crate::innertube::text(renderer.get(key)?).and_then(|t| watch::clean(&t, limit))
+    };
+    Ok(CommentSummary {
+        id: id.to_owned(),
+        author: text("authorText", 200),
+        author_id: renderer
+            .pointer("/authorEndpoint/browseEndpoint/browseId")
+            .and_then(Value::as_str)
+            .and_then(|id| ChannelId::new(id).ok()),
+        text: text("contentText", 10_000).ok_or(ProviderError::MalformedOutput)?,
+        published_text: text("publishedTimeText", 100),
+        like_count: text("voteCount", 32).as_deref().and_then(watch::count),
+        author_is_uploader: renderer
+            .get("authorIsChannelOwner")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        author_thumbnail_url: renderer
+            .pointer("/authorThumbnail/thumbnails")
+            .and_then(Value::as_array)
+            .and_then(|list| list.iter().take(16).next_back())
+            .and_then(|thumbnail| thumbnail.get("url")?.as_str())
+            .and_then(crate::channel_avatar::safe_avatar),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -346,6 +701,7 @@ mod tests {
             generation: 7,
             offset: 180,
             prefix_ids: (0..180).map(|i| format!("UgSynthetic{i}")).collect(),
+            token: None,
         };
         let final_page = parse_page(&fixture(201), &id, Some(&cursor), 7).unwrap();
         assert_eq!(final_page.comments.len(), 20);
@@ -422,5 +778,291 @@ mod tests {
                 Err(error) => assert!(i % 23 == 22 && error == ProviderError::OutputTooLarge),
             }
         }
+    }
+
+    // TEST FIXTURE: synthetic native continuation responses in the shapes
+    // observed live on 2026-09-30. No real comments, authors or tokens.
+    const CHANNEL: &str = "UCabcdefghijklmnopqrstuv";
+    fn thread(id: &str) -> Value {
+        json!({"commentThreadRenderer": {"commentViewModel": {"commentViewModel": {
+            "commentId": id, "commentKey": format!("key-{id}"), "toolbarStateKey": format!("toolbar-{id}")}}}})
+    }
+    fn entity(id: &str, n: usize) -> Value {
+        json!({"entityKey": format!("key-{id}"), "payload": {"commentEntityPayload": {
+            "properties": {"commentId": id, "replyLevel": 0,
+                "content": {"content": format!("Synthetic comment {n}\nline")},
+                "publishedTime": "7 hours ago (edited)"},
+            "author": {"channelId": CHANNEL, "displayName": "@synthetic",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/synthetic=s88-c-k", "isCreator": n == 0},
+            "toolbar": {"likeCountNotliked": if n == 0 { "5K" } else { "12" }, "likeCountA11y": "12 likes"}}}})
+    }
+    fn native(ids: std::ops::Range<usize>, token: Option<&str>, reload: bool) -> Value {
+        let names: Vec<String> = ids.clone().map(|i| format!("UgNative{i}")).collect();
+        let mut items: Vec<Value> = names.iter().map(|id| thread(id)).collect();
+        if let Some(token) = token {
+            items.push(
+                json!({"continuationItemRenderer": {"continuationEndpoint": {
+                "continuationCommand": {"token": token}}}}),
+            );
+        }
+        let mutations: Vec<Value> = names
+            .iter()
+            .zip(ids)
+            .flat_map(|(id, n)| {
+                [
+                    entity(id, n),
+                    json!({"entityKey": format!("toolbar-{id}"), "payload": {
+                        "engagementToolbarStateEntityPayload": {"heartState": "TOOLBAR_HEART_STATE_UNHEARTED"}}}),
+                ]
+            })
+            .collect();
+        let action = if reload {
+            json!([
+                {"reloadContinuationItemsCommand": {"continuationItems": [
+                    {"commentsHeaderRenderer": {"countText": {"runs": [{"text": "2,824"}, {"text": " Comments"}]}}}]}},
+                {"reloadContinuationItemsCommand": {"continuationItems": items}}
+            ])
+        } else {
+            json!([{"appendContinuationItemsAction": {"continuationItems": items}}])
+        };
+        json!({"onResponseReceivedEndpoints": action,
+            "frameworkUpdates": {"entityBatchUpdate": {"mutations": mutations}}})
+    }
+    fn watch_next(video: &str) -> Value {
+        json!({"currentVideoEndpoint": {"watchEndpoint": {"videoId": video}},
+            "contents": {"twoColumnWatchNextResults": {"results": {"results": {"contents": [
+                {"itemSectionRenderer": {"sectionIdentifier": "comment-item-section", "contents": [
+                    {"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {
+                        "token": "SYNTHETIC_SECTION"}}}}]}}]}}}}})
+    }
+    fn op() -> OperationContext {
+        OperationContext {
+            request_id: 1,
+            session_generation: 0,
+            cancel: Default::default(),
+        }
+    }
+
+    #[test]
+    fn native_view_model_threads_join_their_entity_mutations() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let page = parse_native_page(
+            &native(0..20, Some("NEXT"), true),
+            &id,
+            0,
+            &Arc::from([]),
+            0,
+        )
+        .unwrap();
+        assert_eq!(page.comments.len(), 20);
+        let first = &page.comments[0];
+        assert_eq!(first.id, "UgNative0");
+        assert_eq!(first.text, "Synthetic comment 0\nline");
+        assert_eq!(first.author.as_deref(), Some("@synthetic"));
+        assert_eq!(
+            first.author_id.as_ref().map(ChannelId::as_str),
+            Some(CHANNEL)
+        );
+        assert_eq!(first.like_count, Some(5_000));
+        assert_eq!(
+            first.published_text.as_deref(),
+            Some("7 hours ago (edited)")
+        );
+        assert!(first.author_is_uploader && !page.comments[1].author_is_uploader);
+        assert_eq!(
+            first.author_thumbnail_url.as_deref(),
+            Some("https://yt3.ggpht.com/synthetic=s88-c-k")
+        );
+        let next = page.next.expect("continuation");
+        assert!(next.is_native());
+        assert_eq!(next.offset, 20);
+        assert_eq!(next.prefix_ids.len(), 20);
+        assert_eq!(next.token.as_deref(), Some("NEXT"));
+    }
+
+    #[test]
+    fn legacy_comment_renderer_threads_are_still_accepted() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let value = json!({"onResponseReceivedEndpoints": [{"appendContinuationItemsAction": {"continuationItems": [
+            {"commentThreadRenderer": {"comment": {"commentRenderer": {
+                "commentId": "UgLegacy1", "contentText": {"runs": [{"text": "Legacy "}, {"text": "text"}]},
+                "authorText": {"simpleText": "Legacy author"},
+                "authorEndpoint": {"browseEndpoint": {"browseId": CHANNEL}},
+                "publishedTimeText": {"runs": [{"text": "1 day ago"}]},
+                "voteCount": {"simpleText": "1.2K"}, "authorIsChannelOwner": true,
+                "authorThumbnail": {"thumbnails": [
+                    {"url": "https://yt3.ggpht.com/legacy=s48"}, {"url": "https://yt3.ggpht.com/legacy=s88"}]}}}}},
+            {"commentRenderer": {"commentId": "UgLegacy2", "contentText": {"simpleText": "flat"},
+                "authorThumbnail": {"thumbnails": [{"url": "https://example.test/a.png"}]}}}
+        ]}}]});
+        let page = parse_native_page(&value, &id, 20, &Arc::from([]), 0).unwrap();
+        assert_eq!(page.comments.len(), 2);
+        let legacy = &page.comments[0];
+        assert_eq!(legacy.text, "Legacy text");
+        assert_eq!(legacy.author.as_deref(), Some("Legacy author"));
+        assert_eq!(legacy.like_count, Some(1_200));
+        assert!(legacy.author_is_uploader);
+        assert_eq!(
+            legacy.author_thumbnail_url.as_deref(),
+            Some("https://yt3.ggpht.com/legacy=s88")
+        );
+        assert_eq!(page.comments[1].author_thumbnail_url, None);
+        assert!(page.next.is_none(), "no continuation, final page");
+    }
+
+    #[test]
+    fn malformed_native_pages_never_look_like_successful_empty_pages() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let none: Arc<[String]> = Arc::from([]);
+        let mut orphan = native(0..3, Some("NEXT"), false);
+        orphan["frameworkUpdates"]["entityBatchUpdate"]["mutations"] = json!([]);
+        let mut two_tokens = native(0..2, Some("A"), false);
+        two_tokens["onResponseReceivedEndpoints"][0]["appendContinuationItemsAction"]
+            ["continuationItems"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "B"}}}}));
+        let mut reply = native(0..1, None, false);
+        reply["frameworkUpdates"]["entityBatchUpdate"]["mutations"][0]["payload"]["commentEntityPayload"]
+            ["properties"]["replyLevel"] = json!(1);
+        for value in [
+            json!({}),
+            json!({"onResponseReceivedEndpoints": [{"appendContinuationItemsAction": {"continuationItems": [{"futureRenderer": {}}]}}]}),
+            json!({"onResponseReceivedEndpoints": "text"}),
+            orphan,
+            two_tokens,
+            reply,
+        ] {
+            assert_eq!(
+                parse_native_page(&value, &id, 0, &none, 0).err(),
+                Some(ProviderError::MalformedOutput)
+            );
+        }
+        let disabled = json!({"onResponseReceivedEndpoints": [{"reloadContinuationItemsCommand": {"continuationItems": [
+            {"messageRenderer": {"text": {"simpleText": "Comments are turned off."}}}]}}]});
+        assert_eq!(
+            parse_native_page(&disabled, &id, 0, &none, 0).err(),
+            Some(ProviderError::Unavailable)
+        );
+        // Zero public comments with a recognized header is a genuine empty page.
+        let empty = json!({"onResponseReceivedEndpoints": [{"reloadContinuationItemsCommand": {"continuationItems": [
+            {"commentsHeaderRenderer": {}}]}}]});
+        let page = parse_native_page(&empty, &id, 0, &none, 0).unwrap();
+        assert!(page.comments.is_empty() && page.next.is_none());
+        // Text is bounded plain text; oversized responses are rejected.
+        let mut long = native(0..1, None, false);
+        long["frameworkUpdates"]["entityBatchUpdate"]["mutations"][0]["payload"]["commentEntityPayload"]
+            ["properties"]["content"]["content"] = json!("é\u{0000}".repeat(20_000));
+        let page = parse_native_page(&long, &id, 0, &none, 0).unwrap();
+        assert_eq!(page.comments[0].text.chars().count(), 10_000);
+        assert!(!page.comments[0].text.contains('\0'));
+        assert_eq!(
+            parse_native_page(&native(0..101, None, false), &id, 0, &none, 0).err(),
+            Some(ProviderError::OutputTooLarge)
+        );
+    }
+
+    #[test]
+    fn native_paging_uses_real_continuations_drops_repeats_and_stops_at_the_ceiling() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        let transport = GuestTransport::with_fixture(vec![
+            Ok(watch_next("abcdefghijk")),
+            Ok(native(0..20, Some("PAGE2"), true)),
+            // Page two repeats the last published comment (pinned repeat).
+            Ok(native(19..40, Some("PAGE3"), false)),
+            // A page of only repeats means the remote stream is looping.
+            Ok(native(0..20, Some("PAGE4"), false)),
+        ]);
+        let first = guest_comments(Some(&transport), None, &id, None, &op()).unwrap();
+        assert_eq!(first.comments.len(), 20);
+        let second =
+            guest_comments(Some(&transport), None, &id, first.next.as_ref(), &op()).unwrap();
+        assert_eq!(second.comments.len(), 20);
+        assert_eq!(second.comments[0].id, "UgNative20");
+        assert_eq!(second.next.as_ref().unwrap().offset, 40);
+        let looping =
+            guest_comments(Some(&transport), None, &id, second.next.as_ref(), &op()).unwrap();
+        assert!(looping.comments.is_empty() && looping.next.is_none() && !looping.limit_reached);
+        {
+            let calls = transport.fixture.as_ref().unwrap().calls.lock().unwrap();
+            assert_eq!(calls.len(), 4);
+            assert_eq!(calls[0].1["videoId"], "abcdefghijk");
+            assert_eq!(calls[1].1["continuation"], "SYNTHETIC_SECTION");
+            assert_eq!(calls[2].1["continuation"], "PAGE2");
+            assert!(calls.iter().all(|(endpoint, _)| endpoint == "next"));
+        }
+        // The 200-comment ceiling ends browsing with an explicit limit.
+        let near = CommentCursor {
+            video: id.clone(),
+            generation: 0,
+            offset: 180,
+            prefix_ids: Arc::from([]),
+            token: Some("NEAR".into()),
+        };
+        let transport =
+            GuestTransport::with_fixture(vec![Ok(native(180..200, Some("MORE"), false))]);
+        let last = guest_comments(Some(&transport), None, &id, Some(&near), &op()).unwrap();
+        assert!(last.next.is_none() && last.limit_reached);
+        // Cursors stay scoped to their video and session generation.
+        let foreign = VideoId::new("zyxwvutsrqp").unwrap();
+        assert_eq!(
+            native_comments(&transport, &foreign, Some(&near), &op()).err(),
+            Some(ProviderError::InvalidInput)
+        );
+        let provider = YtDlp::new("/does/not/exist").unwrap();
+        assert_eq!(
+            provider.comments(&id, Some(&near), &op()).err(),
+            Some(ProviderError::InvalidInput),
+            "a native token is never replayed through the extractor"
+        );
+    }
+
+    #[test]
+    fn only_unsupported_first_pages_fall_back_to_the_extractor() {
+        let id = VideoId::new("abcdefghijk").unwrap();
+        // The extractor path is observable: this helper does not exist.
+        let extractor = YtDlp::new("/does/not/exist").unwrap();
+        let transport = GuestTransport::with_fixture(vec![
+            Ok(json!({"error": {"status": "INTERNAL"}})),
+            Ok(watch_next("zyxwvutsrqp")),
+            Ok(json!({"error": {"status": "RESOURCE_EXHAUSTED"}})),
+        ]);
+        for _ in 0..2 {
+            assert_eq!(
+                guest_comments(Some(&transport), Some(&extractor), &id, None, &op()).err(),
+                Some(ProviderError::HelperUnavailable),
+                "unsupported/foreign native response falls back"
+            );
+        }
+        assert_eq!(
+            guest_comments(Some(&transport), Some(&extractor), &id, None, &op()).err(),
+            Some(ProviderError::RateLimited),
+            "rate limits are not repeated through the helper"
+        );
+        assert_eq!(
+            guest_comments(None, Some(&extractor), &id, None, &op()).err(),
+            Some(ProviderError::HelperUnavailable),
+            "no native transport uses the extractor"
+        );
+        let later = CommentCursor {
+            video: id.clone(),
+            generation: 0,
+            offset: 20,
+            prefix_ids: Arc::from([]),
+            token: Some("LATER".into()),
+        };
+        let transport = GuestTransport::with_fixture(vec![Ok(json!({"unexpected": true}))]);
+        assert_eq!(
+            guest_comments(Some(&transport), Some(&extractor), &id, Some(&later), &op()).err(),
+            Some(ProviderError::MalformedOutput),
+            "a native continuation never becomes a differently ordered replay"
+        );
+        let cancelled = op();
+        cancelled.cancel.cancel();
+        let transport = GuestTransport::with_fixture(vec![]);
+        assert_eq!(
+            guest_comments(Some(&transport), Some(&extractor), &id, None, &cancelled).err(),
+            Some(ProviderError::Cancelled)
+        );
     }
 }

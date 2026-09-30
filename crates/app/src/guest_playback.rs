@@ -253,10 +253,13 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &serein_media::Snapshot
 fn publish(
     app: &App,
     state: &Rc<UiState>,
-    item: ResolvedPlayback,
+    mut item: ResolvedPlayback,
     quality: serein_core::QualityCeiling,
     start: serein_core::VideoStart,
 ) {
+    // Native watch-page values (when already received) replace the extractor's
+    // details field by field; chapters, comments and refresh all see the merge.
+    crate::watch_meta::merge_into(state, &mut item);
     let focus_scope = crate::focus_intent::Scope::Guest(state.worker.borrow().generation());
     let restart = state.guest_playback.retry.borrow().attempt;
     // Extraction generation does not identify the native file it may replace.
@@ -307,7 +310,12 @@ fn publish(
     app.set_page(2);
     app.set_loaded(true);
     crate::watch_loading::guest_finished(app, state, state.worker.borrow().generation());
-    crate::channel_avatar::selected_guest(app, state, &item.video);
+    crate::channel_avatar::selected_guest(
+        app,
+        state,
+        &item.video,
+        crate::watch_meta::channel_hint(state, &item.video),
+    );
     comments_ui::details(app, state, &item.video.id, &item.details);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Guest playback · Ad filtering is experimental and may miss some ads".into());
