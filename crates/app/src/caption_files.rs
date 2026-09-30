@@ -12,9 +12,13 @@ use std::{
 mod private;
 #[cfg(unix)]
 use private::Directory;
-#[cfg(not(unix))]
+#[cfg(windows)]
+mod windows;
+#[cfg(windows)]
+use windows::Directory;
+#[cfg(not(any(unix, windows)))]
 struct Directory;
-#[cfg(not(unix))]
+#[cfg(not(any(unix, windows)))]
 impl Directory {
     fn create(_: PathBuf) -> Result<Self, &'static str> {
         Err("Protected caption files are not validated on this platform.")
