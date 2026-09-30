@@ -946,9 +946,6 @@ fn publish(app: &App, s: &UiState, items: Vec<Item>, next: Option<Cursor>) -> bo
     let ui = app.global::<LibraryUi>();
     ui.set_next(has_next);
     ui.set_previous(has_previous);
-    if let Some(videos) = fixture_videos(s) {
-        crate::library_fixture::publish(app, s, &videos);
-    }
     if app.get_page() == 1 && ui.get_tab() == 2 {
         // A deletion/page change may preserve the numeric viewport while its
         // row identities change. Cancel/re-admit cache-only work immediately.
@@ -1355,7 +1352,16 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                             if app.get_page()==1 { refresh(&app,&s); }
                             true
                         }
-                        library::PageResult::Videos(_,page) => publish(&app,&s,page.items.into_iter().map(Item::Video).collect(),page.next.map(Cursor::Page)),
+                        library::PageResult::Videos(_,page) => {
+                            let published=publish(&app,&s,page.items.into_iter().map(Item::Video).collect(),page.next.map(Cursor::Page));
+                            // Only an acknowledged video read may switch the
+                            // offline fixture to its feed. Selection invalidation
+                            // publishes empty rows before this read is queued.
+                            if published && let Some(videos)=fixture_videos(&s) {
+                                crate::library_fixture::publish(&app,&s,&videos);
+                            }
+                            published
+                        },
                         library::PageResult::Subscriptions(page) => publish(&app,&s,page.items.into_iter().map(Item::Follow).collect(),page.next.map(Cursor::Page)),
                         library::PageResult::History {entries,next,retention_days} => {
                             app.global::<LibraryUi>().set_retention(retention_days as i32);
