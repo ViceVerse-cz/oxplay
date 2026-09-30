@@ -1,12 +1,16 @@
 # Performance qualification
 
-The latest mini-player/settings/appearance corrections add no resource or energy
+The [2026-09-30 audit](performance-audit-2026-09-30.md) checks the current worker,
+image and cancellation paths and records new finite native measurements. Earlier
+results below retain their original source and qualification scope.
+
+The earlier mini-player/settings/appearance corrections added no resource or energy
 measurements. A retained guest-related snapshot is bounded to 20 records; hidden
 surface image references are dropped and the existing thumbnail worker/cache is
 shared with generation invalidation. No decoder, media timer or frame-copy path
 is added. Translucency/blur changes can affect compositor cost and remain
 unmeasured. All SPEC targets/ceilings and previous source-scoped results remain
-unchanged. Performance/usage testing is deferred at the user's explicit request.
+unchanged. Performance/usage testing was deferred when those corrections landed.
 
 The immediate-watch/header slice adds no measurements. Source inspection found
 an image-publication loop that could consume successive batches in one UI
@@ -18,7 +22,7 @@ changes resolve all reported loading stalls or improve extraction latency.
 The local-file, playlist organization and time/chapter navigation feature batch
 adds no performance or resource measurements. All earlier results retain their
 recorded binary/source scope; these additions do not pass or change any budget.
-Performance testing remains deferred at the user’s explicit request.
+Performance testing was deferred for that feature batch.
 
 
 Numbers in SPEC remain contract targets/ceilings, not results. Reference host:

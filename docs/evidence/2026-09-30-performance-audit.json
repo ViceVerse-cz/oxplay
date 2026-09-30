@@ -1,0 +1,854 @@
+{
+  "date": "2026-09-30",
+  "platform": {
+    "os": "macOS 27.0 (26A428)",
+    "gpu": "Apple M1",
+    "libmpv_pkg_config_version": "2.5.0",
+    "rust": "1.98.1"
+  },
+  "final_code_source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+  "baseline_source": "f831a22",
+  "concurrent_upstream_commits": [
+    "3cee068",
+    "5ac3298",
+    "4901842"
+  ],
+  "scope": "Local synthetic microbenchmarks, finite native resource runs and functional fixtures. Whole-app comparisons include concurrent upstream UI changes; no isolated app-wide speedup claim.",
+  "binaries": [
+    {
+      "source": "f831a22",
+      "artifact": "baseline-serein",
+      "sha256": "e9b83ae667c8d954de6bd578b7303aaa4a98a4b2657e4a4d03528f877c8650b1"
+    },
+    {
+      "source": "6440df5",
+      "artifact": "feedback-serein",
+      "sha256": "16e34d7178cac44b3705906cef02c6ac2f54de9d7811895ff6dc86b4f3fea2d3"
+    },
+    {
+      "source": "5cd61e8",
+      "artifact": "final-serein",
+      "sha256": "c139139c48eaccc73d60192eaf863a9cfd4497e916ab1b589cc2e2ccf2d3c0da"
+    },
+    {
+      "source": "225eef0",
+      "artifact": "grid-fixed-serein",
+      "sha256": "d9d54abfab93cb76be94917a529a95738eb441c7818615f150f8a66a95c91d22"
+    },
+    {
+      "source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+      "artifact": "clock-fixed-serein",
+      "sha256": "19c4834ba0aa523ad2a7f5d291106a65242b2b2d6be8b11b15d0a80590fb3535"
+    }
+  ],
+  "fixture": {
+    "media_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+    "subtitles_sha256": "a9f549cb82ce73ed67a21b720f808de8234b8faf5646f05956e0f282053064ee",
+    "library_rows": 10000,
+    "page_rows": 100,
+    "distinct_thumbnail_rasters": 30,
+    "provenance_sha256": "5f15ee754b1f3b4f6bf07359738ae975a7a1c745866b173aa2bdfd7333d9c99f"
+  },
+  "microbenchmarks": {
+    "source": "6440df5",
+    "log": {
+      "artifact": "image-benchmarks-main.log",
+      "sha256": "7ccf98fd570b76df7f6147214156f46203a51a63b611aa02bec530e1619bc617"
+    },
+    "batches": 21,
+    "statistic": "median batch mean",
+    "inputs": "deterministic synthetic PNGs",
+    "measured_files_sha256": {
+      "crates/app/src/image_performance.rs": "2869e30945928053bed1e0747759cf4839d75462391ad6842f7ba26c1917cddf",
+      "crates/app/src/thumbnails.rs": "eb37fbd4a2b9d471130398a4b76234ea4f8698524fc457ae2bc7248530736b76"
+    },
+    "results": [
+      {
+        "benchmark": "disabled_artwork_cache",
+        "unit": "us/image",
+        "before": 336.7042,
+        "after": 0.0114375
+      },
+      {
+        "benchmark": "portrait_decode",
+        "edge": 48,
+        "unit": "us/image",
+        "before": 472.16044999999997,
+        "after": 39.6125
+      },
+      {
+        "benchmark": "portrait_decode",
+        "edge": 180,
+        "unit": "us/image",
+        "before": 826.90625,
+        "after": 603.6229500000001
+      },
+      {
+        "benchmark": "portrait_decode",
+        "edge": 1024,
+        "unit": "us/image",
+        "before": 16555.102099999996,
+        "after": 13686.927050000002
+      }
+    ],
+    "scope": "Operation costs exclude network, GPU upload, page throughput and energy. Image benchmark and measured image code are unchanged in final source."
+  },
+  "resource_runs": [
+    {
+      "name": "baseline-idle-awake",
+      "source": "f831a22",
+      "raw": {
+        "artifact": "baseline-idle-awake.json",
+        "sha256": "78140872469492a0805974c35d95e64202d9be9211ddf59d95f5c2afede085ad"
+      },
+      "native_log": {
+        "artifact": "baseline-idle-awake.json.log",
+        "sha256": "a139edb33ba4730e8ecbf0fa33d66dc38ff3cb00a3b66f85f97f192796c79968"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:00:19Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 15.061520863054414,
+        "p95": 34.61044404186301,
+        "peak": 36.41404285260428
+      },
+      "rss_mib": {
+        "mean": 123.5734375,
+        "p95": 123.8125,
+        "peak": 123.859375
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.06409341489220557,
+        "p95": 0.0,
+        "peak": 1.922802446766167
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "baseline-playback-awake",
+      "source": "f831a22",
+      "raw": {
+        "artifact": "baseline-playback-awake.json",
+        "sha256": "18ab385a5dc90d3f56534a1a8aeeef8c2f82794c7d216f827931e6b82a40fdc8"
+      },
+      "native_log": {
+        "artifact": "baseline-playback-awake.json.log",
+        "sha256": "39ebda0979caa63f1110de5edca35401b9c54c1824ece795d7c038d956253b95"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 10,
+      "requested_sample_count": 60,
+      "sample_count": 60,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T02:58:15Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 98.41583697091262,
+        "p95": 203.7043457383891,
+        "peak": 239.54078043019848
+      },
+      "rss_mib": {
+        "mean": 196.9140625,
+        "p95": 199.703125,
+        "peak": 199.734375
+      },
+      "cpu_one_core_percent": {
+        "mean": 46.91742045636044,
+        "p95": 58.76891328723419,
+        "peak": 66.79010654597775
+      },
+      "process_count_peak": 3,
+      "include_new_vt_services": true,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "final-idle",
+      "source": "5cd61e8",
+      "raw": {
+        "artifact": "final-idle.json",
+        "sha256": "21c9189bd6334e8052a8c549fa9110f00f41ef43ec4836ec7e5296fb4aaf8fe7"
+      },
+      "native_log": {
+        "artifact": "final-idle.json.log",
+        "sha256": "5dfecda4b53edaff1a7f20b8e30978fa0464ce4d4514739108cb9effda538f32"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:40:18Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 23.601979203669334,
+        "p95": 131.35136412493637,
+        "peak": 183.9998007260493
+      },
+      "rss_mib": {
+        "mean": 123.725,
+        "p95": 123.984375,
+        "peak": 123.984375
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.1662588182401313,
+        "p95": 1.8603511156612802,
+        "peak": 3.1274134315426596
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "final-playback",
+      "source": "5cd61e8",
+      "raw": {
+        "artifact": "final-playback.json",
+        "sha256": "6f947ec2511ea56e3db163f1fc920d56ca9e33b52695e518945985f587e225d2"
+      },
+      "native_log": {
+        "artifact": "final-playback.json.log",
+        "sha256": "ab51362b88c3e48d19a648ed03047d4796f1ac252424c5c161a9d03b1d563630"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 10,
+      "requested_sample_count": 60,
+      "sample_count": 60,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:47:31Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 56.27303474937716,
+        "p95": 63.998309358949044,
+        "peak": 73.37883291212715
+      },
+      "rss_mib": {
+        "mean": 194.40442708333333,
+        "p95": 195.125,
+        "peak": 195.1875
+      },
+      "cpu_one_core_percent": {
+        "mean": 46.16434951481217,
+        "p95": 51.13455383124683,
+        "peak": 53.00247341411743
+      },
+      "process_count_peak": 3,
+      "include_new_vt_services": true,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "final-paused",
+      "source": "5cd61e8",
+      "raw": {
+        "artifact": "final-paused.json",
+        "sha256": "bcee4773730771f51ace647d512febd4fb85333121f737d42150c0676fc2116b"
+      },
+      "native_log": {
+        "artifact": "final-paused.json.log",
+        "sha256": "7f7779b61951255c47e2c0c80d7ed70d7c51c2d763c2539ca4c917b230582b50"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:48:47Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 30.854648587873168,
+        "p95": 123.70841071216188,
+        "peak": 132.99441981977338
+      },
+      "rss_mib": {
+        "mean": 181.509375,
+        "p95": 181.75,
+        "peak": 181.75
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.06200922842711688,
+        "p95": 0.0,
+        "peak": 1.8602768528135065
+      },
+      "process_count_peak": 3,
+      "include_new_vt_services": true,
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "final-library",
+      "source": "5cd61e8",
+      "raw": {
+        "artifact": "final-library.json",
+        "sha256": "cbf41456714faf073ce5eca7be44fe7080163232c0f1653742fd22ea6f42e998"
+      },
+      "native_log": {
+        "artifact": "final-library.json.log",
+        "sha256": "948a96762ab6cd3b2c4bd4e87b7357adca0e07c81a61869c1e965ea4fa5902f5"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:49:28Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 14.978026661352823,
+        "p95": 34.000691369095186,
+        "peak": 40.99942768832735
+      },
+      "rss_mib": {
+        "mean": 142.3578125,
+        "p95": 142.609375,
+        "peak": 142.609375
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.031005576730923412,
+        "p95": 0.0,
+        "peak": 0.9301673019277024
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "library_fixture_readiness": {
+        "elapsed_ms": 334,
+        "generation": 5,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 12,
+        "near_viewport_ready": 12,
+        "viewport_intersecting_ready_thumbnails": 9,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 12,
+        "decoded": 12,
+        "failed": 0,
+        "published": 12,
+        "published_bytes": 2764800,
+        "catalog_changes": 12,
+        "catalog_resets": 1,
+        "group_child_changes": 12,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 0.6255613749963231
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "final-library-minimized",
+      "source": "5cd61e8",
+      "raw": {
+        "artifact": "final-library-minimized.json",
+        "sha256": "4ca5f360cd9f4966715c806142b9ae2b1402aacfa37a136ce82ad61ae714bd54"
+      },
+      "native_log": {
+        "artifact": "final-library-minimized.json.log",
+        "sha256": "976ee07962640b4aa01eb0796f5dcd865c6e3d077c63d9852d5c2f2ac72c2f4f"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T03:50:14Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 19.715976063205563,
+        "p95": 48.99939363220359,
+        "peak": 200.00739186613475
+      },
+      "rss_mib": {
+        "mean": 142.2328125,
+        "p95": 142.484375,
+        "peak": 142.484375
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.031004621423260784,
+        "p95": 0.0,
+        "peak": 0.9301386426978235
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "library_fixture_readiness": {
+        "elapsed_ms": 322,
+        "generation": 5,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 12,
+        "near_viewport_ready": 12,
+        "viewport_intersecting_ready_thumbnails": 9,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 12,
+        "decoded": 12,
+        "failed": 0,
+        "published": 12,
+        "published_bytes": 2764800,
+        "catalog_changes": 12,
+        "catalog_resets": 1,
+        "group_child_changes": 12,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 0.6459940419881605
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "grid-fixed-library",
+      "source": "225eef0",
+      "raw": {
+        "artifact": "grid-fixed-library.json",
+        "sha256": "33e568942c7cb33bd94738319666d13e8a56a8032fa6ba2bbceeae9b42fe19c4"
+      },
+      "native_log": {
+        "artifact": "grid-fixed-library.json.log",
+        "sha256": "64cecaceb3ca5a89c50ff193baab7ddaa2510226f9f0734a9ace2b6a97ca549c"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T04:09:26Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 11.178993776278483,
+        "p95": 19.533170398346183,
+        "peak": 36.37858496587591
+      },
+      "rss_mib": {
+        "mean": 142.4359375,
+        "p95": 142.6875,
+        "peak": 142.6875
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.0,
+        "p95": 0.0,
+        "peak": 0.0
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "library_fixture_readiness": {
+        "elapsed_ms": 354,
+        "generation": 5,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 12,
+        "near_viewport_ready": 12,
+        "viewport_intersecting_ready_thumbnails": 9,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 12,
+        "decoded": 12,
+        "failed": 0,
+        "published": 12,
+        "published_bytes": 2764800,
+        "catalog_changes": 12,
+        "catalog_resets": 1,
+        "group_child_changes": 12,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 1.1863169579883106
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "grid-fixed-library-minimized",
+      "source": "225eef0",
+      "raw": {
+        "artifact": "grid-fixed-library-minimized.json",
+        "sha256": "2146876b212f21d7d1b4577745873a3a770533a67e0f0a6196f5a4eb9e9faa4c"
+      },
+      "native_log": {
+        "artifact": "grid-fixed-library-minimized.json.log",
+        "sha256": "69af0314d23cd8f501c7539bac3da8aaf93ae036969e5cee1b41e48e629a54b9"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 5,
+      "requested_sample_count": 30,
+      "sample_count": 30,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T04:10:12Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 16.30583279285892,
+        "p95": 69.99876046252238,
+        "peak": 95.99973993818836
+      },
+      "rss_mib": {
+        "mean": 142.78125,
+        "p95": 143.03125,
+        "peak": 143.078125
+      },
+      "cpu_one_core_percent": {
+        "mean": 0.0646264639355638,
+        "p95": 0.9301610291913324,
+        "peak": 1.0086328888755818
+      },
+      "process_count_peak": 2,
+      "include_new_vt_services": false,
+      "library_fixture_readiness": {
+        "elapsed_ms": 319,
+        "generation": 5,
+        "model_rows": 100,
+        "near_viewport_first": 0,
+        "near_viewport_end": 12,
+        "near_viewport_ready": 12,
+        "viewport_intersecting_ready_thumbnails": 9,
+        "pending": 0,
+        "inflight": 0,
+        "ready": 0,
+        "remote_started": 0,
+        "started": 12,
+        "decoded": 12,
+        "failed": 0,
+        "published": 12,
+        "published_bytes": 2764800,
+        "catalog_changes": 12,
+        "catalog_resets": 1,
+        "group_child_changes": 12,
+        "hidden": false,
+        "scope": "application queues and ready model images; compositor visibility and GPU completion unmeasured",
+        "sampler_wait_seconds": 0.5494099580100738
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "name": "clock-fixed-playback",
+      "source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+      "raw": {
+        "artifact": "clock-fixed-playback.json",
+        "sha256": "81a9dbc302384a1c4ac90c31d177c115c3cb75e8a5aa67b3917634a879382745"
+      },
+      "native_log": {
+        "artifact": "clock-fixed-playback.json.log",
+        "sha256": "23d80df50e61917604535263dd53caafad6e70d024dbe3d326c538259480d1aa"
+      },
+      "status": "completed_not_automatically_qualified",
+      "warmup_seconds": 10,
+      "requested_sample_count": 60,
+      "sample_count": 60,
+      "interval_seconds": 1,
+      "measurement_start_utc": "2026-09-30T04:27:31Z",
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.99100731021191,
+        "p95": 64.0005493806844,
+        "peak": 73.48400577571714
+      },
+      "rss_mib": {
+        "mean": 194.63776041666668,
+        "p95": 195.34375,
+        "peak": 195.40625
+      },
+      "cpu_one_core_percent": {
+        "mean": 45.26277145120694,
+        "p95": 51.00154065309039,
+        "peak": 53.001062247480554
+      },
+      "process_count_peak": 3,
+      "include_new_vt_services": true,
+      "exit_code": 0,
+      "forced_termination": false
+    }
+  ],
+  "rust_tests_passed": 599,
+  "rust_tests_ignored": 6,
+  "python_tests_passed": 163,
+  "release_microbenchmark_tests_passed": 2,
+  "native_outcomes": {
+    "artifact": "completed-native-outcomes.json",
+    "sha256": "bcb4c45bb40329973b37ccb457bff19bbb9fbff1f8ea4efa382ccac64620664f"
+  },
+  "native_exit_codes": [
+    {
+      "run": "grid-fixed-release-library-smoke",
+      "exit_code": 0,
+      "source": "225eef0"
+    },
+    {
+      "run": "local-smoke-fixed-release",
+      "source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+      "exit_code": 0
+    }
+  ],
+  "resource_observations": {
+    "playback_source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+    "playback_lifetime_vo_drops": 3,
+    "previous_playback_source": "5cd61e8",
+    "previous_playback_lifetime_vo_drops": 2,
+    "playback_target_allocations": 2,
+    "playback_target_bytes": 18874368,
+    "playback_lifetime_decoder_drops": 0,
+    "playback_duration_seconds": 80,
+    "hwdec": "videotoolbox",
+    "audio_output": "avfoundation",
+    "paused_display_clock_active": false,
+    "paused_prevents_display_sleep": false,
+    "pre_grid_fix_library_lifetime_ui_draws": 9,
+    "final_grid_library_lifetime_ui_draws": 8,
+    "zero_sample_cpu_scope": "No CPU-time increment observed at sampler resolution in finite window; not zero resource consumption.",
+    "minimization_observed": true,
+    "external_display_wake_assertion": "Bounded caffeinate -d -u for graphical session; not an application energy claim."
+  },
+  "functional_checks": [
+    {
+      "log": {
+        "artifact": "grid-fixed-release-library-smoke.log",
+        "sha256": "619e78be43fe44c71544bca1b2ae5046917bbec4c6a524e468105ed3828b50b3"
+      },
+      "source": "225eef0",
+      "outcome": "passed"
+    },
+    {
+      "log": {
+        "artifact": "local-smoke-fixed-release.log",
+        "sha256": "73244c5b5e724ac79439d28d960c23cff618d29dbec9c34b72f8574db2a3aaf8"
+      },
+      "source": "1b4333e8b37a7693019e68e49e90e24ed76951fa",
+      "outcome": "passed"
+    }
+  ],
+  "validation": [
+    {
+      "name": "rust_tests",
+      "command": "cargo test --locked --workspace",
+      "outcome": "passed",
+      "log": {
+        "artifact": "rust-tests-final.log",
+        "sha256": "9a26e1c678b791e527882e83ae74a7f6c43a30390440f99fe2be1026d8a5002f"
+      }
+    },
+    {
+      "name": "clippy",
+      "command": "cargo clippy --locked --workspace --all-targets -- -D warnings",
+      "outcome": "passed",
+      "log": {
+        "artifact": "clippy-final.log",
+        "sha256": "029ff6e34c86e838c6aa162be93508060544a85cc42e35c9943edc615a09c798"
+      }
+    },
+    {
+      "name": "python_tests",
+      "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
+      "outcome": "passed",
+      "log": {
+        "artifact": "python-tests.log",
+        "sha256": "f1ef6dcef39b659d0a07f191530cc9ac1cbc737a245da56de742e692f7df55ab"
+      }
+    },
+    {
+      "name": "release_build",
+      "command": "cargo build --locked --release --workspace",
+      "outcome": "passed",
+      "log": {
+        "artifact": "release-final.log",
+        "sha256": "79b7e92b7478b793f8c7d003f86d2c33b5d85f9e6b7598c0dc9d35d7d6e7ad38"
+      }
+    }
+  ],
+  "sql_supplement": {
+    "engine": "Python sqlite3, in-memory 100000 synthetic history rows; not bundled app SQLite",
+    "raw": {
+      "artifact": "history-query-baseline.json",
+      "sha256": "278d9a84224989b87957cd002f854da9b9b87db2803dc724e451ee43a5b42787"
+    },
+    "results": {
+      "before": {
+        "first": {
+          "median_ms": 0.075875,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        },
+        "middle": {
+          "median_ms": 0.0752915,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        },
+        "deep": {
+          "median_ms": 0.077792,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        }
+      },
+      "after": {
+        "first": {
+          "median_ms": 0.076792,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        },
+        "middle": {
+          "median_ms": 0.07739599999999999,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        },
+        "deep": {
+          "median_ms": 0.076916,
+          "plan": [
+            [
+              5,
+              0,
+              204,
+              "SEARCH local_history USING INDEX local_history_page (watched_at<?)"
+            ]
+          ]
+        }
+      }
+    },
+    "decision": "Existing keyset query uses index; alternative predicate not adopted."
+  },
+  "excluded_attempts": [
+    {
+      "raw": {
+        "artifact": "baseline-idle-preparation-overlap.json",
+        "sha256": "c1aa89e1a907ede693b6fdebe2df52deb9265271a351889cfeef17c33dfd396a"
+      },
+      "source": "f831a22",
+      "reason": "Fixture preparation overlapped sampling."
+    },
+    {
+      "raw": {
+        "artifact": "baseline-idle.json",
+        "sha256": "dfd2f321413a5a4ca663fb7b047f3667e90c133e9dddf1dda7cdb61655d89321"
+      },
+      "source": "f831a22",
+      "reason": "Display-clock initialization failed."
+    },
+    {
+      "raw": {
+        "artifact": "baseline-playback-display-asleep.json",
+        "sha256": "1db6831b16cbae04a7bc135f819d64a6baf88f31f4e4f59a852b7cf7a737835b"
+      },
+      "source": "f831a22",
+      "reason": "No valid playback; display unavailable."
+    },
+    {
+      "raw": {
+        "artifact": "baseline-library.json",
+        "sha256": "e844f80f6d82a23a41bc9d16b7c57066d45ce1a77eb06a75386efd4f707942dc"
+      },
+      "source": "f831a22",
+      "reason": "Arguments rejected: mismatched data root."
+    },
+    {
+      "raw": {
+        "artifact": "baseline-library-valid.json",
+        "sha256": "1ae67db8855e76d8f955c5161af21c1ff9189763ec61b31dcc5004cec8c8df67"
+      },
+      "source": "f831a22",
+      "reason": "Acknowledged library feed never published; readiness timeout and zero samples."
+    },
+    {
+      "raw": {
+        "artifact": "feedback-library-smoke-occluded.log",
+        "sha256": "bf9ab2f87512bb946e55ab5f1813f067d24cf882cbabdb365ff4b3e205b2ebd3"
+      },
+      "source": "6440df5",
+      "reason": "Reached readiness, then strict visibility checkpoint failed after occlusion."
+    },
+    {
+      "raw": {
+        "artifact": "final-playback-display-unavailable.json",
+        "sha256": "4d582d25154ef28dc27cb9f332b783791191ec0c59d484ffe9337615467d1d62"
+      },
+      "source": "5cd61e8",
+      "reason": "Display-clock initialization failed; media did not start despite normal process exit."
+    },
+    {
+      "raw": {
+        "artifact": "final-paused-display-unavailable.json",
+        "sha256": "5d693f1ca9fe08a18165084fa0a780b9afa6fd422f31cb940cffd4e9eb815fd2"
+      },
+      "source": "5cd61e8",
+      "reason": "Display-clock initialization failed; no valid media."
+    },
+    {
+      "raw": {
+        "artifact": "final-library-display-unavailable.json",
+        "sha256": "20c10574fc776a2f593d2d85250af3e51e17f622ebc082c12335e742baba90ec"
+      },
+      "source": "5cd61e8",
+      "reason": "No active graphical display; superseded by awake run."
+    },
+    {
+      "raw": {
+        "artifact": "final-library-minimized-display-unavailable.json",
+        "sha256": "d044c293b4f3ccd03b51bf963484331a9fbbc3bec98cbdaa6114c0c6b539c2ea"
+      },
+      "source": "5cd61e8",
+      "reason": "No active graphical display; superseded by awake run."
+    },
+    {
+      "raw": {
+        "artifact": "local-smoke-fixed-debug-2.log",
+        "sha256": "3b82c36975dabe34a7172a7ca89846bf0a9047998925ea3f5f2fdc0a6829a1a8"
+      },
+      "source": "225eef0 with smoke setup experiment",
+      "reason": "Working-tree smoke setup experiment at 225eef0 used a 1000x600 window and exposed progress polling despite offscreen clock controls; corrected with d9bef21."
+    },
+    {
+      "raw": {
+        "artifact": "grid-fixed-release-local-smoke.log",
+        "sha256": "f86205bb4b78736791f8380394b268e95bb9625334ef155754d2be4b9d072da8"
+      },
+      "source": "225eef0",
+      "reason": "Current compact geometry exposed related rows; smoke setup corrected. This was a functional check with readback, not a resource measurement."
+    },
+    {
+      "raw": {
+        "artifact": "final-library-smoke.log",
+        "sha256": "cae60f5f27767e780e8398b586d63f86a43e3e7ddb34d54a351330f6c4733628"
+      },
+      "source": "5cd61e8",
+      "reason": "Page traversal passed, but rapid End/Left/Right exposed inconsistent grid geometry; corrected subsequently."
+    }
+  ],
+  "limitations": [
+    "25% one-core playback CPU target not met.",
+    "30 visible thumbnails not demonstrated: nine geometrically intersecting; compositor/GPU completion unmeasured.",
+    "Finite runs do not establish long-soak leak freedom.",
+    "Shared pages may be double-counted in aggregated RSS; decoder services attributed temporally.",
+    "No energy, account, screen-reader or other-platform qualification.",
+    "Resource samples contain no GPU queries, screenshots or stack sampling.",
+    "Raw private profiles, host executable names and absolute paths excluded from published summary."
+  ]
+}
