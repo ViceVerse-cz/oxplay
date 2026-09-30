@@ -922,3 +922,68 @@ fn clipped_transport_background_does_not_keep_offscreen_clock_controls_active() 
     settle();
     assert!(app.get_progress_visible());
 }
+
+#[test]
+fn ambient_mode_toggle_and_glow_scope_follow_the_watch_page() {
+    let app = app();
+    app.set_theme(2);
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    settle();
+    assert!(app.get_ambient_mode(), "on by default");
+    assert!(app.get_ambient_active());
+    element(&app, "Playback settings").invoke_accessible_default_action();
+    settle();
+    let toggle = element(&app, "Ambient mode");
+    assert_eq!(toggle.accessible_checked(), Some(true));
+    toggle.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(!app.get_ambient_mode());
+    assert!(!app.get_ambient_active(), "turning it off stops sampling");
+    assert_eq!(
+        element(&app, "Ambient mode").accessible_checked(),
+        Some(false)
+    );
+    element(&app, "Ambient mode").invoke_accessible_default_action();
+    settle();
+    assert!(app.get_ambient_mode() && app.get_ambient_active());
+    key(&app, Key::Escape);
+    settle();
+    // Only the regular/theatre watch page shows the glow.
+    app.set_theatre_mode(true);
+    settle();
+    assert!(app.get_ambient_active(), "theatre keeps the glow");
+    type Change = fn(&App);
+    let cases: [(&str, Change, Change); 5] = [
+        (
+            "fullscreen",
+            |app| app.set_fullscreen_active(true),
+            |app| app.set_fullscreen_active(false),
+        ),
+        (
+            "picture in picture",
+            |app| app.set_picture_in_picture(true),
+            |app| app.set_picture_in_picture(false),
+        ),
+        ("mini-player", |app| app.set_page(0), |app| app.set_page(2)),
+        (
+            "light theme",
+            |app| app.set_theme(1),
+            |app| app.set_theme(2),
+        ),
+        (
+            "closed player",
+            |app| app.set_loaded(false),
+            |app| app.set_loaded(true),
+        ),
+    ];
+    for (label, enter, leave) in cases {
+        enter(&app);
+        settle();
+        assert!(!app.get_ambient_active(), "{label} must not sample");
+        leave(&app);
+        settle();
+        assert!(app.get_ambient_active(), "{label} restored");
+    }
+}

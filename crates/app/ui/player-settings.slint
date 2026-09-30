@@ -12,6 +12,8 @@ export component PlayerSettingsPanel inherits Rectangle {
     in property <bool> quality-busy;
     in property <bool> remote-video;
     in property <bool> subtitle-available;
+    // Session preference; the glow itself is drawn only in the dark theme.
+    in-out property <bool> ambient-mode: true;
     callback volume(float);
     callback speed(int);
     callback quality(int);
@@ -22,7 +24,7 @@ export component PlayerSettingsPanel inherits Rectangle {
     private property <[string]> qualities: ["Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"];
     private property <string> current-speed: root.speed-index >= 0 && root.speed-index < root.speeds.length ? root.speeds[root.speed-index] : "Unknown";
     private property <string> current-quality: root.quality-index >= 0 && root.quality-index < root.qualities.length ? root.qualities[root.quality-index] : "Unknown";
-    preferred-height: root.section == 2 ? 336px : root.section == 1 ? 256px : root.remote-video ? 296px : 336px;
+    preferred-height: root.section == 2 ? 336px : root.section == 1 ? 256px : root.remote-video ? 344px : 384px;
     background: Colors.dialog;
     border-width: 1px; border-color: Colors.border; border-radius: 16px;
     forward-focus: header-action;
@@ -67,13 +69,31 @@ export component PlayerSettingsPanel inherits Rectangle {
                 clicked => { root.section = 2; header-action.focus(); }
                 Text { x: parent.width - 118px; y: 0px; width: 106px; height: parent.height; text: root.quality-busy ? "Loading…" : root.remote-video ? root.current-quality : "Local file"; color: Colors.muted; horizontal-alignment: right; vertical-alignment: center; opacity: root.remote-video ? 1 : 0.4; }
             }
+            Action {
+                x: 0px; y: 168px; width: parent.width; height: 44px;
+                label: "Ambient mode"; checkable: true; selected: root.ambient-mode;
+                accessible-label: Colors.dark ? "Ambient mode" : "Ambient mode (dark theme only)";
+                clicked => { root.ambient-mode = !root.ambient-mode; }
+                if !Colors.dark: Text { x: parent.width - 176px; y: 0px; width: 112px; height: parent.height; text: "Dark theme only"; color: Colors.muted; font-size: 12px; horizontal-alignment: right; vertical-alignment: center; }
+                // Compact switch: track and knob follow the preference.
+                Rectangle {
+                    x: parent.width - 52px; y: (parent.height - self.height) / 2; width: 36px; height: 20px; border-radius: 10px;
+                    background: root.ambient-mode ? Colors.focus : Colors.strong;
+                    animate background { duration: 150ms; }
+                    Rectangle {
+                        x: root.ambient-mode ? parent.width - self.width - 3px : 3px; y: 3px; width: 14px; height: 14px; border-radius: 7px;
+                        background: #ffffff;
+                        animate x { duration: 150ms; easing: ease-out; }
+                    }
+                }
+            }
             if !root.remote-video: Action {
-                x: 0px; y: 168px; width: parent.width; height: 40px;
+                x: 0px; y: 216px; width: parent.width; height: 40px;
                 label: "Load subtitle file…"; icon-name: "captions"; enabled: root.subtitle-available;
                 clicked => { root.subtitle(); }
             }
             Text {
-                x: 12px; y: root.remote-video ? 176px : 212px; width: parent.width - 24px; height: 36px;
+                x: 12px; y: root.remote-video ? 224px : 260px; width: parent.width - 24px; height: 36px;
                 text: root.remote-video ? "Quality uses the best available stream within your selected limit." : "Quality selection applies to YouTube videos.";
                 color: Colors.muted; font-size: 12px; wrap: word-wrap;
             }

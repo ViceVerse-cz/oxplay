@@ -2,6 +2,8 @@
 //! In-process libmpv control and a single-window OpenGL presenter.
 //! No decoded pixels cross this interface. Commands are asynchronous; snapshots
 //! contain only observed, sanitized properties. This is an experimental adapter.
+mod ambient;
+pub use ambient::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, AmbientStats};
 mod audio_probe;
 mod commands;
 pub use audio_probe::AudioProbeReply;

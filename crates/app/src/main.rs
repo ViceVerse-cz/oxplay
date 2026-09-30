@@ -2,6 +2,7 @@
 mod account;
 mod account_playback;
 mod account_ui;
+mod ambient_ui;
 mod caption_cache;
 mod caption_files;
 mod caption_ui;
@@ -78,6 +79,7 @@ struct UiState {
     watch_loading: watch_loading::State,
     watch_context: watch_context::State,
     watch_meta: watch_meta::State,
+    ambient_ui: ambient_ui::State,
     pip: picture_in_picture::Controller,
     pip_exit_pending: Cell<bool>,
     presenter_generations: Cell<u64>,
@@ -1161,6 +1163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         watch_loading: watch_loading::State::default(),
         watch_context: watch_context::State::default(),
         watch_meta,
+        ambient_ui: ambient_ui::State::default(),
         pip: picture_in_picture::Controller::default(),
         pip_exit_pending: Cell::new(false),
         presenter_generations: Cell::new(0),
@@ -1705,6 +1708,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 if let Some(p) = presenter.as_mut() {
                     let scale = app.window().scale_factor();
+                    p.set_ambient_sampling(ambient_ui::sampling_wanted(&app, &s));
+                    let mut published = false;
                     // SAFETY: current notifier context, texture never leaves this window.
                     match unsafe {
                         p.render(
@@ -1715,6 +1720,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     } {
                         Ok(Some(image)) => {
                             app.set_video_texture(image);
+                            published = true;
                         }
                         Ok(None) => {}
                         Err(e) => {
@@ -1727,6 +1733,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             app.set_status(e.to_string().into());
                         }
                     }
+                    ambient_ui::after_render(&app, &s, p, published);
                 }
             }
             slint::RenderingState::AfterRendering => {
