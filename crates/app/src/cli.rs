@@ -782,6 +782,8 @@ YouTube search suggestions are on (Settings; not in finite diagnostics).";
 
 #[cfg(test)]
 mod tests {
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn home_diagnostic_forbids_network_existing_modes_and_missing_private_root() {
         let base = ["--home-smoke-test", "--data-root", "/synthetic/new-profile"];
@@ -802,6 +804,8 @@ mod tests {
             assert!(parse(&args).is_err());
         }
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn pip_diagnostic_is_offline_isolated_and_has_a_finite_watchdog() {
         let base = [
@@ -906,6 +910,8 @@ mod tests {
             .is_err()
         );
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn save_diagnostic_requires_explicit_new_profile_and_one_public_video_scope() {
         let base = [
@@ -1006,6 +1012,8 @@ mod tests {
     fn parse(args: &[&str]) -> Result<Options, &'static str> {
         Options::parse(args.iter().map(OsString::from))
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn finite_diagnostics_disable_remote_search_suggestions() {
         assert!(!parse(&[]).unwrap().finite_diagnostic());
@@ -1265,6 +1273,8 @@ mod tests {
             assert!(parse(&args).is_err());
         }
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn prepared_library_resource_mode_is_explicit_offline_and_has_no_default_timer() {
         let base = ["--library-resource-fixture", "/prepared-root"];
@@ -1396,6 +1406,8 @@ mod tests {
             Some(3600)
         );
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn preferences_diagnostic_is_explicit_isolated_and_finite() {
         assert!(parse(&[]).unwrap().preferences_smoke.is_none());
@@ -1445,6 +1457,8 @@ mod tests {
             .is_err()
         );
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn soak_requires_full_duration_fresh_profile_workload_and_fixed_watchdog() {
         assert!(parse(&[]).unwrap().soak_minutes.is_none());

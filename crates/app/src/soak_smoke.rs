@@ -445,6 +445,8 @@ mod tests {
         assert_eq!(scheduled_seconds(seconds.len(), 60), None);
         assert_eq!(scheduled_seconds(240 * PHASES.len(), 240), None);
     }
+    // Synthetic Unix-rooted paths are not absolute on Windows.
+    #[cfg(unix)]
     #[test]
     fn invalid_duration_and_relative_paths_are_rejected_without_io() {
         for minutes in [0, 1, 59, 241, u32::MAX] {
