@@ -46,7 +46,7 @@ fn source(lease: Arc<Lease>) -> HttpSource {
         .unwrap(),
         headers: HeaderMap::new(),
         timing: None,
-        config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+        config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         access: Some(lease),
     }
 }

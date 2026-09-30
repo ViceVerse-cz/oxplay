@@ -913,7 +913,8 @@ mod tests {
             assert_eq!(info.capabilities.identity, Capability::Verified);
             assert_eq!(info.capabilities.authenticated_playback, expected);
             if expected == Capability::Unsupported {
-                let resolver = crate::YtDlp::new("/never-spawned-helper").unwrap();
+                let resolver =
+                    crate::YtDlp::new(crate::test_absolute("/never-spawned-helper")).unwrap();
                 assert!(matches!(
                     client.resolve_authenticated(
                         &resolver,
@@ -1058,7 +1059,8 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         let mut client = fixture_client(vec![Ok(identity_response())]);
         client.session.as_mut().unwrap().cookies = SessionCookies::import_netscape(
             zeroize::Zeroizing::new(b"# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t1\tSAPISID\tsynthetic-expired\n".to_vec()), 0).unwrap();
-        let resolver = crate::YtDlp::new("/never-spawned-expired-helper").unwrap();
+        let resolver =
+            crate::YtDlp::new(crate::test_absolute("/never-spawned-expired-helper")).unwrap();
         assert!(matches!(
             client.resolve_authenticated(
                 &resolver,
@@ -1110,7 +1112,7 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
     fn nondefault_account_slot_cannot_leak_into_an_unbound_extractor_session() {
         let mut client = fixture_client(vec![Ok(identity_response())]);
         client.session.as_mut().unwrap().account_index = 1;
-        let resolver = crate::YtDlp::new("/never-spawned-helper").unwrap();
+        let resolver = crate::YtDlp::new(crate::test_absolute("/never-spawned-helper")).unwrap();
         assert!(matches!(
             client.resolve_authenticated(
                 &resolver,

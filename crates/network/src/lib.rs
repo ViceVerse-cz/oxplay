@@ -56,6 +56,16 @@ impl NetworkConfig {
     }
 }
 
+/// An absolute, never-executed helper path for synthetic configurations.
+#[cfg(test)]
+fn synthetic_dns_helper() -> std::path::PathBuf {
+    if cfg!(windows) {
+        r"C:\synthetic\oxplay-dns".into()
+    } else {
+        "/synthetic/oxplay-dns".into()
+    }
+}
+
 const RANGE_BYTES: usize = 1024 * 1024;
 const DEADLINE: Duration = Duration::from_secs(20);
 type Result<T> = std::result::Result<T, Error>;
@@ -674,7 +684,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let (mut reader, cancel) = source.open();
         assert!(reader.session.is_none());
@@ -762,7 +772,7 @@ mod tests {
             headers,
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -800,7 +810,7 @@ mod tests {
                 headers: HeaderMap::new(),
                 timing: None,
                 access: None,
-                config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+                config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
             };
             let result = runtime().block_on(fetch_range_with_policy(
                 &Client::builder().no_proxy().build().unwrap(),
@@ -842,7 +852,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -876,7 +886,7 @@ mod tests {
                 headers: HeaderMap::new(),
                 timing: None,
                 access: None,
-                config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+                config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
             };
             let (mut reader, _) = source.open();
             reader.session = Some(Session {
@@ -898,7 +908,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let client = Client::builder()
             .no_proxy()
@@ -918,7 +928,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let (mut reader, _) = source.open();
         reader.total = Some(100_000);
@@ -946,7 +956,7 @@ mod tests {
             headers: HeaderMap::new(),
             timing: None,
             access: None,
-            config: NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let (mut reader, cancel) = source.open();
         reader.session = Some(Session {

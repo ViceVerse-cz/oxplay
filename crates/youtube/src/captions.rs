@@ -291,7 +291,7 @@ mod tests {
             cancel: Default::default(),
         };
         operation.cancel.cancel();
-        let provider = YtDlp::new("/does/not/exist").unwrap();
+        let provider = YtDlp::new(crate::test_absolute("/does/not/exist")).unwrap();
         assert!(matches!(
             provider.caption(&tracks[0], &video, &operation),
             Err(ProviderError::Cancelled)

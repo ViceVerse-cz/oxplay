@@ -299,7 +299,7 @@ mod tests {
             headers: reqwest::header::HeaderMap::new(),
             timing: Some(Arc::new(Stats::default())),
             access: None,
-            config: crate::NetworkConfig::new(Some("/synthetic/oxplay-dns".into())).unwrap(),
+            config: crate::NetworkConfig::new(Some(crate::synthetic_dns_helper())).unwrap(),
         };
         let weak = Arc::downgrade(source.timing.as_ref().unwrap());
         let (mut reader, cancel) = source.open();

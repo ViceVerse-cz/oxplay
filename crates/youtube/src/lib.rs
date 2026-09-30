@@ -30,6 +30,17 @@ use url::Url;
 /// document for one guest video on 2026-09-30); `skip=translated_subs` did not
 /// reduce it. The bound stays finite and the parsed value is dropped after use.
 pub const MAX_EXTRACTOR_JSON_BYTES: usize = 32 * 1024 * 1024;
+
+/// Synthetic never-spawned helper paths are Unix-rooted; on Windows a drive
+/// prefix makes them absolute too, so the same constructor checks apply.
+#[cfg(test)]
+pub(crate) fn test_absolute(path: &str) -> PathBuf {
+    if cfg!(windows) {
+        PathBuf::from(format!("C:{path}"))
+    } else {
+        PathBuf::from(path)
+    }
+}
 /// Opaque provider-owned cursor. Search terms intentionally have no Debug formatting.
 #[derive(Clone)]
 pub struct SearchCursor {

@@ -913,7 +913,7 @@ mod tests {
         assert_eq!(final_page.comments.len(), 20);
         assert!(final_page.next.is_none());
         assert!(final_page.limit_reached);
-        let provider = YtDlp::new("/does/not/exist").unwrap();
+        let provider = YtDlp::new(crate::test_absolute("/does/not/exist")).unwrap();
         let operation = OperationContext {
             request_id: 1,
             session_generation: 8,
@@ -1215,7 +1215,7 @@ mod tests {
             native_comments(&transport, &foreign, Some(&near), &op()).err(),
             Some(ProviderError::InvalidInput)
         );
-        let provider = YtDlp::new("/does/not/exist").unwrap();
+        let provider = YtDlp::new(crate::test_absolute("/does/not/exist")).unwrap();
         assert_eq!(
             provider.comments(&id, Some(&near), &op()).err(),
             Some(ProviderError::InvalidInput),
@@ -1227,7 +1227,7 @@ mod tests {
     fn only_unsupported_first_pages_fall_back_to_the_extractor() {
         let id = VideoId::new("abcdefghijk").unwrap();
         // The extractor path is observable: this helper does not exist.
-        let extractor = YtDlp::new("/does/not/exist").unwrap();
+        let extractor = YtDlp::new(crate::test_absolute("/does/not/exist")).unwrap();
         let transport = GuestTransport::with_fixture(vec![
             Ok(json!({"error": {"status": "INTERNAL"}})),
             Ok(watch_next("zyxwvutsrqp")),

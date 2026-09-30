@@ -525,7 +525,7 @@ mod tests {
             session_generation: 8,
             cancel: CancellationToken::default(),
         };
-        let provider = YtDlp::new("/synthetic/nonexistent-helper").unwrap();
+        let provider = YtDlp::new(crate::test_absolute("/synthetic/nonexistent-helper")).unwrap();
         assert!(matches!(
             provider.catalog(&request(), page.next.as_ref(), &operation),
             Err(ProviderError::InvalidInput)

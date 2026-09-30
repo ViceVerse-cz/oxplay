@@ -1517,7 +1517,7 @@ mod tests {
     }
 
     fn provider(replies: Vec<Result<Value, ProviderError>>) -> YtDlp {
-        YtDlp::new("/synthetic/nonexistent-helper")
+        YtDlp::new(crate::test_absolute("/synthetic/nonexistent-helper"))
             .unwrap()
             .with_guest_transport(GuestTransport::with_fixture(replies))
     }
