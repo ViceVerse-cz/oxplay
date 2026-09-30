@@ -279,3 +279,17 @@ consent for each subscribe/like/save and inverse action; remote reconciliation;
 sign-out during each pending operation and authenticated playback; restart
 without account data reappearance; secret scans; vault denial; helper process
 and temp-file cleanup. No credentials should be sent through chat or public CI.
+
+## Launch restore of a remembered session (2026-09-30)
+
+When a session was imported with **Remember this session and sign in
+automatically**, the next normal launch reads the nonsecret marker and submits
+one `Reconnect` for it, without asking for the consent checkbox again: consent
+was given when the session was saved. The restore runs at most once per launch,
+is never retried after a failure (the saved-session actions remain for a manual
+retry), is skipped for every finite diagnostic/smoke/fixture mode, and is
+cancelled by Disconnect. If the user is still on the untouched local Home when
+identity verification succeeds, Home switches to the account's
+recommendations; any other page is left alone. This deliberately relaxes the
+earlier "no network work on clean launch" rule only for this opt-in. It is
+unit-tested only; a real remembered account was not exercised.

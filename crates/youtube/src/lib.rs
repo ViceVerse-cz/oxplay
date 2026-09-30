@@ -23,6 +23,11 @@ use url::Url;
 
 const PAGE_SIZE: usize = 20;
 const MAX_SEARCH_RESULTS: usize = 200;
+/// Upper bound for one yt-dlp JSON document. Popular videos list ~180
+/// machine-translated caption languages (observed 11.2 MiB of the 11.7 MiB
+/// document for one guest video on 2026-09-30); `skip=translated_subs` did not
+/// reduce it. The bound stays finite and the parsed value is dropped after use.
+pub const MAX_EXTRACTOR_JSON_BYTES: usize = 32 * 1024 * 1024;
 /// Opaque provider-owned cursor. Search terms intentionally have no Debug formatting.
 #[derive(Clone)]
 pub struct SearchCursor {
@@ -205,7 +210,7 @@ impl YtDlp {
             &args,
             operation,
             self.timeout,
-            8 * 1024 * 1024,
+            MAX_EXTRACTOR_JSON_BYTES,
             64 * 1024,
             cancelled,
         )?;

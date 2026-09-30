@@ -65,7 +65,8 @@ results by videos, channels, or playlists. Select a video to play, a channel to
 browse its public tabs, or a playlist to browse its videos. Canonical `/channel/UC…`
 and `/playlist?list=…` URLs, standalone `@handles`, and channel-handle URLs are supported. The initial resolver selects up to 1080p,
 preferring H.264 at equal resolution/frame rate. No network work occurs on clean
-launch. History, autoplay, previews, telemetry, and background refresh are off.
+launch unless you chose to remember an account session, which is verified once
+at launch to sign you back in. History, autoplay, previews, telemetry, and background refresh are off.
 
 ```sh
 ./target/release/serein --local /absolute/path/video.mp4 --subtitle /absolute/path/subtitles.srt

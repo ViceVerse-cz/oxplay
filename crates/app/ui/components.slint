@@ -200,7 +200,7 @@ export component Action inherits Rectangle {
     min-width: compact ? 40px : 70px;
     // Filled/tonal actions are pills; quiet rows keep a softer rounded rectangle.
     border-radius: root.corner-radius >= 0px ? root.corner-radius : root.on-video || (root.compact && !root.stacked && root.variant == quiet) || root.variant != quiet ? self.height / 2 : 10px;
-    background: root.on-video ? (pressed ? #ffffff38 : hovered ? #ffffff24 : selected ? #ffffff18 : transparent)
+    background: root.on-video ? (pressed ? #ffffff38 : hovered ? #ffffff2e : selected ? #ffffff18 : variant == secondary ? #ffffff1f : transparent)
         : variant == primary ? (pressed ? Colors.primary-pressed : hovered ? Colors.primary-hover : Colors.primary)
         : variant == quiet ? (pressed ? Colors.strong : hovered ? (selected ? Colors.pressed : Colors.hover) : selected ? Colors.selected : transparent)
         : pressed ? Colors.strong : hovered || selected ? Colors.pressed : Colors.hover;
@@ -276,7 +276,7 @@ export component Action inherits Rectangle {
         width: parent.width - self.x - (root.variant == quiet ? 12px : 16px); height: parent.height;
         text: root.label; color: root.foreground; font-size: 14px;
         font-weight: root.variant != quiet || root.selected ? 600 : 400;
-        horizontal-alignment: root.variant == quiet || root.icon-name != "" ? left : center;
+        horizontal-alignment: (root.variant == quiet && !root.on-video) || root.icon-name != "" ? left : center;
         vertical-alignment: center; overflow: elide;
     }
     if root.compact && root.stacked: Text {

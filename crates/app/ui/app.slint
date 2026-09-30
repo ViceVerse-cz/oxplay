@@ -812,7 +812,7 @@ export component App inherits Window {
             }
             if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
-            if !root.account-connected: CheckBox { text: "Remember this session using protected storage"; checked <=> root.account-remember; }
+            if !root.account-connected: CheckBox { text: "Remember this session and sign in automatically (protected storage)"; checked <=> root.account-remember; }
             if !root.account-connected: HorizontalLayout {
                 height: 42px; spacing: 12px;
                 Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; variant: ActionVariant.primary; width: 240px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
@@ -911,13 +911,20 @@ export component App inherits Window {
                 VerticalLayout {
                     x: max(16px, (parent.width - 420px) / 2); y: max(12px, (parent.height - self.height) / 2);
                     width: min(420px, parent.width - 32px); height: self.preferred-height;
-                    spacing: 14px; alignment: start;
-                    Image { source: @image-url("icons/clapperboard.svg"); colorize: #777777; width: 36px; height: 36px; horizontal-stretch: 0; }
+                    spacing: 12px; alignment: start;
+                    // Centre the badge on the same axis as the centred text.
+                    HorizontalLayout { alignment: center; height: 64px;
+                        Rectangle { width: 64px; height: 64px; border-radius: 32px; background: #ffffff14;
+                            Image { x: (parent.width - 30px) / 2; y: (parent.height - 30px) / 2; width: 30px; height: 30px; source: root.watch-load-error != "" ? @image-url("icons/info.svg") : @image-url("icons/clapperboard.svg"); colorize: #9a9a9a; }
+                        }
+                    }
                     Text { text: root.watch-load-error != "" ? "Couldn’t open this video" : root.watch-loading ? "Loading video…" : "Starting playback…"; color: #eeeeee; font-size: 18px; font-weight: 600; horizontal-alignment: center; wrap: word-wrap; }
                     if root.watch-load-error != "": Text { text: root.watch-load-error; color: #bbbbbb; font-size: 13px; horizontal-alignment: center; wrap: word-wrap; }
-                    if root.watch-loading: Rectangle { height: 4px; width: min(200px, parent.width); horizontal-stretch: 0; border-radius: 2px; background: #333333; }
+                    if root.watch-loading: HorizontalLayout { alignment: center; height: 4px;
+                        Rectangle { height: 4px; width: min(200px, parent.width); horizontal-stretch: 0; border-radius: 2px; background: #333333; }
+                    }
                     if root.watch-load-error != "" && (root.watch-load-account || root.recovery-available): HorizontalLayout { height: 36px; spacing: 8px; alignment: center;
-                        Action { label: root.watch-load-account ? "Retry" : root.recovery-ready ? "Retry" : "Retry shortly"; width: 128px; height: 36px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && (root.watch-load-account ? root.account-connected && !root.account-pending : root.recovery-ready); clicked => { root.watch-retry(); } }
+                        Action { on-video: true; variant: ActionVariant.secondary; label: root.watch-load-account ? "Retry" : root.recovery-ready ? "Retry" : "Retry shortly"; width: 128px; height: 36px; horizontal-stretch: 0; enabled: !root.busy && !root.account-busy && (root.watch-load-account ? root.account-connected && !root.account-pending : root.recovery-ready); clicked => { root.watch-retry(); } }
                     }
                 }
             }

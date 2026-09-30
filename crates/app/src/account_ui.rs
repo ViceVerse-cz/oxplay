@@ -81,12 +81,18 @@ pub struct State {
     identity_epoch: Cell<u64>,
     pending_identity_epoch: Cell<u64>,
     write_warning: WriteWarning,
+    /// One launch-time reconnect of a session the user chose to remember.
+    /// Consumed by the first marker inspection; never retried after failure.
+    auto_reconnect: Cell<bool>,
+    /// Set while that launch restore is in flight, so Home can follow it.
+    launch_restore: Cell<bool>,
 }
 impl State {
     pub fn new(
         weak: slint::Weak<App>,
         directory: PathBuf,
         resolver: crate::resolver::SharedResolver,
+        auto_reconnect: bool,
     ) -> Self {
         Self {
             worker: account::Worker::with_resolver(directory, resolver, move || {
@@ -106,6 +112,8 @@ impl State {
             identity_epoch: Cell::new(0),
             pending_identity_epoch: Cell::new(0),
             write_warning: WriteWarning::default(),
+            auto_reconnect: Cell::new(auto_reconnect),
+            launch_restore: Cell::new(false),
         }
     }
     pub fn stop_picker(&self) {
@@ -385,17 +393,8 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     app.on_account_reconnect(move || {
         if let Some(app) = weak.upgrade()
             && app.get_account_consent()
-            && !app.get_account_busy()
-            && let Some(saved) = s.account_ui.saved.borrow().clone()
         {
-            identity_lost(&app, &s);
-            crate::account_playback::clear(&app, &s);
-            app.set_account_status(
-                s.account_ui
-                    .write_warning
-                    .status("Verifying the saved YouTube session…"),
-            );
-            s.account_ui.submit(&app, AccountRequest::Reconnect(saved));
+            reconnect_saved(&app, &s);
         }
     });
     let weak = app.as_weak();
@@ -420,6 +419,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             Err(error) => s.account_ui.set_status(&app, error.to_string()),
         }
         s.account_ui.saved.borrow_mut().take();
+        s.account_ui.auto_reconnect.set(false);
         app.set_account_saved(false);
         app.set_account_forget_needed(true);
         app.set_account_consent(false);
@@ -599,8 +599,21 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     Persistence::Remembered(saved) => { *s.account_ui.saved.borrow_mut() = Some(saved); app.set_account_saved(true); app.set_account_status(s.account_ui.write_warning.status("Identity verified. Session saved in protected storage. Public playback remains guest.")); }
                     Persistence::SaveFailed(error) => { app.set_account_forget_needed(true); app.set_account_status(s.account_ui.write_warning.status(format!("Identity verified; using memory only. {error}"))); }
                 }
+                // A restored launch session replaces the still-untouched local
+                // Home with the account's recommendations; any other page stays.
+                if s.account_ui.launch_restore.replace(false) && app.get_page() == 0 && app.get_home_active() {
+                    crate::home_ui::open(&app, &s, true);
+                }
             }
-            Ok(Response::SavedProfile(profile)) => { app.set_account_saved(profile.is_some()); *s.account_ui.saved.borrow_mut() = profile; }
+            Ok(Response::SavedProfile(profile)) => {
+                app.set_account_saved(profile.is_some());
+                *s.account_ui.saved.borrow_mut() = profile;
+                // The session was remembered with explicit consent; restore it
+                // once at launch so a restart keeps the user signed in.
+                if s.account_ui.auto_reconnect.replace(false) && !app.get_account_connected() {
+                    s.account_ui.launch_restore.set(reconnect_saved(&app, &s));
+                }
+            }
             Ok(Response::Subscriptions(page)) => s.account_ui.publish(&app, page.items.into_iter().map(Item::Channel).collect(), page.next, page.partial),
             Ok(Response::Playlists(page)) => s.account_ui.publish(&app, page.items.into_iter().map(Item::Playlist).collect(), page.next, page.partial),
             Ok(Response::Playlist(contents)) => { s.account_ui.playlist_editable.set(contents.editable); s.account_ui.publish(&app, contents.page.items.into_iter().map(Item::Video).collect(), contents.page.next, contents.page.partial); }
@@ -625,6 +638,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                 app.set_account_status(s.account_ui.write_warning.status(forget_error.map(|e| format!("Disconnected, but saved credential removal needs another attempt: {e}")).unwrap_or_else(|| "Disconnected and saved credentials removed. Local collections were kept.".into())));
             }
             Err(error) => {
+                if kind == PendingKind::Connection { s.account_ui.launch_restore.set(false); }
                 // Home owns its loading/error state for its own request ticket.
                 crate::home_ui::receive_recommendations(&app, &s, result.request_id, Err(error));
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::SessionExpired | serein_youtube::account::AccountError::IdentityNotVerified | serein_youtube::account::AccountError::StaleSession)) {
@@ -651,6 +665,25 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     // Reading this marker cannot access a Keychain item or connect an account.
     state.account_ui.submit(app, AccountRequest::InspectSaved);
+}
+
+/// Verifies the saved session again; the caller owns any consent requirement.
+fn reconnect_saved(app: &App, s: &Rc<UiState>) -> bool {
+    if app.get_account_busy() {
+        return false;
+    }
+    let Some(saved) = s.account_ui.saved.borrow().clone() else {
+        return false;
+    };
+    identity_lost(app, s);
+    crate::account_playback::clear(app, s);
+    app.set_account_status(
+        s.account_ui
+            .write_warning
+            .status("Verifying the saved YouTube session…"),
+    );
+    s.account_ui.submit(app, AccountRequest::Reconnect(saved));
+    true
 }
 
 fn is_private_read(result: &Result<Response, account::WorkerError>) -> bool {

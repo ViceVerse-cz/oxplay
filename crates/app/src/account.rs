@@ -38,7 +38,8 @@ pub enum AccountRequest {
         account_index: u8,
         remember: bool,
     },
-    /// Requires a new, explicit user action, even if a marker exists at startup.
+    /// Explicit Reconnect, or the single launch-time restore of a session the
+    /// user chose to remember (never for finite diagnostics or after failure).
     Reconnect(SavedProfile),
     /// Reads a bounded nonsecret marker and cleans stale app-owned extractor jars
     /// once; never opens Keychain or the network. Call during worker startup.

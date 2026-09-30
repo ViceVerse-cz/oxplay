@@ -891,6 +891,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     // Finite diagnostics and fixtures never contact the completion service.
     let remote_suggestions = !options.finite_diagnostic();
+    // Diagnostics never reconnect a developer's remembered account.
+    let restore_account = !options.finite_diagnostic();
     let save_smoke_video = if options.save_smoke {
         Some(serein_core::VideoId::from_url(
             options
@@ -1083,7 +1085,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = weak.upgrade_in_event_loop(|app| app.global::<SearchSuggestionsUi>().invoke_wake());
     });
     let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
-    let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
+    let account_ui =
+        account_ui::State::new(app.as_weak(), account_directory, resolver, restore_account);
     let state = Rc::new(UiState {
         window_chrome,
         watch_loading: watch_loading::State::default(),
