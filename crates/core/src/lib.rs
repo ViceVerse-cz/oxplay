@@ -543,7 +543,8 @@ pub struct VideoDetails {
     /// Present but malformed/oversized chapter metadata was rejected as a set.
     pub chapters_unavailable: bool,
 }
-/// Read-only public top-level comment. No provider JSON or account write capability.
+/// Read-only public comment (top-level or reply). No provider JSON or account
+/// write capability.
 #[derive(Clone)]
 pub struct CommentSummary {
     pub id: String,
@@ -557,6 +558,9 @@ pub struct CommentSummary {
     /// adapter to an HTTPS Google avatar host. The app still applies its own
     /// exact-host fetch policy; absence means "show the placeholder".
     pub author_thumbnail_url: Option<String>,
+    /// Provider-reported reply total of a top-level comment; absent when not
+    /// reported (never a guessed zero). Always absent for replies.
+    pub reply_count: Option<u64>,
 }
 /// A single controlled refresh attempt owned by one playback lifecycle. Preserve
 /// this budget when replacing expired stream URLs; reset only for a new selection.
