@@ -202,6 +202,19 @@ fn private_permissions_and_symlink_rejection() {
 #[test]
 #[ignore = "explicit local macOS Keychain integration; no real credentials"]
 fn macos_keychain_synthetic_roundtrip() {
+    system_store_synthetic_roundtrip();
+}
+
+/// The same synthetic flow against Windows Credential Manager.
+#[cfg(windows)]
+#[test]
+#[ignore = "explicit Windows Credential Manager integration; no real credentials"]
+fn windows_credential_manager_synthetic_roundtrip() {
+    system_store_synthetic_roundtrip();
+}
+
+#[cfg(any(target_os = "macos", windows))]
+fn system_store_synthetic_roundtrip() {
     let directory = tempfile::tempdir().unwrap();
     let profile = SessionProfile::random().unwrap();
     assert!(

@@ -7,9 +7,11 @@ use chacha20poly1305::{
     XChaCha20Poly1305, XNonce,
     aead::{Aead, KeyInit, Payload},
 };
+#[cfg(unix)]
+use std::fs::OpenOptions;
 use std::{
     fmt,
-    fs::{File, OpenOptions},
+    fs::File,
     io::{Read, Write},
     path::{Path, PathBuf},
 };
@@ -144,7 +146,109 @@ impl KeyStore for SystemKeyStore {
         }
     }
 }
-#[cfg(not(target_os = "macos"))]
+/// Windows Credential Manager: one local-machine-persisted generic credential
+/// per random profile, protected by the user's logon credentials (DPAPI). Like
+/// the macOS Keychain item it is separate from the ciphertext directory, so a
+/// copied envelope cannot be decrypted after disconnect deletes the key.
+#[cfg(windows)]
+mod credential_manager {
+    use super::{Result, SERVICE, VaultError};
+    use windows_sys::Win32::{
+        Foundation::ERROR_NOT_FOUND,
+        Security::Credentials::{
+            CRED_PERSIST_LOCAL_MACHINE, CRED_TYPE_GENERIC, CREDENTIALW, CredDeleteW, CredFree,
+            CredReadW, CredWriteW,
+        },
+    };
+    use zeroize::Zeroizing;
+
+    fn wide(value: &str) -> Vec<u16> {
+        value.encode_utf16().chain(Some(0)).collect()
+    }
+    fn target(profile: &str) -> Vec<u16> {
+        wide(&format!("{SERVICE}/{profile}"))
+    }
+    fn not_found() -> bool {
+        std::io::Error::last_os_error().raw_os_error() == Some(ERROR_NOT_FOUND as i32)
+    }
+
+    pub(super) fn read(profile: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
+        let target = target(profile);
+        let mut credential: *mut CREDENTIALW = std::ptr::null_mut();
+        // SAFETY: CredReadW allocates the credential; it is freed exactly once
+        // after its blob is copied into a zeroizing buffer.
+        unsafe {
+            if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut credential) == 0 {
+                return if not_found() {
+                    Ok(None)
+                } else {
+                    Err(VaultError::KeychainUnavailable)
+                };
+            }
+            let record = &*credential;
+            let bytes = if record.CredentialBlob.is_null() {
+                Zeroizing::new(Vec::new())
+            } else {
+                Zeroizing::new(
+                    std::slice::from_raw_parts(
+                        record.CredentialBlob,
+                        record.CredentialBlobSize as usize,
+                    )
+                    .to_vec(),
+                )
+            };
+            CredFree(credential.cast());
+            Ok(Some(bytes))
+        }
+    }
+
+    pub(super) fn create(profile: &str, record: &[u8]) -> Result<()> {
+        // CredWriteW is an upsert. The caller holds the vault file lock, and a
+        // pre-existing key is reported instead of silently replaced.
+        if read(profile)?.is_some() {
+            return Err(VaultError::InUse);
+        }
+        let mut target = target(profile);
+        let mut user = wide(profile);
+        let mut blob = Zeroizing::new(record.to_vec());
+        let credential = CREDENTIALW {
+            Type: CRED_TYPE_GENERIC,
+            TargetName: target.as_mut_ptr(),
+            CredentialBlobSize: blob.len() as u32,
+            CredentialBlob: blob.as_mut_ptr(),
+            Persist: CRED_PERSIST_LOCAL_MACHINE,
+            UserName: user.as_mut_ptr(),
+            ..Default::default()
+        };
+        // SAFETY: every pointer references a live local buffer for this call.
+        if unsafe { CredWriteW(&credential, 0) } == 0 {
+            return Err(VaultError::KeychainUnavailable);
+        }
+        Ok(())
+    }
+
+    pub(super) fn delete(profile: &str) -> Result<()> {
+        let target = target(profile);
+        // SAFETY: NUL-terminated target name alive for the call.
+        if unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) } == 0 && !not_found() {
+            return Err(VaultError::KeychainUnavailable);
+        }
+        Ok(())
+    }
+}
+#[cfg(windows)]
+impl KeyStore for SystemKeyStore {
+    fn read(&self, profile: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
+        credential_manager::read(profile)
+    }
+    fn create(&self, profile: &str, record: &[u8]) -> Result<()> {
+        credential_manager::create(profile, record)
+    }
+    fn delete(&self, profile: &str) -> Result<()> {
+        credential_manager::delete(profile)
+    }
+}
+#[cfg(not(any(target_os = "macos", windows)))]
 impl KeyStore for SystemKeyStore {
     fn read(&self, _: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
         Err(VaultError::UnsupportedPlatform)
@@ -164,7 +268,7 @@ pub struct ProtectedSessionStore {
 }
 impl ProtectedSessionStore {
     pub fn platform_supported() -> bool {
-        cfg!(target_os = "macos")
+        cfg!(any(target_os = "macos", windows))
     }
 
     /// No automatic import, credential read, or directory creation occurs here.
@@ -363,7 +467,19 @@ fn ensure_private_directory(path: &Path) -> Result<()> {
         Err(_) => Err(VaultError::StorageUnavailable),
     }
 }
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn ensure_private_directory(path: &Path) -> Result<()> {
+    crate::windows_private::ensure_private_directory(path).map_err(windows_error)
+}
+#[cfg(windows)]
+fn windows_error(error: std::io::Error) -> VaultError {
+    if error.kind() == std::io::ErrorKind::InvalidInput {
+        VaultError::UnsafePath
+    } else {
+        VaultError::StorageUnavailable
+    }
+}
+#[cfg(not(any(unix, windows)))]
 fn ensure_private_directory(_: &Path) -> Result<()> {
     Err(VaultError::UnsupportedPlatform)
 }
@@ -397,14 +513,25 @@ fn private_open(path: &Path, create: bool) -> Result<File> {
     }
     Ok(file)
 }
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn private_open(path: &Path, create: bool) -> Result<File> {
+    crate::windows_private::open_no_follow(path, create, create).map_err(windows_error)
+}
+#[cfg(not(any(unix, windows)))]
 fn private_open(_: &Path, _: bool) -> Result<File> {
     Err(VaultError::UnsupportedPlatform)
 }
+#[cfg(not(windows))]
 fn sync_directory(path: &Path) -> Result<()> {
     File::open(path)
         .and_then(|file| file.sync_all())
         .map_err(|_| VaultError::StorageUnavailable)
+}
+/// std cannot open a Windows directory handle for flushing. NTFS journals the
+/// rename metadata, and the envelope contents were synced before the rename.
+#[cfg(windows)]
+fn sync_directory(_: &Path) -> Result<()> {
+    Ok(())
 }
 
 #[cfg(test)]

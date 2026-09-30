@@ -708,23 +708,26 @@ fn now() -> Result<u64, WorkerError> {
 /// Canonicalize only the explicitly selected file; never enumerate a directory.
 fn read_import(path: &Path) -> Result<Zeroizing<Vec<u8>>, WorkerError> {
     let canonical = path.canonicalize().map_err(|_| WorkerError::InvalidFile)?;
-    let mut options = OpenOptions::new();
-    options.read(true);
     #[cfg(unix)]
-    {
+    let file = {
         use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC);
-    }
-    // Platform import safety needs native file-handle validation before enabling Windows.
-    #[cfg(not(unix))]
+        OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+            .open(canonical)
+            .map_err(|_| WorkerError::InvalidFile)?
+    };
+    // The handle itself must be a regular file, never a reparse point.
+    #[cfg(windows)]
+    let file = oxplay_storage::windows_private::open_no_follow(&canonical, false, false)
+        .map_err(|_| WorkerError::InvalidFile)?;
+    #[cfg(not(any(unix, windows)))]
     {
+        let _ = canonical;
         return Err(WorkerError::InvalidFile);
     }
-    #[cfg(unix)]
+    #[cfg(any(unix, windows))]
     {
-        let file = options
-            .open(canonical)
-            .map_err(|_| WorkerError::InvalidFile)?;
         let metadata = file.metadata().map_err(|_| WorkerError::InvalidFile)?;
         if !metadata.is_file() {
             return Err(WorkerError::InvalidFile);
@@ -784,10 +787,34 @@ fn prepare_directory(directory: &Path) -> Result<(), WorkerError> {
         }
         Ok(())
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+        let parent = directory.parent().ok_or(VaultError::UnsafePath)?;
+        std::fs::create_dir_all(parent).map_err(|_| VaultError::StorageUnavailable)?;
+        oxplay_storage::windows_private::ensure_private_directory(directory).map_err(|error| {
+            if error.kind() == std::io::ErrorKind::InvalidInput {
+                VaultError::UnsafePath
+            } else {
+                VaultError::StorageUnavailable
+            }
+        })?;
+        Ok(())
+    }
+    #[cfg(not(any(unix, windows)))]
     {
         Err(VaultError::UnsupportedPlatform.into())
     }
+}
+/// Persist a directory entry change. std cannot open Windows directory handles
+/// for flushing; NTFS journals the rename after the file itself was synced.
+fn sync_directory(directory: &Path) -> Result<(), WorkerError> {
+    #[cfg(not(windows))]
+    File::open(directory)
+        .and_then(|file| file.sync_all())
+        .map_err(|_| VaultError::StorageUnavailable)?;
+    #[cfg(windows)]
+    let _ = directory;
+    Ok(())
 }
 fn read_marker(directory: &Path) -> Result<Option<SavedProfile>, WorkerError> {
     if !directory
@@ -803,6 +830,12 @@ fn read_marker(directory: &Path) -> Result<Option<SavedProfile>, WorkerError> {
     {
         use std::os::unix::fs::OpenOptionsExt;
         options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        // FILE_FLAG_OPEN_REPARSE_POINT: open a link itself, never its target.
+        options.custom_flags(0x0020_0000);
     }
     let file = match options.open(directory.join(MARKER)) {
         Ok(file) => file,
@@ -822,6 +855,14 @@ fn read_marker(directory: &Path) -> Result<Option<SavedProfile>, WorkerError> {
             || metadata.nlink() != 1
             || metadata.uid() != unsafe { libc::geteuid() }
         {
+            return Err(VaultError::UnsafePath.into());
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        // FILE_ATTRIBUTE_REPARSE_POINT: the marker handle must not be a link.
+        if metadata.file_attributes() & 0x400 != 0 {
             return Err(VaultError::UnsafePath.into());
         }
     }
@@ -877,19 +918,14 @@ fn write_marker(directory: &Path, saved: &SavedProfile) -> Result<(), WorkerErro
             .map_err(|_| VaultError::StorageUnavailable)?;
         std::fs::rename(&temporary, directory.join(MARKER))
             .map_err(|_| VaultError::StorageUnavailable)?;
-        File::open(directory)
-            .and_then(|file| file.sync_all())
-            .map_err(|_| VaultError::StorageUnavailable)?;
-        Ok(())
+        sync_directory(directory)
     })();
     let _ = std::fs::remove_file(temporary);
     result
 }
 fn remove_marker(directory: &Path) -> Result<(), WorkerError> {
     match std::fs::remove_file(directory.join(MARKER)) {
-        Ok(()) => File::open(directory)
-            .and_then(|file| file.sync_all())
-            .map_err(|_| VaultError::StorageUnavailable.into()),
+        Ok(()) => sync_directory(directory),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(_) => Err(VaultError::StorageUnavailable.into()),
     }

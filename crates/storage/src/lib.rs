@@ -8,6 +8,8 @@ mod backup;
 mod history;
 mod library_transfer;
 pub mod vault;
+#[cfg(windows)]
+pub mod windows_private;
 pub use history::{
     HistoryCursor, HistoryEntry, MAX_SEARCH_HISTORY, MAX_SEARCH_QUERY_CHARS,
     normalize_search_query, search_query_key,
