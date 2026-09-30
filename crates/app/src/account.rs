@@ -90,7 +90,7 @@ pub enum Response {
     Playlist(PlaylistContents),
     Recommendations(AccountPage<VideoSummary>),
     SubscriptionState(bool),
-    Rating(bool),
+    Rating(serein_youtube::account::VideoRating),
     Mutation(MutationOutcome),
     PlaybackResolved {
         playback: Box<AuthorizedPlayback>,
@@ -1001,7 +1001,7 @@ mod tests {
         for request in [
             AccountRequest::Mutate(AccountMutation::Rating {
                 video_id: VideoId::new("aqz-KE-bpKQ").unwrap(),
-                liked: true,
+                rating: serein_youtube::account::VideoRating::Like,
             }),
             AccountRequest::Reconcile,
             AccountRequest::Subscriptions(None),

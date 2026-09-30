@@ -48,6 +48,7 @@ mod playback_preferences;
 mod playback_ui;
 mod preferences_smoke;
 mod presentation_diagnostics;
+mod rating_ui;
 mod recovery_smoke;
 mod related_focus_smoke;
 mod resolver;

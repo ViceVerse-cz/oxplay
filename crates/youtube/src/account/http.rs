@@ -21,6 +21,7 @@ const ENDPOINTS: &[&str] = &[
     "subscription/subscribe",
     "subscription/unsubscribe",
     "like/like",
+    "like/dislike",
     "like/removelike",
     "browse/edit_playlist",
 ];

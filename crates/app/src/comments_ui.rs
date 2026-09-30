@@ -99,6 +99,7 @@ fn set_details(
         .into(),
     );
     present(app, details);
+    crate::rating_ui::set_count(app, state, details.like_count);
     if guest_comments {
         schedule_auto(app, state);
     }
@@ -111,6 +112,7 @@ pub fn refresh_details(app: &App, state: &UiState, video: &VideoId, details: &Vi
         return;
     }
     present(app, details);
+    crate::rating_ui::set_count(app, state, details.like_count);
 }
 fn present(app: &App, details: &VideoDetails) {
     let ui = app.global::<CommentsUi>();
@@ -137,9 +139,7 @@ fn present(app: &App, details: &VideoDetails) {
     if let Some(date) = &details.upload_date {
         metadata.push(display_format::date(date));
     }
-    if let Some(count) = details.like_count {
-        metadata.push(format!("{} likes", display_format::compact_count(count)));
-    }
+    // The like count is shown on the watch page's like button (rating_ui).
     ui.set_metadata(metadata.join(" · ").into());
     app.set_watch_channel_subscribers(
         details
@@ -250,6 +250,7 @@ pub fn clear_local(app: &App, state: &UiState) {
     ui.set_metadata("".into());
     ui.set_status("".into());
     app.set_watch_channel_subscribers("".into());
+    crate::rating_ui::set_count(app, state, None);
 }
 fn submit(app: &App, state: &UiState, cursor: Option<CommentCursor>) {
     if app.get_busy()

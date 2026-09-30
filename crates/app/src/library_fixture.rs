@@ -192,7 +192,7 @@ pub fn bind(app: &crate::App, state: &std::rc::Rc<crate::UiState>) {
     block!(on_account_play, (index));
     block!(on_account_next, ());
     block!(on_account_reconcile, ());
-    block!(on_account_rating, ());
+    block!(on_account_rating, (like));
     block!(on_open_youtube, ());
     block!(on_open_export_guide, ());
     let weak = app.as_weak();

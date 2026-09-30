@@ -232,7 +232,7 @@ impl Smoke {
         block!(on_account_play, (index));
         block!(on_account_next, ());
         block!(on_account_reconcile, ());
-        block!(on_account_rating, ());
+        block!(on_account_rating, (like));
         block!(on_open_youtube, ());
         block!(on_open_export_guide, ());
         let completed = Rc::new(Cell::new(0));

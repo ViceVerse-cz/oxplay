@@ -236,7 +236,7 @@ pub fn clear(app: &App, state: &Rc<UiState>) {
     app.set_video_texture(slint::Image::default());
     app.set_video_title("".into());
     app.set_video_channel("".into());
-    app.set_rating_known(false);
+    crate::rating_ui::clear(app, state);
     crate::apply_clock(
         app,
         state,
@@ -795,7 +795,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     );
     app.set_video_title(item.video.title.clone().into());
     app.set_video_channel(item.video.channel.clone().into());
-    app.set_rating_known(false);
+    crate::rating_ui::clear(app, state);
     app.set_remote_video(true);
     let quality =
         serein_core::QualityCeiling::from_height(job.policy.max_height).unwrap_or_default();
@@ -809,6 +809,7 @@ pub fn receive(app: &App, state: &Rc<UiState>, response: AccountResponse) {
     app.set_page(2);
     app.set_loaded(true);
     crate::watch_loading::account_finished(app, state);
+    crate::account_ui::read_rating(app, state);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Account playback · Experimental ad filtering · Account captions and private local history are unavailable".into());
     state.account_ui.set_status(

@@ -494,6 +494,73 @@ fn creator_avatar_and_name_share_one_keyboard_accessible_channel_action() {
 }
 
 #[test]
+fn rating_pill_shows_the_public_count_to_guests_and_rates_only_when_connected() {
+    let app = app();
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    app.set_watch_like_count("1.2K".into());
+    let clicks = Rc::new(std::cell::RefCell::new(Vec::new()));
+    let output = clicks.clone();
+    app.on_account_rating(move |like| output.borrow_mut().push(like));
+    settle();
+    // The former explicit read step no longer exists.
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "Check YouTube account like")
+            .next()
+            .is_none()
+    );
+    let like = element(&app, "Like on YouTube · 1.2K likes");
+    let dislike = element(&app, "Dislike on YouTube");
+    assert_eq!(like.accessible_enabled(), Some(false));
+    assert_eq!(dislike.accessible_enabled(), Some(false));
+    like.mock_single_click(slint::platform::PointerEventButton::Left);
+    dislike.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(clicks.borrow().is_empty(), "guests cannot rate");
+
+    app.set_account_connected(true);
+    settle();
+    element(&app, "Like on YouTube · 1.2K likes")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Dislike on YouTube")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(*clicks.borrow(), [true, false]);
+
+    // Rust owns the confirmed/optimistic state and the adjusted count.
+    app.set_rating_known(true);
+    app.set_account_liked(true);
+    app.set_watch_like_count("1.3K".into());
+    settle();
+    let liked = element(&app, "Remove like on YouTube · 1.3K likes");
+    assert_eq!(liked.accessible_checked(), Some(true));
+    assert_eq!(
+        element(&app, "Dislike on YouTube").accessible_checked(),
+        Some(false)
+    );
+    app.set_account_liked(false);
+    app.set_account_disliked(true);
+    settle();
+    assert_eq!(
+        element(&app, "Remove dislike on YouTube").accessible_checked(),
+        Some(true)
+    );
+    // A pending write disables both halves.
+    app.set_account_busy(true);
+    settle();
+    assert_eq!(
+        element(&app, "Remove dislike on YouTube").accessible_enabled(),
+        Some(false)
+    );
+    // Without a public count the like half is icon-only.
+    app.set_watch_like_count("".into());
+    app.set_account_busy(false);
+    settle();
+    element(&app, "Like on YouTube");
+}
+
+#[test]
 fn shared_header_centers_controls_and_bounds_the_creator_hit_region() {
     let app = app();
     app.set_native_header_integrated(true);

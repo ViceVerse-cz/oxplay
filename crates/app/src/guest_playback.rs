@@ -296,7 +296,7 @@ fn publish(
     state.guest_playback.retry.borrow_mut().attempt = None;
     account_playback::leave_for_guest(app, state);
     app.set_video_texture(slint::Image::default());
-    app.set_rating_known(false);
+    crate::rating_ui::clear(app, state);
     app.set_remote_video(true);
     app.set_quality_index(quality.index());
     state.quality_index.set(quality.index() as usize);
@@ -317,6 +317,7 @@ fn publish(
         crate::watch_meta::channel_hint(state, &item.video),
     );
     comments_ui::details(app, state, &item.video.id, &item.details);
+    crate::account_ui::read_rating(app, state);
     crate::focus_intent::apply(app, state, focus_scope);
     app.set_status("Guest playback · Ad filtering is experimental and may miss some ads".into());
 }

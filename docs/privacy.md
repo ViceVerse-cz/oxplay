@@ -48,6 +48,13 @@ a clear user action; no silent escalation. No cookies may be sent to public
 metadata services or arbitrary media hosts. Do not submit extra watch-reporting
 or ad beacons by default; that does not guarantee account history is unaffected.
 
+While an account is connected, loading a YouTube video on the watch page makes
+one authenticated `next` read (when the account worker is idle) to show that
+identity's own like/dislike state. This associates the opened video with the
+account even when playback itself stays guest. It never writes; a rating
+changes only when the user clicks Like or Dislike. Guests see the public like
+count from the guest details with both buttons disabled.
+
 ## Data and credentials
 
 Local subscriptions/playlists are distinct from YouTube account collections.

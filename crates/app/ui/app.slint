@@ -2,6 +2,7 @@
 import { LineEdit, Slider, ListView, CheckBox, Palette, ScrollView } from "std-widgets.slint";
 import { Colors, Action, ActionVariant, ConfirmedChoice, ConfirmedToggle, VideoCard, VideoRow, VideoGroup, AccountRow, CatalogKeys } from "components.slint";
 import { PlayerSettingsPanel } from "player-settings.slint";
+import { RatingPill } from "rating.slint";
 import { LibraryPage, LibraryUi, LibraryRow, SaveUi } from "library.slint";
 import { WatchDetails, CommentsUi, CommentRow } from "comments.slint";
 import { CaptionSelector, CaptionsUi } from "captions.slint";
@@ -154,9 +155,14 @@ export component App inherits Window {
     in property <[string]> account-browser-names;
     in property <bool> account-browser-supported;
     in-out property <int> account-browser-index;
+    // Watch-page rating: the formatted public like count is shown for guests
+    // too; liked/disliked are the connected account's state once known.
+    in property <string> watch-like-count;
     in property <bool> rating-known;
     in property <bool> account-liked;
-    callback account-rating();
+    in property <bool> account-disliked;
+    // true = Like button, false = Dislike button. One explicit write per click.
+    callback account-rating(bool);
     callback account-wake();
     callback account-import();
     callback account-import-path(string, bool);
@@ -1128,7 +1134,7 @@ export component App inherits Window {
             if !root.video-only: HorizontalLayout {
                 x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
                 creator-action := Action {
-                    horizontal-stretch: 0; width: min(max(creator-name.preferred-width, creator-subs.preferred-width) + 62px, max(54px, parent.width - (root.account-connected ? 432px : 332px))); height: 44px; compact: true;
+                    horizontal-stretch: 0; width: min(max(creator-name.preferred-width, creator-subs.preferred-width) + 62px, max(54px, parent.width - (root.remote-video ? 492px : 332px))); height: 44px; compact: true;
                     label: "Open " + root.video-channel + " channel";
                     enabled: root.watch-channel-available && !root.watch-loading;
                     opacity: 1; clicked => { root.open-watch-channel(); }
@@ -1142,7 +1148,13 @@ export component App inherits Window {
                     if root.watch-loading && root.video-channel == "": Rectangle { x: 50px; y: 14px; width: min(160px, max(0px, parent.width - 54px)); height: 16px; border-radius: 4px; background: Colors.raised; }
                 }
                 Rectangle { horizontal-stretch: 1; min-width: 0px; }
-                if root.account-connected && !root.watch-loading && root.watch-load-error == "": Action { variant: ActionVariant.secondary; width: 92px; horizontal-stretch: 0; height: 36px; label: !root.rating-known ? "Check like" : root.account-liked ? "Unlike" : "Like"; accessible-label: !root.rating-known ? "Check YouTube account like" : root.account-liked ? "Unlike on YouTube" : "Like on YouTube"; enabled: !root.account-busy && !root.account-pending; clicked => { root.account-rating(); } }
+                if root.remote-video && !root.watch-loading && root.watch-load-error == "": RatingPill {
+                    horizontal-stretch: 0;
+                    like-count: root.watch-like-count;
+                    liked: root.rating-known && root.account-liked; disliked: root.rating-known && root.account-disliked;
+                    enabled: root.account-connected && !root.account-busy && !root.account-pending;
+                    rate(like) => { root.account-rating(like); }
+                }
                 Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
                 share-button := Action { variant: ActionVariant.secondary; width: 76px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
                 Action { variant: ActionVariant.secondary; width: 92px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }

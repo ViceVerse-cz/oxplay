@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { Colors, Action } from "components.slint";
+
+// YouTube-style joined like/dislike pill. The public like count stays visible
+// for guests; the buttons only act for a connected account, and each click is
+// one explicit rating write. YouTube publishes no dislike count.
+export component RatingPill inherits Rectangle {
+    in property <string> like-count;
+    in property <bool> liked;
+    in property <bool> disliked;
+    in property <bool> enabled;
+    callback rate(bool);
+    private property <length> like-width: root.like-count != "" ? max(64px, count.preferred-width + 54px) : 52px;
+    width: root.like-width + 1px + 48px;
+    height: 36px;
+    border-radius: self.height / 2;
+    clip: true;
+    Action {
+        x: 0px; y: 0px; width: root.like-width; height: parent.height;
+        compact: true; variant: secondary; corner-radius: 0px;
+        checkable: true; selected: root.liked; enabled: root.enabled;
+        label: (root.liked ? "Remove like on YouTube" : "Like on YouTube") + (root.like-count != "" ? " · " + root.like-count + " likes" : "");
+        clicked => { root.rate(true); }
+    }
+    Rectangle { x: root.like-width; y: 8px; width: 1px; height: parent.height - 16px; background: Colors.border; }
+    Action {
+        x: root.like-width + 1px; y: 0px; width: 48px; height: parent.height;
+        compact: true; variant: secondary; corner-radius: 0px;
+        checkable: true; selected: root.disliked; enabled: root.enabled;
+        label: root.disliked ? "Remove dislike on YouTube" : "Dislike on YouTube";
+        clicked => { root.rate(false); }
+    }
+    // Drawn over the actions so a disabled pill keeps the public count legible.
+    Image {
+        x: root.like-count != "" ? 14px : (root.like-width - self.width) / 2; y: (parent.height - self.height) / 2;
+        width: 20px; height: 20px; source: @image-url("icons/thumbs-up.svg");
+        colorize: root.liked ? Colors.accent : Colors.text; opacity: root.enabled ? 1 : 0.5;
+    }
+    count := Text {
+        x: 40px; y: 0px; height: parent.height; visible: root.like-count != "";
+        text: root.like-count; color: Colors.text; font-size: 14px; font-weight: root.liked ? 700 : 600;
+        vertical-alignment: center;
+    }
+    Image {
+        x: root.like-width + 1px + (48px - self.width) / 2; y: (parent.height - self.height) / 2;
+        width: 20px; height: 20px; source: @image-url("icons/thumbs-down.svg");
+        colorize: root.disliked ? Colors.accent : Colors.text; opacity: root.enabled ? 1 : 0.5;
+    }
+}

@@ -77,6 +77,8 @@ pub struct State {
     picker: RefCell<Option<slint::JoinHandle<()>>>,
     playlist_editable: Cell<bool>,
     rating_video: RefCell<Option<RatingTarget>>,
+    /// Watch-page rating presentation and its one unresolved write.
+    pub rating: crate::rating_ui::State,
     playback_capable: Cell<bool>,
     identity_epoch: Cell<u64>,
     pending_identity_epoch: Cell<u64>,
@@ -111,6 +113,7 @@ impl State {
             picker: RefCell::new(None),
             playlist_editable: Cell::new(false),
             rating_video: RefCell::new(None),
+            rating: crate::rating_ui::State::default(),
             playback_capable: Cell::new(false),
             identity_epoch: Cell::new(0),
             pending_identity_epoch: Cell::new(0),
@@ -192,6 +195,10 @@ impl State {
         Ok(id)
     }
     fn submit(&self, app: &App, request: AccountRequest) {
+        self.try_submit(app, request);
+    }
+    /// Returns whether the request was admitted to the single account slot.
+    fn try_submit(&self, app: &App, request: AccountRequest) -> bool {
         if !app.get_account_connected()
             && !matches!(
                 &request,
@@ -204,7 +211,7 @@ impl State {
             app.set_account_status(
                 "Connect and verify an account identity before requesting account data.".into(),
             );
-            return;
+            return false;
         }
         let kind = match &request {
             AccountRequest::Import { .. }
@@ -221,9 +228,17 @@ impl State {
                 self.pending_kind.set(kind);
                 self.pending_identity_epoch.set(self.identity_epoch.get());
                 app.set_account_busy(true);
+                true
             }
-            Err(error) => self.set_status(app, error.to_string()),
+            Err(error) => {
+                self.set_status(app, error.to_string());
+                false
+            }
         }
+    }
+    /// A new watch-page load may read its rating again.
+    pub fn forget_rating_read(&self) {
+        self.rating_video.borrow_mut().take();
     }
     fn clear_rows(&self, app: &App) {
         self.items.borrow_mut().clear();
@@ -248,8 +263,6 @@ impl State {
         app.set_account_identity("".into());
         app.set_account_capabilities("".into());
         app.set_account_pending(false);
-        app.set_rating_known(false);
-        app.set_account_liked(false);
     }
     fn publish(&self, app: &App, items: Vec<Item>, next: Option<AccountCursor>, partial: bool) {
         let rows: Vec<_> = items
@@ -302,6 +315,7 @@ impl State {
 /// Identity loss clears every account-derived view, including Home rows.
 pub fn identity_lost(app: &App, state: &UiState) {
     state.account_ui.clear_identity(app);
+    crate::rating_ui::clear(app, state);
     crate::home_ui::account_cleared(app, state);
 }
 fn capability(value: Capability) -> &'static str {
@@ -677,31 +691,29 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
-    app.on_account_rating(move || {
+    // An explicit click is the only path to a rating write.
+    app.on_account_rating(move |like| {
         let Some(app) = weak.upgrade() else { return };
         let Some(video) = s.current_video.borrow().clone() else {
             return;
         };
-        if !app.get_account_connected() || app.get_account_busy() || app.get_account_pending() {
+        if !app.get_account_connected()
+            || app.get_account_busy()
+            || app.get_account_pending()
+            || !app.get_remote_video()
+        {
             return;
         }
-        s.account_ui.submit(
-            &app,
-            if app.get_rating_known() {
-                AccountRequest::Mutate(AccountMutation::Rating {
-                    video_id: video.id,
-                    liked: !app.get_account_liked(),
-                })
-            } else {
-                {
-                    *s.account_ui.rating_video.borrow_mut() = Some(RatingTarget {
-                        video: video.id.clone(),
-                        generation: s.account_ui.worker.control().generation(),
-                    });
-                    AccountRequest::Rating(video.id)
-                }
-            },
+        let mutation = crate::rating_ui::request(&app, &s, &video.id, like);
+        app.set_account_status(
+            "Submitting your rating once, then checking its remote state…".into(),
         );
+        if !s
+            .account_ui
+            .try_submit(&app, AccountRequest::Mutate(mutation))
+        {
+            crate::rating_ui::finished(&app, &s, Err(false));
+        }
     });
     let weak = app.as_weak();
     let s = state.clone();
@@ -757,10 +769,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             Ok(Response::Playlist(contents)) => { s.account_ui.playlist_editable.set(contents.editable); s.account_ui.publish(&app, contents.page.items.into_iter().map(Item::Video).collect(), contents.page.next, contents.page.partial); }
             Ok(Response::Recommendations(page)) => crate::home_ui::receive_recommendations(&app, &s, result.request_id, Ok(page)),
             Ok(Response::SubscriptionState(subscribed)) => app.set_account_status(if subscribed { "YouTube confirms this channel is subscribed." } else { "YouTube confirms this channel is not subscribed." }.into()),
-            Ok(Response::Rating(liked)) => {
-                let current = s.current_video.borrow();
-                if s.account_ui.rating_video.borrow().as_ref().is_some_and(|target| target.matches(current.as_ref().map(|v| &v.id), result.generation)) {
-                    app.set_account_liked(liked); app.set_rating_known(true);
+            Ok(Response::Rating(rating)) => {
+                let current = s.current_video.borrow().as_ref().map(|v| v.id.clone());
+                if s.account_ui.rating_video.borrow().as_ref().is_some_and(|target| target.matches(current.as_ref(), result.generation)) {
+                    crate::rating_ui::observed(&app, &s, rating);
                 }
             }
             Ok(Response::PlaybackResolved { .. }) => {
@@ -768,8 +780,10 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             }
             Ok(Response::Mutation(outcome)) => {
                 let pending = outcome == MutationOutcome::NeedsReconciliation;
-                app.set_account_pending(pending); app.set_rating_known(false);
-                app.set_account_status(if pending { "The change has an unknown outcome. Check its remote state before another write; it will not be repeated automatically." } else { "YouTube's remote state confirms the change. Refresh the account list to view it." }.into());
+                let rating = crate::rating_ui::write_pending(&s);
+                app.set_account_pending(pending);
+                crate::rating_ui::finished(&app, &s, Ok(outcome));
+                app.set_account_status(if pending { "The change has an unknown outcome. Check its remote state before another write; it will not be repeated automatically." } else if rating { "YouTube's remote state confirms your rating." } else { "YouTube's remote state confirms the change. Refresh the account list to view it." }.into());
             }
             Ok(Response::Disconnected { forget_error }) => {
                 app.set_account_forget_needed(forget_error.is_some());
@@ -784,10 +798,14 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     crate::account_playback::clear(&app, &s);
                 }
                 if matches!(error, account::WorkerError::Account(serein_youtube::account::AccountError::ReconciliationRequired)) { app.set_account_pending(true); }
+                // A failed rating write rolls back; an unconfirmed one stays unknown.
+                if kind == PendingKind::Mutation { crate::rating_ui::finished(&app, &s, Err(result.unconfirmed_mutation || app.get_account_pending())); }
                 app.set_account_status(s.account_ui.write_warning.status(error.to_string()));
                 if kind == PendingKind::Connection { s.account_ui.submit(&app, AccountRequest::InspectSaved); }
             }
         }
+        // A rating read deferred by a busy account slot runs once it is idle.
+        read_rating(&app, &s);
     });
     app.on_open_youtube(|| {
         std::thread::spawn(|| {
@@ -803,6 +821,38 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     // Reading this marker cannot access a Keychain item or connect an account.
     state.account_ui.submit(app, AccountRequest::InspectSaved);
+}
+
+/// Reads the connected identity's rating for the loaded watch-page video when
+/// the single account slot is idle. Never writes, and reads at most once per
+/// video load and account generation; a busy slot defers it to the next wake.
+pub fn read_rating(app: &App, state: &UiState) {
+    let s = &state.account_ui;
+    if !app.get_account_connected()
+        || app.get_account_busy()
+        || app.get_account_pending()
+        || !app.get_loaded()
+        || !app.get_remote_video()
+        || !s.rating.wants_read()
+    {
+        return;
+    }
+    let Some(video) = state.current_video.borrow().as_ref().map(|v| v.id.clone()) else {
+        return;
+    };
+    let generation = s.worker.control().generation();
+    if s.rating_video
+        .borrow()
+        .as_ref()
+        .is_some_and(|target| target.matches(Some(&video), generation))
+    {
+        return;
+    }
+    *s.rating_video.borrow_mut() = Some(RatingTarget {
+        video: video.clone(),
+        generation,
+    });
+    s.submit(app, AccountRequest::Rating(video));
 }
 
 /// Verifies the saved session again; the caller owns any consent requirement.
@@ -954,7 +1004,9 @@ mod tests {
     }
     #[test]
     fn expired_identity_drops_read_publication_but_keeps_mutation_outcomes_and_errors() {
-        assert!(is_private_read(&Ok(Response::Rating(true))));
+        assert!(is_private_read(&Ok(Response::Rating(
+            serein_youtube::account::VideoRating::Like
+        ))));
         assert!(is_private_read(&Ok(Response::SubscriptionState(true))));
         assert!(is_private_read(&Ok(Response::Recommendations(
             serein_youtube::account::AccountPage {

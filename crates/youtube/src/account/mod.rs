@@ -213,6 +213,15 @@ pub struct PlaylistContents {
     pub page: AccountPage<AccountPlaylistItem>,
     pub editable: bool,
 }
+/// The connected identity's own rating of a video. YouTube publishes no
+/// dislike count; this is only the account's private state.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum VideoRating {
+    #[default]
+    None,
+    Like,
+    Dislike,
+}
 /// Only construct in response to the user's explicit account action. Import/read
 /// operations never call this API and never imply authorization to write.
 #[derive(Clone)]
@@ -223,7 +232,7 @@ pub enum AccountMutation {
     },
     Rating {
         video_id: VideoId,
-        liked: bool,
+        rating: VideoRating,
     },
     AddToPlaylist {
         playlist_id: PlaylistId,
@@ -578,7 +587,11 @@ impl AccountClient {
         let value = self.request("browse", json!({"browseId":id.0}), false, operation)?;
         parser::subscription_state(&value, id)
     }
-    pub fn rating(&self, id: &VideoId, operation: &OperationContext) -> Result<bool, AccountError> {
+    pub fn rating(
+        &self,
+        id: &VideoId,
+        operation: &OperationContext,
+    ) -> Result<VideoRating, AccountError> {
         let value = self.request("next", json!({"videoId":id.as_str()}), false, operation)?;
         parser::rating(&value)
     }
@@ -666,8 +679,8 @@ impl AccountClient {
             } => self
                 .subscription_state(channel_id, operation)
                 .map(|s| s == *subscribed),
-            AccountMutation::Rating { video_id, liked } => {
-                self.rating(video_id, operation).map(|s| s == *liked)
+            AccountMutation::Rating { video_id, rating } => {
+                self.rating(video_id, operation).map(|s| s == *rating)
             }
             AccountMutation::AddToPlaylist {
                 playlist_id,
@@ -807,11 +820,12 @@ fn mutation_request(
                 false,
             )
         }
-        AccountMutation::Rating { video_id, liked } => (
-            if *liked {
-                "like/like"
-            } else {
-                "like/removelike"
+        AccountMutation::Rating { video_id, rating } => (
+            match rating {
+                VideoRating::Like => "like/like",
+                VideoRating::Dislike => "like/dislike",
+                // Removes either a like or a dislike.
+                VideoRating::None => "like/removelike",
             },
             json!({"target":{"videoId":video_id.as_str()}}),
             true,
@@ -1109,11 +1123,61 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         ));
     }
     #[test]
+    fn dislike_and_removal_are_single_writes_verified_by_a_rating_reread() {
+        let status = |value: &str| {
+            Ok(json!({"likeButtonViewModel": {"likeStatusEntity": {"likeStatus": value}}}))
+        };
+        let mut client = fixture_client(vec![
+            Ok(identity_response()),
+            Ok(json!({})),
+            status("DISLIKE"),
+            Ok(json!({})),
+            status("LIKE"),
+        ]);
+        let video = VideoId::new("abcdefghijk").unwrap();
+        assert_eq!(
+            client.apply_user_mutation(
+                AccountMutation::Rating {
+                    video_id: video.clone(),
+                    rating: VideoRating::Dislike,
+                },
+                &context()
+            ),
+            Ok(MutationOutcome::Verified)
+        );
+        assert_eq!(
+            client.connection().unwrap().capabilities.likes,
+            Capability::Verified
+        );
+        // A reread that disagrees stays pending; it is never retried.
+        assert_eq!(
+            client.apply_user_mutation(
+                AccountMutation::Rating {
+                    video_id: video,
+                    rating: VideoRating::None,
+                },
+                &context()
+            ),
+            Ok(MutationOutcome::NeedsReconciliation)
+        );
+        assert!(client.has_unconfirmed_mutation());
+        assert_eq!(
+            &*client.http.fixture.as_ref().unwrap().calls.borrow(),
+            &[
+                "account/accounts_list",
+                "like/dislike",
+                "next",
+                "like/removelike",
+                "next"
+            ]
+        );
+    }
+    #[test]
     fn writes_require_verified_identity_before_creating_pending_state() {
         let mut client = AccountClient::new(SessionControl::default()).unwrap();
         let mutation = AccountMutation::Rating {
             video_id: VideoId::new("abcdefghijk").unwrap(),
-            liked: true,
+            rating: VideoRating::Like,
         };
         assert_eq!(
             client.apply_user_mutation(mutation, &context()),
@@ -1160,7 +1224,7 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
                 .borrow_mut() = Some(lease.clone());
             let mutation = AccountMutation::Rating {
                 video_id: VideoId::new("abcdefghijk").unwrap(),
-                liked: true,
+                rating: VideoRating::Like,
             };
             let submitted = client.apply_user_mutation(mutation.clone(), &context());
             if uncertain_submission {
@@ -1210,7 +1274,7 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
         ]);
         let mutation = AccountMutation::Rating {
             video_id: VideoId::new("abcdefghijk").unwrap(),
-            liked: true,
+            rating: VideoRating::Like,
         };
         assert_eq!(
             client.apply_user_mutation(mutation.clone(), &context()),
@@ -1444,14 +1508,20 @@ printf '%s' '{"id":"abcdefghijk","title":"Synthetic helper video","url":"https:/
     #[test]
     fn mutation_payload_is_typed_and_does_not_retry() {
         let video = VideoId::new("abcdefghijk").unwrap();
-        let (path, payload, tv) = mutation_request(&AccountMutation::Rating {
-            video_id: video,
-            liked: false,
-        })
-        .unwrap();
-        assert_eq!(path, "like/removelike");
-        assert_eq!(payload["target"]["videoId"], "abcdefghijk");
-        assert!(tv);
+        for (rating, expected) in [
+            (VideoRating::None, "like/removelike"),
+            (VideoRating::Like, "like/like"),
+            (VideoRating::Dislike, "like/dislike"),
+        ] {
+            let (path, payload, tv) = mutation_request(&AccountMutation::Rating {
+                video_id: video.clone(),
+                rating,
+            })
+            .unwrap();
+            assert_eq!(path, expected);
+            assert_eq!(payload["target"]["videoId"], "abcdefghijk");
+            assert!(tv);
+        }
         assert!(
             mutation_request(&AccountMutation::Subscription {
                 channel_id: ChannelId("file:///bad".into()),
