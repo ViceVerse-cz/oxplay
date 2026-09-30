@@ -654,8 +654,12 @@ pub struct Preferences {
 }
 
 /// Supported user-selected ceilings; this does not promise source availability.
+/// Ceilings above 1080p are experimental: YouTube usually offers them only as
+/// VP9/AV1, so hardware decode depends on the machine (see docs/playback-quality.md).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum QualityCeiling {
+    P2160,
+    P1440,
     #[default]
     P1080,
     P720,
@@ -665,7 +669,9 @@ pub enum QualityCeiling {
     P144,
 }
 impl QualityCeiling {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 8] = [
+        Self::P2160,
+        Self::P1440,
         Self::P1080,
         Self::P720,
         Self::P480,
@@ -675,6 +681,8 @@ impl QualityCeiling {
     ];
     pub const fn height(self) -> u16 {
         match self {
+            Self::P2160 => 2160,
+            Self::P1440 => 1440,
             Self::P1080 => 1080,
             Self::P720 => 720,
             Self::P480 => 480,
@@ -750,6 +758,12 @@ mod tests {
     #[test]
     fn playback_presets_roundtrip_and_reject_unsupported_values() {
         assert_eq!(PlaybackPreferences::default().quality.height(), 1080);
+        assert_eq!(QualityCeiling::ALL[0].height(), 2160);
+        assert!(
+            QualityCeiling::ALL
+                .windows(2)
+                .all(|pair| pair[0].height() > pair[1].height())
+        );
         assert_eq!(PlaybackPreferences::default().speed.rate(), 1.);
         for quality in QualityCeiling::ALL {
             assert_eq!(QualityCeiling::from_height(quality.height()), Some(quality));
@@ -759,14 +773,14 @@ mod tests {
             assert_eq!(PlaybackSpeed::from_millis(speed.millis()), Some(speed));
             assert_eq!(PlaybackSpeed::from_rate(speed.rate()), Some(speed));
         }
-        for height in [0, 143, 145, 2160, u16::MAX] {
+        for height in [0, 143, 145, 1081, 2159, 4320, u16::MAX] {
             assert_eq!(QualityCeiling::from_height(height), None);
         }
         for speed in [f64::NAN, f64::INFINITY, 0., 0.25, 1.25, 4.] {
             assert_eq!(PlaybackSpeed::from_rate(speed), None);
         }
         assert_eq!(QualityCeiling::from_index(-1), None);
-        assert_eq!(QualityCeiling::from_index(6), None);
+        assert_eq!(QualityCeiling::from_index(8), None);
     }
     #[test]
     fn urls_are_restricted() {

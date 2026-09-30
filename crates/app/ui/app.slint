@@ -129,9 +129,10 @@ export component App inherits Window {
     changed native-overlay-open => { root.prepare-native-overlay(); }
     changed show-info => { root.prepare-native-overlay(); }
     changed loaded => { root.prepare-native-overlay(); }
-    in-out property <int> quality-index;
+    // Indexes follow serein_core::QualityCeiling::ALL; 2 is the 1080p default.
+    in-out property <int> quality-index: 2;
     in property <int> speed-index: 1;
-    in property <int> default-quality-index: 0;
+    in property <int> default-quality-index: 2;
     in property <bool> speed-busy;
     callback quality(int);
     in property <[AccountRow]> account-rows;
@@ -855,8 +856,8 @@ export component App inherits Window {
             CheckBox { text: "Blur behind window (experimental)"; enabled: root.window-blur-available && root.window-translucent; checked <=> root.window-blur-enabled; }
             Text { text: root.window-appearance-status + " Changes apply to this session."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Text { text: "Default maximum quality"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            ConfirmedChoice { max-width: 360px; accessible-label: "Default maximum quality"; model: ["1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
-            Text { text: "Applies to new videos. The current video's quality is controlled on its watch page."; color: Colors.muted; wrap: word-wrap; }
+            ConfirmedChoice { max-width: 360px; accessible-label: "Default maximum quality"; model: ["2160p (4K)", "1440p", "1080p", "720p", "480p", "360p", "240p", "144p"]; acknowledged-index: root.default-quality-index; choose(index) => { root.default-quality(index); } }
+            Text { text: "Applies to new videos. The current video's quality is controlled on its watch page. Above 1080p YouTube usually offers VP9 or AV1, which some machines cannot decode in hardware."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Privacy by default"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             Text { text: "Serein does not send telemetry or keep local watch history by default. YouTube still receives requests when you search or play a video."; color: Colors.muted; wrap: word-wrap; }

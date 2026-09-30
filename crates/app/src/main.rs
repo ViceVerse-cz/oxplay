@@ -916,7 +916,13 @@ fn guest_media_headers_supported(item: &serein_core::ResolvedPlayback) -> bool {
                 })
             })
 }
-const QUALITY_HEIGHTS: [u16; 6] = [1080, 720, 480, 360, 240, 144];
+/// The active ceiling; `quality_index` indexes `QualityCeiling::ALL`.
+fn active_quality(state: &UiState) -> serein_core::QualityCeiling {
+    serein_core::QualityCeiling::ALL
+        .get(state.quality_index.get())
+        .copied()
+        .unwrap_or_default()
+}
 
 fn load_remote(
     state: &UiState,
@@ -1209,7 +1215,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         playlists: RefCell::new(Vec::new()),
         preferences: Cell::new(serein_storage::LocalPreferences::default()),
         current_video: RefCell::new(None),
-        quality_index: Cell::new(0),
+        quality_index: Cell::new(serein_core::QualityCeiling::default().index() as usize),
         displayed_elapsed: Cell::new(u64::MAX),
         displayed_remaining: Cell::new(u64::MAX),
         displayed_duration: Cell::new(u64::MAX),
@@ -1309,10 +1315,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if app.get_busy() || !app.get_remote_video() {
             return;
         }
-        let Some(height) = usize::try_from(index)
-            .ok()
-            .and_then(|i| QUALITY_HEIGHTS.get(i))
-            .copied()
+        let Some(height) =
+            serein_core::QualityCeiling::from_index(index).map(serein_core::QualityCeiling::height)
         else {
             return;
         };
@@ -2329,10 +2333,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "initial guest playback did not become ready"
                             );
                             position.set(snapshot.position);
-                            app.invoke_quality(1);
+                            app.invoke_quality(serein_core::QualityCeiling::P720.index());
                         }
                         50 => {
-                            assert_eq!(s.quality_index.get(), 1, "720p ceiling was not resolved");
+                            assert_eq!(
+                                s.quality_index.get(),
+                                serein_core::QualityCeiling::P720.index() as usize,
+                                "720p ceiling was not resolved"
+                            );
                             assert!(
                                 snapshot.height <= 720 && snapshot.position >= position.get(),
                                 "quality change lost position or exceeded requested ceiling"
@@ -2342,10 +2350,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         55 => {
                             assert!(snapshot.paused, "pause was not observed");
                             position.set(snapshot.position);
-                            app.invoke_quality(2);
+                            app.invoke_quality(serein_core::QualityCeiling::P480.index());
                         }
                         _ => {
-                            assert_eq!(s.quality_index.get(), 2, "480p ceiling was not resolved");
+                            assert_eq!(
+                                s.quality_index.get(),
+                                serein_core::QualityCeiling::P480.index() as usize,
+                                "480p ceiling was not resolved"
+                            );
                             assert!(
                                 snapshot.paused && snapshot.height <= 480,
                                 "quality change did not preserve pause/ceiling"

@@ -1,11 +1,34 @@
 # Maximum playback quality and resume
 
 The shared Slint playback-settings popup offers explicit ceilings from 144p to
-1080p. These are labeled “Up to …”, not advertised as a list of exact formats.
+2160p (4K). These are labeled “Up to …”, not advertised as a list of exact formats.
 The resolver chooses the highest available resolution/frame rate within the
 selected ceiling, preferring H.264 only at equal resolution/frame rate. It does
 not lower quality to meet a performance budget. New videos initially use 1080p
 maximum. Live/4K/HDR remain unqualified.
+
+## Ceilings above 1080p (experimental)
+
+The 1440p and 2160p ceilings are selectable but not a supported 4K60 claim.
+YouTube normally publishes those heights only as VP9 or AV1, never H.264, so the
+yt-dlp selector filters by height and protocol only, never by codec, and sorts
+`height,fps,vcodec:h264`. Resolution and frame rate therefore still win; at
+equal height/fps yt-dlp's limited codec sort ranks H.264 first and then the codec
+nearest to it (HEVC, VP9, VP9.2/HDR, AV1). In practice a 4K ceiling yields SDR
+VP9 when offered. A manual yt-dlp 2026.08.19 check of the public test video on
+2026-09-30 selected `315` VP9 2160p60 SDR, `308` VP9 1440p60 and, at the 1080p
+ceiling, `299` H.264 1080p60, i.e. ≤1080p behavior is unchanged.
+
+Hardware decode caveat: mpv uses `hwdec=auto-safe`, so whether VP9/AV1 is
+decoded in hardware depends on the GPU, OS and FFmpeg hwaccel (for example,
+Apple Silicon AV1 hardware decode exists only on M3 or later, and older
+integrated GPUs may lack VP9 and AV1 entirely). VP9/AV1 hardware decode has not
+been verified on any reference machine. Without it mpv decodes in software, which can
+drop frames and raise CPU/power well beyond the 1080p budgets. The technical-info
+panel and decode warning report the active decoder; a software fallback is not
+optimized playback. The default forward buffer was sized for 1080p and was not
+re-measured for 4K bitrates. HDR sources are neither selected deliberately nor
+tone-mapped or advertised.
 
 A user change submits one cancellable request to the existing supervised guest
 resolver. Current playback continues while extraction runs. Failed extraction

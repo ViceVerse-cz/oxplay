@@ -174,6 +174,11 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
     let attempted = Rc::new(Cell::new(None));
     let output = attempted.clone();
     app.on_quality(move |index| output.set(Some(index)));
+    let p1080 = serein_core::QualityCeiling::P1080.index();
+    let p720 = serein_core::QualityCeiling::P720.index();
+    // The Slint defaults must match the core default before Rust hydrates them.
+    assert_eq!(app.get_quality_index(), p1080);
+    assert_eq!(app.get_default_quality_index(), p1080);
     settle();
     element(&app, "Playback settings").invoke_accessible_default_action();
     settle();
@@ -183,8 +188,21 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
     element(&app, "Maximum quality Up to 720p")
         .mock_single_click(slint::platform::PointerEventButton::Left);
     settle();
-    assert_eq!(attempted.get(), Some(1));
-    assert_eq!(app.get_quality_index(), 0);
+    assert_eq!(attempted.get(), Some(p720));
+    assert_eq!(app.get_quality_index(), p1080);
+    for (label, index) in [
+        (
+            "Up to 2160p (4K)",
+            serein_core::QualityCeiling::P2160.index(),
+        ),
+        ("Up to 1440p", serein_core::QualityCeiling::P1440.index()),
+    ] {
+        element(&app, &format!("Maximum quality {label}"))
+            .mock_single_click(slint::platform::PointerEventButton::Left);
+        settle();
+        assert_eq!(attempted.get(), Some(index));
+        assert_eq!(app.get_quality_index(), p1080);
+    }
     assert_eq!(
         element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
         Some(true)
@@ -199,14 +217,20 @@ fn settings_quality_pointer_selection_stays_open_until_acknowledgement() {
         element(&app, "Maximum quality Up to 480p").accessible_enabled(),
         Some(false)
     );
-    app.set_quality_index(1);
+    app.set_quality_index(p720);
     app.set_busy(false);
     settle();
     assert_eq!(
         element(&app, "Maximum quality Up to 720p").accessible_item_selected(),
         Some(true)
     );
-    app.set_quality_index(0);
+    app.set_quality_index(serein_core::QualityCeiling::P2160.index());
+    settle();
+    assert_eq!(
+        element(&app, "Maximum quality Up to 2160p (4K)").accessible_item_selected(),
+        Some(true)
+    );
+    app.set_quality_index(p1080);
     settle();
     assert_eq!(
         element(&app, "Maximum quality Up to 1080p").accessible_item_selected(),
