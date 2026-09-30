@@ -691,6 +691,32 @@ impl Options {
         }
         Ok(options)
     }
+
+    /// Finite smoke tests, fixtures and native diagnostics. These never make
+    /// incidental network requests such as typed search completions.
+    pub fn finite_diagnostic(&self) -> bool {
+        self.smoke
+            || self.native_video_child
+            || self.native_video_child_smoke
+            || self.library_resource_fixture.is_some()
+            || self.library_resource_smoke
+            || self.related_focus_check
+            || self.save_smoke
+            || self.recovery_smoke
+            || self.pip_smoke
+            || self.home_smoke
+            || self.quality_smoke
+            || self.comments_smoke
+            || self.captions_smoke
+            || self.clear_local_smoke
+            || self.library_smoke
+            || self.library_keyboard_smoke
+            || self.collection_window_smoke
+            || self.refresh_smoke
+            || self.preferences_smoke.is_some()
+            || self.soak_minutes.is_some()
+            || self.demo_related
+    }
 }
 
 fn parse_size(value: &str) -> Result<(u32, u32), &'static str> {
@@ -751,7 +777,8 @@ pub const HELP: &str = "Serein experimental native client
   --diagnostics     Finite playback snapshot checkpoints
   --quit-after N    Exit after N seconds, from 1 to 86400
   --help            Show this help without opening a window
-No network requests occur until search or URL submission.";
+No network requests occur until search or URL submission, or typing in search while
+YouTube search suggestions are on (Settings; not in finite diagnostics).";
 
 #[cfg(test)]
 mod tests {
@@ -978,6 +1005,29 @@ mod tests {
     use super::*;
     fn parse(args: &[&str]) -> Result<Options, &'static str> {
         Options::parse(args.iter().map(OsString::from))
+    }
+    #[test]
+    fn finite_diagnostics_disable_remote_search_suggestions() {
+        assert!(!parse(&[]).unwrap().finite_diagnostic());
+        assert!(
+            !parse(&["--search", "synthetic"])
+                .unwrap()
+                .finite_diagnostic()
+        );
+        assert!(
+            parse(&["--home-smoke-test", "--data-root", "/synthetic/new-profile"])
+                .unwrap()
+                .finite_diagnostic()
+        );
+        assert!(
+            parse(&[
+                "--library-smoke-test",
+                "--data-root",
+                "/synthetic/new-profile"
+            ])
+            .unwrap()
+            .finite_diagnostic()
+        );
     }
     #[test]
     fn related_focus_diagnostic_is_exact_offline_bounded_and_isolated() {

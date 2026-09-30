@@ -432,6 +432,11 @@ pub fn set_comments_enabled(app: &App, state: &UiState, enabled: bool) -> bool {
     prefs.comments_enabled = enabled;
     save_preferences(app, state, prefs)
 }
+pub fn set_search_suggestions(app: &App, state: &UiState, enabled: bool) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.search_suggestions = enabled;
+    save_preferences(app, state, prefs)
+}
 pub fn save_quality(app: &App, state: &UiState, quality: serein_core::QualityCeiling) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.quality = quality;
@@ -1254,6 +1259,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     if !s.playback_preferences.ready() {
                       s.preferences.set(prefs);
                     crate::comments_ui::sync_preferences(&app, &s);
+                    crate::search_suggestions::sync_preferences(&app, &s);
                       app.set_theme(match prefs.theme {
                         serein_storage::Theme::System => 0,
                         serein_storage::Theme::Light => 1,
@@ -1358,11 +1364,15 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     };
                     if published { s.library_ui.last_page_read.set(Some(ticket)); }
                 }
-                library::Response::HistoryRecorded(_) => {}
+                library::Response::HistoryRecorded(_) | library::Response::SearchHistoryWritten => {}
+                library::Response::SearchHistory { ticket, result } => {
+                    crate::search_suggestions::loaded(&app, &s, ticket, result);
+                }
                 library::Response::BackgroundError(error) => status(&app, error),
                 library::Response::PreferencesFailed(write, error) => {
                     let latest = s.library_ui.finish_preferences(write);
                     crate::comments_ui::sync_preferences(&app, &s);
+                    crate::search_suggestions::sync_preferences(&app, &s);
                     app.set_thumbnail_cache_index(thumbnail_cache_index(s.preferences.get().thumbnail_cache_mib).unwrap_or(0));
                     if latest {
                         crate::playback_preferences::save_failed(&app, &s, write.value.playback);
@@ -1385,6 +1395,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     let theme_changed = s.preferences.get().theme != prefs.theme;
                     s.preferences.set(prefs);
                     crate::comments_ui::sync_preferences(&app, &s);
+                    crate::search_suggestions::sync_preferences(&app, &s);
                     app.set_thumbnail_cache_index(thumbnail_cache_index(prefs.thumbnail_cache_mib).unwrap_or(0));
                     // Keep newer admitted previews; unrelated writes must not
                     // override a session-only diagnostic appearance.
@@ -1506,6 +1517,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     s.preferences.set(prefs);
                     s.library_ui.requested_preferences.set(None);
                     crate::comments_ui::sync_preferences(&app, &s);
+                    crate::search_suggestions::local_data_cleared(&app, &s);
                     s.library_ui.last_record.borrow_mut().take();
                     s.library_ui.save_target.borrow_mut().take();
                     app.global::<SaveUi>().set_video_title("".into());
@@ -1915,15 +1927,21 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     let weak = app.as_weak();
     let s = state.clone();
     app.global::<LibraryUi>().on_set_retention(move |days| {
-        if let Some(app) = weak.upgrade() {
-            submit(&app, &s, library::Request::HistoryRetention(days as u16));
+        if let Some(app) = weak.upgrade()
+            && submit(&app, &s, library::Request::HistoryRetention(days as u16))
+        {
+            // Retention also prunes stored searches; re-read that list.
+            crate::search_suggestions::reload(&s);
         }
     });
     let weak = app.as_weak();
     let s = state.clone();
     app.global::<LibraryUi>().on_clear_history(move || {
-        if let Some(app) = weak.upgrade() {
-            submit(&app, &s, library::Request::ClearHistory);
+        if let Some(app) = weak.upgrade()
+            && submit(&app, &s, library::Request::ClearHistory)
+        {
+            // The same request deletes stored searches; forget them now too.
+            crate::search_suggestions::history_cleared(&app, &s);
         }
     });
     let weak = app.as_weak();

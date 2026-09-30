@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 use super::*;
+use std::time::SystemTime;
 
 #[test]
 fn artwork_limit_persists_reopens_and_clear_restores_the_bounded_default() {
@@ -92,7 +93,7 @@ fn v5_artwork_migration_preserves_collections_and_existing_preferences() {
     }
     let store = LocalStore::open(&path).unwrap();
     let prefs = store.preferences().unwrap();
-    assert_eq!(store.schema_version().unwrap(), 7);
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
     assert_eq!(prefs.thumbnail_cache_mib, 256);
     assert_eq!((prefs.volume_percent, prefs.theme), (43, Theme::Dark));
     assert_eq!(prefs.playback.quality, QualityCeiling::P720);
@@ -1005,7 +1006,6 @@ fn local_import_rolls_back_on_database_failure() {
 
 #[test]
 fn local_history_requires_opt_in_and_retention_deletes_rows() {
-    use std::time::SystemTime;
     let mut store = LocalStore::in_memory().unwrap();
     let now = SystemTime::UNIX_EPOCH + Duration::from_secs(200 * 86400);
     assert_eq!(store.history_retention_days().unwrap(), 30);
@@ -1137,4 +1137,214 @@ fn comments_setting_rejects_corrupt_readback() {
         )
         .unwrap();
     assert_eq!(store.preferences(), Err(StorageError::CorruptData));
+}
+
+fn enable_history(store: &LocalStore) {
+    let mut prefs = store.preferences().unwrap();
+    prefs.privacy.local_history = true;
+    store.set_preferences(prefs).unwrap();
+}
+fn search_rows(store: &LocalStore) -> i64 {
+    store
+        .connection
+        .query_row("SELECT COUNT(*) FROM local_search_history", [], |row| {
+            row.get(0)
+        })
+        .unwrap()
+}
+
+#[test]
+fn v8_migration_preserves_v7_data_and_defaults_remote_suggestions_on() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("v7.sqlite3");
+    {
+        let connection = Connection::open(&path).unwrap();
+        for schema in [
+            include_str!("schema_v1.sql"),
+            include_str!("schema_v2.sql"),
+            include_str!("schema_v3.sql"),
+            include_str!("schema_v4.sql"),
+            include_str!("schema_v5.sql"),
+            include_str!("schema_v6.sql"),
+            include_str!("schema_v7.sql"),
+        ] {
+            connection.execute_batch(schema).unwrap();
+        }
+        connection.execute_batch("UPDATE local_preferences SET volume_percent=29,local_history=1,comments_enabled=0; PRAGMA user_version=7;
+            INSERT INTO local_playlists(name) VALUES ('Synthetic preserved collection');").unwrap();
+    }
+    let mut store = LocalStore::open(&path).unwrap();
+    assert_eq!(store.schema_version().unwrap(), SCHEMA_VERSION);
+    let prefs = store.preferences().unwrap();
+    assert!(prefs.search_suggestions);
+    assert!(prefs.privacy.local_history);
+    assert!(!prefs.comments_enabled);
+    assert_eq!(prefs.volume_percent, 29);
+    assert_eq!(store.playlists(None, 10).unwrap().items.len(), 1);
+    assert!(store.search_history(SystemTime::now()).unwrap().is_empty());
+    assert!(
+        store
+            .record_search("synthetic migrated query", SystemTime::now())
+            .unwrap()
+    );
+}
+
+#[test]
+fn remote_suggestion_setting_persists_rejects_corruption_and_clear_restores_default() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("suggestions.sqlite3");
+    let mut store = LocalStore::open(&path).unwrap();
+    let mut prefs = store.preferences().unwrap();
+    prefs.search_suggestions = false;
+    store.set_preferences(prefs).unwrap();
+    assert!(
+        !LocalStore::open(&path)
+            .unwrap()
+            .preferences()
+            .unwrap()
+            .search_suggestions
+    );
+    store.clear_local_data().unwrap();
+    assert!(store.preferences().unwrap().search_suggestions);
+    assert!(
+        store
+            .connection
+            .execute("UPDATE local_preferences SET search_suggestions=2", [])
+            .is_err()
+    );
+    store
+        .connection
+        .execute_batch(
+            "PRAGMA ignore_check_constraints=ON; UPDATE local_preferences SET search_suggestions=2;",
+        )
+        .unwrap();
+    assert_eq!(store.preferences(), Err(StorageError::CorruptData));
+}
+
+#[test]
+fn search_history_requires_the_local_history_opt_in() {
+    let mut store = LocalStore::in_memory().unwrap();
+    let now = SystemTime::now();
+    assert!(!store.record_search("synthetic private query", now).unwrap());
+    assert_eq!(search_rows(&store), 0);
+    assert!(store.search_history(now).unwrap().is_empty());
+    enable_history(&store);
+    assert!(store.record_search("synthetic private query", now).unwrap());
+    assert_eq!(
+        store.search_history(now).unwrap(),
+        ["synthetic private query"]
+    );
+    // Turning history off deletes stored searches in the same update.
+    let mut prefs = store.preferences().unwrap();
+    prefs.privacy.local_history = false;
+    store.set_preferences(prefs).unwrap();
+    assert_eq!(search_rows(&store), 0);
+    assert!(!store.record_search("synthetic later query", now).unwrap());
+    // A direct row cannot be read back while the opt-in is off.
+    store
+        .connection
+        .execute(
+            "INSERT INTO local_search_history(query_key,query,searched_at) VALUES('x','x',?1)",
+            [now.duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64],
+        )
+        .unwrap();
+    assert!(store.search_history(now).unwrap().is_empty());
+}
+
+#[test]
+fn search_history_is_deduplicated_case_insensitively_bounded_and_newest_first() {
+    let mut store = LocalStore::in_memory().unwrap();
+    enable_history(&store);
+    let now = SystemTime::now();
+    for index in 0..60 {
+        assert!(
+            store
+                .record_search(&format!("synthetic query {index:02}"), now)
+                .unwrap()
+        );
+    }
+    let stored = store.search_history(now).unwrap();
+    assert_eq!(stored.len(), MAX_SEARCH_HISTORY);
+    assert_eq!(stored[0], "synthetic query 59");
+    assert_eq!(stored[49], "synthetic query 10");
+    assert_eq!(search_rows(&store), MAX_SEARCH_HISTORY as i64);
+    // Re-searching moves an entry to the top; the newest spelling wins.
+    assert!(store.record_search("  SYNTHETIC   Query 20 ", now).unwrap());
+    let stored = store.search_history(now).unwrap();
+    assert_eq!(stored.len(), MAX_SEARCH_HISTORY);
+    assert_eq!(stored[0], "SYNTHETIC Query 20");
+    assert_eq!(
+        stored
+            .iter()
+            .filter(|query| query.eq_ignore_ascii_case("synthetic query 20"))
+            .count(),
+        1
+    );
+    assert!(store.delete_search("synthetic QUERY 20").unwrap());
+    assert!(!store.delete_search("synthetic query 20").unwrap());
+    assert!(!store.delete_search("").unwrap());
+    assert_eq!(store.search_history(now).unwrap()[0], "synthetic query 59");
+}
+
+#[test]
+fn search_history_rejects_urls_controls_and_oversized_queries() {
+    let mut store = LocalStore::in_memory().unwrap();
+    enable_history(&store);
+    let now = SystemTime::now();
+    for rejected in [
+        "",
+        "   ",
+        "https://www.youtube.com/watch?v=aqz-KE-bpKQ&token=secret",
+        "HTTP://example.invalid/?sig=secret",
+        "www.youtube.com/watch?v=aqz-KE-bpKQ",
+        "youtu.be/aqz-KE-bpKQ?si=secret",
+        "synthetic\u{0}query",
+        "synthetic\nquery",
+    ] {
+        assert_eq!(
+            store.record_search(rejected, now),
+            Err(StorageError::InvalidInput),
+            "{rejected:?}"
+        );
+    }
+    let longest = "é".repeat(MAX_SEARCH_QUERY_CHARS);
+    assert!(store.record_search(&longest, now).unwrap());
+    assert_eq!(
+        store.record_search(&format!("{longest}e"), now),
+        Err(StorageError::InvalidInput)
+    );
+    assert_eq!(search_rows(&store), 1);
+    assert_eq!(
+        normalize_search_query(" rust  \u{3000} lang ").as_deref(),
+        Some("rust lang")
+    );
+    assert_eq!(search_query_key("Příliš ŽLUŤOUČKÝ"), "příliš žluťoučký");
+}
+
+#[test]
+fn clearing_history_or_local_data_and_retention_remove_stored_searches() {
+    let mut store = LocalStore::in_memory().unwrap();
+    enable_history(&store);
+    let now = SystemTime::now();
+    store.record_search("synthetic clear query", now).unwrap();
+    store.clear_history().unwrap();
+    assert_eq!(search_rows(&store), 0);
+    store.record_search("synthetic clear query", now).unwrap();
+    store.clear_local_data().unwrap();
+    assert_eq!(search_rows(&store), 0);
+    assert!(!store.preferences().unwrap().privacy.local_history);
+    enable_history(&store);
+    let old = now - Duration::from_secs(40 * 86400);
+    store.record_search("synthetic expired query", old).unwrap();
+    store.record_search("synthetic recent query", now).unwrap();
+    assert_eq!(
+        store.search_history(now).unwrap(),
+        ["synthetic recent query"]
+    );
+    store
+        .set_history_retention_days(1, now + Duration::from_secs(2 * 86400))
+        .unwrap();
+    assert_eq!(search_rows(&store), 0);
 }

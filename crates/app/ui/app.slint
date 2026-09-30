@@ -8,6 +8,8 @@ import { CaptionSelector, CaptionsUi } from "captions.slint";
 import { ChapterPanel, ChaptersUi } from "chapters.slint";
 import { JumpDialog, JumpUi } from "jump.slint";
 import { SearchField } from "search-field.slint";
+import { SearchSuggestions, SearchSuggestionsUi, SearchSuggestion } from "search-suggestions.slint";
+export { SearchSuggestionsUi, SearchSuggestion }
 import { MediaSlider } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
@@ -447,6 +449,8 @@ export component App inherits Window {
     focus-on-click: false;
     capture-key-pressed(event) => {
         if root.video-visible { root.controls-activity(); }
+        // Arrow/Escape navigation of the open search suggestions, before the editor.
+        if search.has-focus && !event.modifiers.control && !event.modifiers.alt && !event.modifiers.meta && suggestions.key(event.text) { return accept; }
         return reject;
     }
     key-pressed(event) => {
@@ -577,8 +581,8 @@ export component App inherits Window {
             width: min(640px, root.width - 420px - root.header-leading-inset); height: 36px;
             enabled: !root.native-video-child; cache-rendering-hint: root.cache-search;
             placeholder: root.native-video-child ? "Local-only diagnostic" : "Search YouTube";
-            edited => { root.cancel-playback-focus(); }
-            accepted(text) => { root.search(text); }
+            edited => { root.cancel-playback-focus(); suggestions.edited(); }
+            accepted(text) => { suggestions.close(); root.search(text); }
         }
         header-account := Action { enabled: !root.native-video-child; x: parent.width - self.width - 20px; y: (parent.height - self.height) / 2; width: 144px; height: 32px; variant: ActionVariant.secondary; icon-name: "circle-user-round"; label: root.account-connected ? "Connected" : "Guest mode"; clicked => { root.navigate(4); } }
     }
@@ -772,6 +776,9 @@ export component App inherits Window {
             Text { text: "Public comments load when you open a guest video. Turning this off cancels comment requests and hides comments. No account comments are fetched."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             ConfirmedToggle { text: "Keep watch history on this device"; acknowledged-checked: LibraryUi.history-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { LibraryUi.history(checked); } }
             Text { text: "When enabled, History appears in the sidebar. Its retention and deletion controls are kept there. Local history is never uploaded to your YouTube account."; color: Colors.muted; wrap: word-wrap; }
+            Text { text: "Searches you submit are kept with this history and suggested again. When history is off, they are remembered only until you quit. Clearing history also removes them."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            ConfirmedToggle { text: "Show search suggestions from YouTube"; acknowledged-checked: SearchSuggestionsUi.youtube-enabled; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; choose(checked) => { SearchSuggestionsUi.set-youtube-enabled(checked); } }
+            Text { text: "While you type in the search box, the text is sent to YouTube to get suggestions, without your account cookies. Turn this off to see only searches from this device."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             Text { text: "Saved video artwork"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             ConfirmedChoice { max-width: 360px; accessible-label: "Saved video artwork cache"; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; model: ["Off — remove cached artwork", "Up to 32 MiB", "Up to 128 MiB", "Up to 256 MiB"]; acknowledged-index: root.thumbnail-cache-index; choose(index) => { root.thumbnail-cache-changed(index); } }
             Text { text: "Keep artwork from guest browsing on this device. These images can reveal browsing interests even when history is off. Home reads them without contacting YouTube. Clear local data removes them with your local library."; color: Colors.muted; wrap: word-wrap; }
@@ -1059,6 +1066,15 @@ export component App inherits Window {
     if root.native-video-child && root.video-only: Rectangle {
         x: 0; y: root.height - 16px; width: root.width; height: 16px; background: Colors.canvas;
         Text { x: 8px; width: parent.width - 16px; height: parent.height; text: "DIAGNOSTIC — native child video; local only; layering, timing and performance unqualified"; color: #c58c44; font-size: 11px; overflow: elide; }
+    }
+    // Drawn after page content so it overlays feeds and the watch page. The
+    // field is disabled for the native child, so it never opens above that view.
+    suggestions := SearchSuggestions {
+        x: search.x; y: search.y + search.height + 4px; width: search.width;
+        field-focused: search.has-focus; field-text: search.text;
+        allowed: !root.video-only && !root.native-video-child;
+        preview(text) => { search.text = text; }
+        activate(text) => { search.text = text; suggestions.close(); root.search(text); }
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.

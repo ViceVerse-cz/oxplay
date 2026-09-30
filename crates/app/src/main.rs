@@ -51,6 +51,7 @@ mod recovery_smoke;
 mod related_focus_smoke;
 mod resolver;
 mod save_smoke;
+mod search_suggestions;
 mod share_ui;
 mod soak_smoke;
 mod thumbnails;
@@ -114,6 +115,7 @@ struct UiState {
     thumbnail_attempted: RefCell<std::collections::HashSet<usize>>,
     library: library::Worker,
     library_ui: library_ui::State,
+    search_suggestions: search_suggestions::State,
     library_fixture: Option<library_fixture::Config>,
     fixture_quiescence: fixture_quiescence::State,
     playlists: RefCell<Vec<serein_storage::LocalPlaylist>>,
@@ -852,6 +854,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{}", cli::HELP);
         return Ok(());
     }
+    // Finite diagnostics and fixtures never contact the completion service.
+    let remote_suggestions = !options.finite_diagnostic();
     let save_smoke_video = if options.save_smoke {
         Some(serein_core::VideoId::from_url(
             options
@@ -1039,6 +1043,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let library = library::Worker::new(library_path, move || {
         let _ = weak.upgrade_in_event_loop(|app| app.invoke_library_wake());
     });
+    let weak = app.as_weak();
+    let suggestions = search_suggestions::Worker::new(remote_suggestions, move || {
+        let _ = weak.upgrade_in_event_loop(|app| app.global::<SearchSuggestionsUi>().invoke_wake());
+    });
     let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
     let account_ui = account_ui::State::new(app.as_weak(), account_directory, resolver);
     let state = Rc::new(UiState {
@@ -1086,6 +1094,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         thumbnail_attempted: RefCell::new(std::collections::HashSet::new()),
         library,
         library_ui: library_ui::State::default(),
+        search_suggestions: search_suggestions::State::new(suggestions),
         library_fixture,
         fixture_quiescence: fixture_quiescence::State::default(),
         playlists: RefCell::new(Vec::new()),
@@ -1105,6 +1114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.set_watch_videos(slint::ModelRc::from(state.watch_context.model.clone()));
     app.set_groups(slint::ModelRc::from(state.groups.model.clone()));
     bind_browsing(&app, &state);
+    search_suggestions::bind(&app, &state);
     account_ui::bind(&app, &state);
     state
         .groups

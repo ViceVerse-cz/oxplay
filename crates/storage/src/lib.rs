@@ -8,7 +8,10 @@ mod backup;
 mod history;
 mod library_transfer;
 pub mod vault;
-pub use history::{HistoryCursor, HistoryEntry};
+pub use history::{
+    HistoryCursor, HistoryEntry, MAX_SEARCH_HISTORY, MAX_SEARCH_QUERY_CHARS,
+    normalize_search_query, search_query_key,
+};
 pub use library_transfer::{ImportSummary, MAX_TRANSFER_BYTES};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use serein_core::{
@@ -17,7 +20,7 @@ use serein_core::{
 };
 use std::{fmt, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 7;
+const SCHEMA_VERSION: u32 = 8;
 pub const MAX_PAGE_SIZE: u32 = 100;
 pub const MAX_PLAYLIST_FILTER_BYTES: usize = 256;
 const MAX_TEXT_BYTES: usize = 1024;
@@ -118,6 +121,9 @@ pub struct LocalPreferences {
     pub thumbnail_cache_mib: u16,
     /// Read-only public comments load after an explicitly selected guest video.
     pub comments_enabled: bool,
+    /// Typed header text is sent to YouTube's completion service while editing.
+    /// Independent from local search history, which follows `local_history`.
+    pub search_suggestions: bool,
 }
 impl Default for LocalPreferences {
     fn default() -> Self {
@@ -128,6 +134,7 @@ impl Default for LocalPreferences {
             playback: PlaybackPreferences::default(),
             thumbnail_cache_mib: 256,
             comments_enabled: true,
+            search_suggestions: true,
         }
     }
 }
@@ -520,8 +527,8 @@ impl LocalStore {
     }
 
     pub fn preferences(&self) -> Result<LocalPreferences> {
-        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis,thumbnail_cache_mib,comments_enabled FROM local_preferences WHERE id=1",[],|row| {
-            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?,row.get::<_,i64>(9)?,row.get::<_,i64>(10)?))
+        let values = self.connection.query_row("SELECT local_history,autoplay,thumbnail_previews,background_refresh,telemetry,volume_percent,theme,quality_height,speed_millis,thumbnail_cache_mib,comments_enabled,search_suggestions FROM local_preferences WHERE id=1",[],|row| {
+            Ok((Preferences { local_history: row.get(0)?,autoplay: row.get(1)?,thumbnail_previews: row.get(2)?,background_refresh: row.get(3)?,telemetry: row.get(4)? },row.get::<_,u8>(5)?,row.get::<_,String>(6)?,row.get::<_,u16>(7)?,row.get::<_,u16>(8)?,row.get::<_,i64>(9)?,row.get::<_,i64>(10)?,row.get::<_,i64>(11)?))
         }).optional()?.ok_or(StorageError::CorruptData)?;
         Ok(LocalPreferences {
             privacy: values.0,
@@ -537,6 +544,11 @@ impl LocalStore {
                 speed: PlaybackSpeed::from_millis(values.4).ok_or(StorageError::CorruptData)?,
             },
             comments_enabled: match values.6 {
+                0 => false,
+                1 => true,
+                _ => return Err(StorageError::CorruptData),
+            },
+            search_suggestions: match values.7 {
                 0 => false,
                 1 => true,
                 _ => return Err(StorageError::CorruptData),
@@ -557,7 +569,7 @@ impl LocalStore {
             Theme::Light => "light",
             Theme::Dark => "dark",
         };
-        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9,thumbnail_cache_mib=?10,comments_enabled=?11 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis(),prefs.thumbnail_cache_mib,prefs.comments_enabled])?;
+        self.connection.execute("UPDATE local_preferences SET local_history=?1,autoplay=?2,thumbnail_previews=?3,background_refresh=?4,telemetry=?5,volume_percent=?6,theme=?7,quality_height=?8,speed_millis=?9,thumbnail_cache_mib=?10,comments_enabled=?11,search_suggestions=?12 WHERE id=1",params![prefs.privacy.local_history,prefs.privacy.autoplay,prefs.privacy.thumbnail_previews,prefs.privacy.background_refresh,prefs.privacy.telemetry,prefs.volume_percent,theme,prefs.playback.quality.height(),prefs.playback.speed.millis(),prefs.thumbnail_cache_mib,prefs.comments_enabled,prefs.search_suggestions])?;
         Ok(())
     }
 
@@ -565,7 +577,7 @@ impl LocalStore {
     /// Not forensic erasure and not a YouTube account operation.
     pub fn clear_local_data(&mut self) -> Result<()> {
         let tx = self.connection.transaction()?;
-        tx.execute_batch("DELETE FROM local_playlist_items; DELETE FROM local_playlists; DELETE FROM local_subscriptions; DELETE FROM local_history; DELETE FROM local_preferences; INSERT INTO local_preferences(id) VALUES(1);")?;
+        tx.execute_batch("DELETE FROM local_playlist_items; DELETE FROM local_playlists; DELETE FROM local_subscriptions; DELETE FROM local_history; DELETE FROM local_search_history; DELETE FROM local_preferences; INSERT INTO local_preferences(id) VALUES(1);")?;
         tx.commit()?;
         Ok(())
     }
@@ -677,6 +689,9 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     }
     if version < 7 {
         tx.execute_batch(include_str!("schema_v7.sql"))?;
+    }
+    if version < 8 {
+        tx.execute_batch(include_str!("schema_v8.sql"))?;
     }
     tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
     tx.commit()?;

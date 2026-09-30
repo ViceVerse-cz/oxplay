@@ -7,6 +7,7 @@ pub mod catalog;
 mod channel_avatar;
 mod chapters;
 pub mod comments;
+pub mod suggestions;
 mod supervisor;
 use serde_json::Value;
 use serein_core::{

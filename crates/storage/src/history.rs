@@ -34,6 +34,10 @@ impl LocalStore {
             [days],
         )?;
         tx.execute("DELETE FROM local_history WHERE watched_at<?1", [cutoff])?;
+        tx.execute(
+            "DELETE FROM local_search_history WHERE searched_at<?1",
+            [cutoff],
+        )?;
         tx.commit()?;
         Ok(())
     }
@@ -74,12 +78,18 @@ impl LocalStore {
     }
 
     /// Deletes expired entries even if no new playback has been recorded.
+    /// Stored searches share the watch-history retention period.
     pub fn prune_history(&self, now: SystemTime) -> Result<usize> {
         let cutoff =
             timestamp(now)?.saturating_sub(i64::from(self.history_retention_days()?) * 86400);
+        let searches = self.connection.execute(
+            "DELETE FROM local_search_history WHERE searched_at<?1",
+            [cutoff],
+        )?;
         Ok(self
             .connection
-            .execute("DELETE FROM local_history WHERE watched_at<?1", [cutoff])?)
+            .execute("DELETE FROM local_history WHERE watched_at<?1", [cutoff])?
+            + searches)
     }
 
     pub fn history(
@@ -147,10 +157,103 @@ impl LocalStore {
             .execute("DELETE FROM local_history WHERE video_id=?1", [id.as_str()])?
             != 0)
     }
+    /// Deletes watch history and submitted-search history together.
     pub fn clear_history(&self) -> Result<()> {
-        self.connection.execute("DELETE FROM local_history", [])?;
+        self.connection
+            .execute_batch("DELETE FROM local_history; DELETE FROM local_search_history;")?;
         Ok(())
     }
+
+    /// Only records normalized plain-text searches while the persisted history
+    /// opt-in is true; URL-like input is rejected. Keeps the newest 50 entries,
+    /// deduplicated case-insensitively (the newest spelling wins).
+    pub fn record_search(&mut self, query: &str, now: SystemTime) -> Result<bool> {
+        if !self.preferences()?.privacy.local_history {
+            return Ok(false);
+        }
+        let query = normalize_search_query(query).ok_or(StorageError::InvalidInput)?;
+        let key = search_query_key(&query);
+        let searched_at = timestamp(now)?;
+        let cutoff = searched_at.saturating_sub(i64::from(self.history_retention_days()?) * 86400);
+        let tx = self.connection.transaction()?;
+        tx.execute(
+            "DELETE FROM local_search_history WHERE searched_at<?1 OR query_key=?2",
+            params![cutoff, key],
+        )?;
+        // Recheck opt-in in the statement, like watch history.
+        let written = tx.execute(
+            "INSERT INTO local_search_history(query_key,query,searched_at)
+            SELECT ?1,?2,?3 WHERE (SELECT local_history FROM local_preferences WHERE id=1)=1",
+            params![key, query, searched_at],
+        )?;
+        tx.execute(
+            "DELETE FROM local_search_history WHERE id NOT IN
+            (SELECT id FROM local_search_history ORDER BY id DESC LIMIT ?1)",
+            [MAX_SEARCH_HISTORY as i64],
+        )?;
+        tx.commit()?;
+        Ok(written != 0)
+    }
+
+    /// Newest first; empty while history is disabled. Expired rows are pruned.
+    pub fn search_history(&self, now: SystemTime) -> Result<Vec<String>> {
+        self.prune_history(now)?;
+        if !self.preferences()?.privacy.local_history {
+            return Ok(Vec::new());
+        }
+        let mut statement = self
+            .connection
+            .prepare("SELECT query FROM local_search_history ORDER BY id DESC LIMIT ?1")?;
+        let rows = statement
+            .query_map([MAX_SEARCH_HISTORY as i64], |row| row.get::<_, String>(0))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        rows.into_iter()
+            .map(|query| normalize_search_query(&query).ok_or(StorageError::CorruptData))
+            .collect()
+    }
+
+    /// Removes one stored search by its case-insensitive identity.
+    pub fn delete_search(&self, query: &str) -> Result<bool> {
+        let Some(query) = normalize_search_query(query) else {
+            return Ok(false);
+        };
+        Ok(self.connection.execute(
+            "DELETE FROM local_search_history WHERE query_key=?1",
+            [search_query_key(&query)],
+        )? != 0)
+    }
+}
+
+/// Bound for stored and in-memory submitted searches.
+pub const MAX_SEARCH_HISTORY: usize = 50;
+/// Same limit as a typed catalog search.
+pub const MAX_SEARCH_QUERY_CHARS: usize = 200;
+
+/// Trims and collapses whitespace. Rejects empty, oversized, control-character
+/// and URL-like input, so pasted links (which may carry tokens) are never kept.
+pub fn normalize_search_query(query: &str) -> Option<String> {
+    if query.len() > 4 * 1024 || query.chars().any(char::is_control) {
+        return None;
+    }
+    let query = query.split_whitespace().collect::<Vec<_>>().join(" ");
+    let count = query.chars().count();
+    if count == 0 || count > MAX_SEARCH_QUERY_CHARS || query.len() > MAX_TEXT_BYTES {
+        return None;
+    }
+    let lower = query.to_lowercase();
+    let url_like = lower.contains("://")
+        || lower.starts_with("www.")
+        || lower.starts_with("https:")
+        || lower.starts_with("http:")
+        || ["youtube.com/", "youtu.be/", "youtube-nocookie.com/"]
+            .iter()
+            .any(|host| lower.contains(host));
+    (!url_like).then_some(query)
+}
+
+/// Case-insensitive identity of an already normalized query.
+pub fn search_query_key(normalized: &str) -> String {
+    normalized.to_lowercase()
 }
 fn timestamp(time: SystemTime) -> Result<i64> {
     i64::try_from(
