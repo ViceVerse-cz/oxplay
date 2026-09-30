@@ -54,6 +54,18 @@ platform-specific transitive crates still belong in the distribution inventory.
 The application integration status belongs in progress.md; a working storage
 crate alone does not prove the shared local-library or account acceptance gates.
 
+The browser-session sign-in path (2026-09-30) adds, to `serein-youtube`, cookie
+decryption and database crates whose fetched manifests declare permissive
+expressions: `aes 0.9.3`, `cbc 0.2.1` and `pbkdf2 0.12.2` (`MIT OR Apache-2.0`),
+their newly pulled transitive RustCrypto crates `cipher 0.5.2`,
+`block-padding 0.4.2`, `inout 0.2.2`, `crypto-common 0.2.2`,
+`hybrid-array 0.4.15`, `cpubits 0.1.1`, `cpufeatures 0.3.1` and `hmac 0.12.1`
+(all `MIT OR Apache-2.0`), plus `rusqlite 0.40.2` (MIT,
+reusing the already-recorded bundled `libsqlite3-sys`/SQLite notices) and the
+already-listed `tempfile`, macOS `security-framework` and `sha1`. No previously locked package version changed. Preserve the MIT and
+Apache-2.0 texts of these packages in the distribution inventory; adopting aes
+0.9 does not alter the application's GPL-3.0-or-later route.
+
 ## Actual development media/helper build
 
 These are locally installed Homebrew development dependencies, not a vetted

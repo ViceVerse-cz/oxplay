@@ -63,7 +63,37 @@ be kept in ordinary storage or logs.
 The account adapter uses an explicitly selected cookie export and verifies
 identity before enabling account operations. Its real-account acceptance tests
 have not been run. Never provide a password, authentication code or cookie file through
-chat, a bug report or public CI. The app must not search browser profiles.
+chat, a bug report or public CI.
+
+On macOS the user may instead pick one installed browser profile and let Serein
+import that profile's YouTube session directly ("Sign in with your browser").
+This is an explicit, consented choice, not a browser scan. When the account page
+opens (never at launch) Serein lists installed browsers by checking for their
+profile folders and non-secret profile metadata (`Local State` profile names,
+Firefox `profiles.ini`) and, for Safari, `/Applications/Safari.app`; no cookie
+database, Keychain item or Safari container is touched until you press **Sign in
+with <Browser>**. After the same risk-consent checkbox it reads ONLY
+cookies whose host is a YouTube or Google sign-in domain
+(`youtube.com`/`.youtube.com`/`www.youtube.com`,
+`google.com`/`.google.com`/`www.google.com`/`accounts.google.com`), filtered
+before any decryption; only the YouTube session cookies are retained, exactly as
+with file import. It reads Chrome/Brave/Edge/Arc/Chromium/Vivaldi
+(`~/Library/Application Support/<vendor>/<Profile>/Cookies`, decrypting values
+with a key from the browser's `<Vendor> Safe Storage` Keychain password),
+Firefox (`cookies.sqlite`, copied with its `-wal` to a private temp directory
+before opening) and Safari (`Cookies.binarycookies`, which needs Full Disk
+Access). macOS shows its own prompt for Keychain access; a denied Keychain or
+missing Full Disk Access is reported with guidance, never bypassed. The Keychain
+password, derived key and decrypted values are held in zeroizing buffers and are
+never logged or persisted in plaintext. Because the running browser locks its
+SQLite database, the selected profile's cookie database (Chromium: values still
+encrypted; Firefox: plaintext) and its `-wal`/`-shm` files are copied into a
+private (`0700`) per-user temporary directory for the duration of the read and
+deleted immediately afterwards; the copy is unlinked, not securely overwritten.
+Only the filtered rows are ever read from it. Other platforms report the
+feature as not supported. What is then stored is identical to the file path:
+nothing unless the session is explicitly remembered.
+
 Imported material is filtered and kept in memory by default. Explicitly remembered
 sessions use a macOS Keychain key plus authenticated-encrypted private files;
 other platforms currently fail closed for protected persistence. If protection is unavailable, only an

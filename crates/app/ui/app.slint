@@ -148,12 +148,18 @@ export component App inherits Window {
     in property <string> account-capabilities;
     in-out property <bool> account-consent;
     in-out property <bool> account-remember;
+    // "Sign in with your browser": detected browser+profile choices (may be empty).
+    in property <[string]> account-browsers;
+    in property <[string]> account-browser-names;
+    in property <bool> account-browser-supported;
+    in-out property <int> account-browser-index;
     in property <bool> rating-known;
     in property <bool> account-liked;
     callback account-rating();
     callback account-wake();
     callback account-import();
     callback account-import-path(string, bool);
+    callback account-browser-sign-in();
     callback account-reconnect();
     callback account-disconnect();
     callback account-tab(int);
@@ -815,9 +821,21 @@ export component App inherits Window {
             if !root.account-connected: Text { text: "Use a dedicated browser profile if possible. Never enter your Google password or verification code here. Connecting does not upload your local collections."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
             if !root.account-connected: CheckBox { text: "I understand the risk and authorize this import"; checked <=> root.account-consent; }
             if !root.account-connected: CheckBox { text: "Remember this session and sign in automatically (protected storage)"; checked <=> root.account-remember; }
+            // Sign in with your browser (macOS): import only YouTube/Google sign-in cookies.
+            if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: Text { text: "Sign in with your browser"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+            if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: Text { text: "Serein reads only YouTube and Google sign-in cookies from the selected browser profile. macOS may ask for access to the browser's saved keys."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if !root.account-connected && root.account-browser-supported && root.account-browsers.length > 0: HorizontalLayout {
+                height: 42px; spacing: 12px;
+                ConfirmedChoice { accessible-label: "Browser to sign in with"; width: 280px; horizontal-stretch: 0; model: root.account-browsers; acknowledged-index: root.account-browser-index; enabled: !root.account-busy; choose(index) => { root.account-browser-index = index; } }
+                Action { label: root.account-busy ? "Verifying session…" : "Sign in with " + root.account-browser-names[root.account-browser-index]; variant: ActionVariant.primary; width: 260px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-browser-sign-in(); } }
+                Rectangle { horizontal-stretch: 1; }
+            }
+            if !root.account-connected && root.account-browser-supported && root.account-browsers.length == 0: Text { text: "No supported browser was found. Sign in to YouTube in Chrome, Brave, Edge, Arc, Vivaldi, Chromium, Firefox or Safari, or use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if !root.account-connected && !root.account-browser-supported: Text { text: "Signing in directly from your browser is not supported on this platform yet. Use the session file option below."; color: Colors.muted; wrap: word-wrap; font-size: 12px; }
+            if !root.account-connected: Text { text: "Other options"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
             if !root.account-connected: HorizontalLayout {
                 height: 42px; spacing: 12px;
-                Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; variant: ActionVariant.primary; width: 240px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
+                Action { label: root.account-busy ? "Verifying session…" : "Connect with session file…"; variant: ActionVariant.secondary; width: 240px; horizontal-stretch: 0; enabled: root.account-consent && !root.account-busy; clicked => { root.account-import(); } }
                 if root.account-saved: Action { label: "Reconnect saved session"; enabled: root.account-consent && !root.account-busy; clicked => { root.account-reconnect(); } }
                 Rectangle { horizontal-stretch: 1; }
             }

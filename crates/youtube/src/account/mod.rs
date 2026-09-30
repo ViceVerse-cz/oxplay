@@ -1,8 +1,12 @@
 //! Explicit, user-driven browser-session account adapter. No credential discovery.
 //! All methods that use the network are blocking worker APIs with cancellable I/O.
 mod authorization;
+mod browser;
 mod cookies;
 pub use authorization::AccountPlaybackLease;
+pub use browser::{
+    BrowserKind, BrowserProfile, InstalledBrowser, detect_browsers, import_browser_session,
+};
 mod ephemeral;
 mod http;
 mod parser;
@@ -39,6 +43,12 @@ pub enum AccountError {
     ReconciliationRequired,
     StateMismatch,
     Busy,
+    /// Browser sign-in is not implemented for this platform or browser yet.
+    BrowserUnsupported,
+    /// The selected browser profile's cookie data could not be read.
+    BrowserUnavailable,
+    /// The OS denied access to the browser's data or saved keys.
+    BrowserPermissionDenied,
 }
 impl fmt::Display for AccountError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -64,6 +74,9 @@ impl fmt::Display for AccountError {
         Self::ReconciliationRequired=>"A previous account action has an unknown outcome. Check its remote state before another write.",
         Self::StateMismatch=>"The remote account state does not match the requested change.",
         Self::Busy=>"Another account operation is active.",
+        Self::BrowserUnsupported=>"Signing in from a browser is not supported yet on this platform or for this browser. Use the session file import instead.",
+        Self::BrowserUnavailable=>"That browser profile's YouTube sign-in could not be read. Make sure the browser is installed and you are signed in to YouTube in it.",
+        Self::BrowserPermissionDenied=>"Serein needs permission to read the selected browser's data. For Safari, grant Serein Full Disk Access in System Settings > Privacy & Security, then try again. For Chrome and other Chromium browsers, allow the keychain access prompt.",
     })
     }
 }

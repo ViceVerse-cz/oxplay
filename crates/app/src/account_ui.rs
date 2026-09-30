@@ -6,7 +6,7 @@ use crate::{
 };
 use serein_youtube::account::{
     AccountChannel, AccountCursor, AccountMutation, AccountPlaylist, AccountPlaylistItem,
-    Capability, MutationOutcome,
+    BrowserKind, Capability, InstalledBrowser, MutationOutcome,
 };
 use slint::ComponentHandle;
 use std::{
@@ -86,6 +86,9 @@ pub struct State {
     auto_reconnect: Cell<bool>,
     /// Set while that launch restore is in flight, so Home can follow it.
     launch_restore: Cell<bool>,
+    /// Detected browser sign-in targets, aligned by index with the UI choice
+    /// model: (browser, opaque profile id). Filesystem discovery only.
+    browser_entries: RefCell<Vec<(BrowserKind, String)>>,
 }
 impl State {
     pub fn new(
@@ -114,6 +117,7 @@ impl State {
             write_warning: WriteWarning::default(),
             auto_reconnect: Cell::new(auto_reconnect),
             launch_restore: Cell::new(false),
+            browser_entries: RefCell::new(Vec::new()),
         }
     }
     pub fn stop_picker(&self) {
@@ -192,6 +196,7 @@ impl State {
             && !matches!(
                 &request,
                 AccountRequest::Import { .. }
+                    | AccountRequest::ImportBrowser { .. }
                     | AccountRequest::Reconnect(_)
                     | AccountRequest::InspectSaved
             )
@@ -202,7 +207,9 @@ impl State {
             return;
         }
         let kind = match &request {
-            AccountRequest::Import { .. } | AccountRequest::Reconnect(_) => PendingKind::Connection,
+            AccountRequest::Import { .. }
+            | AccountRequest::ImportBrowser { .. }
+            | AccountRequest::Reconnect(_) => PendingKind::Connection,
             AccountRequest::InspectSaved => PendingKind::Inspection,
             AccountRequest::ResolvePlayback { .. } => PendingKind::Playback,
             AccountRequest::Mutate(_) | AccountRequest::Reconcile => PendingKind::Mutation,
@@ -318,9 +325,108 @@ fn capabilities(c: &serein_youtube::account::AccountCapabilities) -> String {
         capability(c.channel_switching)
     )
 }
+/// Browser sign-in is permitted only after explicit risk consent and while no
+/// other account operation is busy, exactly like the file import.
+fn browser_sign_in_allowed(consent: bool, busy: bool) -> bool {
+    consent && !busy
+}
+
+/// Resolve the selected choice-model index to a concrete (browser, profile id),
+/// or `None` for an out-of-range selection.
+fn browser_sign_in_target(
+    index: i32,
+    entries: &[(BrowserKind, String)],
+) -> Option<(BrowserKind, String)> {
+    usize::try_from(index)
+        .ok()
+        .and_then(|index| entries.get(index))
+        .cloned()
+}
+
+/// One selectable browser profile in the UI choice model.
+#[derive(Debug, PartialEq, Eq)]
+struct BrowserChoice {
+    /// Choice label: the browser, plus the profile when it has several.
+    label: String,
+    /// Browser name for the "Sign in with <Browser>" action.
+    browser_name: String,
+    kind: BrowserKind,
+    profile: String,
+}
+
+/// Flatten detected browsers into index-aligned choices (detection order,
+/// default profile first within each browser).
+fn browser_choices(browsers: Vec<InstalledBrowser>) -> Vec<BrowserChoice> {
+    let mut choices = Vec::new();
+    for browser in browsers {
+        let multiple = browser.profiles.len() > 1;
+        for profile in browser.profiles {
+            let label = if multiple {
+                format!("{} — {}", browser.display_name, profile.display_name)
+            } else {
+                browser.display_name.clone()
+            };
+            choices.push(BrowserChoice {
+                label,
+                browser_name: browser.display_name.clone(),
+                kind: browser.kind,
+                profile: profile.id,
+            });
+        }
+    }
+    choices
+}
+
+/// Keep the user's previous selection when it is still offered, else select
+/// the first (default) entry.
+fn retained_browser_index(
+    previous: Option<&(BrowserKind, String)>,
+    choices: &[BrowserChoice],
+) -> i32 {
+    previous
+        .and_then(|(kind, profile)| {
+            choices
+                .iter()
+                .position(|choice| choice.kind == *kind && choice.profile == *profile)
+        })
+        .and_then(|index| i32::try_from(index).ok())
+        .unwrap_or(0)
+}
+
+/// Refresh the "Sign in with your browser" choices. Called when the account
+/// page is opened (never at launch), so installing or signing in to a browser
+/// is picked up. Detection is filesystem metadata only: no cookie database is
+/// opened, no Keychain item or network request is touched, and Safari's
+/// protected container is not probed.
+pub fn refresh_browsers(app: &App, state: &UiState) {
+    app.set_account_browser_supported(cfg!(target_os = "macos"));
+    // An in-flight sign-in already captured its target; the choice is disabled
+    // while busy, so refreshing here cannot redirect it.
+    let choices = browser_choices(serein_youtube::account::detect_browsers());
+    let previous = browser_sign_in_target(
+        app.get_account_browser_index(),
+        &state.account_ui.browser_entries.borrow(),
+    );
+    let index = retained_browser_index(previous.as_ref(), &choices);
+    let labels: Vec<slint::SharedString> =
+        choices.iter().map(|c| c.label.as_str().into()).collect();
+    let names: Vec<slint::SharedString> = choices
+        .iter()
+        .map(|c| c.browser_name.as_str().into())
+        .collect();
+    *state.account_ui.browser_entries.borrow_mut() = choices
+        .into_iter()
+        .map(|choice| (choice.kind, choice.profile))
+        .collect();
+    app.set_account_browsers(slint::ModelRc::new(slint::VecModel::from(labels)));
+    app.set_account_browser_names(slint::ModelRc::new(slint::VecModel::from(names)));
+    app.set_account_browser_index(index);
+}
+
 pub fn bind(app: &App, state: &Rc<UiState>) {
     app.set_account_media_available(state.account_media_network.is_some());
     app.set_account_rows(slint::ModelRc::from(state.account_ui.rows.clone()));
+    app.set_account_browser_supported(cfg!(target_os = "macos"));
     let weak = app.as_weak();
     let s = state.clone();
     app.on_account_import(move || {
@@ -383,6 +489,38 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
             &app,
             AccountRequest::Import {
                 path: PathBuf::from(path.as_str()),
+                account_index: 0,
+                remember,
+            },
+        );
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_account_browser_sign_in(move || {
+        let Some(app) = weak.upgrade() else { return };
+        // Same gating as file import: explicit risk consent and not busy.
+        if !browser_sign_in_allowed(app.get_account_consent(), app.get_account_busy()) {
+            return;
+        }
+        let index = app.get_account_browser_index();
+        let target = browser_sign_in_target(index, &s.account_ui.browser_entries.borrow());
+        let Some((browser, profile)) = target else {
+            app.set_account_status("Select an installed browser profile first.".into());
+            return;
+        };
+        s.account_ui.stop_picker();
+        identity_lost(&app, &s);
+        crate::account_playback::clear(&app, &s);
+        let remember = app.get_account_remember();
+        app.set_account_status(s.account_ui.write_warning.status(format!(
+            "Reading YouTube sign-in cookies from {} and verifying your identity…",
+            browser.display_name()
+        )));
+        s.account_ui.submit(
+            &app,
+            AccountRequest::ImportBrowser {
+                browser,
+                profile,
                 account_index: 0,
                 remember,
             },
@@ -701,6 +839,73 @@ fn is_private_read(result: &Result<Response, account::WorkerError>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn browser_sign_in_requires_consent_and_a_valid_selection() {
+        let entries = vec![
+            (BrowserKind::Chrome, "Default".to_owned()),
+            (BrowserKind::Firefox, "abcd.default".to_owned()),
+        ];
+        // Consent is mandatory; a busy worker also blocks a new sign-in.
+        assert!(!browser_sign_in_allowed(false, false));
+        assert!(!browser_sign_in_allowed(true, true));
+        assert!(browser_sign_in_allowed(true, false));
+        // The resolved target is index-aligned with the choice model.
+        assert_eq!(
+            browser_sign_in_target(0, &entries),
+            Some((BrowserKind::Chrome, "Default".to_owned()))
+        );
+        assert_eq!(
+            browser_sign_in_target(1, &entries),
+            Some((BrowserKind::Firefox, "abcd.default".to_owned()))
+        );
+        // Out-of-range or negative selections never produce a request.
+        assert_eq!(browser_sign_in_target(2, &entries), None);
+        assert_eq!(browser_sign_in_target(-1, &entries), None);
+        assert_eq!(browser_sign_in_target(0, &[]), None);
+    }
+    #[test]
+    fn browser_choices_label_profiles_and_retain_the_selection() {
+        use serein_youtube::account::BrowserProfile;
+        let profile = |id: &str, name: &str| BrowserProfile {
+            id: id.to_owned(),
+            display_name: name.to_owned(),
+        };
+        let detected = || {
+            vec![
+                InstalledBrowser {
+                    kind: BrowserKind::Chrome,
+                    display_name: "Google Chrome".to_owned(),
+                    profiles: vec![profile("Default", "Personal"), profile("Profile 1", "Work")],
+                },
+                InstalledBrowser {
+                    kind: BrowserKind::Safari,
+                    display_name: "Safari".to_owned(),
+                    profiles: vec![profile("", "Safari")],
+                },
+            ]
+        };
+        let choices = browser_choices(detected());
+        let labels: Vec<_> = choices.iter().map(|c| c.label.as_str()).collect();
+        // Multi-profile browsers name the profile; the default stays first.
+        assert_eq!(
+            labels,
+            ["Google Chrome — Personal", "Google Chrome — Work", "Safari"]
+        );
+        // The action names only the browser, never the profile label.
+        assert_eq!(choices[1].browser_name, "Google Chrome");
+        assert_eq!(
+            (choices[1].kind, choices[1].profile.as_str()),
+            (BrowserKind::Chrome, "Profile 1")
+        );
+        // A still-offered selection survives a refresh; a vanished one falls
+        // back to the first (default) entry.
+        let work = (BrowserKind::Chrome, "Profile 1".to_owned());
+        assert_eq!(retained_browser_index(Some(&work), &choices), 1);
+        let gone = (BrowserKind::Firefox, "x.default".to_owned());
+        assert_eq!(retained_browser_index(Some(&gone), &choices), 0);
+        assert_eq!(retained_browser_index(None, &choices), 0);
+        assert!(browser_choices(Vec::new()).is_empty());
+    }
     #[test]
     fn only_uncertain_or_inflight_writes_leave_generic_warning_across_reconnect() {
         let warning = WriteWarning::default();

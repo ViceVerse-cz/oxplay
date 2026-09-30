@@ -88,6 +88,39 @@ addition (new packages/features were added).
   its asynchronous API. Other native picker targets have not been run here.
 - Explicit system-browser links: webbrowser 1.2.4. No embedded web content.
 
+## Browser-session sign-in (2026-09-30)
+
+The account adapter (`serein-youtube`) gained an explicit, user-selected
+"Sign in with your browser" path that reads ONLY YouTube/Google session cookies
+from one chosen installed browser profile on macOS. It adds, all permissively
+licensed (MIT OR Apache-2.0 unless noted) and all already resolvable from the
+locked registry:
+
+- `rusqlite 0.40.2` (MIT) with defaults disabled and only `bundled` enabled, to
+  read Chromium (`Cookies`) and Firefox (`cookies.sqlite`) databases. Feature
+  unification with `serein-storage` means the single locked `libsqlite3-sys
+  0.38.2` (SQLite 3.53.2) is built once; no system SQLite is required.
+- `aes 0.9.3`, `cbc 0.2.1` (features `alloc,block-padding`) and `pbkdf2 0.12.2`
+  (defaults off, `hmac`) to decrypt Chromium "v10" values: AES-128-CBC with a
+  key from `PBKDF2-HMAC-SHA1(password, "saltysalt", 1003)`. `sha1 0.10` (already
+  present) provides the PRF. Adopting aes 0.9 pulled transitive `cipher 0.5.2`,
+  `block-padding 0.4.2`, `inout 0.2.2`, `crypto-common 0.2.2`,
+  `hybrid-array 0.4.15`, `cpubits 0.1.1` and `cpufeatures 0.3.1`; pbkdf2 pulled
+  `hmac 0.12.1` (and enabled `digest`'s optional `subtle` dependency, already
+  locked). No previously locked version changed.
+- `tempfile 3.27` (already locked; MIT OR Apache-2.0) to copy a locked cookie
+  database and its `-wal`/`-shm` into a private temp directory before opening.
+- macOS `security-framework 3.7` (already locked) to read the
+  `<Vendor> Safe Storage` Keychain generic password. macOS shows its
+  own access prompt; denial is a typed permission error, never a silent failure.
+
+Decrypted values and derived keys are held in zeroizing buffers. Safari uses no
+new dependency: its `Cookies.binarycookies` file is parsed directly (Full Disk
+Access required; a permission error is surfaced with guidance). Non-macOS targets
+compile and report the feature as not supported. The account/browser tests use
+only synthetic fixture databases/files; no real browser, profile or Keychain is
+touched. Reaudit the selected macOS application graph before packaging.
+
 Local upstream Slint sources were used to verify compiled model APIs, ListView
 `content-y`/`visible-height`, `spawn_local` cancellation, and Window::take_snapshot.
 `--snapshot PATH` performs exactly one diagnostic pixel readback at 15 seconds and

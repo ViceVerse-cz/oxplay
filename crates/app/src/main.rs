@@ -803,6 +803,10 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
         } else {
             app.global::<LibraryUi>().set_confirmation(0);
         }
+        if page == 4 {
+            // Browser sign-in choices are detected only when the account page opens.
+            account_ui::refresh_browsers(&app, &s);
+        }
         s.worker.borrow_mut().cancel();
         app.set_busy(false);
         if s.native_child.enabled && page != 2 {

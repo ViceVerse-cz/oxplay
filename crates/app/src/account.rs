@@ -10,8 +10,9 @@ use serein_storage::vault::{ProtectedSessionStore, SessionProfile, VaultError};
 use serein_youtube::ResolutionPolicy;
 use serein_youtube::account::{
     AccountChannel, AccountClient, AccountCursor, AccountError, AccountMutation, AccountPage,
-    AccountPlaylist, AuthenticatedResolveError, AuthorizedPlayback, ConnectionInfo,
+    AccountPlaylist, AuthenticatedResolveError, AuthorizedPlayback, BrowserKind, ConnectionInfo,
     MAX_COOKIE_BYTES, MutationOutcome, PlaylistContents, SessionControl, SessionCookies,
+    import_browser_session,
 };
 use std::{
     fmt,
@@ -35,6 +36,15 @@ pub enum AccountRequest {
     /// The caller must first obtain explicit import/risk consent and a user-selected file.
     Import {
         path: PathBuf,
+        account_index: u8,
+        remember: bool,
+    },
+    /// Sign in by reading ONLY the YouTube/Google session cookies of one
+    /// user-selected installed browser profile. Requires the same explicit
+    /// risk consent as file import; runs the identical verification/storage path.
+    ImportBrowser {
+        browser: BrowserKind,
+        profile: String,
         account_index: u8,
         remember: bool,
     },
@@ -317,7 +327,9 @@ impl Worker {
         }
         if matches!(
             request,
-            AccountRequest::Import { .. } | AccountRequest::Reconnect(_)
+            AccountRequest::Import { .. }
+                | AccountRequest::ImportBrowser { .. }
+                | AccountRequest::Reconnect(_)
         ) {
             self.shared.control.invalidate();
         }
@@ -469,22 +481,25 @@ impl Engine {
                 let bytes = read_import(&path)?;
                 current(&self.control, operation)?;
                 let cookies = SessionCookies::import_netscape(bytes, now()?)?;
-                // An explicit replacement must not strand an old saved credential.
-                self.forget()?;
+                self.connect_and_persist(cookies, account_index, remember, operation)
+            }
+            AccountRequest::ImportBrowser {
+                browser,
+                profile,
+                account_index,
+                remember,
+            } => {
+                if let Some(client) = self.client.as_mut() {
+                    client.disconnect();
+                }
+                if account_index > 9 {
+                    return Err(AccountError::InvalidInput.into());
+                }
+                // Reads ONLY YouTube/Google session cookies from the chosen
+                // profile, then verifies identity exactly like file import.
+                let cookies = import_browser_session(browser, &profile, now()?)?;
                 current(&self.control, operation)?;
-                let connection = self.client()?.connect(cookies, account_index, operation)?;
-                let persistence = if remember {
-                    match self.remember(account_index, operation) {
-                        Ok(saved) => Persistence::Remembered(saved),
-                        Err(error) => Persistence::SaveFailed(error),
-                    }
-                } else {
-                    Persistence::SessionOnly
-                };
-                Ok(Response::Connected {
-                    connection,
-                    persistence,
-                })
+                self.connect_and_persist(cookies, account_index, remember, operation)
             }
             AccountRequest::Reconnect(saved) => {
                 if let Some(client) = self.client.as_mut() {
@@ -565,6 +580,33 @@ impl Engine {
                 })
             }
         }
+    }
+    /// Shared tail of every connection path (file or browser import). Discards
+    /// any previously saved credential, verifies identity, and optionally saves
+    /// the session to protected storage. Identical for both import sources.
+    fn connect_and_persist(
+        &mut self,
+        cookies: SessionCookies,
+        account_index: u8,
+        remember: bool,
+        operation: &OperationContext,
+    ) -> Result<Response, WorkerError> {
+        // An explicit replacement must not strand an old saved credential.
+        self.forget()?;
+        current(&self.control, operation)?;
+        let connection = self.client()?.connect(cookies, account_index, operation)?;
+        let persistence = if remember {
+            match self.remember(account_index, operation) {
+                Ok(saved) => Persistence::Remembered(saved),
+                Err(error) => Persistence::SaveFailed(error),
+            }
+        } else {
+            Persistence::SessionOnly
+        };
+        Ok(Response::Connected {
+            connection,
+            persistence,
+        })
     }
     fn remember(
         &mut self,
@@ -1127,6 +1169,32 @@ mod tests {
                 &operation
             ),
             Err(WorkerError::Account(AccountError::InvalidCookieFile))
+        ));
+        assert!(engine.client.is_none());
+        assert!(engine.saved.is_none());
+    }
+    #[test]
+    fn browser_import_rejects_invalid_index_before_touching_any_browser() {
+        // The account-index guard runs before any browser discovery/read, so an
+        // out-of-range request fails closed without inspecting real browsers.
+        let directory = TestDirectory::new();
+        let mut engine = engine(&directory.0);
+        let operation = OperationContext {
+            request_id: 1,
+            session_generation: 0,
+            cancel: CancellationToken::default(),
+        };
+        assert!(matches!(
+            engine.handle(
+                AccountRequest::ImportBrowser {
+                    browser: serein_youtube::account::BrowserKind::Chrome,
+                    profile: "Default".to_owned(),
+                    account_index: 10,
+                    remember: false,
+                },
+                &operation,
+            ),
+            Err(WorkerError::Account(AccountError::InvalidInput))
         ));
         assert!(engine.client.is_none());
         assert!(engine.saved.is_none());
