@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Guest channel/playlist/search pages via the supervised yt-dlp adapter.
-//! Cursor offsets are application-owned, not exposed InnerTube continuation tokens.
-use crate::{YtDlp, is_promoted, safe_thumbnail, summary};
+//! Guest channel/playlist/search pages. The native anonymous InnerTube reader
+//! (`guest_catalog`) serves them first; the supervised yt-dlp listing remains
+//! as a one-shot fallback for unsupported or changed response shapes.
+//! Cursors are opaque: native ones carry a continuation token internally,
+//! extractor ones an application-owned offset. Neither is exposed by Debug.
+use crate::{YtDlp, guest_catalog, is_promoted, safe_thumbnail, summary};
 use serde_json::Value;
 use serein_core::{
     CatalogItem, ChannelHandle, ChannelId, ChannelSummary, OperationContext, PlaylistId,
@@ -9,7 +12,7 @@ use serein_core::{
 };
 use url::Url;
 
-const PAGE_SIZE: usize = 20;
+pub(crate) const PAGE_SIZE: usize = 20;
 const SEARCH_LIMIT: usize = 200;
 const BROWSE_LIMIT: usize = 10_000;
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -46,14 +49,25 @@ pub enum CatalogRequest {
 }
 #[derive(Clone)]
 pub struct CatalogCursor {
-    request: CatalogRequest,
-    offset: usize,
-    generation: u64,
+    pub(crate) request: CatalogRequest,
+    /// Records already served for this listing.
+    pub(crate) offset: usize,
+    pub(crate) generation: u64,
+    /// `None` continues through the supervised extractor at `offset`.
+    pub(crate) native: Option<guest_catalog::Continuation>,
 }
+#[derive(Clone)]
 pub enum CatalogHeader {
     Search,
     Channel(ChannelSummary),
     Playlist(PlaylistSummary),
+}
+/// Which implementation produced a page. Diagnostic only; both paths share
+/// one normalized, bounded page contract.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CatalogSource {
+    Native,
+    Extractor,
 }
 pub struct CatalogPage {
     pub header: CatalogHeader,
@@ -63,6 +77,21 @@ pub struct CatalogPage {
     pub partial: bool,
     /// The explicit catalog safety limit was reached, not the remote end of the list.
     pub limit_reached: bool,
+    pub source: CatalogSource,
+}
+/// Native failures that indicate an unsupported or changed response (or a
+/// native transport refusal the extractor may not share) and so justify one
+/// extractor attempt. Cancellation, local cooldown, connectivity, timeouts,
+/// invalid input and genuinely unavailable content are returned unchanged.
+pub(crate) fn falls_back(error: ProviderError) -> bool {
+    matches!(
+        error,
+        ProviderError::MalformedOutput
+            | ProviderError::ExtractorFailed
+            | ProviderError::OutputTooLarge
+            | ProviderError::UnsupportedFormat
+            | ProviderError::ProofRequired
+    )
 }
 impl CatalogRequest {
     fn url(&self) -> Result<String, ProviderError> {
@@ -109,14 +138,14 @@ impl CatalogRequest {
             Self::Playlist { id } => Ok(PlaylistId::new(id.as_str())?.browse_url()),
         }
     }
-    fn limit(&self) -> usize {
+    pub(crate) fn limit(&self) -> usize {
         if matches!(self, Self::Search { .. }) {
             SEARCH_LIMIT
         } else {
             BROWSE_LIMIT
         }
     }
-    fn accepts(&self, item: &CatalogItem) -> bool {
+    pub(crate) fn accepts(&self, item: &CatalogItem) -> bool {
         if matches!(
             self,
             Self::Search {
@@ -165,26 +194,48 @@ impl CatalogRequest {
 }
 impl YtDlp {
     /// Dedicated worker only. Uses guest configuration even if another account is connected.
+    /// Native InnerTube first; one extractor attempt only for `falls_back` errors.
     pub fn catalog(
         &self,
         request: &CatalogRequest,
         cursor: Option<&CatalogCursor>,
         operation: &OperationContext,
     ) -> Result<CatalogPage, ProviderError> {
-        let url = request.url()?;
-        let start = match cursor {
-            Some(cursor)
-                if cursor.request == *request
-                    && cursor.generation == operation.session_generation =>
-            {
-                cursor.offset
+        request.url()?;
+        let start = validated_start(request, cursor, operation)?;
+        let native = cursor.is_none_or(|cursor| cursor.native.is_some());
+        if native && let Some(transport) = self.guest() {
+            match guest_catalog::page(transport, request, cursor, operation) {
+                Err(error) if falls_back(error) => {}
+                result => return result,
             }
-            Some(_) => return Err(ProviderError::InvalidInput),
-            None => 0,
-        };
-        if start >= request.limit() {
-            return Err(ProviderError::InvalidInput);
         }
+        if operation.cancel.is_cancelled() {
+            return Err(ProviderError::Cancelled);
+        }
+        self.extractor_page(request, start, operation)
+    }
+
+    /// The supervised yt-dlp listing alone (fallback path and diagnostics).
+    /// A native cursor continues at the number of records already served.
+    pub fn catalog_with_extractor(
+        &self,
+        request: &CatalogRequest,
+        cursor: Option<&CatalogCursor>,
+        operation: &OperationContext,
+    ) -> Result<CatalogPage, ProviderError> {
+        request.url()?;
+        let start = validated_start(request, cursor, operation)?;
+        self.extractor_page(request, start, operation)
+    }
+
+    fn extractor_page(
+        &self,
+        request: &CatalogRequest,
+        start: usize,
+        operation: &OperationContext,
+    ) -> Result<CatalogPage, ProviderError> {
+        let url = request.url()?;
         // One bounded lookahead distinguishes a full final page from more results.
         // Lazy extraction avoids downloading a whole remote collection merely for its count.
         let response = self.run(
@@ -203,6 +254,26 @@ impl YtDlp {
         }
         parse_page(&response, request, start, operation.session_generation)
     }
+}
+/// A cursor is valid only for its exact (canonical) request and session generation.
+fn validated_start(
+    request: &CatalogRequest,
+    cursor: Option<&CatalogCursor>,
+    operation: &OperationContext,
+) -> Result<usize, ProviderError> {
+    let start = match cursor {
+        Some(cursor)
+            if cursor.request == *request && cursor.generation == operation.session_generation =>
+        {
+            cursor.offset
+        }
+        Some(_) => return Err(ProviderError::InvalidInput),
+        None => 0,
+    };
+    if start >= request.limit() {
+        return Err(ProviderError::InvalidInput);
+    }
+    Ok(start)
 }
 fn text(value: &Value, key: &str, limit: usize) -> Option<String> {
     value.get(key)?.as_str().filter(|s| !s.is_empty()).map(|s| {
@@ -356,6 +427,7 @@ fn parse_page(
         request: canonical,
         offset: start + PAGE_SIZE,
         generation,
+        native: None,
     });
     Ok(CatalogPage {
         header,
@@ -363,6 +435,7 @@ fn parse_page(
         next,
         partial,
         limit_reached,
+        source: CatalogSource::Extractor,
     })
 }
 

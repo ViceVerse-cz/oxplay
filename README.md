@@ -9,8 +9,10 @@ play/pause, seek, fullscreen, explicit local subtitle loading/cycling, real gues
 YouTube video/channel/playlist search, public channel and playlist pages, and
 direct content stream resolution/playback. Genuine video descriptions and optional
 metadata appear inline beneath the player; public read-only comments
-load explicitly in bounded pages. The provider runs one cancellable
-bounded yt-dlp process group; each displayed guest catalog page has at most 20 rows.
+load explicitly in bounded pages. Guest search, channel and playlist pages are
+read by a native anonymous InnerTube client (yt-dlp only as a fallback); stream
+resolution runs one cancellable bounded yt-dlp process group; each displayed
+guest catalog page has at most 20 rows.
 The shared UI now includes responsive thumbnail cards, themes, local collections,
 local follows, opt-in history, import/export, and account connection screens.
 Account code implements explicit session import, protected storage, identity

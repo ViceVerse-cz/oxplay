@@ -1,6 +1,9 @@
 //! Bounded normalization of reviewed InnerTube renderer shapes. Unknown shapes
 //! yield partial results or an unsupported error, never synthetic account success.
 use super::*;
+#[cfg(test)]
+use crate::renderers::duration_text;
+use crate::renderers::{Parsed, text, video_lockup, video_renderer};
 use std::collections::HashSet;
 const MAX_NODES: usize = 50_000;
 const MAX_ITEMS: usize = 200;
@@ -54,29 +57,6 @@ fn nodes_except<'a>(
         }
     }
     Ok(result)
-}
-fn text(value: Option<&Value>) -> String {
-    let Some(value) = value else {
-        return String::new();
-    };
-    if let Some(value) = value
-        .as_str()
-        .or_else(|| value.get("simpleText")?.as_str())
-        .or_else(|| value.get("content")?.as_str())
-    {
-        return value.chars().take(500).collect();
-    }
-    value
-        .get("runs")
-        .and_then(Value::as_array)
-        .map(|runs| {
-            runs.iter()
-                .filter_map(|r| r.get("text")?.as_str())
-                .flat_map(str::chars)
-                .take(500)
-                .collect()
-        })
-        .unwrap_or_default()
 }
 fn continuation(
     value: &Value,
@@ -380,12 +360,6 @@ const FEED_SKIP: &[&str] = &[
     "shortsLockupViewModel",
     "feedFilterChipBarRenderer",
 ];
-enum FeedEntry {
-    Video(VideoSummary),
-    /// Deliberately omitted (advertising or Shorts); not an interpretation failure.
-    Filtered,
-    Unsupported,
-}
 /// Signed-in `FEwhat_to_watch` browse or its continuation. Only the direct item
 /// arrays of the reviewed grid containers are read; nested navigation commands,
 /// chip continuations and shelves never become items or cursors.
@@ -411,7 +385,8 @@ pub(super) fn recommendations(
             continue;
         };
         for entry in entries {
-            if crate::is_promoted(entry) || has_ad_badge(entry) {
+            // Ad-badged video renderers are filtered by the shared parser.
+            if crate::is_promoted(entry) {
                 continue;
             }
             if let Some(next) = entry.get("continuationItemRenderer") {
@@ -440,13 +415,13 @@ pub(super) fn recommendations(
                 continue;
             };
             match feed_entry(content) {
-                FeedEntry::Video(video) => {
+                Parsed::Item(video) => {
                     if seen.insert(video.id.clone()) {
                         items.push(video);
                     }
                 }
-                FeedEntry::Filtered => {}
-                FeedEntry::Unsupported => partial = true,
+                Parsed::Filtered => {}
+                Parsed::Unsupported => partial = true,
             }
             if items.len() > MAX_ITEMS {
                 return Err(AccountError::ResponseTooLarge);
@@ -469,20 +444,7 @@ pub(super) fn recommendations(
         partial,
     })
 }
-fn has_ad_badge(entry: &Value) -> bool {
-    entry
-        .pointer("/richItemRenderer/content/videoRenderer/badges")
-        .and_then(Value::as_array)
-        .is_some_and(|badges| {
-            badges.iter().take(16).any(|badge| {
-                badge
-                    .pointer("/metadataBadgeRenderer/style")
-                    .and_then(Value::as_str)
-                    == Some("BADGE_STYLE_TYPE_AD")
-            })
-        })
-}
-fn feed_entry(content: &Value) -> FeedEntry {
+fn feed_entry(content: &Value) -> Parsed<VideoSummary> {
     if let Some(video) = content.get("videoRenderer") {
         video_renderer(video)
     } else if let Some(lockup) = content.get("lockupViewModel") {
@@ -490,163 +452,10 @@ fn feed_entry(content: &Value) -> FeedEntry {
     } else if content.get("reelItemRenderer").is_some()
         || content.get("shortsLockupViewModel").is_some()
     {
-        FeedEntry::Filtered
+        Parsed::Filtered
     } else {
-        FeedEntry::Unsupported
+        Parsed::Unsupported
     }
-}
-fn video_renderer(video: &Value) -> FeedEntry {
-    if video
-        .pointer("/navigationEndpoint/reelWatchEndpoint")
-        .is_some()
-    {
-        return FeedEntry::Filtered;
-    }
-    let Some(id) = video
-        .get("videoId")
-        .and_then(Value::as_str)
-        .and_then(|id| VideoId::new(id).ok())
-    else {
-        return FeedEntry::Unsupported;
-    };
-    if let Some(target) = video.pointer("/navigationEndpoint/watchEndpoint/videoId")
-        && target.as_str() != Some(id.as_str())
-    {
-        return FeedEntry::Unsupported;
-    }
-    let byline = ["ownerText", "shortBylineText", "longBylineText"]
-        .iter()
-        .find_map(|key| video.get(*key));
-    FeedEntry::Video(VideoSummary {
-        id,
-        title: title_or_default(text(video.get("title"))),
-        channel: channel_or_default(text(byline)),
-        channel_id: byline
-            .and_then(|b| b.pointer("/runs/0/navigationEndpoint/browseEndpoint/browseId"))
-            .and_then(Value::as_str)
-            .and_then(|id| ChannelId::new(id).ok()),
-        duration: duration_text(&text(video.get("lengthText"))),
-        thumbnail_url: thumbnail(video.pointer("/thumbnail/thumbnails")),
-    })
-}
-fn video_lockup(lockup: &Value) -> FeedEntry {
-    if lockup.get("contentType").and_then(Value::as_str) != Some("LOCKUP_CONTENT_TYPE_VIDEO") {
-        // Mixes, playlists and other lockups are not playable single videos here.
-        return FeedEntry::Unsupported;
-    }
-    let command = lockup.pointer("/rendererContext/commandContext/onTap/innertubeCommand");
-    if command.is_some_and(|c| c.get("reelWatchEndpoint").is_some()) {
-        return FeedEntry::Filtered;
-    }
-    let Some(id) = lockup
-        .get("contentId")
-        .and_then(Value::as_str)
-        .and_then(|id| VideoId::new(id).ok())
-    else {
-        return FeedEntry::Unsupported;
-    };
-    if let Some(target) = command.and_then(|c| c.pointer("/watchEndpoint/videoId"))
-        && target.as_str() != Some(id.as_str())
-    {
-        return FeedEntry::Unsupported;
-    }
-    let metadata = lockup.pointer("/metadata/lockupMetadataViewModel");
-    let duration = lockup
-        .pointer("/contentImage/thumbnailViewModel/overlays")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .take(8)
-        .flat_map(|overlay| {
-            overlay
-                .pointer("/thumbnailOverlayBadgeViewModel/thumbnailBadges")
-                .or_else(|| overlay.pointer("/thumbnailBottomOverlayViewModel/badges"))
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-                .take(8)
-        })
-        .find_map(|badge| {
-            duration_text(
-                badge
-                    .pointer("/thumbnailBadgeViewModel/text")
-                    .and_then(Value::as_str)?,
-            )
-        });
-    FeedEntry::Video(VideoSummary {
-        id,
-        title: title_or_default(text(metadata.and_then(|m| m.get("title")))),
-        channel: channel_or_default(text(metadata.and_then(|m| {
-            m.pointer("/metadata/contentMetadataViewModel/metadataRows/0/metadataParts/0/text")
-        }))),
-        channel_id: metadata
-            .and_then(|m| {
-                m.pointer("/image/decoratedAvatarViewModel/rendererContext/commandContext/onTap/innertubeCommand/browseEndpoint/browseId")
-            })
-            .and_then(Value::as_str)
-            .and_then(|id| ChannelId::new(id).ok()),
-        duration,
-        thumbnail_url: thumbnail(lockup.pointer("/contentImage/thumbnailViewModel/image/sources")),
-    })
-}
-fn title_or_default(title: String) -> String {
-    if title.trim().is_empty() {
-        "Untitled video".into()
-    } else {
-        title
-    }
-}
-fn channel_or_default(channel: String) -> String {
-    if channel.trim().is_empty() {
-        "Unknown channel".into()
-    } else {
-        channel.chars().take(200).collect()
-    }
-}
-/// Card-sized candidate from a bounded list; only reviewed HTTPS artwork hosts.
-fn thumbnail(value: Option<&Value>) -> Option<String> {
-    let mut best: Option<(u64, &str)> = None;
-    for candidate in value?.as_array()?.iter().take(16) {
-        let Some(url) = candidate.get("url").and_then(Value::as_str) else {
-            continue;
-        };
-        let width = candidate.get("width").and_then(Value::as_u64).unwrap_or(0);
-        let better = match best {
-            None => true,
-            Some((current, _)) if current > 720 => width < current,
-            Some((current, _)) => width <= 720 && width > current,
-        };
-        if better {
-            best = Some((width, url));
-        }
-    }
-    let url = best?.1;
-    if url.len() > 2048 {
-        return None;
-    }
-    match url.strip_prefix("//") {
-        Some(rest) => crate::safe_thumbnail(&format!("https://{rest}")),
-        None => crate::safe_thumbnail(url),
-    }
-}
-/// `M:SS` or `H:MM:SS`; anything else (LIVE, localized words) is unknown.
-fn duration_text(value: &str) -> Option<std::time::Duration> {
-    let parts: Vec<_> = value.trim().split(':').collect();
-    if !(2..=3).contains(&parts.len()) {
-        return None;
-    }
-    let mut total = 0u64;
-    for (index, part) in parts.iter().enumerate() {
-        if part.is_empty() || part.len() > 4 || !part.bytes().all(|b| b.is_ascii_digit()) {
-            return None;
-        }
-        let number: u64 = part.parse().ok()?;
-        if index > 0 && (number >= 60 || part.len() != 2) {
-            return None;
-        }
-        total = total * 60 + number;
-    }
-    (total <= 31_536_000).then(|| std::time::Duration::from_secs(total))
 }
 #[cfg(test)]
 mod tests {

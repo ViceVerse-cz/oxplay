@@ -5,10 +5,15 @@ The shared search field accepts a standalone `@handle` or a strict HTTPS
 accepted. Videos, Shorts, Streams and Playlists URL suffixes select their
 corresponding channel tab. A phrase such as `@name tutorial` remains a search.
 
-Handle lookup uses the existing supervised guest yt-dlp catalog worker, with
-its cancellation, output/time bounds, page size, retry policy and ad filtering.
-Connecting an account does not attach credentials to this lookup. No extra
-HTTP client, persistent helper or synthetic channel identity is introduced.
+Handle lookup runs on the existing guest catalog worker. Since 2026-09-30 the
+provider resolves it natively with one anonymous InnerTube
+`navigation/resolve_url` request on the fixed-origin guest transport, then
+browses the returned `UC…` channel; if that response shape is unsupported, the
+supervised guest yt-dlp listing of the `@handle` URL is the one-shot fallback
+([provider evidence](provider.md#native-guest-catalog-innertube)). Both keep
+cancellation, output/time bounds, page size, no-retry policy and ad filtering.
+Connecting an account does not attach credentials to this lookup. No
+persistent helper or synthetic channel identity is introduced.
 
 A successful response must supply a valid stable `UC…` channel ID and real
 channel metadata. The acknowledged route and continuation cursor switch to

@@ -7,7 +7,9 @@ pub mod catalog;
 mod channel_avatar;
 mod chapters;
 pub mod comments;
+mod guest_catalog;
 pub mod innertube;
+mod renderers;
 pub mod suggestions;
 mod supervisor;
 use serde_json::Value;
@@ -17,13 +19,11 @@ use serein_core::{
 };
 use std::{
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Mutex, OnceLock},
     time::{Duration, Instant, SystemTime},
 };
 use url::Url;
 
-const PAGE_SIZE: usize = 20;
-const MAX_SEARCH_RESULTS: usize = 200;
 /// Upper bound for one yt-dlp JSON document. Popular videos list ~180
 /// machine-translated caption languages (observed 11.2 MiB of the 11.7 MiB
 /// document for one guest video on 2026-09-30); `skip=translated_subs` did not
@@ -33,7 +33,7 @@ pub const MAX_EXTRACTOR_JSON_BYTES: usize = 32 * 1024 * 1024;
 #[derive(Clone)]
 pub struct SearchCursor {
     query: String,
-    offset: usize,
+    catalog: catalog::CatalogCursor,
 }
 pub struct SearchPage {
     pub videos: Vec<VideoSummary>,
@@ -102,6 +102,9 @@ pub struct YtDlp {
     cooldown: Mutex<Option<RateLimit>>,
     timeout: Duration,
     resolution: ResolutionPolicy,
+    /// Anonymous InnerTube transport for public catalog reads, created lazily
+    /// on the first worker call. `None` if it cannot be constructed.
+    guest: OnceLock<Option<innertube::GuestTransport>>,
 }
 impl YtDlp {
     pub fn new(binary: impl AsRef<Path>) -> Result<Self, ProviderError> {
@@ -115,7 +118,25 @@ impl YtDlp {
             cooldown: Mutex::new(None),
             timeout: Duration::from_secs(45),
             resolution: ResolutionPolicy::default(),
+            guest: OnceLock::new(),
         })
+    }
+    fn guest(&self) -> Option<&innertube::GuestTransport> {
+        self.guest
+            .get_or_init(|| {
+                // Synthetic tests never reach the public network implicitly;
+                // they install a fixture transport explicitly.
+                #[cfg(test)]
+                return None;
+                #[cfg(not(test))]
+                innertube::GuestTransport::new().ok()
+            })
+            .as_ref()
+    }
+    #[cfg(test)]
+    pub(crate) fn with_guest_transport(self, transport: innertube::GuestTransport) -> Self {
+        let _ = self.guest.set(Some(transport));
+        self
     }
     /// Opt in to one installed, reviewed runtime. Runtime downloads remain disabled.
     pub fn with_deno(mut self, path: impl AsRef<Path>) -> Result<Self, ProviderError> {
@@ -228,6 +249,8 @@ impl YtDlp {
         }
         serde_json::from_slice(&output.stdout).map_err(|_| ProviderError::MalformedOutput)
     }
+    /// Compatibility video-only search over the typed catalog (native first,
+    /// with the same extractor fallback), 20 videos per page, 200 at most.
     pub fn search(
         &self,
         query: &str,
@@ -238,38 +261,27 @@ impl YtDlp {
         if query.is_empty() || query.chars().count() > 200 || query.chars().any(char::is_control) {
             return Err(ProviderError::InvalidInput);
         }
-        let start = match cursor {
-            Some(c) if c.query == query => c.offset,
+        let cursor = match cursor {
+            Some(c) if c.query == query => Some(&c.catalog),
             Some(_) => return Err(ProviderError::InvalidInput),
-            None => 0,
+            None => None,
         };
-        if start >= MAX_SEARCH_RESULTS {
-            return Err(ProviderError::InvalidInput);
-        }
-        let end = start + PAGE_SIZE;
-        let response = self.run(
-            &[
-                "--flat-playlist".into(),
-                "--playlist-items".into(),
-                format!("{}:{end}", start + 1),
-                "--".into(),
-                format!("ytsearch{end}:{query}"),
-            ],
-            operation,
-        )?;
-        let entries = response
-            .get("entries")
-            .and_then(Value::as_array)
-            .ok_or(ProviderError::MalformedOutput)?;
-        let videos = entries
-            .iter()
-            .filter(|v| !is_promoted(v))
-            .filter_map(|v| summary(v).ok())
-            .take(PAGE_SIZE)
-            .collect();
-        let next = (entries.len() >= PAGE_SIZE && end < MAX_SEARCH_RESULTS).then(|| SearchCursor {
+        let request = catalog::CatalogRequest::Search {
             query: query.to_owned(),
-            offset: end,
+            kind: catalog::SearchKind::Videos,
+        };
+        let page = self.catalog(&request, cursor, operation)?;
+        let videos = page
+            .items
+            .into_iter()
+            .filter_map(|item| match item {
+                serein_core::CatalogItem::Video(video) => Some(video),
+                _ => None,
+            })
+            .collect();
+        let next = page.next.map(|catalog| SearchCursor {
+            query: query.to_owned(),
+            catalog,
         });
         Ok(SearchPage { videos, next })
     }
@@ -397,6 +409,7 @@ fn is_promoted(value: &Value) -> bool {
         "promotedVideoRenderer",
         "promotedSparklesWebRenderer",
         "promotedSparklesTextSearchRenderer",
+        "searchPyvRenderer",
         "inFeedAdLayoutRenderer",
         "adPlacementRenderer",
         "adMetadata",
