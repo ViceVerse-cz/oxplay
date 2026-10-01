@@ -144,6 +144,15 @@ class NativeReleaseContracts(unittest.TestCase):
                         "--prefix=" + str(negative) + os.sep], cwd=repo, check=True)
         self.assertIn(b"\r\n", (negative / relative).read_bytes())
 
+    def test_dynamic_windows_tests_find_private_dlls_before_stock_sdk(self):
+        prefix, dependencies = self.root / "native", self.root / "sdk"
+        old = {"PATH": "ambient-sdk", "PKG_CONFIG_PATH": "ambient-pkgconfig"}
+        with patch.dict(os.environ, old, clear=True):
+            environment = windows_builder.windows_build_environment(prefix, dependencies)
+        self.assertEqual(environment["PATH"].split(os.pathsep),
+                         [str(prefix / "bin"), str(dependencies / "bin"), "ambient-sdk"])
+        self.assertTrue(environment["PKG_CONFIG_PATH"].startswith(str(prefix / "lib/pkgconfig")))
+
     def test_windows_plan_preserves_required_native_os_and_media_features(self):
         # Exercise the public portable plan, which shares its option list with
         # the actual Meson setup. All auto-disabled Windows essentials must be

@@ -31,6 +31,15 @@ MPV_MESON_OPTIONS = [
 ]
 
 
+def windows_build_environment(prefix: Path, dependencies: Path) -> dict[str, str]:
+    env = build_environment(prefix, dependencies)
+    # Meson only infers dependent DLL directories for directly linked tests.
+    # libmpv-lifetime uses LoadLibraryW, so its private FFmpeg/libplacebo DLLs
+    # must also be reachable explicitly, ahead of any stock SDK DLLs.
+    env["PATH"] = os.pathsep.join([str(prefix / "bin"), str(dependencies / "bin"), env.get("PATH", "")])
+    return env
+
+
 @lru_cache(maxsize=None)
 def msys_executable(name: str) -> str:
     """Bypass CreateProcess's system-directory lookup (notably WSL bash.exe)."""
@@ -205,7 +214,7 @@ def main() -> int:
     mpv, placebo, applied = prepare(args.work_dir.resolve(), "windows-d3d11-interop.patch")
     if args.prepare_only:
         return 0
-    env = build_environment(prefix, args.dependencies.resolve())
+    env = windows_build_environment(prefix, args.dependencies.resolve())
     if args.build_ffmpeg:
         ffmpeg = args.work_dir.resolve() / "ffmpeg"
         fetch_source(FFMPEG_URL, FFMPEG_SHA256, ffmpeg,
