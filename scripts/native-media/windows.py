@@ -19,6 +19,18 @@ from platform_build import (MPV_REVISION, PLACEBO_VERSION, build_environment,
                             FFMPEG_URL, FFMPEG_SHA256, FFMPEG_VERSION)
 
 
+# auto_features=disabled must not disable the Windows OS backend. POSIX
+# pthread IDs are incompatible with the unconditionally selected Win32 timer.
+MPV_MESON_OPTIONS = [
+    "-Dauto_features=disabled", "-Dwin32-threads=enabled",
+    # Upstream's encoding test registers av://lavfi:testsrc through libavdevice.
+    "-Dlibavdevice=enabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true",
+    "-Dbuild-date=false", "-Dgl=disabled", "-Dshaderc=enabled", "-Dspirv-cross=enabled",
+    "-Dd3d11=enabled", "-Dd3d-hwaccel=enabled", "-Dwasapi=enabled",
+    "-Dlua=luajit", "-Dmanpage-build=disabled",
+]
+
+
 @lru_cache(maxsize=None)
 def msys_executable(name: str) -> str:
     """Bypass CreateProcess's system-directory lookup (notably WSL bash.exe)."""
@@ -182,7 +194,7 @@ def main() -> int:
     if args.jobs < 1:
         parser.error("--jobs must be positive")
     if args.plan:
-        print(json.dumps({"mpv": MPV_REVISION, "libplacebo": PLACEBO_VERSION, "api": "d3d11", "ui_api": "dx12", "patches": ["common-mpv-gpu-next.patch", "windows-d3d11-interop.patch"]}, indent=2))
+        print(json.dumps({"mpv": MPV_REVISION, "libplacebo": PLACEBO_VERSION, "api": "d3d11", "ui_api": "dx12", "mpv_options": MPV_MESON_OPTIONS, "patches": ["common-mpv-gpu-next.patch", "windows-d3d11-interop.patch"]}, indent=2))
         return 0
     if sys.platform != "win32":
         parser.error("Native D3D11 media build requires Windows; --plan is portable")
@@ -210,9 +222,7 @@ def main() -> int:
     run(["meson", "compile", "-C", str(placebo / "build"), "-j", str(args.jobs)], env=env)
     run(["meson", "install", "-C", str(placebo / "build"), "--no-rebuild"], env=env)
     run(["meson", "setup", str(mpv / "build"), str(mpv), f"--prefix={prefix}", "--libdir=lib", "--buildtype=release", "--wrap-mode=nofallback",
-         # The upstream encoding test uses av://lavfi:testsrc; libavfilter is
-         # mandatory, but registering lavfi inputs requires libavdevice too.
-         "-Dauto_features=disabled", "-Dlibavdevice=enabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true", "-Dbuild-date=false", "-Dgl=disabled", "-Dshaderc=enabled", "-Dspirv-cross=enabled", "-Dd3d11=enabled", "-Dd3d-hwaccel=enabled", "-Dwasapi=enabled", "-Dlua=luajit", "-Dmanpage-build=disabled", *native], env=env)
+         *MPV_MESON_OPTIONS, *native], env=env)
     run(["meson", "compile", "-C", str(mpv / "build"), "-j", str(args.jobs)], env=env)
     run(["meson", "test", "-C", str(mpv / "build"), "--print-errorlogs", "--timeout-multiplier=2"], env=env)
     run(["meson", "install", "-C", str(mpv / "build"), "--no-rebuild"], env=env)

@@ -144,6 +144,20 @@ class NativeReleaseContracts(unittest.TestCase):
                         "--prefix=" + str(negative) + os.sep], cwd=repo, check=True)
         self.assertIn(b"\r\n", (negative / relative).read_bytes())
 
+    def test_windows_plan_preserves_required_native_os_and_media_features(self):
+        # Exercise the public portable plan, which shares its option list with
+        # the actual Meson setup. All auto-disabled Windows essentials must be
+        # explicit, including the OS timer's required native thread-ID backend.
+        plan = json.loads(subprocess.check_output([
+            sys.executable, str(ROOT / "scripts/native-media/windows.py"),
+            "--prefix", str(self.root / "prefix"), "--work-dir", str(self.root / "work"),
+            "--dependencies", str(self.root / "sdk"), "--plan"], text=True))
+        required = {"-Dwin32-threads=enabled", "-Dwasapi=enabled", "-Dd3d11=enabled",
+                    "-Dd3d-hwaccel=enabled", "-Dshaderc=enabled", "-Dspirv-cross=enabled",
+                    "-Dlibavdevice=enabled", "-Dtests=true"}
+        self.assertTrue(required <= set(plan["mpv_options"]))
+        self.assertEqual(plan["api"], "d3d11")
+
     def test_portable_source_collection_follows_actual_bundled_closure(self):
         appdir, prefix, system = [self.root / name for name in ("appdir", "prefix", "system")]
         executable = appdir / "usr/lib/oxplay/oxplay"

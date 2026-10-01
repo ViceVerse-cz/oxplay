@@ -12,9 +12,10 @@ default-feature build, Clippy, tests, renderer cache checks and headless smoke:
 ABI 1, 15 distinct VideoToolbox frames and zero teardown callbacks on the Apple
 Paravirtual device. The native Mac package also passed its integrity checks,
 and the downloaded CI app passed the local M1 playback smoke. Linux's private
-native stack passed its upstream tests and ABI/load checks on Ubuntu, Fedora
-and Arch; Arch's package verification passed. The remaining cross-platform
-release packaging rerun is pending. These checks do not establish Windows or
+native stack passed its upstream tests, ABI/load checks and distribution
+package verification on Ubuntu, Fedora and Arch. The [subsequent release run](https://github.com/ViceVerse-cz/oxplay/actions/runs/36819644642)
+also passed Debian, AppImage, portable tarball, RPM and Arch packaging.
+Windows' native release build remains pending. These checks do not establish Windows or
 Linux hardware playback or close the failed playback CPU target.
 
 The `native-macos` job builds the checksum-pinned mpv/libplacebo sources and
