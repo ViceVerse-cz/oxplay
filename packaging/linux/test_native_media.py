@@ -131,8 +131,10 @@ class NativeReleaseContracts(unittest.TestCase):
             self.assertIn('"--enable-libdav1d"', recipe)
             self.assertIn("check_software_av1(prefix,", recipe)
         dependencies = (ROOT / "packaging/linux/install-build-deps.sh").read_text()
-        for package in ("libdav1d-dev", "dav1d-devel", "gnutls dav1d libass"):
-            self.assertIn(package, dependencies)
+        packages = dependencies.split()
+        for package in ("libdav1d-dev", "libdav1d-devel", "dav1d"):
+            self.assertIn(package, packages)
+        self.assertNotIn("dav1d-devel", packages)
 
     def windows_fixture(self):
         prefix, dependencies, system = [self.root / name for name in ("native", "dependencies", "windows")]

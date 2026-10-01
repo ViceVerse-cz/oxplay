@@ -25,7 +25,7 @@ case "$ID:${VERSION_ID:-rolling}" in
   fedora:43|fedora:44)
     dnf install -y --setopt=install_weak_deps=False gcc gcc-c++ make pkgconf-pkg-config \
       curl git ca-certificates tar gzip xz python3 coreutils findutils shadow-utils util-linux \
-      meson ninja-build nasm cmake gnutls-devel dav1d-devel libass-devel luajit-devel \
+      meson ninja-build nasm cmake gnutls-devel libdav1d-devel libass-devel luajit-devel \
       libshaderc-devel vulkan-loader-devel vulkan-headers libva-devel libdrm-devel libdisplay-info-devel \
       alsa-lib-devel pulseaudio-libs-devel patchelf \
       rpm-build cpio desktop-file-utils file glibc-common \
