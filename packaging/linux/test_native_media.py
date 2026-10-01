@@ -88,7 +88,51 @@ class NativeReleaseContracts(unittest.TestCase):
             members = set(sources.getnames())
         self.assertTrue({"upstream/mpv.tar.gz", "patches/common-mpv-gpu-next.patch",
                          "patches/linux-vulkan-interop.patch", "build/linux.py",
-                         "build/install-build-deps-linux.sh"} <= members)
+                         "build/install-build-deps-linux.sh", "build/check_software_av1.c",
+                         "build/fixtures/moving-av1-64x64.ivf", "build/fixtures/moving-av1-64x64.json"} <= members)
+
+    def test_software_av1_fixture_and_probe_evidence_are_required(self):
+        prefix, work = self.root / "prefix", self.root / "work"
+        work.mkdir()
+        fixture = platform_build.PATCHES.parent / "fixtures/moving-av1-64x64.ivf"
+        metadata = json.loads(fixture.with_suffix(".json").read_text())
+        self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), metadata["sha256"])
+        self.assertEqual(fixture.stat().st_size, metadata["bytes"])
+        self.assertEqual(fixture.read_bytes()[:4], b"DKIF")
+        expected = "Software AV1 decode PASS: decoder=libdav1d frames=8 distinct=8 size=64x64 format=yuv420p"
+        with patch.object(platform_build, "run") as compile_probe, patch.object(
+                platform_build.subprocess, "check_output", return_value="-I/private/include -L/private/lib -lavcodec -lavformat -lavutil"), patch.object(
+                platform_build.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=expected + "\n")) as execute:
+            platform_build.check_software_av1(prefix, work, {"CC": "gcc"}, windows=True)
+        self.assertIn("-Werror", compile_probe.call_args.args[0])
+        self.assertEqual(execute.call_args.kwargs["timeout"], 30)
+        self.assertTrue(execute.call_args.kwargs["check"])
+        self.assertEqual(Path(execute.call_args.args[0][0]).suffix, ".exe")
+        evidence = json.loads((prefix / "share/oxplay-native/software-av1-decode.json").read_text())
+        self.assertEqual(evidence["fixture_sha256"], metadata["sha256"])
+        self.assertEqual(evidence["result"]["frames"], 8)
+        self.assertFalse(evidence["result"]["hardware"])
+
+    def test_failed_or_static_software_av1_probe_cannot_publish_evidence(self):
+        for outcome in (subprocess.CalledProcessError(1, "probe"),
+                        subprocess.CompletedProcess([], 0, stdout="decoder=libdav1d frames=8 distinct=1")):
+            prefix, work = self.root / "failed", self.root / "work"
+            work.mkdir(exist_ok=True)
+            with patch.object(platform_build, "run"), patch.object(
+                    platform_build.subprocess, "check_output", return_value="-lavcodec -lavformat -lavutil"), patch.object(
+                    platform_build.subprocess, "run", **({"side_effect": outcome} if isinstance(outcome, Exception) else {"return_value": outcome})):
+                with self.assertRaises((RuntimeError, subprocess.CalledProcessError)):
+                    platform_build.check_software_av1(prefix, work, {}, windows=False)
+            self.assertFalse((prefix / "share/oxplay-native/software-av1-decode.json").exists())
+
+    def test_private_ffmpeg_requires_software_av1_on_both_platforms(self):
+        for name in ("linux.py", "windows.py"):
+            recipe = (platform_build.PATCHES.parent / name).read_text()
+            self.assertIn('"--enable-libdav1d"', recipe)
+            self.assertIn("check_software_av1(prefix,", recipe)
+        dependencies = (ROOT / "packaging/linux/install-build-deps.sh").read_text()
+        for package in ("libdav1d-dev", "dav1d-devel", "gnutls dav1d libass"):
+            self.assertIn(package, dependencies)
 
     def windows_fixture(self):
         prefix, dependencies, system = [self.root / name for name in ("native", "dependencies", "windows")]

@@ -188,6 +188,11 @@ class WindowsNativeRelease(unittest.TestCase):
 
     def test_windows_release_requires_private_native_build_and_package_evidence(self):
         job = release_build_job()
+        # Private FFmpeg needs an explicit software AV1 decoder on clean runners;
+        # the upstream built-in AV1 decoder requires hardware acceleration.
+        tools = step(job, "Prepare UCRT64 native media build tools")
+        installed = tools.split("          install: >-\n", 1)[1].split()
+        self.assertIn("mingw-w64-ucrt-x86_64-dav1d", installed)
         native = step(job, "Build private D3D11 media libraries and runtime source closure")
         for argument in ("--build-ffmpeg", "--collect-runtime-sources"):
             self.assertIn(argument, native)

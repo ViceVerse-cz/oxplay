@@ -16,7 +16,7 @@ from functools import lru_cache
 from platform_build import (MPV_REVISION, PLACEBO_VERSION, build_environment,
                             prepare, provenance, require_tools, run,
                             source_bundle, check_installed_abi, fetch_source,
-                            FFMPEG_URL, FFMPEG_SHA256, FFMPEG_VERSION)
+                            FFMPEG_URL, FFMPEG_SHA256, FFMPEG_VERSION, check_software_av1)
 
 
 # auto_features=disabled must not disable the Windows OS backend. POSIX
@@ -222,7 +222,7 @@ def main() -> int:
         unix_prefix = subprocess.check_output(["cygpath", "-u", str(prefix)], text=True).strip()
         run([msys_executable("bash"), str(ffmpeg / "configure"), "--prefix=" + unix_prefix,
              "--enable-shared", "--disable-static", "--disable-programs", "--disable-doc",
-             "--enable-gpl", "--enable-gnutls", "--enable-w32threads", "--enable-d3d11va"], cwd=ffmpeg, env=env)
+             "--enable-gpl", "--enable-gnutls", "--enable-libdav1d", "--enable-w32threads", "--enable-d3d11va"], cwd=ffmpeg, env=env)
         run([msys_executable("make"), "-j", str(args.jobs)], cwd=ffmpeg, env=env)
         run([msys_executable("make"), "install"], cwd=ffmpeg, env=env)
     native = ["--native-file", str(args.native_file.resolve())] if args.native_file else []
@@ -248,6 +248,7 @@ def main() -> int:
     if not any((prefix / name).is_file() for name in ("libmpv-2.dll", "mpv-2.dll")):
         raise RuntimeError("Installed mpv runtime DLL is missing")
     check_installed_abi(prefix, args.work_dir.resolve(), env, vulkan=False)
+    check_software_av1(prefix, args.work_dir.resolve(), env, windows=True)
     source_bundle(prefix, args.work_dir.resolve(), applied)
     if args.collect_runtime_sources:
         collect_runtime_sources(prefix, args.dependencies.resolve(), records, args.work_dir.resolve())

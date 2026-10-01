@@ -220,7 +220,7 @@ jobs:
             mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-nasm
             mingw-w64-ucrt-x86_64-gnutls mingw-w64-ucrt-x86_64-libass
             mingw-w64-ucrt-x86_64-shaderc mingw-w64-ucrt-x86_64-spirv-cross
-            mingw-w64-ucrt-x86_64-luajit
+            mingw-w64-ucrt-x86_64-luajit mingw-w64-ucrt-x86_64-dav1d
       - name: Build private D3D11 media libraries and runtime source closure
         if: runner.os == 'Windows'
         shell: msys2 {0}

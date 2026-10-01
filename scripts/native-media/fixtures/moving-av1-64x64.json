@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "file": "moving-av1-64x64.ivf",
+  "sha256": "7639f033a9c91d1d7b6dbe833f003820ac3b3615de78d49e9db23e912fbb6448",
+  "bytes": 3680,
+  "origin": "Synthetic FFmpeg lavfi testsrc2; no external media",
+  "generator": "Homebrew FFmpeg9.0.2, SVT-AV1 encoder4.2.0, single CPU worker",
+  "ffmpeg_version": [
+    "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "configuration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.2 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon"
+  ],
+  "command": [
+    "ffmpeg",
+    "-nostdin",
+    "-hide_banner",
+    "-loglevel",
+    "warning",
+    "-f",
+    "lavfi",
+    "-i",
+    "testsrc2=size=64x64:rate=8:duration=1",
+    "-frames:v",
+    "8",
+    "-an",
+    "-c:v",
+    "libsvtav1",
+    "-preset",
+    "12",
+    "-crf",
+    "40",
+    "-svtav1-params",
+    "lp=1",
+    "-pix_fmt",
+    "yuv420p",
+    "-f",
+    "ivf",
+    "moving-av1-64x64.ivf"
+  ],
+  "expected": {
+    "decoder": "libdav1d",
+    "width": 64,
+    "height": 64,
+    "frames": 8,
+    "distinct_luma_frames": 8,
+    "hardware": false
+  }
+}

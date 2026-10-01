@@ -8,7 +8,7 @@ import sys
 from platform_build import (MPV_REVISION, PLACEBO_VERSION, build_environment,
                             prepare, provenance, require_tools, run, fetch_source,
                             FFMPEG_URL, FFMPEG_SHA256, FFMPEG_VERSION,
-                            source_bundle, check_installed_abi)
+                            source_bundle, check_installed_abi, check_software_av1)
 
 
 def main() -> int:
@@ -45,7 +45,7 @@ def main() -> int:
         # system ffmpeg-free cannot supply the release's codec coverage.
         run([str(ffmpeg / "configure"), f"--prefix={prefix}", "--libdir=" + str(prefix / "lib"),
              "--enable-shared", "--disable-static", "--disable-programs", "--disable-doc",
-             "--enable-gpl", "--enable-gnutls", "--enable-vaapi", "--enable-libdrm"], cwd=ffmpeg, env=env)
+             "--enable-gpl", "--enable-gnutls", "--enable-libdav1d", "--enable-vaapi", "--enable-libdrm"], cwd=ffmpeg, env=env)
         run(["make", "-j", str(args.jobs)], cwd=ffmpeg, env=env)
         run(["make", "install"], cwd=ffmpeg, env=env)
     run(["meson", "setup", str(placebo / "build"), str(placebo), f"--prefix={prefix}", "--libdir=lib", "--buildtype=release", "--wrap-mode=nofallback",
@@ -63,6 +63,7 @@ def main() -> int:
     run(["meson", "test", "-C", str(mpv / "build"), "--print-errorlogs", "--timeout-multiplier=2"], env=env)
     run(["meson", "install", "-C", str(mpv / "build"), "--no-rebuild"], env=env)
     check_installed_abi(prefix, args.work_dir.resolve(), env, vulkan=True)
+    check_software_av1(prefix, args.work_dir.resolve(), env, windows=False)
     source_bundle(prefix, args.work_dir.resolve(), applied)
     provenance(prefix, "linux-vulkan", applied, env, work=args.work_dir.resolve(), private_ffmpeg=args.build_ffmpeg)
     print(f"Set OXPLAY_NATIVE_MPV_PREFIX={prefix}, PKG_CONFIG_PATH={prefix}/lib/pkgconfig and LD_LIBRARY_PATH={prefix}/lib")

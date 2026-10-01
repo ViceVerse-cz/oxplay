@@ -17,6 +17,14 @@ in performance results. D3D11VA may perform a GPU texture copy from decoder
 storage to a shader-readable surface; this does not transfer a frame through CPU
 memory. Do not force mpv's unsafe `d3d11va-zero-copy` option.
 
+The private Linux and Windows FFmpeg builds enable dav1d so AV1 playback also
+works without a hardware AV1 decoder. Each build must decode the authenticated
+synthetic AV1 fixture through explicit software `libdav1d`, producing eight
+distinct 64×64 frames. The bounded probe and its fixture ship with the build
+sources; its result and fixture checksum are recorded in the media provenance.
+This check preserves software fallback without changing automatic hardware
+decoder selection or the app's H.264 format preference.
+
 ## Source inputs and status
 
 Both recipes use [lhc70000/mpv at 97179bce](https://github.com/lhc70000/mpv/tree/97179bce7ed980c53647d6344916f632fe689e9e)

@@ -108,7 +108,7 @@ def provenance(prefix: Path, platform: str, applied: list[dict], env: dict,
     # Record every resolved native dependency instead of claiming a reproducible
     # binary from source pins alone. The SDK/compiler/system packages are external.
     dependencies = {}
-    for package in ("libavcodec", "libavformat", "libavutil", "libass", "libplacebo", "vulkan", "shaderc", "spirv-cross-c-shared", "libva", "lua", "luajit"):
+    for package in ("libavcodec", "libavformat", "libavutil", "dav1d", "libass", "libplacebo", "vulkan", "shaderc", "spirv-cross-c-shared", "libva", "lua", "luajit"):
         result = subprocess.run(["pkg-config", "--modversion", package], env=env, text=True, capture_output=True)
         if result.returncode == 0:
             dependencies[package] = result.stdout.strip()
@@ -125,6 +125,9 @@ def provenance(prefix: Path, platform: str, applied: list[dict], env: dict,
              "source_bundle_sha256": hashlib.sha256((prefix / "share/oxplay-native/sources.tar.gz").read_bytes()).hexdigest()}
     if private_ffmpeg:
         value["ffmpeg"] = {"version": FFMPEG_VERSION, "url": FFMPEG_URL, "sha256": FFMPEG_SHA256}
+    software_check = prefix / "share/oxplay-native/software-av1-decode.json"
+    if software_check.is_file():
+        value["software_codec_checks"] = {"av1": json.loads(software_check.read_text())}
     value["meson_build_options"] = {}
     for name in ("mpv", "libplacebo"):
         options = work / name / "build/meson-info/intro-buildoptions.json"
@@ -164,8 +167,9 @@ def source_bundle(prefix: Path, work: Path, applied: list[dict]) -> None:
             archive.add(path, arcname="upstream/" + path.name)
         for patch in applied:
             archive.add(PATCHES / patch["file"], arcname="patches/" + patch["file"])
-        for name in ("platform_build.py", "linux.py", "windows.py", "check_abi.c"):
+        for name in ("platform_build.py", "linux.py", "windows.py", "check_abi.c", "check_software_av1.c"):
             archive.add(PATCHES.parent / name, arcname="build/" + name)
+        archive.add(PATCHES.parent / "fixtures", arcname="build/fixtures")
         archive.add(PATCHES.parents[2] / "packaging/linux/install-build-deps.sh",
                     arcname="build/install-build-deps-linux.sh")
     for name in ("mpv", "libplacebo", "ffmpeg"):
@@ -212,6 +216,35 @@ def check_installed_abi(prefix: Path, work: Path, env: dict, *, vulkan: bool) ->
     finally:
         if lease:
             lease.close()
+
+
+def check_software_av1(prefix: Path, work: Path, env: dict, *, windows: bool) -> None:
+    """Require actual bounded moving-frame AV1 decode through CPU libdav1d."""
+    fixture = PATCHES.parent / "fixtures/moving-av1-64x64.ivf"
+    metadata = json.loads(fixture.with_suffix(".json").read_text())
+    digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+    if digest != metadata["sha256"] or fixture.stat().st_size != metadata["bytes"]:
+        raise RuntimeError("Software AV1 fixture differs from its authenticated provenance")
+    executable = work / ("check-software-av1.exe" if windows else "check-software-av1")
+    libraries = shlex.split(subprocess.check_output(
+        ["pkg-config", "--cflags", "--libs", "libavcodec", "libavformat", "libavutil"],
+        text=True, env=env))
+    run([*shlex.split(env.get("CC", "cc")), "-std=c11", "-Werror",
+         str(PATCHES.parent / "check_software_av1.c"), "-o", str(executable), *libraries], env=env)
+    try:
+        result = subprocess.run([str(executable), str(fixture)], env=env, check=True,
+                                text=True, capture_output=True, timeout=30)
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError("Software AV1 decode probe failed: " +
+                           (error.stderr or error.stdout or str(error))[:2048]) from error
+    expected = "Software AV1 decode PASS: decoder=libdav1d frames=8 distinct=8 size=64x64 format=yuv420p"
+    if result.stdout.strip() != expected:
+        raise RuntimeError("Software AV1 probe returned unexpected frame evidence: " + result.stdout)
+    print(result.stdout.strip(), flush=True)
+    record = prefix / "share/oxplay-native/software-av1-decode.json"
+    record.parent.mkdir(parents=True, exist_ok=True)
+    record.write_text(json.dumps({"schema": 1, "fixture_sha256": digest,
+                                 "result": metadata["expected"], "stdout": result.stdout.strip()}, indent=2) + "\n")
 
 
 def require_tools() -> None:
