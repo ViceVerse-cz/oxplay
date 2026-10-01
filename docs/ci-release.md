@@ -7,7 +7,15 @@ and release artifacts below use the legacy stack; they do not qualify the native
 migration. The release workflow now builds the private native media stack and
 default Rust features for every platform. Linux uses pinned full FFmpeg rather
 than Fedora’s codec-limited system build, and Windows uses an explicit UCRT64
-DLL closure with source records. Hosted validation for this migration is pending.
+DLL closure with source records. The [October 1 native macOS run](https://github.com/ViceVerse-cz/oxplay/actions/runs/36816648669/job/110223746474) passed its
+default-feature build, Clippy, tests, renderer cache checks and headless smoke:
+ABI 1, 15 distinct VideoToolbox frames and zero teardown callbacks on the Apple
+Paravirtual device. The native Mac package also passed its integrity checks,
+and the downloaded CI app passed the local M1 playback smoke. Linux's private
+native stack passed its upstream tests and ABI/load checks on Ubuntu, Fedora
+and Arch; Arch's package verification passed. The remaining cross-platform
+release packaging rerun is pending. These checks do not establish Windows or
+Linux hardware playback or close the failed playback CPU target.
 
 The `native-macos` job builds the checksum-pinned mpv/libplacebo sources and
 reviewed patches with [`macos.py`](../scripts/native-media/macos.py). It installs

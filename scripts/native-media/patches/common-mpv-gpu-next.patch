@@ -141,6 +141,26 @@
  }
  
  static void reset(struct render_backend *ctx)
+@@ -495,3 +520,3 @@
+ {
+-    static const struct pl_filter_preset fixed_scalers[] = {
++    const struct pl_filter_preset fixed_scalers[] = {
+         { "bilinear",     &pl_filter_bilinear },
+@@ -502,3 +527,3 @@
+     };
+-    static const struct pl_filter_preset fixed_frame_mixers[] = {
++    const struct pl_filter_preset fixed_frame_mixers[] = {
+         { "linear",     &pl_filter_bilinear   },
+@@ -612,3 +637,3 @@
+     // Tone mapping and gamut mapping
+-    static const struct pl_tone_map_function * const tone_map_funs[] = {
++    const struct pl_tone_map_function * const tone_map_funs[] = {
+         [TONE_MAPPING_AUTO]      = &pl_tone_map_auto,
+@@ -626,3 +651,3 @@
+     };
+-    static const struct pl_gamut_map_function * const gamut_modes[] = {
++    const struct pl_gamut_map_function * const gamut_modes[] = {
+         [GAMUT_AUTO]       = NULL, // resolved below
 @@ -824,13 +849,8 @@
      struct pl_frame_mix mix = {0};
      pl_queue_update(p->queue, &mix, pl_queue_params(.pts = pts));

@@ -28,9 +28,9 @@ app do not inherit bundled libraries. The AppImage keeps host GPU drivers,
 glibc, X11/Wayland, audio servers, VA-API/VDPAU/Vulkan loaders and fontconfig
 from the system (the AppImage exclude list); it needs glibc 2.39 or newer.
 
-**Windows.** The release job sets `MPV_DIR` to the extracted pinned
-`mpv-dev-x86_64` archive (`include/mpv/*.h`, `libmpv-2.dll`, `libmpv.dll.a`)
-and adds an MSVC import library `mpv.lib` generated from the DLL's export table
+**Windows.** The release job builds the pinned, patched D3D11 media stack in a
+private UCRT64 prefix and sets `MPV_DIR` to that prefix (`include/mpv/*.h`,
+`libmpv-2.dll`, `libmpv.dll.a`). It adds an MSVC import library `mpv.lib` generated from the DLL's export table
 (`packaging/windows/mpv_import_lib.py`). The Windows port's build script links
 libmpv from `MPV_DIR`. `oxplay.exe` is built with a static CRT. The installer
 installs per user to `%LOCALAPPDATA%\Programs\Oxplay` without elevation and its
