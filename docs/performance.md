@@ -1,5 +1,10 @@
 # Performance qualification
 
+The [2026-10-01 native-backend audit](performance-native-2026-10-01.md) records
+the Metal/Vulkan/Direct3D migration, CPU profiling, bounded renderer caches, and
+new CPU/memory comparisons. Its build-specific results supersede no historical
+measurement; platform and browser qualification limits remain explicit.
+
 The [2026-09-30 audit](performance-audit-2026-09-30.md) checks the current worker,
 image and cancellation paths and records new finite native measurements. Earlier
 results below retain their original source and qualification scope.

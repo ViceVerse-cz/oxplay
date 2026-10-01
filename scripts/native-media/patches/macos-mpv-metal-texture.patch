@@ -1,0 +1,432 @@
+--- a/include/mpv/render.h
++++ b/include/mpv/render.h
+@@ -442,6 +442,8 @@
+      * Type: mpv_metal_init_params* (see render_mtl.h)
+      */
+     MPV_RENDER_PARAM_METAL_INIT_PARAMS = 23,
++    /** Caller-owned Metal texture; mpv_metal_texture from render_mtl.h. */
++    MPV_RENDER_PARAM_METAL_TEXTURE = 24,
+ } mpv_render_param_type;
+ 
+ /**
+--- a/include/mpv/render_mtl.h
++++ b/include/mpv/render_mtl.h
+@@ -17,6 +17,8 @@
+ #define MPV_CLIENT_API_RENDER_MTL_H_
+ 
+ #include "render.h"
++
++#define OXPLAY_NATIVE_RENDER_ABI 1
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -74,7 +76,26 @@
+      * Only set this when targeting a specific GPU on a multi-GPU Mac.
+      */
+     void *metal_device;
++    /** Required in offscreen mode (layer=NULL); same queue used by host. */
++    void *command_queue;
++    /** Optional completion wake; may execute on a Metal completion thread. */
++    void (*wakeup)(void *);
++    void *wakeup_context;
+ } mpv_metal_init_params;
++
++/** Offscreen mode: required per-frame parameter MPV_RENDER_PARAM_METAL_TEXTURE.
++ * RGBA8Unorm target with ShaderRead|RenderTarget usage on the supplied device.
++ * Host keeps ownership until all host/native GPU submissions complete.
++ * Native submits before returning; the shared queue orders subsequent sampling.
++ * BUSY=27 via get_info/render writes int1 if native capacity is full. A busy
++ * render leaves the queued mpv frame intact; completion invokes wakeup(context).
++ * Context destruction drains all native completion handlers before returning.
++ */
++typedef struct mpv_metal_texture {
++    void *texture;
++    int width;
++    int height;
++} mpv_metal_texture;
+ 
+ #ifdef __cplusplus
+ }
+--- a/meson.build
++++ b/meson.build
+@@ -1342,7 +1342,8 @@
+ endif
+ 
+ if darwin and libplacebo.get_variable('pl_has_metal', default_value: '0') == '1'
+-    sources += files('video/out/gpu_next/libmpv_mtl_pl.c')
++    sources += files('video/out/gpu_next/libmpv_mtl_pl.c',
++                     'video/out/gpu_next/libmpv_mtl_vt.m')
+ endif
+ 
+ if features['vulkan'] and features['android']
+@@ -1837,7 +1838,8 @@
+                  description: 'mpv media player client library')
+ 
+     headers = ['include/mpv/client.h', 'include/mpv/render.h',
+-               'include/mpv/render_gl.h', 'include/mpv/stream_cb.h']
++               'include/mpv/render_gl.h', 'include/mpv/stream_cb.h',
++               'include/mpv/render_mtl.h', 'include/mpv/render_vk.h']
+     install_headers(headers, subdir: 'mpv')
+ 
+     # Allow projects to build with libmpv by cloning into ./subprojects/mpv
+--- a/video/out/gpu_next/libmpv_mtl_pl.c
++++ b/video/out/gpu_next/libmpv_mtl_pl.c
+@@ -30,23 +30,31 @@
+ #include "video/out/libmpv.h"
+ #include "video/out/placebo/utils.h"
+ #include "libmpv_gpu_next.h"
++#include "libmpv_mtl_vt.h"
+ 
+ struct priv {
+     pl_metal metal;
+     pl_swapchain swapchain;
+     struct pl_swapchain_frame cur_frame;
+     bool has_frame;
++    bool offscreen;
++    void (*wakeup)(void *);
++    void *wakeup_context;
++    struct mpv_metal_vt *vt;
+ };
+ 
+ static int init(struct libmpv_gpu_next_context *ctx, mpv_render_param *params)
+ {
+     mpv_metal_init_params *p_init =
+         get_mpv_render_param(params, MPV_RENDER_PARAM_METAL_INIT_PARAMS, NULL);
+-    if (!p_init || !p_init->layer)
++    if (!p_init || (!p_init->layer && (!p_init->metal_device || !p_init->command_queue)))
+         return MPV_ERROR_INVALID_PARAMETER;
+ 
+     struct priv *p = talloc_zero(NULL, struct priv);
+     ctx->priv = p;
++    p->offscreen = !p_init->layer;
++    p->wakeup = p_init->wakeup;
++    p->wakeup_context = p_init->wakeup_context;
+ 
+     ctx->pllog = mppl_log_create(p, ctx->log);
+     if (!ctx->pllog)
+@@ -55,6 +63,7 @@
+     mppl_log_set_probing(ctx->pllog, true);
+     p->metal = pl_metal_create(ctx->pllog, pl_metal_params(
+         .device = p_init->metal_device,
++        .command_queue = p_init->command_queue,
+     ));
+     mppl_log_set_probing(ctx->pllog, false);
+ 
+@@ -62,6 +71,10 @@
+         MP_ERR(ctx, "Failed to create Metal context via libplacebo.\n");
+         return MPV_ERROR_UNSUPPORTED;
+     }
++
++    ctx->gpu = p->metal->gpu;
++    if (p->offscreen)
++        return 0;
+ 
+     p->swapchain = pl_metal_create_swapchain(p->metal, pl_metal_swapchain_params(
+         .layer = p_init->layer,
+@@ -80,13 +93,31 @@
+                             const struct pl_color_space *csp)
+ {
+     struct priv *p = ctx->priv;
+-    pl_swapchain_colorspace_hint(p->swapchain, csp);
++    if (p->swapchain)
++        pl_swapchain_colorspace_hint(p->swapchain, csp);
+ }
+ 
+ static int start_frame(struct libmpv_gpu_next_context *ctx,
+                        mpv_render_param *params, pl_tex *out_tex)
+ {
+     struct priv *p = ctx->priv;
++
++    if (p->offscreen) {
++        mpv_metal_texture *target = get_mpv_render_param(params,
++            MPV_RENDER_PARAM_METAL_TEXTURE, NULL);
++        if (!target || !target->texture || !pl_metal_offscreen_available(ctx->gpu))
++            return MPV_ERROR_INVALID_PARAMETER;
++        *out_tex = pl_metal_wrap(ctx->gpu, pl_metal_wrap_params(.texture = target->texture));
++        if (!*out_tex)
++            return MPV_ERROR_UNSUPPORTED;
++        if ((*out_tex)->params.w != target->width || (*out_tex)->params.h != target->height ||
++            !(*out_tex)->params.renderable || !(*out_tex)->params.sampleable) {
++            pl_tex_destroy(ctx->gpu, out_tex);
++            return MPV_ERROR_INVALID_PARAMETER;
++        }
++        ctx->target_color_space = pl_color_space_srgb;
++        return 0;
++    }
+ 
+     if (!pl_swapchain_start_frame(p->swapchain, &p->cur_frame)) {
+         MP_WARN(ctx, "pl_swapchain_start_frame failed — skipping frame.\n");
+@@ -104,6 +135,16 @@
+                            mpv_render_param *params, int *out_w, int *out_h)
+ {
+     struct priv *p = ctx->priv;
++    if (p->offscreen) {
++        mpv_metal_texture *target = get_mpv_render_param(params,
++            MPV_RENDER_PARAM_METAL_TEXTURE, NULL);
++        if (!target || !target->texture || target->width < 1 || target->height < 1 ||
++            target->width > 4096 || target->height > 4096)
++            return MPV_ERROR_INVALID_PARAMETER;
++        *out_w = target->width;
++        *out_h = target->height;
++        return 0;
++    }
+     // Pass w=h=0 to read the live drawableSize without resizing.
+     // Avoids a one-frame lag if the layer resizes between get_target_size() and render().
+     int w = 0, h = 0;
+@@ -118,6 +159,12 @@
+ {
+     struct priv *p = ctx->priv;
+ 
++    if (p->offscreen) {
++        pl_tex_destroy(ctx->gpu, target);
++        if (!pl_metal_offscreen_submit(ctx->gpu, p->wakeup, p->wakeup_context))
++            MP_ERR(ctx, "Failed to submit offscreen Metal frame.\n");
++        return;
++    }
+     // target points to the swapchain FBO — the swapchain owns it, do not destroy.
+     (void)target;
+ 
+@@ -136,6 +183,9 @@
+     struct priv *p = ctx->priv;
+     if (!p)
+         return;
++    if (p->metal)
++        pl_metal_offscreen_finish(ctx->gpu);
++    mpv_metal_vt_destroy(&p->vt);
+     if (p->swapchain)
+         pl_swapchain_destroy(&p->swapchain);
+     if (p->metal)
+@@ -145,10 +195,54 @@
+     ctx->priv = NULL;
+ }
+ 
++static int get_info(struct libmpv_gpu_next_context *ctx, mpv_render_param param)
++{
++    struct priv *p = ctx->priv;
++    if (param.type != MPV_RENDER_PARAM_METAL_BUSY || !param.data)
++        return MPV_ERROR_NOT_IMPLEMENTED;
++    *(int *)param.data = p->offscreen && !pl_metal_offscreen_available(ctx->gpu);
++    return 0;
++}
++
++static int init_hwdec(struct libmpv_gpu_next_context *ctx, struct mp_hwdec_devices *devices)
++{
++    struct priv *p = ctx->priv;
++    p->vt = mpv_metal_vt_create(ctx, p->metal, devices);
++    return p->vt ? 0 : MPV_ERROR_UNSUPPORTED;
++}
++
++static bool check_hwdec_format(struct libmpv_gpu_next_context *ctx, int imgfmt)
++{
++    struct priv *p = ctx->priv;
++    return p->vt && imgfmt == IMGFMT_VIDEOTOOLBOX;
++}
++
++static bool map_hwdec(struct libmpv_gpu_next_context *ctx,
++                      struct pl_frame *frame, struct mp_image *image)
++{
++    return mpv_metal_vt_map(((struct priv *)ctx->priv)->vt, frame, image);
++}
++
++static void unmap_hwdec(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame)
++{
++    mpv_metal_vt_unmap(((struct priv *)ctx->priv)->vt, frame);
++}
++
++static void hold_hwdec(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame)
++{
++    mpv_metal_vt_hold(((struct priv *)ctx->priv)->vt, frame);
++}
++
+ const struct libmpv_gpu_next_context_fns libmpv_gpu_next_context_mtl = {
+     .api_name        = MPV_RENDER_API_TYPE_METAL,
+     .init            = init,
+     .colorspace_hint = colorspace_hint,
++    .get_info        = get_info,
++    .init_hwdec      = init_hwdec,
++    .check_hwdec_format = check_hwdec_format,
++    .map_hwdec       = map_hwdec,
++    .unmap_hwdec     = unmap_hwdec,
++    .hold_hwdec      = hold_hwdec,
+     .start_frame     = start_frame,
+     .get_target_size = get_target_size,
+     .end_frame       = end_frame,
+--- a/video/out/gpu_next/libmpv_mtl_vt.h
++++ b/video/out/gpu_next/libmpv_mtl_vt.h
+@@ -0,0 +1,14 @@
++// SPDX-License-Identifier: LGPL-2.1-or-later
++#pragma once
++#include <libplacebo/metal.h>
++#include <libplacebo/renderer.h>
++#include "video/hwdec.h"
++#include "video/mp_image.h"
++struct libmpv_gpu_next_context;
++struct mpv_metal_vt;
++struct mpv_metal_vt *mpv_metal_vt_create(struct libmpv_gpu_next_context *, pl_metal,
++                                       struct mp_hwdec_devices *);
++void mpv_metal_vt_destroy(struct mpv_metal_vt **);
++bool mpv_metal_vt_map(struct mpv_metal_vt *, struct pl_frame *, struct mp_image *);
++void mpv_metal_vt_unmap(struct mpv_metal_vt *, struct pl_frame *);
++void mpv_metal_vt_hold(struct mpv_metal_vt *, struct pl_frame *);
+--- a/video/out/gpu_next/libmpv_mtl_vt.m
++++ b/video/out/gpu_next/libmpv_mtl_vt.m
+@@ -0,0 +1,159 @@
++// SPDX-License-Identifier: LGPL-2.1-or-later
++// VideoToolbox import follows upstream hwdec_vt_pl.m, using native Metal wraps.
++#import <Metal/Metal.h>
++#import <CoreVideo/CoreVideo.h>
++#include <libavutil/hwcontext.h>
++#include "mpv_talloc.h"
++#include "common/msg.h"
++#include "libmpv_gpu_next.h"
++#include "libmpv_mtl_vt.h"
++#include "pl_utils.h"
++
++struct vt_mapping {
++    struct vt_mapping *next;
++    CVPixelBufferRef pixel;
++    CVMetalTextureRef planes[4];
++    pl_tex textures[4];
++};
++struct mpv_metal_vt {
++    pl_metal metal;
++    struct mp_hwdec_devices *devices;
++    struct mp_hwdec_ctx hw;
++    CVMetalTextureCacheRef cache;
++    struct vt_mapping *mapped;
++};
++
++struct mpv_metal_vt *mpv_metal_vt_create(struct libmpv_gpu_next_context *ctx,
++                                        pl_metal metal, struct mp_hwdec_devices *devices)
++{
++    struct mpv_metal_vt *vt = talloc_zero(NULL, struct mpv_metal_vt);
++    vt->metal = metal;
++    vt->devices = devices;
++    vt->hw.driver_name = "videotoolbox";
++    vt->hw.hw_imgfmt = IMGFMT_VIDEOTOOLBOX;
++    if (av_hwdevice_ctx_create(&vt->hw.av_device_ref,
++            AV_HWDEVICE_TYPE_VIDEOTOOLBOX, NULL, NULL, 0) < 0 ||
++        CVMetalTextureCacheCreate(kCFAllocatorDefault, NULL,
++            (__bridge id<MTLDevice>)metal->device, NULL, &vt->cache) != kCVReturnSuccess)
++    {
++        MP_ERR(ctx, "Could not initialize native VideoToolbox texture import.\n");
++        mpv_metal_vt_destroy(&vt);
++        return NULL;
++    }
++    hwdec_devices_add(devices, &vt->hw);
++    return vt;
++}
++
++static void free_mapping(struct mpv_metal_vt *vt, struct vt_mapping *mapping)
++{
++    for (int i = 0; i < 4; i++) {
++        pl_tex_destroy(vt->metal->gpu, &mapping->textures[i]);
++        if (mapping->planes[i])
++            CFRelease(mapping->planes[i]);
++    }
++    if (mapping->pixel)
++        CVPixelBufferRelease(mapping->pixel);
++    talloc_free(mapping);
++}
++
++void mpv_metal_vt_destroy(struct mpv_metal_vt **ptr)
++{
++    struct mpv_metal_vt *vt = *ptr;
++    if (!vt)
++        return;
++    // Native caller drains all submitted work before reaching this function.
++    while (vt->mapped) {
++        struct vt_mapping *m = vt->mapped;
++        vt->mapped = m->next;
++        free_mapping(vt, m);
++    }
++    hwdec_devices_remove(vt->devices, &vt->hw);
++    av_buffer_unref(&vt->hw.av_device_ref);
++    if (vt->cache)
++        CFRelease(vt->cache);
++    talloc_free(vt);
++    *ptr = NULL;
++}
++
++bool mpv_metal_vt_map(struct mpv_metal_vt *vt, struct pl_frame *frame, struct mp_image *image)
++{
++    struct pl_plane_data data[4] = {0};
++    int count = plane_data_from_imgfmt(data, &frame->repr.bits, image->params.hw_subfmt, false);
++    if (!count || count > 4 || !image->planes[3])
++        return false;
++    struct vt_mapping *m = talloc_zero(NULL, struct vt_mapping);
++    m->pixel = (CVPixelBufferRef)image->planes[3];
++    CVPixelBufferRetain(m->pixel);
++    bool planar = CVPixelBufferIsPlanar(m->pixel);
++    if ((planar && CVPixelBufferGetPlaneCount(m->pixel) != count) || (!planar && count != 1))
++        goto fail;
++    for (int i = 0; i < count; i++) {
++        int components = 0;
++        while (components < 4 && data[i].component_size[components])
++            components++;
++        MTLPixelFormat format;
++        int bits = data[i].component_size[0];
++        if (components == 1 && bits == 8) format = MTLPixelFormatR8Unorm;
++        else if (components == 2 && bits == 8) format = MTLPixelFormatRG8Unorm;
++        else if (components == 1 && bits == 16) format = MTLPixelFormatR16Unorm;
++        else if (components == 2 && bits == 16) format = MTLPixelFormatRG16Unorm;
++        else if (components == 4 && bits == 8) {
++            format = CVPixelBufferGetPixelFormatType(m->pixel) == kCVPixelFormatType_32BGRA
++                ? MTLPixelFormatBGRA8Unorm : MTLPixelFormatRGBA8Unorm;
++        } else goto fail;
++        size_t width = planar ? CVPixelBufferGetWidthOfPlane(m->pixel, i)
++                              : CVPixelBufferGetWidth(m->pixel);
++        size_t height = planar ? CVPixelBufferGetHeightOfPlane(m->pixel, i)
++                               : CVPixelBufferGetHeight(m->pixel);
++        if (CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, vt->cache,
++                m->pixel, NULL, format, width, height, i, &m->planes[i]) != kCVReturnSuccess)
++            goto fail;
++        m->textures[i] = pl_metal_wrap(vt->metal->gpu, pl_metal_wrap_params(
++            .texture = (__bridge void *)CVMetalTextureGetTexture(m->planes[i])));
++        if (!m->textures[i] || !m->textures[i]->params.sampleable)
++            goto fail;
++        frame->planes[i] = (struct pl_plane){.texture = m->textures[i], .components = components};
++        for (int c = 0; c < components; c++)
++            frame->planes[i].component_mapping[c] = data[i].component_map[c];
++        // BGRA textures are sampled as RGBA by Metal, unlike raw memory order.
++        if (format == MTLPixelFormatBGRA8Unorm) {
++            frame->planes[i].component_mapping[0] = PL_CHANNEL_R;
++            frame->planes[i].component_mapping[1] = PL_CHANNEL_G;
++            frame->planes[i].component_mapping[2] = PL_CHANNEL_B;
++        }
++    }
++    frame->num_planes = count;
++    frame->user_data = m;
++    pl_frame_set_chroma_location(frame, image->params.chroma_location);
++    m->next = vt->mapped;
++    vt->mapped = m;
++    return true;
++fail:
++    free_mapping(vt, m);
++    return false;
++}
++
++void mpv_metal_vt_unmap(struct mpv_metal_vt *vt, struct pl_frame *frame)
++{
++    struct vt_mapping **link = &vt->mapped;
++    while (*link && *link != frame->user_data)
++        link = &(*link)->next;
++    if (!*link)
++        return;
++    struct vt_mapping *m = *link;
++    *link = m->next;
++    free_mapping(vt, m);
++}
++
++void mpv_metal_vt_hold(struct mpv_metal_vt *vt, struct pl_frame *frame)
++{
++    // Software frames have unrelated user_data; never dereference it here.
++    for (struct vt_mapping *m = vt->mapped; m; m = m->next) {
++        if (m != frame->user_data)
++            continue;
++        pl_metal_hold(vt->metal->gpu, m->pixel);
++        for (int i = 0; i < 4; i++)
++            pl_metal_hold(vt->metal->gpu, m->planes[i]);
++        break;
++    }
++}

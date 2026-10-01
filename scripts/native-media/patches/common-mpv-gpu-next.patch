@@ -1,0 +1,241 @@
+--- a/include/mpv/render.h
++++ b/include/mpv/render.h
+@@ -422,6 +422,8 @@
+      * See MPV_RENDER_PARAM_SW_STRIDE for alignment requirements.
+      */
+     MPV_RENDER_PARAM_SW_POINTER = 20,
++    /** Native offscreen frame capacity, int output via get_info/render. */
++    MPV_RENDER_PARAM_METAL_BUSY = 27,
+     /*
+      * MPV_RENDER_API_TYPE_VULKAN only: Vulkan device initialization parameters.
+      * Valid for mpv_render_context_create().
+--- a/video/out/libmpv.h
++++ b/video/out/libmpv.h
+@@ -48,6 +48,8 @@
+     bool (*check_format)(struct render_backend *ctx, int imgfmt);
+     // Implementation of mpv_render_context_set_parameter(). Optional.
+     int (*set_parameter)(struct render_backend *ctx, mpv_render_param param);
++    // Optional implementation of backend-specific get_info parameters.
++    int (*get_info)(struct render_backend *ctx, mpv_render_param param);
+     // Like vo_driver.reconfig().
+     void (*reconfig)(struct render_backend *ctx, struct mp_image_params *params);
+     // Like VOCTRL_RESET.
+--- a/video/out/gpu_next/libmpv_gpu_next.h
++++ b/video/out/gpu_next/libmpv_gpu_next.h
+@@ -18,11 +18,15 @@
+ #pragma once
+ 
+ #include <libplacebo/gpu.h>
++#include <libplacebo/colorspace.h>
+ #include <libplacebo/log.h>
+ #include "mpv/render.h"
+ 
+ struct mpv_global;
+ struct mp_log;
++struct mp_hwdec_devices;
++struct mp_image;
++struct pl_frame;
+ 
+ // Per-API context shared between libmpv_gpu_next.c and its backend drivers.
+ struct libmpv_gpu_next_context {
+@@ -49,6 +53,15 @@
+     // Create the libplacebo GPU context from user-supplied render params.
+     // Must set ctx->gpu and ctx->pllog on success.
+     int (*init)(struct libmpv_gpu_next_context *ctx, mpv_render_param *params);
++
++    int (*init_hwdec)(struct libmpv_gpu_next_context *ctx,
++                      struct mp_hwdec_devices *devices);
++    bool (*check_hwdec_format)(struct libmpv_gpu_next_context *ctx, int imgfmt);
++    bool (*map_hwdec)(struct libmpv_gpu_next_context *ctx,
++                      struct pl_frame *frame, struct mp_image *image);
++    void (*unmap_hwdec)(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame);
++    void (*hold_hwdec)(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame);
++    int (*get_info)(struct libmpv_gpu_next_context *ctx, mpv_render_param param);
+ 
+     // Optional — NULL for FBO backends (OpenGL, Vulkan) that have no swapchain.
+     // Swapchain backends call pl_swapchain_colorspace_hint() to configure the
+--- a/video/out/gpu_next/libmpv_gpu_next.c
++++ b/video/out/gpu_next/libmpv_gpu_next.c
+@@ -74,6 +74,7 @@
+ 
+ struct frame_priv {
+     struct priv *p;
++    bool hardware;
+ };
+ 
+ struct priv {
+@@ -118,6 +119,15 @@
+         .user_data = mpi,
+     };
+ 
++    if (p->ctx->fns->check_hwdec_format &&
++        p->ctx->fns->check_hwdec_format(p->ctx, mpi->imgfmt)) {
++        if (!p->ctx->fns->map_hwdec ||
++            !p->ctx->fns->map_hwdec(p->ctx, frame, mpi))
++            return false;
++        fp->hardware = true;
++        return true;
++    }
++
+     struct pl_plane_data data[4] = {0};
+ 
+     // Try normalized first, fall back to integer if necessary
+@@ -125,7 +135,6 @@
+     if (!n) {
+         n = plane_data_from_imgfmt(data, &frame->repr.bits, mpi->imgfmt, true);
+         if (!n) {
+-            talloc_free(mpi);
+             return false;
+         }
+     }
+@@ -146,7 +155,6 @@
+ 
+         if (!pl_upload_plane(gpu, plane, &tex[i], &data[i])) {
+             MP_ERR(p->ctx, "Failed uploading video plane %d.\n", i);
+-            talloc_free(mpi);
+             return false;
+         }
+     }
+@@ -161,6 +169,8 @@
+     struct mp_image *mpi = src->frame_data;
+     struct frame_priv *fp = mpi->priv;
+     struct priv *p = fp->p;
++    if (fp->hardware && p->ctx->fns->unmap_hwdec)
++        p->ctx->fns->unmap_hwdec(p->ctx, frame);
+ 
+     for (int i = 0; i < MAX_OSD_PARTS; i++) {
+         pl_tex t = p->osd_state.entries[i].tex;
+@@ -323,6 +333,11 @@
+     p->ctx->target_color_space = pl_color_space_srgb;
+ 
+     ctx->hwdec_devs  = hwdec_devices_create();
++    if (backend->init_hwdec) {
++        err = backend->init_hwdec(p->ctx, ctx->hwdec_devs);
++        if (err < 0)
++            return err;
++    }
+     ctx->driver_caps = VO_CAP_ROTATE90 | VO_CAP_VFLIP;
+ 
+     return 0;
+@@ -331,6 +346,9 @@
+ static bool check_format(struct render_backend *ctx, int imgfmt)
+ {
+     struct priv *p = ctx->priv;
++    if (p->ctx->fns->check_hwdec_format &&
++        p->ctx->fns->check_hwdec_format(p->ctx, imgfmt))
++        return true;
+     struct pl_bit_encoding bits;
+     struct pl_plane_data data[4] = {0};
+     int n = plane_data_from_imgfmt(data, &bits, imgfmt, false);
+@@ -349,6 +367,13 @@
+ static int set_parameter(struct render_backend *ctx, mpv_render_param param)
+ {
+     return MPV_ERROR_NOT_IMPLEMENTED;
++}
++
++static int get_info(struct render_backend *ctx, mpv_render_param param)
++{
++    struct priv *p = ctx->priv;
++    return p->ctx->fns->get_info
++        ? p->ctx->fns->get_info(p->ctx, param) : MPV_ERROR_NOT_IMPLEMENTED;
+ }
+ 
+ static void reset(struct render_backend *ctx)
+@@ -824,13 +849,8 @@
+     struct pl_frame_mix mix = {0};
+     pl_queue_update(p->queue, &mix, pl_queue_params(.pts = pts));
+ 
+-    // signatures derived from user_data (mp_image *) pointers.
+-    uint64_t sigs[64] = {0};
+-    int num_frames = MPMIN(mix.num_frames, MP_ARRAY_SIZE(sigs));
+-    for (int i = 0; i < num_frames; i++)
+-        sigs[i] = (uintptr_t) mix.frames[i]->user_data;
+-    mix.signatures = sigs;
+-    mix.num_frames = num_frames;
++    // pl_queue_update owns monotonic content signatures. Allocation addresses
++    // can be reused for different decoded frames and must never replace them.
+ 
+     // map_frame() leaves crop zeroed; set it now to avoid degenerate GLSL.
+     // Cast away const — we own the frames through user_data.
+@@ -868,12 +888,17 @@
+ 
+     struct pl_render_params rparams = p->pars->params;
+     rparams.color_adjustment = &p->pars->color_adjustment;
+-    if (!pl_render_image_mix(p->renderer, &mix, &target_frame, &rparams))
++    bool rendered = pl_render_image_mix(p->renderer, &mix, &target_frame, &rparams);
++    if (!rendered)
+         MP_WARN(p->ctx, "pl_render_image_mix failed.\n");
+ 
++    if (p->ctx->fns->hold_hwdec) {
++        for (int i = 0; i < mix.num_frames; i++)
++            p->ctx->fns->hold_hwdec(p->ctx, (struct pl_frame *)mix.frames[i]);
++    }
+     p->ctx->fns->end_frame(p->ctx, &target_tex);
+ 
+-    return 0;
++    return rendered ? 0 : MPV_ERROR_GENERIC;
+ }
+ 
+ static void destroy(struct render_backend *ctx)
+@@ -881,9 +906,6 @@
+     struct priv *p = ctx->priv;
+     if (!p)
+         return;
+-
+-    hwdec_devices_destroy(ctx->hwdec_devs);
+-    ctx->hwdec_devs = NULL;
+ 
+     if (p->ctx && p->ctx->gpu) {
+         for (int i = 0; i < MAX_OSD_PARTS; i++)
+@@ -902,6 +924,8 @@
+     if (p->ctx && p->ctx->fns)
+         p->ctx->fns->destroy(p->ctx);
+ 
++    hwdec_devices_destroy(ctx->hwdec_devs);
++    ctx->hwdec_devs = NULL;
+     talloc_free(p);
+     ctx->priv = NULL;
+ }
+@@ -910,6 +934,7 @@
+     .init           = init,
+     .check_format   = check_format,
+     .set_parameter  = set_parameter,
++    .get_info       = get_info,
+     .reconfig       = reconfig,
+     .reset          = reset,
+     .screenshot     = screenshot,
+--- a/video/out/vo_libmpv.c
++++ b/video/out/vo_libmpv.c
+@@ -341,6 +341,20 @@
+     int do_render =
+         !GET_MPV_RENDER_PARAM(params, MPV_RENDER_PARAM_SKIP_RENDERING, int, 0);
+ 
++    int busy = 0;
++    int *busy_out = get_mpv_render_param(params, MPV_RENDER_PARAM_METAL_BUSY, NULL);
++    if (busy_out)
++        *busy_out = 0;
++    if (do_render && ctx->renderer->fns->get_info &&
++        ctx->renderer->fns->get_info(ctx->renderer, (mpv_render_param){
++            .type = MPV_RENDER_PARAM_METAL_BUSY, .data = &busy}) == 0 && busy)
++    {
++        if (busy_out)
++            *busy_out = 1;
++        mp_mutex_unlock(&ctx->lock);
++        return 0; // Leave next_frame queued; a completion callback wakes the host.
++    }
++
+     if (do_render) {
+         int vp_w, vp_h;
+         int err = ctx->renderer->fns->get_target_size(ctx->renderer, params,
+@@ -479,7 +493,10 @@
+         res = 0;
+         break;
+     }
+-    default:;
++    default:
++        if (ctx->renderer->fns->get_info)
++            res = ctx->renderer->fns->get_info(ctx->renderer, param);
++        break;
+     }
+ 
+     mp_mutex_unlock(&ctx->lock);

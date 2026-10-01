@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "sources": {
+    "mpv": {
+      "repository": "lhc70000/mpv",
+      "revision": "97179bce7ed980c53647d6344916f632fe689e9e",
+      "url": "https://codeload.github.com/lhc70000/mpv/tar.gz/97179bce7ed980c53647d6344916f632fe689e9e",
+      "sha256": "0aa760258c3ad07b5339bb8998ea0f93b53357234eb49836f0caaa9da15e96e7",
+      "bytes": 7401263,
+      "license": "GPL-2.0-or-later / LGPL-2.1-or-later components; configured GPL build",
+      "destination": "mpv"
+    },
+    "libplacebo": {
+      "repository": "lhc70000/libplacebo",
+      "revision": "a96296875a067887fc75d7b74a0a4292422c204d",
+      "url": "https://codeload.github.com/lhc70000/libplacebo/tar.gz/a96296875a067887fc75d7b74a0a4292422c204d",
+      "sha256": "2cdee8df975b27fe0157bf12b13100bfcb83ccb5de9832e5bf79b3ed3aacaaca",
+      "bytes": 892828,
+      "license": "LGPL-2.1-or-later",
+      "destination": "libplacebo"
+    },
+    "spirv-cross": {
+      "repository": "KhronosGroup/SPIRV-Cross",
+      "revision": "aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+      "url": "https://codeload.github.com/KhronosGroup/SPIRV-Cross/tar.gz/aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+      "sha256": "b99db6ee6182dbeb102257e755bf6d4978c23dcfd3329033304779279bc27212",
+      "bytes": 2035431,
+      "license": "Apache-2.0",
+      "destination": "spirv-cross"
+    },
+    "jinja": {
+      "repository": "pallets/jinja",
+      "revision": "15206881c006c79667fe5154fe80c01c65410679",
+      "url": "https://codeload.github.com/pallets/jinja/tar.gz/15206881c006c79667fe5154fe80c01c65410679",
+      "sha256": "b88a20dcc2e34072fcf4159325bc6c34cd4b29a81a8b83d15d2f28ba561da296",
+      "bytes": 276954,
+      "license": "BSD-3-Clause",
+      "destination": "libplacebo/3rdparty/jinja"
+    },
+    "markupsafe": {
+      "repository": "pallets/markupsafe",
+      "revision": "297fc8e356e6836a62087949245d09a28e9f1b13",
+      "url": "https://codeload.github.com/pallets/markupsafe/tar.gz/297fc8e356e6836a62087949245d09a28e9f1b13",
+      "sha256": "da7c010c9c81a66ac73036558c1fcb6212b50482f43211cd1254035b94f82414",
+      "bytes": 83817,
+      "license": "BSD-3-Clause",
+      "destination": "libplacebo/3rdparty/markupsafe"
+    },
+    "fast_float": {
+      "repository": "fastfloat/fast_float",
+      "revision": "97b54ca9e75f5303507699d27c6b4f4efe4641a1",
+      "url": "https://codeload.github.com/fastfloat/fast_float/tar.gz/97b54ca9e75f5303507699d27c6b4f4efe4641a1",
+      "sha256": "2b132274539286e41f37857cac22aa8441d21bd86d55de825a3342b149f66801",
+      "bytes": 120200,
+      "license": "MIT OR Apache-2.0",
+      "destination": "libplacebo/3rdparty/fast_float"
+    }
+  }
+}

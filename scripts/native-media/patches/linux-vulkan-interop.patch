@@ -1,0 +1,530 @@
+--- a/include/mpv/render_vk.h
++++ b/include/mpv/render_vk.h
+@@ -24,6 +24,8 @@
+ 
+ #include "render.h"
+ 
++#define OXPLAY_NATIVE_RENDER_ABI 1
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -44,20 +46,20 @@
+  * Synchronization
+  * ---------------
+  *
+- * The host application is responsible for ensuring the image is not in use
+- * before calling mpv_render_context_render(). When the call returns, all GPU
+- * work has been submitted and waited on (via pl_gpu_finish); the image is safe
+- * to use immediately.
+- *
+- * The image is expected to be in VK_IMAGE_LAYOUT_GENERAL when passed in.
+- * After rendering it will remain in VK_IMAGE_LAYOUT_GENERAL (or whatever
+- * layout libplacebo last transitioned it to), so the caller must issue an
+- * explicit layout transition to whatever layout is needed next.
+- *
+- * For queue family ownership, pass images created with
+- * VK_SHARING_MODE_CONCURRENT, or ensure the image is not owned by any
+- * specific queue family (qf = VK_QUEUE_FAMILY_IGNORED is used in the
+- * release call to libplacebo).
++ * Output is asynchronous. wait_semaphore/value (timeline, optional first use)
++ * gates producer access; signal_semaphore/value (timeline, required nonzero)
++ * announces producer completion. Values strictly increase per semaphore. The
++ * image is explicitly returned in target_layout. A successful render enqueue
++ * does not make the image immediately safe for CPU access or presentation.
++ * The host's Vulkan queue must wait on the producer signal before sampling,
++ * then signal its consumer timeline before mpv reuses that pool slot.
++ * The imported queue is graphics family queue 0 only, count 1. All raw queue
++ * submissions and the UI queue submission must share the supplied queue lock
++ * or execute on the same serialized rendering thread. Never pass a different
++ * queue family or concurrently submit through the shared VkQueue.
++ * Keep images, semaphores, VkDevice and callback state alive until both GPU
++ * queues complete. On device loss/hung shutdown, quarantine these leases until
++ * process exit rather than freeing imported decoder storage still in use.
+  *
+  * Usage flags
+  * -----------
+@@ -101,7 +103,7 @@
+      * Graphics queue family and queue index within that family.
+      * queue_graphics.count should be the number of queues in this family
+      * that the application created (used for parallel submission).
+-     * Set count to 0 to let libplacebo use all available queues.
++     * This ABI requires graphics index 0 and count 1.
+      *
+      * At least queue_graphics must be valid. queue_compute and
+      * queue_transfer default to queue_graphics if not provided.
+@@ -133,6 +135,16 @@
+      */
+     const char * const *extensions;
+     int num_extensions;
++    /** Exact features/pNext chain ENABLED on device (not supported features).
++     * Must contain pl_vulkan_required_features: timelineSemaphore,
++     * hostQueryReset, and any additional pinned libplacebo requirements. */
++    const VkPhysicalDeviceFeatures2 *features;
++    void *queue_context;
++    void (*lock_queue)(void *, uint32_t family, uint32_t index);
++    void (*unlock_queue)(void *, uint32_t family, uint32_t index);
++    /** Optional Linux VAAPI render node. Must match this physical device's DRM
++     * render major/minor. NULL disables VAAPI native decoding. */
++    const char *drm_render_node;
+ } mpv_vulkan_init_params;
+ 
+ /**
+@@ -168,6 +180,14 @@
+      * Image dimensions. Required.
+      */
+     int w, h;
++    VkImageLayout target_layout;
++    VkSemaphore wait_semaphore;
++    uint64_t wait_value;
++    VkSemaphore signal_semaphore;
++    uint64_t signal_value;
++    /** Required immediate enqueue-status output (0 or mpv error). A negative
++     * value means the producer signal is not guaranteed; abandon this frame. */
++    int *result;
+ } mpv_vulkan_fbo;
+ 
+ #ifdef __cplusplus
+--- a/meson.build
++++ b/meson.build
+@@ -1838,6 +1838,7 @@
+ 
+     headers = ['include/mpv/client.h', 'include/mpv/render.h',
+                'include/mpv/render_gl.h', 'include/mpv/stream_cb.h']
++    headers += ['include/mpv/render_vk.h']
+     install_headers(headers, subdir: 'mpv')
+ 
+     # Allow projects to build with libmpv by cloning into ./subprojects/mpv
+--- a/video/out/gpu_next/libmpv_vk_pl.c
++++ b/video/out/gpu_next/libmpv_vk_pl.c
+@@ -1,155 +1,327 @@
+-/*
+- * This file is part of mpv.
+- *
+- * mpv is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU Lesser General Public
+- * License as published by the Free Software Foundation; either
+- * version 2.1 of the License, or (at your option) any later version.
+- *
+- * mpv is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU Lesser General Public License for more details.
+- *
+- * You should have received a copy of the GNU Lesser General Public
+- * License along with mpv.  If not, see <https://www.gnu.org/licenses/>.
+- */
+-
++/* Native caller-owned Vulkan output; derived from the pinned mpv Vulkan backend.
++ * SPDX-License-Identifier: LGPL-2.1-or-later */
+ #include "config.h"
+ #include <libplacebo/config.h>
+-
+ #if HAVE_VULKAN && defined(PL_HAVE_VULKAN)
+-
+ #include <vulkan/vulkan.h>
+ #include <libplacebo/vulkan.h>
+-
++#include <libplacebo/utils/libav.h>
++#include <sys/stat.h>
++#include <sys/sysmacros.h>
+ #include "mpv_talloc.h"
+ #include "common/msg.h"
+ #include "mpv/render.h"
+ #include "mpv/render_vk.h"
++#include "video/hwdec.h"
++#include "video/mp_image.h"
+ #include "video/out/libmpv.h"
+ #include "video/out/gpu_next/libmpv_gpu_next.h"
+ #include "video/out/placebo/utils.h"
+ 
++/* ABI checked again in Rust; all supported desktop targets are 64-bit. */
++_Static_assert(sizeof(void *) == 8, "64-bit native media ABI");
++_Static_assert(sizeof(mpv_vulkan_init_params) == 128, "Vulkan init ABI");
++_Static_assert(sizeof(mpv_vulkan_fbo) == 72, "Vulkan target ABI");
++
++#define MAX_NATIVE_MAPPINGS 64
++struct mapping {
++    struct pl_frame mapped; // Preserve libplacebo's own private user_data.
++    VkSemaphore completion;
++    uint64_t value;
++    bool retired;
++    struct mapping *next;
++};
+ struct priv {
+     pl_vulkan vulkan;
++    VkDevice device;
++    VkPhysicalDevice physical;
++    PFN_vkGetPhysicalDeviceProperties2 properties;
++    PFN_vkGetSemaphoreCounterValue counter;
++    PFN_vkWaitSemaphores wait;
++    struct mp_hwdec_devices *devices;
++    struct mp_hwdec_ctx hwdec;
++    char *drm_node;
++    struct mapping *maps;
++    int num_maps;
++    mpv_vulkan_fbo current;
++    VkSemaphore last_completion;
++    uint64_t last_value;
++    bool failed;
+ };
+ 
++static bool complete(struct priv *p, struct mapping *m)
++{
++    if (!m->completion)
++        return true; // Mapped but never referenced by a render submission.
++    uint64_t value = 0;
++    VkResult result = p->counter(p->device, m->completion, &value);
++    if (result != VK_SUCCESS) {
++        p->failed = true;
++        return false;
++    }
++    return value >= m->value;
++}
++static void reap(struct libmpv_gpu_next_context *ctx)
++{
++    struct priv *p = ctx->priv;
++    struct mapping **link = &p->maps;
++    while (*link) {
++        struct mapping *m = *link;
++        if (m->retired && complete(p, m)) {
++            *link = m->next;
++            pl_unmap_avframe(ctx->gpu, &m->mapped);
++            talloc_free(m);
++            p->num_maps--;
++        } else {
++            link = &m->next;
++        }
++    }
++}
+ static int init(struct libmpv_gpu_next_context *ctx, mpv_render_param *params)
+ {
+-    mpv_vulkan_init_params *p_init =
++    mpv_vulkan_init_params *in =
+         get_mpv_render_param(params, MPV_RENDER_PARAM_VULKAN_INIT_PARAMS, NULL);
+-    if (!p_init || !p_init->instance || !p_init->phys_device || !p_init->device)
+-        return MPV_ERROR_INVALID_PARAMETER;
+-
+-    struct priv *p = talloc_zero(NULL, struct priv);
+-    ctx->priv = p;
+-
++    if (!in || !in->instance || !in->phys_device || !in->device ||
++        !in->get_instance_proc_addr || !in->features || !in->lock_queue ||
++        !in->unlock_queue || in->queue_graphics_index != 0 ||
++        in->queue_graphics_count != 1 || in->queue_compute_count ||
++        in->queue_transfer_count)
++        return MPV_ERROR_INVALID_PARAMETER;
++    struct priv *p = ctx->priv = talloc_zero(NULL, struct priv);
++    p->device = in->device;
++    p->physical = in->phys_device;
++    p->drm_node = talloc_strdup(p, in->drm_render_node);
++    PFN_vkGetDeviceProcAddr get_device = (void *)in->get_instance_proc_addr(
++                                    in->instance, "vkGetDeviceProcAddr");
++    p->properties = (void *)in->get_instance_proc_addr(in->instance,
++                                    "vkGetPhysicalDeviceProperties2");
++    if (!get_device || !p->properties)
++        return MPV_ERROR_UNSUPPORTED;
++    p->counter = (void *)get_device(p->device, "vkGetSemaphoreCounterValue");
++    p->wait = (void *)get_device(p->device, "vkWaitSemaphores");
++    if (!p->counter || !p->wait)
++        return MPV_ERROR_UNSUPPORTED;
+     ctx->pllog = mppl_log_create(p, ctx->log);
+     if (!ctx->pllog)
+         return MPV_ERROR_GENERIC;
+-
+-    mppl_log_set_probing(ctx->pllog, true);
+     p->vulkan = pl_vulkan_import(ctx->pllog, pl_vulkan_import_params(
+-        .instance      = p_init->instance,
+-        .get_proc_addr = p_init->get_instance_proc_addr,
+-        .phys_device   = p_init->phys_device,
+-        .device        = p_init->device,
+-        .queue_graphics = {
+-            .index = p_init->queue_graphics_index,
+-            .count = p_init->queue_graphics_count,
+-        },
+-        .queue_compute = {
+-            .index = p_init->queue_compute_index,
+-            .count = p_init->queue_compute_count,
+-        },
+-        .queue_transfer = {
+-            .index = p_init->queue_transfer_index,
+-            .count = p_init->queue_transfer_count,
+-        },
+-        .extensions     = p_init->extensions,
+-        .num_extensions = p_init->num_extensions,
+-    ));
+-    mppl_log_set_probing(ctx->pllog, false);
+-
+-    if (!p->vulkan) {
+-        MP_ERR(ctx, "Failed to import Vulkan device via libplacebo.\n");
++        .instance = in->instance, .get_proc_addr = in->get_instance_proc_addr,
++        .phys_device = in->phys_device, .device = in->device,
++        // libplacebo's queue.index is the FAMILY, not the queue-within-family.
++        .queue_graphics = {.index = in->queue_graphics_family, .count = 1},
++        .extensions = in->extensions, .num_extensions = in->num_extensions,
++        .features = in->features, .queue_ctx = in->queue_context,
++        .lock_queue = in->lock_queue, .unlock_queue = in->unlock_queue));
++    if (!p->vulkan)
+         return MPV_ERROR_UNSUPPORTED;
+-    }
+-
+     ctx->gpu = p->vulkan->gpu;
+     return 0;
+ }
+-
++static int init_hwdec(struct libmpv_gpu_next_context *ctx,
++                      struct mp_hwdec_devices *devices)
++{
++    struct priv *p = ctx->priv;
++    // Software decoding remains available if no matching VAAPI adapter exists.
++    if (!p->drm_node || !pl_test_pixfmt(ctx->gpu, AV_PIX_FMT_VAAPI))
++        return 0;
++    struct stat node;
++    if (stat(p->drm_node, &node) || !S_ISCHR(node.st_mode))
++        return MPV_ERROR_INVALID_PARAMETER;
++    VkPhysicalDeviceDrmPropertiesEXT drm = {
++        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT};
++    VkPhysicalDeviceProperties2 props = {
++        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &drm};
++    p->properties(p->physical, &props);
++    if (!drm.hasRender || major(node.st_rdev) != drm.renderMajor ||
++        minor(node.st_rdev) != drm.renderMinor) {
++        MP_ERR(ctx, "VAAPI render node does not match the Vulkan adapter.\n");
++        return MPV_ERROR_INVALID_PARAMETER;
++    }
++    if (av_hwdevice_ctx_create(&p->hwdec.av_device_ref, AV_HWDEVICE_TYPE_VAAPI,
++                              p->drm_node, NULL, 0) < 0) {
++        MP_WARN(ctx, "Matching adapter does not support VAAPI; software decoding remains available.\n");
++        return 0;
++    }
++    static const int formats[] = {IMGFMT_NV12, IMGFMT_P010, 0};
++    p->hwdec.driver_name = "vaapi";
++    p->hwdec.hw_imgfmt = IMGFMT_VAAPI;
++    p->hwdec.supported_formats = formats;
++    p->devices = devices;
++    hwdec_devices_add(devices, &p->hwdec);
++    return 0;
++}
++static bool check_hwdec_format(struct libmpv_gpu_next_context *ctx, int imgfmt)
++{
++    struct priv *p = ctx->priv;
++    return p->hwdec.av_device_ref && imgfmt == IMGFMT_VAAPI;
++}
++static bool map_hwdec(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame,
++                      struct mp_image *image)
++{
++    struct priv *p = ctx->priv;
++    reap(ctx);
++    if (p->failed || p->num_maps >= MAX_NATIVE_MAPPINGS)
++        return false;
++    AVFrame *avframe = mp_image_to_av_frame(image);
++    if (!avframe)
++        return false;
++    struct mapping *m = talloc_zero(p, struct mapping);
++    // VAAPI -> DRM_PRIME uses AV_HWFRAME_MAP_DIRECT; there is no CPU fallback.
++    bool ok = pl_map_avframe_ex(ctx->gpu, &m->mapped,
++                                pl_avframe_params(.frame = avframe));
++    av_frame_free(&avframe);
++    if (!ok) {
++        talloc_free(m);
++        return false;
++    }
++    frame->num_planes = m->mapped.num_planes;
++    for (int i = 0; i < frame->num_planes; i++)
++        frame->planes[i] = m->mapped.planes[i];
++    frame->repr.bits = m->mapped.repr.bits;
++    frame->user_data = m;
++    m->next = p->maps;
++    p->maps = m;
++    p->num_maps++;
++    return true;
++}
++static void hold_hwdec(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame)
++{
++    struct priv *p = ctx->priv;
++    // Common hook also sees software frames: never dereference their user_data.
++    for (struct mapping *m = p->maps; m; m = m->next) {
++        if (frame->user_data == m) {
++            m->completion = p->current.signal_semaphore;
++            m->value = p->current.signal_value;
++            break;
++        }
++    }
++}
++static void unmap_hwdec(struct libmpv_gpu_next_context *ctx, struct pl_frame *frame)
++{
++    struct mapping *m = frame->user_data;
++    m->retired = true;
++    reap(ctx); // Keep decoder AVFrame + DMA_BUF alive until the GPU fence fires.
++}
++static int validate_fbo(struct priv *p, mpv_render_param *params,
++                        mpv_vulkan_fbo **out)
++{
++    mpv_vulkan_fbo *fbo =
++        get_mpv_render_param(params, MPV_RENDER_PARAM_VULKAN_FBO, NULL);
++    if (!fbo || !fbo->result)
++        return MPV_ERROR_INVALID_PARAMETER;
++    *fbo->result = MPV_ERROR_INVALID_PARAMETER;
++    if (!fbo->image || fbo->w <= 0 || fbo->h <= 0 ||
++        fbo->format != VK_FORMAT_R8G8B8A8_UNORM ||
++        !(fbo->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) ||
++        !fbo->signal_semaphore || !fbo->signal_value ||
++        fbo->target_layout == VK_IMAGE_LAYOUT_UNDEFINED)
++        return MPV_ERROR_INVALID_PARAMETER;
++    if (p->failed)
++        return *fbo->result = MPV_ERROR_GENERIC;
++    *out = fbo;
++    *fbo->result = 0;
++    return 0;
++}
+ static int start_frame(struct libmpv_gpu_next_context *ctx,
+                        mpv_render_param *params, pl_tex *out_tex)
+ {
+-    mpv_vulkan_fbo *fbo =
+-        get_mpv_render_param(params, MPV_RENDER_PARAM_VULKAN_FBO, NULL);
+-    if (!fbo || !fbo->image)
+-        return MPV_ERROR_INVALID_PARAMETER;
+-
++    struct priv *p = ctx->priv;
++    mpv_vulkan_fbo *fbo;
++    int err = validate_fbo(p, params, &fbo);
++    if (err < 0)
++        return err;
++    reap(ctx);
++    p->current = *fbo;
+     *out_tex = pl_vulkan_wrap(ctx->gpu, pl_vulkan_wrap_params(
+-        .image  = fbo->image,
+-        .width  = fbo->w,
+-        .height = fbo->h,
+-        .format = fbo->format,
+-        .usage  = fbo->usage,
+-    ));
+-    if (!*out_tex) {
+-        MP_ERR(ctx, "Failed to wrap VkImage (format %d, usage 0x%x) — "
+-               "is VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT set?\n",
+-               (int)fbo->format, (unsigned)fbo->usage);
+-        return MPV_ERROR_UNSUPPORTED;
+-    }
+-
+-    // Release to libplacebo; skip queue family transition (caller handles ownership).
++        .image = fbo->image, .width = fbo->w, .height = fbo->h,
++        .format = fbo->format, .usage = fbo->usage));
++    if (!*out_tex)
++        return *fbo->result = MPV_ERROR_UNSUPPORTED;
+     pl_vulkan_release_ex(ctx->gpu, pl_vulkan_release_params(
+-        .tex    = *out_tex,
+-        .layout = fbo->layout,
+-        .qf     = VK_QUEUE_FAMILY_IGNORED,
+-    ));
+-
+-    return 0;
+-}
+-
++        .tex = *out_tex, .layout = fbo->layout, .qf = VK_QUEUE_FAMILY_IGNORED,
++        .semaphore = {.sem = fbo->wait_semaphore, .value = fbo->wait_value}));
++    return 0;
++}
+ static int get_target_size(struct libmpv_gpu_next_context *ctx,
+                            mpv_render_param *params, int *out_w, int *out_h)
+ {
+-    mpv_vulkan_fbo *fbo =
+-        get_mpv_render_param(params, MPV_RENDER_PARAM_VULKAN_FBO, NULL);
+-    if (!fbo)
+-        return MPV_ERROR_INVALID_PARAMETER;
++    mpv_vulkan_fbo *fbo;
++    int err = validate_fbo(ctx->priv, params, &fbo);
++    if (err < 0)
++        return err;
+     *out_w = fbo->w;
+     *out_h = fbo->h;
+-    return 0;
+-}
+-
++    return 0; // Size queries must not release/hold or enqueue native commands.
++}
++static int get_info(struct libmpv_gpu_next_context *ctx, mpv_render_param param)
++{
++    if (param.type != MPV_RENDER_PARAM_METAL_BUSY || !param.data)
++        return MPV_ERROR_NOT_IMPLEMENTED;
++    struct priv *p = ctx->priv;
++    reap(ctx);
++    if (p->failed)
++        return MPV_ERROR_GENERIC;
++    *(int *)param.data = p->num_maps >= MAX_NATIVE_MAPPINGS;
++    return 0;
++}
+ static void end_frame(struct libmpv_gpu_next_context *ctx, pl_tex *target)
+ {
+-    pl_tex_destroy(ctx->gpu, target);
+-    // Wait for GPU completion so the VkImage is safe to use immediately.
+-    pl_gpu_finish(ctx->gpu);
+-}
+-
++    struct priv *p = ctx->priv;
++    bool held = pl_vulkan_hold_ex(ctx->gpu, pl_vulkan_hold_params(
++        .tex = *target, .layout = p->current.target_layout,
++        .qf = VK_QUEUE_FAMILY_IGNORED,
++        .semaphore = {.sem = p->current.signal_semaphore,
++                      .value = p->current.signal_value}));
++    if (!held) {
++        p->failed = true;
++        *p->current.result = MPV_ERROR_GENERIC;
++        // The image was not transferred back; retain the wrapper until teardown.
++        // Never destroy a released wrapper or claim a signal will fire.
++    } else {
++        p->last_completion = p->current.signal_semaphore;
++        p->last_value = p->current.signal_value;
++        pl_tex_destroy(ctx->gpu, target);
++    }
++    p->current = (mpv_vulkan_fbo){0};
++    // No pl_gpu_finish/vkQueueWaitIdle in the per-frame path.
++}
+ static void destroy(struct libmpv_gpu_next_context *ctx)
+ {
+     struct priv *p = ctx->priv;
+     if (!p)
+         return;
++    if (p->devices)
++        hwdec_devices_remove(p->devices, &p->hwdec);
++    if (p->last_completion && !p->failed) {
++        VkSemaphoreWaitInfo info = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
++            .semaphoreCount = 1, .pSemaphores = &p->last_completion,
++            .pValues = &p->last_value};
++        if (p->wait(p->device, &info, UINT64_C(5000000000)) != VK_SUCCESS)
++            p->failed = true;
++    }
++    if (p->failed && p->vulkan) {
++        // A hung/device-lost queue cannot safely release imported decoder frames.
++        // Quarantine this native context until process exit. The host must keep
++        // its imported VkDevice + fence/image leases alive on this error path.
++        MP_ERR(ctx, "Vulkan shutdown completion failed; native GPU leases retained.\n");
++        ctx->priv = NULL;
++        ctx->gpu = NULL;
++        ctx->pllog = NULL;
++        return;
++    }
++    for (struct mapping *m = p->maps; m; m = m->next)
++        pl_unmap_avframe(ctx->gpu, &m->mapped);
++    av_buffer_unref(&p->hwdec.av_device_ref);
+     pl_vulkan_destroy(&p->vulkan);
+     pl_log_destroy(&ctx->pllog);
+     talloc_free(p);
+     ctx->priv = NULL;
+ }
+-
+ const struct libmpv_gpu_next_context_fns libmpv_gpu_next_context_vk = {
+-    .api_name        = MPV_RENDER_API_TYPE_VULKAN,
+-    .init            = init,
+-    .start_frame     = start_frame,
+-    .get_target_size = get_target_size,
+-    .end_frame       = end_frame,
+-    .destroy         = destroy,
++    .api_name = MPV_RENDER_API_TYPE_VULKAN, .init = init,
++    .init_hwdec = init_hwdec, .check_hwdec_format = check_hwdec_format,
++    .map_hwdec = map_hwdec, .unmap_hwdec = unmap_hwdec, .hold_hwdec = hold_hwdec,
++    .start_frame = start_frame, .get_target_size = get_target_size,
++    .get_info = get_info, .end_frame = end_frame, .destroy = destroy,
+ };
+-
+-#endif // HAVE_VULKAN && PL_HAVE_VULKAN
++#endif

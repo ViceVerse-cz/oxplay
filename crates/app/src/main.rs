@@ -27,6 +27,7 @@ mod downloads_ui;
 mod feed_focus;
 mod fixture_quiescence;
 mod focus_intent;
+mod graphics_backend;
 mod groups;
 mod guest_playback;
 mod guest_recovery;
@@ -74,7 +75,7 @@ mod window_chrome;
 mod windows_console;
 use catalog::{Response, Worker};
 use model::CatalogModel;
-use oxplay_media::{GlPresenter, Player};
+use oxplay_media::{Player, VideoPresenter};
 use slint::winit_030::{EventResult, WinitWindowAccessor, winit};
 use slint::{ComponentHandle, Model, Timer, TimerMode};
 use std::{
@@ -85,6 +86,9 @@ use std::{
 slint::include_modules!();
 
 struct UiState {
+    graphics_backend: graphics_backend::GraphicsBackend,
+    graphics_info: RefCell<String>,
+    presentation_display: Cell<Option<u32>>,
     window_chrome: Rc<window_chrome::Controller>,
     watch_loading: watch_loading::State,
     watch_context: watch_context::State,
@@ -309,7 +313,8 @@ fn update(app: &App, state: &Rc<UiState>) {
     }
     if app.get_show_info() {
         let info = format!(
-            "Winit · FemtoVG/OpenGL · decoder: {} · {} · {}×{} @ {:.2} fps · dropped {}\nUI assignments {} · catalog changes {} / resets {} · requested draws {} / callbacks {}",
+            "{} · decoder: {} · {} · {}×{} @ {:.2} fps · dropped {}\nUI assignments {} · catalog changes {} / resets {} · requested draws {} / callbacks {}",
+            state.graphics_info.borrow(),
             snapshot.hwdec_current,
             snapshot.codec,
             snapshot.width,
@@ -499,12 +504,20 @@ fn setup_presenter(
     state: &Rc<UiState>,
     api: &slint::GraphicsAPI<'_>,
     startup: &mut Option<StartupMedia>,
-) -> Option<GlPresenter> {
+) -> Option<VideoPresenter> {
     state.presentation_retry.set(false);
-    let slint::GraphicsAPI::NativeOpenGL { get_proc_address } = api else {
-        app.set_status("Unsupported graphics API: OpenGL is required for this presenter".into());
-        return None;
+    let identity = match state.graphics_backend.identity(api) {
+        Ok(identity) => identity,
+        Err(error) => {
+            app.set_status(error.into());
+            return None;
+        }
     };
+    *state.graphics_info.borrow_mut() = identity;
+    if state.native_child.enabled && !matches!(api, slint::GraphicsAPI::NativeOpenGL { .. }) {
+        app.set_status("The native-child comparison requires OpenGL".into());
+        return None;
+    }
     if state.native_child.enabled {
         match native_child::setup(app, state) {
             Ok(info) => {
@@ -522,7 +535,9 @@ fn setup_presenter(
         return None;
     }
     // SAFETY: only called from Setup/BeforeRendering with the one owning context current.
-    match unsafe { GlPresenter::new(&state.player, get_proc_address) } {
+    let display = native_display(app);
+    state.presentation_display.set(display);
+    match unsafe { VideoPresenter::new(&state.player, api, display) } {
         Ok(presenter) => {
             app.set_pip_available(picture_in_picture::availability(app.window()).is_ok());
             state
@@ -537,9 +552,23 @@ fn setup_presenter(
         Err(error) => {
             state.presentation_ready.set(false);
             eprintln!("presenter setup failed: {error}");
-            app.set_status("Video presentation is unavailable. Activate the display to retry; details are in local diagnostics.".into());
+            app.set_status(format!("Video presentation is unavailable: {error}").into());
             None
         }
+    }
+}
+fn native_display(app: &App) -> Option<u32> {
+    #[cfg(target_os = "macos")]
+    {
+        use winit::platform::macos::MonitorHandleExtMacOS;
+        app.window()
+            .with_winit_window(|window| window.current_monitor().map(|monitor| monitor.native_id()))
+            .flatten()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = app;
+        None
     }
 }
 // CLI file checks happen before creating the UI or entering its event loop.
@@ -1135,14 +1164,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let integrated_header = !options.native_video_child;
-    slint::BackendSelector::new()
-        .backend_name("winit".into())
-        .renderer_name("femtovg".into())
-        .require_opengl()
-        .with_winit_window_attributes_hook(move |attributes| {
-            window_chrome::attributes(attributes, integrated_header)
-        })
-        .select()?;
+    let graphics_backend = if options.native_video_child {
+        graphics_backend::GraphicsBackend::OpenGl
+    } else {
+        options
+            .graphics_backend
+            .unwrap_or(if cfg!(feature = "native-rendering") {
+                graphics_backend::GraphicsBackend::Native
+            } else {
+                graphics_backend::GraphicsBackend::OpenGl
+            })
+    };
+    graphics_backend
+        .select(move |attributes| window_chrome::attributes(attributes, integrated_header))?;
     // Declare before App/Player so error-path destruction releases all media
     // leases before the caption cleanup owner joins.
     let caption_cleanup = caption_files::Worker::new(
@@ -1220,6 +1254,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let account_ui =
         account_ui::State::new(app.as_weak(), account_directory, resolver, restore_account);
     let state = Rc::new(UiState {
+        graphics_backend,
+        graphics_info: RefCell::new(String::new()),
+        presentation_display: Cell::new(None),
         window_chrome,
         watch_loading: watch_loading::State::default(),
         watch_context: watch_context::State::default(),
@@ -1632,6 +1669,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             if matches!(
                 event,
                 winit::event::WindowEvent::Resized(_)
+                    | winit::event::WindowEvent::ScaleFactorChanged { .. }
+                    | winit::event::WindowEvent::Moved(_)
+            ) {
+                s.presentation_display.set(native_display(&app));
+            }
+            if matches!(
+                event,
+                winit::event::WindowEvent::Resized(_)
                     | winit::event::WindowEvent::Focused(_)
                     | winit::event::WindowEvent::ScaleFactorChanged { .. }
                     | winit::event::WindowEvent::ThemeChanged(_)
@@ -1716,7 +1761,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         EventResult::Propagate
     });
-    let mut presenter: Option<GlPresenter> = None;
+    let mut presenter: Option<VideoPresenter> = None;
     let mut startup_media = Some(StartupMedia {
         local,
         subtitle,
@@ -1772,6 +1817,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     native_child::before_render(&app, &s);
                 }
                 if let Some(p) = presenter.as_mut() {
+                    if let Err(error) = p.set_display(s.presentation_display.get()) {
+                        app.set_status(error.to_string().into());
+                    }
                     let scale = app.window().scale_factor();
                     p.set_ambient_sampling(ambient_ui::sampling_wanted(&app, &s));
                     let mut published = false;

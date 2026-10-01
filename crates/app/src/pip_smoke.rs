@@ -98,9 +98,85 @@ impl Driver {
             "picture-in-picture stage={} failed: {error}",
             self.stage.get() + 1
         );
+        self.report_observed_state();
         // Normal event-loop teardown retains all existing presenter/player
         // destruction ordering; no process exit, panic or second media window.
         let _ = slint::quit_event_loop();
+    }
+
+    /// Only a failed finite exercise emits these observations. Capture before
+    /// teardown changes visibility and resets the accepted load's state.
+    fn report_observed_state(&self) {
+        let (Some(app), Some(state)) = (self.app.upgrade(), self.state.upgrade()) else {
+            return;
+        };
+        let snapshot = state.player.snapshot();
+        eprintln!(
+            "pip failure state: stage={} phase_ms={} compact={} controller_active={} exit_pending={} borderless={} fullscreen={} theatre={} player_focus={} search_focus={} shell_focus={} loaded={} visible={} hidden={} presenter_ready={} frame_ready={} clock_ready={} video={}x{} texture={:?} playback={:?} paused={} loads={} request={} presenters={}",
+            self.stage.get() + 1,
+            self.phase_started.get().elapsed().as_millis(),
+            app.get_picture_in_picture(),
+            state.pip.active(),
+            state.pip_exit_pending.get(),
+            app.get_window_borderless(),
+            app.get_fullscreen_active(),
+            app.get_theatre_mode(),
+            app.get_player_active(),
+            app.get_search_active(),
+            app.get_browse_active(),
+            app.get_loaded(),
+            app.window().is_visible(),
+            state.hidden.get(),
+            state.presentation_ready.get(),
+            state.player.current_load_frame_ready(),
+            state.player.clock_identity().is_some(),
+            app.get_video_width(),
+            app.get_video_height(),
+            app.get_video_texture().size(),
+            snapshot.state,
+            snapshot.paused,
+            snapshot.file_loads,
+            snapshot.load_request_id,
+            state.presenter_generations.get(),
+        );
+        if let Some(original) = self.original.get() {
+            eprintln!(
+                "pip failure expected original: client={}x{} frame={}x{} decorated={} loads={} request={} presenters={}",
+                original.width,
+                original.height,
+                original.frame_width,
+                original.frame_height,
+                original.decorated,
+                original.loads,
+                original.request,
+                original.presenters,
+            );
+        }
+        if app
+            .window()
+            .with_winit_window(|window| {
+                let scale = window.scale_factor();
+                let inner = window.inner_size().to_logical::<f64>(scale);
+                let outer = window.outer_size().to_logical::<f64>(scale);
+                eprintln!(
+                    "pip failure native window: client={}x{} outer={}x{} scale={} decorated={} focused={} fullscreen={} minimized={:?} maximized={} original_window={}",
+                    inner.width,
+                    inner.height,
+                    outer.width,
+                    outer.height,
+                    scale,
+                    window.is_decorated(),
+                    window.has_focus(),
+                    window.fullscreen().is_some(),
+                    window.is_minimized(),
+                    window.is_maximized(),
+                    self.original.get().is_some_and(|original| original.window == window.id()),
+                );
+            })
+            .is_none()
+        {
+            eprintln!("pip failure native window: unavailable");
+        }
     }
 
     fn tick(self: &Rc<Self>) {

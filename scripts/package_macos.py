@@ -23,19 +23,21 @@ import tarfile
 import tempfile
 import tomllib
 import package_helpers
+import build_inputs
 
 ROOT = Path(__file__).resolve().parents[1]
 SYSTEM_PREFIXES = ("/System/Library/", "/usr/lib/")
 ID = "cz.viceverse.oxplay"
+NATIVE_PREFIX = ROOT / "artifacts/native-media/macos/prefix"
 
 
 class PackagingError(Exception):
     pass
 
 
-def run(*args: str | Path, cwd: Path = ROOT) -> str:
+def run(*args: str | Path, cwd: Path = ROOT, env: dict[str, str] | None = None) -> str:
     result = subprocess.run([str(arg) for arg in args], cwd=cwd, text=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, env=env)
     if result.returncode:
         detail = (": " + str(sanitized(result.stderr[-2000:])).strip()
                   if Path(args[0]).name in ("codesign", "install_name_tool") else "")
@@ -143,8 +145,8 @@ def keg_for(path: Path) -> Path | None:
 
 def source_files() -> list[Path]:
     names = run("git", "ls-files", "--cached", "--others", "--exclude-standard", "-z").split("\0")
-    roots = {"crates", "scripts", "docs", "third_party"}
-    top = {"Cargo.toml", "Cargo.lock", "LICENSE", "README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "SPEC.md"}
+    roots = {"crates", "scripts", "docs", "third_party", "vendor", ".cargo"}
+    top = {"Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml", "LICENSE", "README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "SPEC.md"}
     return sorted({ROOT / name for name in names if name and (Path(name).parts[0] in roots or name in top
                    or Path(name).parts[:2] == ("tools", "media-baseline"))
                    and (ROOT / name).is_file() and not (ROOT / name).is_symlink()})
@@ -428,10 +430,15 @@ def write_spdx(path: Path, manifest: dict, cargo: dict, native: dict[Path, dict]
                      "comment": "Development inventory. Corresponding source, native resource closure and redistribution review remain incomplete. No platform approval is asserted."})
 
 
-def build_executables() -> dict[str, Path]:
-    """Resolve both first-party executables from one locked Cargo invocation."""
+def build_executables(native_prefix: Path = NATIVE_PREFIX) -> dict[str, Path]:
+    """Select the native renderer explicitly and bind its reviewed private ABI."""
+    env = os.environ.copy()
+    # package() verifies this prefix before compilation. Keep command formation
+    # independent of local dependency installation for synthetic/offline tests.
+    env["OXPLAY_NATIVE_MPV_PREFIX"] = str(native_prefix.resolve())
     messages = run("cargo", "build", "--locked", "--release", "-p", "oxplay",
-                   "-p", "oxplay-network", "--bins", "--message-format=json-render-diagnostics")
+                   "-p", "oxplay-network", "--features", "native-rendering", "--bins",
+                   "--message-format=json-render-diagnostics", env=env)
     artifacts: dict[str, list[Path]] = {"oxplay": [], "oxplay-dns": []}
     for line in messages.splitlines():
         if not line.startswith("{"):
@@ -445,6 +452,79 @@ def build_executables() -> dict[str, Path]:
     if any(len(paths) != 1 for paths in artifacts.values()):
         raise PackagingError("Cargo did not identify both first-party executables exactly once")
     return {name: paths[0] for name, paths in artifacts.items()}
+
+
+def native_media_inputs(prefix: Path) -> dict:
+    """Verify immutable dependency inputs before using or describing a build."""
+    prefix = prefix.resolve(strict=True)
+    root = prefix.parent
+    source = ROOT / "scripts/native-media/macos-sources.json"
+    pins = json.loads(source.read_text())["sources"]
+    manifest_path = root / "build-result.json"
+    manifest = json.loads(manifest_path.read_text())
+    if (manifest.get("schema") != 1 or manifest.get("status") != "compiled_and_installed"
+            or manifest.get("native_render_abi") != 1 or manifest.get("sources") != pins):
+        raise PackagingError("Native media build manifest does not match reviewed source pins and ABI")
+    header = prefix / "include/mpv/render_mtl.h"
+    if not re.search(r"^#define\s+OXPLAY_NATIVE_RENDER_ABI\s+1\s*$", header.read_text(), re.MULTILINE):
+        raise PackagingError("Native media Metal ABI header is missing or incompatible")
+    installed = manifest.get("installed_files", {})
+    files = []
+    for relative in ("lib/libmpv.2.dylib", "lib/libplacebo.365.dylib", "include/mpv/render_mtl.h"):
+        path = prefix / relative
+        if (path.is_symlink() or not path.is_file() or digest(path) != installed.get(relative)):
+            raise PackagingError("Native media installed input changed after its reviewed build")
+        files.append({"source": str(path), "sha256": digest(path), "kind": "installed"})
+    inputs = [{"source": str(manifest_path), "sha256": digest(manifest_path), "target": "build-result.json"},
+              {"source": str(source), "sha256": digest(source), "target": "macos-sources.json"}]
+    for name, pin in pins.items():
+        archive = root / "downloads" / f"{name}-{pin['revision']}.tar.gz"
+        if (archive.is_symlink() or not archive.is_file() or archive.stat().st_size != pin["bytes"]
+                or digest(archive) != pin["sha256"]):
+            raise PackagingError("Native media source archive failed its reviewed checksum/size")
+        inputs.append({"source": str(archive), "sha256": pin["sha256"], "target": "sources/" + archive.name})
+        licenses = prefix / "share/licenses/native-media" / name
+        notices = sorted(path for path in licenses.glob("*") if path.is_file() and not path.is_symlink())
+        if not notices:
+            raise PackagingError("Native media source input lacks installed license evidence")
+        for path in notices:
+            relative = str(path.relative_to(prefix))
+            if digest(path) != installed.get(relative):
+                raise PackagingError("Native media license input changed after build")
+            inputs.append({"source": str(path), "sha256": digest(path), "target": "licenses/" + name + "/" + path.name})
+    patches = manifest.get("patches")
+    if not isinstance(patches, dict) or not patches:
+        raise PackagingError("Native media build has no reviewed patch inventory")
+    for name, checksum in patches.items():
+        if Path(name).name != name:
+            raise PackagingError("Native media patch name escapes its source directory")
+        path = ROOT / "scripts/native-media/patches" / name
+        if path.is_symlink() or not path.is_file() or digest(path) != checksum:
+            raise PackagingError("Native media patch differs from the compiled dependency input")
+        inputs.append({"source": str(path), "sha256": checksum, "target": "patches/" + name})
+    return {"prefix": str(prefix), "root": str(root), "native_render_abi": 1,
+            "backend": "metal", "installed": files, "evidence": inputs}
+
+
+def require_native_media_closure(native: dict[Path, dict], inputs: dict) -> None:
+    selected = {Path(item["source"]) for item in inputs["installed"] if item["kind"] == "installed"
+                and item["source"].endswith(".dylib")}
+    if not selected.issubset(native):
+        raise PackagingError("Application must load the reviewed private native mpv and libplacebo libraries")
+    if any(path.name.startswith(("libmpv.", "libplacebo.")) and path not in selected for path in native):
+        raise PackagingError("Application closure mixes stock and reviewed native media libraries")
+
+
+def require_macos_ceiling(native: dict[Path, dict], maximum: str | None) -> None:
+    if maximum is None:
+        return
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+){0,2}", maximum):
+        raise PackagingError("Maximum macOS must be a numeric deployment version")
+    limit = version_tuple(maximum) + (0,) * (3 - len(version_tuple(maximum)))
+    incompatible = [path.name for path, item in native.items()
+                    if version_tuple(item["minimum_macos"]) + (0,) * (3 - len(version_tuple(item["minimum_macos"]))) > limit]
+    if incompatible:
+        raise PackagingError("Dependencies require newer macOS than the release target: " + ", ".join(sorted(incompatible)))
 
 
 def validate_dns_helper(executable: Path) -> dict:
@@ -514,13 +594,15 @@ def package(args: argparse.Namespace) -> None:
     if args.command == "bundle" and output.suffix != ".app":
         raise PackagingError("Bundle output must end in .app")
     output.parent.mkdir(parents=True, exist_ok=True)
+    media = native_media_inputs(getattr(args, "native_mpv_prefix", NATIVE_PREFIX))
+    build_provenance = build_inputs.capture(ROOT)
     files = source_files()
     fingerprint = source_fingerprint(files)
     if args.build:
         if (args.binary != ROOT / "target/release/oxplay"
                 or args.dns_helper != ROOT / "target/release/oxplay-dns"):
             raise PackagingError("With --build, executables must be selected from Cargo's build result")
-        executables = build_executables()
+        executables = build_executables(Path(media["prefix"]))
         args.binary, args.dns_helper = executables["oxplay"], executables["oxplay-dns"]
         if fingerprint != source_fingerprint(source_files()):
             raise PackagingError("Sources changed during compilation; retry from a stable tree")
@@ -529,6 +611,7 @@ def package(args: argparse.Namespace) -> None:
     if dns_helper == binary:
         raise PackagingError("Application and DNS helper must be distinct executables")
     native = native_closure(binary)
+    require_native_media_closure(native, media)
     native_closure(dns_helper, native)
     if any(native[path]["architectures"] != ["arm64"] for path in (binary, dns_helper)) or any("arm64" not in item["architectures"] for item in native.values()):
         raise PackagingError("Only the available Apple Silicon developer closure has been qualified by this tool")
@@ -554,6 +637,7 @@ def package(args: argparse.Namespace) -> None:
     kegs |= {keg for path in native if (keg := keg_for(path))}
     epoch = int(os.environ.get("SOURCE_DATE_EPOCH") or run("git", "show", "-s", "--format=%ct", "HEAD").strip())
     minimum = max((item["minimum_macos"] for item in native.values()), key=version_tuple)
+    require_macos_ceiling(native, getattr(args, "maximum_macos", None))
     stage = Path(tempfile.mkdtemp(prefix=".oxplay-package-", dir=output.parent))
     try:
         app = stage / output.name
@@ -561,6 +645,9 @@ def package(args: argparse.Namespace) -> None:
         evidence.mkdir(parents=True)
         manifest = {"schema": 1, "development_only": True, "portable": False, "source_build_performed": args.build,
                     "prebuilt_source_association_verified": args.build, "source_fingerprint": fingerprint,
+                    "inputs_match_commit": build_provenance["inputs_match_commit"],
+                    "build_input_provenance": build_provenance,
+                    "native_media": sanitized(media),
                     "source_date_epoch": epoch,
                     "macos_version": run("sw_vers", "-productVersion").strip(),
                     "macos_build": run("sw_vers", "-buildVersion").strip(),
@@ -633,6 +720,14 @@ def package(args: argparse.Namespace) -> None:
             native_evidence.append(record)
         manifest["homebrew_provenance"] = native_evidence
         manifest["native_notice_gaps"] = [item["formula"] for item in native_evidence if not item["notices"]]
+        media_evidence = evidence / "native-media"
+        for item in media["evidence"]:
+            source, destination = Path(item["source"]), media_evidence / item["target"]
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+            if digest(destination) != item["sha256"]:
+                raise PackagingError("Native media source/license evidence changed while packaging")
+        manifest["native_media"]["evidence_bundle_path"] = "native-media"
         # Original application source only; this is NOT all dependency corresponding source.
         with tarfile.open(evidence / "application-source.tar", "w", format=tarfile.PAX_FORMAT) as archive:
             for file in files:
@@ -654,6 +749,8 @@ def package(args: argparse.Namespace) -> None:
         manifest["application_source_archive_sha256"] = digest(evidence / "application-source.tar")
         if fingerprint != source_fingerprint(source_files()):
             raise PackagingError("Sources changed during inventory; retry from a stable tree")
+        if build_inputs.capture(ROOT) != build_provenance:
+            raise PackagingError("Build inputs changed during packaging; retry from a stable tree")
         if args.command == "bundle":
             macos, frameworks = app / "Contents/MacOS", app / "Contents/Frameworks"
             macos.mkdir(parents=True)
@@ -761,6 +858,9 @@ def main() -> None:
     parser.add_argument("--yt-dlp", type=Path, default=Path("/opt/homebrew/bin/yt-dlp"))
     parser.add_argument("--deno", type=Path, default=Path("/opt/homebrew/bin/deno"))
     parser.add_argument("--bundle-helpers", action="store_true", help="Include the exact reviewed installed Python/yt-dlp/EJS/Deno runtime")
+    parser.add_argument("--native-mpv-prefix", type=Path, default=NATIVE_PREFIX,
+                        help="Reviewed private Metal prefix from scripts/native-media/macos.py; stock mpv is rejected")
+    parser.add_argument("--maximum-macos", help="Reject any native/helper dependency whose minimum macOS exceeds this release target")
     parser.add_argument("--build", action="store_true", help="build both first-party binaries with the lockfile; otherwise source association is explicitly unverified")
     try:
         args = parser.parse_args()
@@ -768,7 +868,7 @@ def main() -> None:
             reinventory(args.output)
         else:
             package(args)
-    except (PackagingError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+    except (PackagingError, build_inputs.InputError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
         print(f"Packaging stopped: {error}", file=sys.stderr)
         raise SystemExit(1) from None
 

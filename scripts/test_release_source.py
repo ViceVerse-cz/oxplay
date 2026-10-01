@@ -31,6 +31,12 @@ class SourceReleaseTests(unittest.TestCase):
             ".gitignore": b"secrets/\n",
             "crates/app/src/main.rs": b"fn main() {}\n",
             "third_party/notices/SYNTHETIC.txt": b"Synthetic attribution fixture\n",
+            "vendor/femtovg/src/renderer/wgpu.rs": b"// synthetic patched dependency\n",
+            "vendor/femtovg/OXPLAY-PROVENANCE.md": b"Synthetic source provenance\n",
+            "vendor/femtovg/LICENSE-MIT": b"Synthetic vendor license fixture; no grant.\n",
+            "scripts/native-media/macos.py": b"# synthetic native build recipe\n",
+            "scripts/native-media/patches/common.patch": b"Synthetic native patch\n",
+            "scripts/native-media/check_abi.c": b"/* synthetic ABI definitions */\n",
         }
         for name, data in self.files.items():
             path = self.repo / name
@@ -146,6 +152,14 @@ class SourceReleaseTests(unittest.TestCase):
         self.commit()
         with self.assertRaisesRegex(release.ReleaseError, "omitted committed"):
             self.make_release()
+
+    def test_native_build_sources_cannot_be_omitted_via_export_ignore(self):
+        for pattern in ("vendor/femtovg", "scripts/native-media"):
+            with self.subTest(pattern=pattern):
+                (self.repo / ".gitattributes").write_text(pattern + " export-ignore\n")
+                self.commit()
+                with self.assertRaisesRegex(release.ReleaseError, "omitted committed"):
+                    self.make_release("omitted-" + pattern.split("/")[0])
 
     def test_archive_substitutions_cannot_change_committed_bytes(self):
         (self.repo / ".gitattributes").write_text("version.txt export-subst\n")

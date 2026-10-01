@@ -4,7 +4,7 @@ An experimental, open-source native YouTube client: one compiled Slint UI and an
 in-process Rust/libmpv core. This repository implements an early working slice of
 [SPEC.md](SPEC.md), **not a completed or release-qualified product**.
 
-Implemented: native shared UI, embedded local video via persistent OpenGL targets,
+Implemented: native shared UI, embedded local video via persistent native GPU textures,
 play/pause, seek, fullscreen, explicit local subtitle loading/cycling, real guest
 YouTube video/channel/playlist search, public channel and playlist pages, and
 direct content stream resolution/playback. Genuine video descriptions and optional
@@ -18,11 +18,12 @@ local follows, opt-in history, import/export, and account connection screens.
 Account code implements explicit session import, protected storage, identity
 verification, remote reads and reconciled writes; real account qualification still
 requires an authorized local human test. No credentials are imported automatically.
-Hardware decoder observations do not establish the optimized playback gate:
-the default macOS presenter still exceeds the CPU release ceiling in some
-measured repeats. A restricted native-presenter experiment reduces UI drawing
-but remains unqualified and misses the CPU target.
-See [performance evidence](docs/performance.md).
+Source builds now default to Metal on macOS, Vulkan on Linux, and D3D11 media
+shared with the DX12 UI on Windows. They require pinned, patched media libraries;
+stock libmpv remains available for the explicit OpenGL comparison build.
+The upstream native extensions are experimental. Hardware decoder observations
+alone do not qualify presentation, performance or a release; see
+[native rendering](docs/native-rendering.md) and [performance evidence](docs/performance.md).
 
 ## Install a release
 
@@ -30,6 +31,10 @@ See [performance evidence](docs/performance.md).
 **production** releases (`vX.Y.Z`, marked latest) and **nightly** prereleases
 (`vX.Y.Z-nightly.YYYYMMDD.N`), built by CI from the tagged commit. They are
 experimental builds; see [CI and releases](docs/ci-release.md#releases-nightly-and-production-channels).
+The release recipes build the default native renderer and bundle its private
+media stack on each platform. Historical stock-libmpv artifacts remain evidence
+for the legacy comparison only. Physical Linux/Windows playback and the resource
+targets remain unqualified.
 Every release bundles pinned yt-dlp and Deno helpers and lists all assets in
 `SHA256SUMS.txt`.
 
@@ -54,25 +59,67 @@ Install Rust 1.98.1 (pinned in `rust-toolchain.toml`), Apple's Command Line Tool
 using Homebrew. A graphical macOS session is required to run the application:
 
 ```sh
-brew install pkgconf mpv yt-dlp
-cargo build --locked --release
+brew install pkgconf cmake ffmpeg libass shaderc libarchive uchardet yt-dlp
+python3 -m venv artifacts/native-media-tools
+artifacts/native-media-tools/bin/python -m pip install meson==1.12.1 ninja==1.13.2
+python3 scripts/native-media/macos.py --tools "$PWD/artifacts/native-media-tools/bin" --jobs 2
+export OXPLAY_NATIVE_MPV_PREFIX="$PWD/artifacts/native-media/macos/prefix"
+cargo build --locked --release --workspace
 ./target/release/oxplay
 ```
 
-The inspected development environment is Apple Silicon macOS 27.0. Other targets
-remain experimental; see [platform matrix](docs/platform-matrix.md). Linux builds
-need libmpv development files and Winit/X11/Wayland development prerequisites;
-the [CI workflow](docs/ci-release.md) compiles and tests the selected features
-on Ubuntu. Native X11 and Wayland playback remain unvalidated. Windows builds and
-tests in CI (see below); its native window and playback are not yet validated.
+The script verifies pinned source archives and applies the reviewed patches,
+installs into the private prefix, and records build provenance. The Rust build
+requires `include/mpv/render_mtl.h` to declare `OXPLAY_NATIVE_RENDER_ABI 1` and
+embeds the private library rpath. Installing Homebrew `mpv` alone cannot satisfy
+this ABI. See [the complete Metal build and headless smoke](docs/native-media-macos.md).
+
+The development host is Apple Silicon macOS 27.0. Linux Vulkan and Windows
+D3D11/DX12 adapters have source and cross-target API checks, with native driver,
+presentation, hardware-decoder and performance qualification still pending.
+CI's Linux/Windows stock-libmpv jobs explicitly build the OpenGL comparison;
+they do not validate those native adapters. See [platform matrix](docs/platform-matrix.md)
+and [CI scope](docs/ci-release.md).
+
+For the separate legacy OpenGL comparison:
+
+```sh
+brew install mpv
+cargo build --locked --release --workspace --no-default-features
+./target/release/oxplay --graphics-backend opengl
+```
+
+## Build on Linux (experimental)
+
+The default requires a private Vulkan/VAAPI media build, matching FFmpeg/libass,
+Vulkan and shader-compiler development dependencies, plus Winit/X11/Wayland
+prerequisites. Follow [the native Linux recipe](docs/native-media-platforms.md#building),
+set `OXPLAY_NATIVE_MPV_PREFIX` to its installed prefix, then run
+`cargo build --locked --release --workspace`. The installed
+`include/mpv/render_vk.h` must declare `OXPLAY_NATIVE_RENDER_ABI 1`.
+Native X11 and Wayland playback remain unqualified on real Linux hosts.
 
 ## Build on Windows (experimental)
 
 Target: `x86_64-pc-windows-msvc`. Install Rust 1.98.1 through rustup (the pinned
 toolchain is selected automatically), the Visual Studio 2022 Build Tools with the
 "Desktop development with C++" workload (MSVC linker and Windows SDK), and
-[7-Zip](https://www.7-zip.org/). There is no pkg-config on Windows: download a
-libmpv development archive and point `MPV_DIR` at its extracted directory. CI
+[the native Windows media toolchain and dependencies](docs/native-media-platforms.md#building).
+Build the pinned D3D11 media library with `scripts/native-media/windows.py`;
+its SDK prefix must provide `include/mpv/render_d3d11.h` declaring
+`OXPLAY_NATIVE_RENDER_ABI 1`, an import library, and the matching runtime DLLs.
+
+```powershell
+$env:OXPLAY_NATIVE_MPV_PREFIX = "C:\oxplay-native\sdk"
+cargo build --locked --release --workspace
+Copy-Item "$env:OXPLAY_NATIVE_MPV_PREFIX\*.dll" target\release\
+.\target\release\oxplay.exe
+```
+
+The native renderer requires shared-texture/fence support and the same adapter
+for D3D11 media and DX12 UI. It has not been runtime-qualified on a Windows host.
+For the separate legacy OpenGL build, install [7-Zip](https://www.7-zip.org/),
+download a stock libmpv development archive and point `MPV_DIR` at it. CI
 uses the exact archive pinned in
 [`scripts/ci/install-mpv-windows.sh`](scripts/ci/install-mpv-windows.sh)
 (shinchiro's `mpv-dev-x86_64-…7z`; `bash scripts/ci/install-mpv-windows.sh DIR`
@@ -82,9 +129,9 @@ MSVC `mpv.lib` or `libmpv.dll.a`, which the MSVC linker accepts directly.
 
 ```powershell
 $env:MPV_DIR = "C:\deps\mpv-dev"
-cargo build --locked --release --workspace
+cargo build --locked --release --workspace --no-default-features
 Copy-Item "$env:MPV_DIR\libmpv-2.dll" target\release\
-.\target\release\oxplay.exe
+.\target\release\oxplay.exe --graphics-backend opengl
 ```
 
 `cargo run` and `cargo test` find `libmpv-2.dll` automatically (the media build
@@ -105,9 +152,10 @@ Slint runtime/build compiler use the identical upstream Git revision recorded in
 [dependencies](docs/dependencies.md). Normal builds use `--locked`; upstream
 updates must be reviewed and tested. No project API keys are needed. Native
 libraries/helpers are installed development prerequisites, not bundled executables.
-The media build requires `pkg-config` to find **libmpv client API 2.5 or newer**
-(the tested mpv executable is 0.41.0). FFmpeg is required for fixture generation;
-the inspected Homebrew mpv package installs it as a dependency. The inspected
+The legacy build requires **libmpv client API 2.5 or newer**, found through
+`pkg-config` on Unix or `MPV_DIR` on Windows. Default native builds additionally
+require the custom ABI-1 headers and matching private libraries. FFmpeg is
+required for fixture generation. The inspected
 yt-dlp package supplies Python, Deno and packaged EJS challenge scripts.
 
 ## Use
@@ -198,6 +246,12 @@ ad-suppression qualification is unfinished; this is not a universal ad-free prom
 No account session, Premium account, or fabricated blocked-ad count is used as proof.
 
 ## Validation
+
+Keep the native prefix from the source-build instructions selected for the
+default Cargo checks. The headless ABI/content check and its hardware requirements
+are documented in [native Metal qualification](docs/native-media-macos.md#qualification).
+For a stock-libmpv comparison, add `--no-default-features` to Cargo build,
+check, Clippy and test commands.
 
 ```sh
 cargo fmt --all -- --check

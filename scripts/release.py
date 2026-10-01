@@ -223,10 +223,19 @@ Rust toolchain and `--locked` dependencies.
 | Source | `oxplay-v{version}-source.tar.gz` with `release.json` |
 
 {mac} Windows and Linux builds are unsigned. yt-dlp and Deno are bundled at
-pinned, SHA-256-verified versions; libmpv is bundled except in the Fedora and
-Arch packages, which use the distribution's libmpv. Oxplay is experimental and
+pinned, SHA-256-verified versions. Every package includes the private native
+libmpv/libplacebo stack: Metal on macOS, Vulkan on Linux, and DX12 UI with
+D3D11 video on Windows. Native media source and dependency records accompany
+the binaries. Oxplay is experimental and
 not release-qualified; see `docs/packaging.md` and `docs/licensing.md` in the
 source for the open portability, notice and corresponding-source items.
+
+The performance audit found low idle CPU usage and lower memory use than a
+minimal Chrome video player, but playback CPU remains above the target.
+An advantage over the YouTube website has not been established. See
+`docs/performance-native-2026-10-01.md` in the source archive for measurements
+and the limits of the comparisons. Linux and Windows hardware playback need
+verification on physical devices.
 
 `SHA256SUMS.txt` covers every attached asset. A checksum only proves integrity
 when obtained through a trusted channel; it is not a code signature.

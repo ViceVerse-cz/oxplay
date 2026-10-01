@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Display-driven scheduling for the single owning macOS OpenGL window.
+//! Display-driven scheduling for the single owning macOS video window.
 //! CVDisplayLink is deprecated in the macOS 15 SDK, but its behavior is verified
 //! against the failing native-swap path and functioning SDL3 baseline. It is
 //! isolated here so a qualified CADisplayLink replacement need not alter the UI.
@@ -26,6 +26,16 @@ pub(crate) struct ClockSignals {
     pub stops: AtomicU64,
 }
 
+impl ClockSignals {
+    /// A stopped clock cannot supply a presentation tick. Paused/control
+    /// notifications must remain consumable without starting a polling clock.
+    pub(crate) fn waiting_for_tick(&self) -> bool {
+        self.enabled.load(Ordering::Acquire)
+            && self.running.load(Ordering::Acquire)
+            && !self.ready.load(Ordering::Acquire)
+    }
+}
+
 type DisplayCallback = unsafe extern "C" fn(
     *mut c_void,
     *const c_void,
@@ -48,6 +58,8 @@ unsafe extern "C" {
         format: *mut c_void,
     ) -> i32;
     fn CVDisplayLinkStart(link: *mut c_void) -> i32;
+    #[cfg(feature = "native-rendering")]
+    fn CVDisplayLinkSetCurrentCGDisplay(link: *mut c_void, display: u32) -> i32;
     fn CVDisplayLinkStop(link: *mut c_void) -> i32;
     fn CVDisplayLinkRelease(link: *mut c_void);
 }
@@ -159,11 +171,13 @@ unsafe extern "C" fn tick(
     0
 }
 
-/// Main-thread owner. The borrowed CGL context outlives this clock. Creation and
-/// destruction require that original Slint context to be current.
+/// Main-thread owner. The OpenGL comparison path also borrows its CGL context;
+/// native GPU presentation associates the clock directly with the window's display.
 pub(crate) struct PresentationClock {
     link: NonNull<c_void>,
-    context: NonNull<c_void>,
+    context: Option<NonNull<c_void>>,
+    #[cfg(feature = "native-rendering")]
+    native_display: Cell<Option<u32>>,
     previous_interval: i32,
     wake: Arc<Wake>,
     running: Cell<bool>,
@@ -181,33 +195,8 @@ impl PresentationClock {
                 "read swap interval",
             )?;
         }
-        let mut link = std::ptr::null_mut();
+        let clock = Self::create(wake, Some(context), previous_interval)?;
         unsafe {
-            checked(
-                CVDisplayLinkCreateWithActiveCGDisplays(&mut link),
-                "create display clock",
-            )?;
-        }
-        let link = NonNull::new(link)
-            .ok_or_else(|| MediaError("macOS returned an empty display clock".into()))?;
-        let clock = Self {
-            link,
-            context,
-            previous_interval,
-            wake,
-            running: Cell::new(false),
-            playback_assertion: PlaybackAssertion::default(),
-            _thread_bound: PhantomData,
-        };
-        unsafe {
-            checked(
-                CVDisplayLinkSetOutputCallback(
-                    link.as_ptr(),
-                    Some(tick),
-                    Arc::as_ptr(&clock.wake).cast_mut().cast(),
-                ),
-                "set display callback",
-            )?;
             clock.update_display()?;
             checked(
                 CGLSetParameter(context.as_ptr(), SWAP_INTERVAL, &0),
@@ -227,14 +216,78 @@ impl PresentationClock {
         clock.wake.clock.enabled.store(true, Ordering::Release);
         Ok(clock)
     }
+    /// Native GPU presentation has no CGL context or swap-interval mutation.
+    #[cfg(feature = "native-rendering")]
+    pub fn new_native(wake: Arc<Wake>, display: Option<u32>) -> Result<Self> {
+        let clock = Self::create(wake, None, 0)?;
+        if let Some(display) = display {
+            clock.set_native_display(display)?;
+        }
+        clock.wake.clock.enabled.store(true, Ordering::Release);
+        Ok(clock)
+    }
+    fn create(
+        wake: Arc<Wake>,
+        context: Option<NonNull<c_void>>,
+        previous_interval: i32,
+    ) -> Result<Self> {
+        let mut link = std::ptr::null_mut();
+        unsafe {
+            checked(
+                CVDisplayLinkCreateWithActiveCGDisplays(&mut link),
+                "create display clock",
+            )?;
+        }
+        let link = NonNull::new(link)
+            .ok_or_else(|| MediaError("macOS returned an empty display clock".into()))?;
+        let clock = Self {
+            link,
+            context,
+            #[cfg(feature = "native-rendering")]
+            native_display: Cell::new(None),
+            previous_interval,
+            wake,
+            running: Cell::new(false),
+            playback_assertion: PlaybackAssertion::default(),
+            _thread_bound: PhantomData,
+        };
+        unsafe {
+            checked(
+                CVDisplayLinkSetOutputCallback(
+                    link.as_ptr(),
+                    Some(tick),
+                    Arc::as_ptr(&clock.wake).cast_mut().cast(),
+                ),
+                "set display callback",
+            )?;
+        }
+        Ok(clock)
+    }
+    #[cfg(feature = "native-rendering")]
+    pub fn set_native_display(&self, display: u32) -> Result<()> {
+        if self.context.is_some() || self.native_display.get() == Some(display) {
+            return Ok(());
+        }
+        unsafe {
+            checked(
+                CVDisplayLinkSetCurrentCGDisplay(self.link.as_ptr(), display),
+                "associate native display clock",
+            )?;
+        }
+        self.native_display.set(Some(display));
+        Ok(())
+    }
     /// Must run on the UI thread with the owning context current, after resize.
     pub unsafe fn update_display(&self) -> Result<()> {
+        let Some(context) = self.context else {
+            return Ok(());
+        };
         unsafe {
             checked(
                 CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(
                     self.link.as_ptr(),
-                    self.context.as_ptr(),
-                    CGLGetPixelFormat(self.context.as_ptr()),
+                    context.as_ptr(),
+                    CGLGetPixelFormat(context.as_ptr()),
                 ),
                 "associate display clock",
             )
@@ -299,14 +352,13 @@ impl Drop for PresentationClock {
         unsafe {
             // Release the native callback source before dropping its Arc data.
             CVDisplayLinkRelease(self.link.as_ptr());
-            debug_assert_eq!(CGLGetCurrentContext(), self.context.as_ptr());
-            let result = CGLSetParameter(
-                self.context.as_ptr(),
-                SWAP_INTERVAL,
-                &self.previous_interval,
-            );
-            if result != 0 {
-                eprintln!("macOS restore swap interval failed ({result})");
+            if let Some(context) = self.context {
+                debug_assert_eq!(CGLGetCurrentContext(), context.as_ptr());
+                let result =
+                    CGLSetParameter(context.as_ptr(), SWAP_INTERVAL, &self.previous_interval);
+                if result != 0 {
+                    eprintln!("macOS restore swap interval failed ({result})");
+                }
             }
         }
     }
@@ -359,6 +411,24 @@ mod tests {
         pulse(&wake);
         assert_eq!(wake.count.load(Ordering::Relaxed), 1);
         assert!(wake.clock.ready.load(Ordering::Acquire));
+    }
+    #[test]
+    fn stopped_clock_admits_a_paused_render_notification_without_a_tick() {
+        let wake = wake();
+        wake.clock.enabled.store(true, Ordering::Release);
+        unsafe { crate::render_wake(Arc::as_ptr(&wake).cast_mut().cast()) };
+        assert!(wake.frame.load(Ordering::Acquire));
+        assert_eq!(wake.count.load(Ordering::Relaxed), 1);
+        assert!(!wake.clock.waiting_for_tick());
+        // Active playback still waits for its real display opportunity.
+        wake.clock.running.store(true, Ordering::Release);
+        assert!(wake.clock.waiting_for_tick());
+        pulse(&wake);
+        assert!(!wake.clock.waiting_for_tick());
+        // Stopping before a subsequent tick must never strand that frame.
+        wake.clock.ready.store(false, Ordering::Release);
+        wake.clock.running.store(false, Ordering::Release);
+        assert!(!wake.clock.waiting_for_tick());
     }
     #[test]
     fn active_clock_coalesces_engine_and_display_wakeups() {

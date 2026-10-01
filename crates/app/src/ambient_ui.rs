@@ -7,7 +7,7 @@
 //! of its own while playing and freezes (keeping its colours) while paused.
 use crate::{App, UiState};
 use oxplay_core::GlowSize;
-use oxplay_media::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, GlPresenter};
+use oxplay_media::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, VideoPresenter};
 use slint::{ComponentHandle, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode};
 use std::{
     cell::RefCell,
@@ -319,9 +319,14 @@ pub fn sampling_wanted(app: &App, state: &UiState) -> bool {
     !state.hidden.get() && app.get_ambient_active()
 }
 
-/// Call in BeforeRendering right after `GlPresenter::render`. `published`
+/// Call in BeforeRendering right after `VideoPresenter::render`. `published`
 /// is true when that call returned a new video image for this frame.
-pub fn after_render(app: &App, state: &Rc<UiState>, presenter: &mut GlPresenter, published: bool) {
+pub fn after_render(
+    app: &App,
+    state: &Rc<UiState>,
+    presenter: &mut VideoPresenter,
+    published: bool,
+) {
     let now = Instant::now();
     let mut inner = state.ambient_ui.inner.borrow_mut();
     let load = presenter.observed_load_request();

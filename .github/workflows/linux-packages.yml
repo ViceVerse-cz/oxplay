@@ -10,6 +10,8 @@ on:
       - 'packaging/licenses/**'
       - 'scripts/fetch_pinned.py'
       - 'scripts/ci/install-mpv-linux.sh'
+      - 'scripts/native-media/**'
+      - 'crates/media/src/native_vulkan.rs'
       - '.github/workflows/linux-packages.yml'
       - '.github/workflows/package-repositories.yml'
   workflow_call:
@@ -31,11 +33,10 @@ env:
 
 jobs:
   ubuntu:
-    # One build with the private libmpv 0.41 (Ubuntu 24.04's is too old):
-    # the .deb links it from /usr/lib/oxplay; the AppImage/tarball bundle its closure.
-    name: Ubuntu 24.04 deb, AppImage and tarball
+    # Every format ships caller-owned Vulkan ABI 1; stock libmpv is incompatible.
+    name: Ubuntu 24.04 native Vulkan deb, AppImage and tarball
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       TAG: ${{ inputs.tag || 'development' }}
     steps:
@@ -54,31 +55,28 @@ jobs:
       - name: Identify actual native dependency versions
         id: native
         run: echo "hash=$(sha256sum "$RUNNER_TEMP/native-packages.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - name: Cache exact Linux libmpv build
-        id: mpv-cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: ${{ runner.temp }}/oxplay-mpv-0.41.0
-          key: libmpv-package-${{ runner.os }}-${{ runner.arch }}-0.41.0-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}-${{ steps.native.outputs.hash }}
-      - name: Build verified Linux libmpv source
-        if: steps.mpv-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 20
-        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/oxplay-mpv-0.41.0"
+      - name: Build pinned native media, verify C ABI and client loading
+        timeout-minutes: 60
+        run: |
+          python3 scripts/native-media/linux.py --build-ffmpeg --jobs 2 \
+            --prefix "$RUNNER_TEMP/oxplay-native-linux" --work-dir "$RUNNER_TEMP/oxplay-native-linux-work"
+          echo "OXPLAY_NATIVE_MPV_PREFIX=$RUNNER_TEMP/oxplay-native-linux" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/oxplay-native-linux/lib" >> "$GITHUB_ENV"
       - name: Select checked-in Rust toolchain
         run: |
           rustup show
           rustc --version --verbose
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: linux-package-ubuntu-${{ steps.native.outputs.hash }}
+          key: linux-package-native-ubuntu-${{ steps.native.outputs.hash }}-${{ hashFiles('scripts/native-media/**') }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cache-on-failure: true
-      - name: Build locked release binary
-        env:
-          PKG_CONFIG_PATH: ${{ runner.temp }}/oxplay-mpv-0.41.0/lib/pkgconfig
+      - name: Build locked default-native release binary
         run: cargo build --release --locked -p oxplay
       - name: Packaging regression (offline)
-        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*packag*.py'
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*packag*.py'
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s packaging/linux -p 'test_native_media.py'
       - name: Fetch pinned helpers and AppImage tools
         run: |
           python3 scripts/fetch_pinned.py yt-dlp-linux-x86_64 deno-linux-x86_64 appimagetool-x86_64 \
@@ -88,11 +86,11 @@ jobs:
       - name: Build and inspect the Debian package
         run: |
           python3 packaging/linux/package.py deb --helpers target/pinned \
-            --mpv-prefix "$RUNNER_TEMP/oxplay-mpv-0.41.0" --output dist
+            --mpv-prefix "$OXPLAY_NATIVE_MPV_PREFIX" --output dist
       - name: Build and inspect the AppImage and portable tarball
         run: |
           python3 packaging/appimage/build.py --helpers target/pinned \
-            --mpv-prefix "$RUNNER_TEMP/oxplay-mpv-0.41.0" --tag "$TAG" --output dist
+            --mpv-prefix "$OXPLAY_NATIVE_MPV_PREFIX" --tag "$TAG" --output dist
       - name: Signed apt repository regression (synthetic key)
         run: |
           python3 -m unittest discover -s scripts -p 'test_package_repositories.py'
@@ -112,10 +110,21 @@ jobs:
           path: release-assets/*
           if-no-files-found: error
           retention-days: 14
+      - name: Preserve native build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-media-linux-ubuntu-evidence
+          path: |
+            ${{ runner.temp }}/oxplay-native-linux/native-media-*.json
+            ${{ runner.temp }}/oxplay-native-linux/share/oxplay-native/host-packages.txt
+            ${{ runner.temp }}/oxplay-native-linux-work/*/build/meson-logs/
+          if-no-files-found: warn
+          retention-days: 14
 
   native:
-    # Distribution libmpv; built and inspected natively as an unprivileged user.
-    name: ${{ matrix.distribution }} ${{ matrix.format }}
+    # Native media is bundled privately even on distributions offering stock mpv.
+    name: ${{ matrix.distribution }} native Vulkan ${{ matrix.format }}
     strategy:
       fail-fast: false
       matrix:
@@ -128,7 +137,7 @@ jobs:
             format: arch
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -138,7 +147,7 @@ jobs:
         with:
           name: release-manifests
           path: .
-      - name: Install native build tools and distribution libmpv
+      - name: Install native source build and packaging tools
         run: sh packaging/linux/install-build-deps.sh
       - name: Create unprivileged builder
         run: |
@@ -155,9 +164,15 @@ jobs:
             export PATH="$HOME/.cargo/bin:$PATH"
             rustup toolchain install
             rustc --version --verbose
+            export OXPLAY_NATIVE_MPV_PREFIX="$GITHUB_WORKSPACE/target/native-media-prefix"
+            python3 scripts/native-media/linux.py --build-ffmpeg --jobs 2 \
+              --prefix "$OXPLAY_NATIVE_MPV_PREFIX" --work-dir "$GITHUB_WORKSPACE/target/native-media-work"
+            export LD_LIBRARY_PATH="$OXPLAY_NATIVE_MPV_PREFIX/lib"
             cargo build --release --locked -p oxplay
             PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_release_packaging.py'
-            python3 packaging/linux/package.py "$FORMAT" --helpers target/pinned --output dist
+            PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s packaging/linux -p 'test_native_media.py'
+            python3 packaging/linux/package.py "$FORMAT" --helpers target/pinned \
+              --mpv-prefix "$OXPLAY_NATIVE_MPV_PREFIX" --output dist
           BUILD
       - name: Collect distribution-labelled package
         env:
@@ -175,4 +190,15 @@ jobs:
           name: oxplay-linux-${{ matrix.distribution }}
           path: release-assets/*
           if-no-files-found: error
+          retention-days: 14
+      - name: Preserve native build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-media-linux-${{ matrix.distribution }}-evidence
+          path: |
+            target/native-media-prefix/native-media-*.json
+            target/native-media-prefix/share/oxplay-native/host-packages.txt
+            target/native-media-work/*/build/meson-logs/
+          if-no-files-found: warn
           retention-days: 14

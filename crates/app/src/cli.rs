@@ -5,6 +5,7 @@ use std::{collections::HashSet, ffi::OsString, path::PathBuf};
 #[derive(Default)]
 pub struct Options {
     pub help: bool,
+    pub graphics_backend: Option<crate::graphics_backend::GraphicsBackend>,
     pub local: Option<PathBuf>,
     pub subtitle: Option<PathBuf>,
     pub handoff_audio: Option<PathBuf>,
@@ -102,6 +103,7 @@ impl Options {
                 | "--search"
                 | "--ui-page"
                 | "--ui-theme"
+                | "--graphics-backend"
                 | "--ui-size"
                 | "--quit-after"
                 | "--soak-minutes"
@@ -129,6 +131,11 @@ impl Options {
                                 .into_string()
                                 .map_err(|_| "Text option values must be UTF-8")?;
                             match key {
+                                "--graphics-backend" => {
+                                    options.graphics_backend = Some(
+                                        crate::graphics_backend::GraphicsBackend::parse(&value)?,
+                                    );
+                                }
                                 "--url" => options.url = Some(value),
                                 "--search" => options.search = Some(value),
                                 "--ui-page" => {
@@ -215,6 +222,7 @@ impl Options {
         }
         if options.home_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--home-smoke-test",
                 "--data-root",
                 "--quit-after",
@@ -241,6 +249,7 @@ impl Options {
         }
         if options.pip_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--pip-smoke-test",
                 "--local",
                 "--subtitle",
@@ -270,6 +279,7 @@ impl Options {
         }
         if options.recovery_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--recovery-smoke-test",
                 "--yt-dlp",
                 "--data-root",
@@ -306,6 +316,7 @@ impl Options {
         }
         if options.collection_window_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--collection-window-smoke-test",
                 "--data-root",
                 "--quit-after",
@@ -337,6 +348,7 @@ impl Options {
         }
         if options.library_keyboard_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--library-keyboard-smoke-test",
                 "--data-root",
                 "--quit-after",
@@ -368,6 +380,7 @@ impl Options {
         }
         if options.save_smoke {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--save-smoke-test",
                 "--url",
                 "--data-root",
@@ -406,6 +419,7 @@ impl Options {
         }
         if options.related_focus_check {
             const ALLOWED: &[&str] = &[
+                "--graphics-backend",
                 "--related-focus-check",
                 "--local",
                 "--demo-related",
@@ -690,6 +704,20 @@ impl Options {
                 "--minimized is an idle diagnostic; do not combine it with startup media or search",
             );
         }
+        if options.native_video_child
+            && options.graphics_backend == Some(crate::graphics_backend::GraphicsBackend::Native)
+        {
+            return Err(
+                "The native-child comparison uses OpenGL; select native rendering without --native-video-child",
+            );
+        }
+        if !cfg!(feature = "native-rendering")
+            && options.graphics_backend == Some(crate::graphics_backend::GraphicsBackend::Native)
+        {
+            return Err(
+                "Native rendering requires a build with the native-rendering feature and native media dependencies",
+            );
+        }
         Ok(options)
     }
 
@@ -741,6 +769,7 @@ pub const HELP: &str = "Oxplay experimental native client
   --search TEXT     Search public YouTube metadata
   --paused          Start local playback paused
   --minimized       Minimized idle diagnostic
+  --graphics-backend BACKEND  native (Metal/Vulkan/DX12) or opengl for comparison
   --data-root DIR   Store local data under DIR/Oxplay (absolute path)
   --ui-page PAGE    Diagnostic: browse/library/settings/account/downloads
   --ui-theme THEME  Diagnostic: system/light/dark (not saved)
@@ -783,6 +812,29 @@ YouTube search suggestions are on (Settings; not in finite diagnostics).";
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    #[test]
+    fn graphics_selection_keeps_offline_diagnostics_available() {
+        assert!(parse(&["--graphics-backend", "automatic"]).is_err());
+        assert!(parse(&["--graphics-backend"]).is_err());
+        let options = parse(&[
+            "--graphics-backend",
+            "opengl",
+            "--home-smoke-test",
+            "--data-root",
+            "/synthetic/native-test",
+        ])
+        .unwrap();
+        assert_eq!(
+            options.graphics_backend,
+            Some(crate::graphics_backend::GraphicsBackend::OpenGl)
+        );
+        assert_eq!(options.quit_after, Some(40));
+        assert_eq!(
+            parse(&["--graphics-backend", "native"]).is_ok(),
+            cfg!(feature = "native-rendering")
+        );
+    }
     // Synthetic Unix-rooted paths are not absolute on Windows.
     #[cfg(unix)]
     #[test]

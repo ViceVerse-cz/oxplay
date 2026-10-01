@@ -106,6 +106,9 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}.lnk"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
   ; Remove only files this installer wrote; never recursively delete a user-chosen folder.
+  !ifdef UNINSTALL_INCLUDE
+    !include "${UNINSTALL_INCLUDE}"
+  !else
   Delete "$INSTDIR\oxplay.exe"
   Delete "$INSTDIR\libmpv-2.dll"
   Delete "$INSTDIR\yt-dlp.exe"
@@ -118,6 +121,7 @@ Section "Uninstall"
   Delete "$INSTDIR\licenses\yt-dlp-LICENSE"
   Delete "$INSTDIR\licenses\yt-dlp-THIRD_PARTY_LICENSES.txt"
   RMDir "$INSTDIR\licenses"
+  !endif
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
 SectionEnd

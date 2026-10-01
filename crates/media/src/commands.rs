@@ -222,8 +222,15 @@ mod tests {
             (c"audio-file-auto", c"no"),
             (c"sub-auto", c"no"),
         ] {
+            let code =
+                unsafe { ffi::mpv_set_option_string(engine.0, key.as_ptr(), value.as_ptr()) };
             assert!(
-                unsafe { ffi::mpv_set_option_string(engine.0, key.as_ptr(), value.as_ptr()) } >= 0
+                code >= 0
+                    || crate::absent_script_disable(
+                        key.to_str().unwrap(),
+                        value.to_str().unwrap(),
+                        code
+                    )
             );
         }
         assert!(unsafe { ffi::mpv_initialize(engine.0) } >= 0);

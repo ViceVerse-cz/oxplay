@@ -9,11 +9,11 @@ Linux/X11 and native Wayland has not been validated.
 
 | Platform | Package | libmpv | yt-dlp / Deno | Tooling |
 | --- | --- | --- | --- | --- |
-| macOS ARM64 | `Oxplay.app` zip, Homebrew cask | Homebrew libmpv closure relocated into `Contents/Frameworks` | reviewed Homebrew Python 3.14/yt-dlp/EJS runtime and Deno in `Contents/Helpers` | `scripts/package_macos.py`, `packaging/macos/sign-release.sh` |
-| Windows x86_64 | portable zip, per-user NSIS installer | pinned shinchiro `libmpv-2.dll` beside `oxplay.exe` | pinned `yt-dlp.exe`, `deno.exe` beside `oxplay.exe` | `packaging/windows/` |
-| Ubuntu 24.04 | `.deb` | private mpv 0.41.0 build, `/usr/lib/oxplay/libmpv.so.2`, system FFmpeg | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
-| Fedora 44, Arch | `.rpm`, `.pkg.tar.zst` | distribution libmpv (client API ≥ 2.5) | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
-| Linux x86_64 | AppImage, tarball | private mpv 0.41.0 with its non-system closure in `usr/lib` | pinned, in `usr/lib/oxplay` | `packaging/appimage/build.py` |
+| macOS ARM64 | `Oxplay.app` zip, Homebrew cask | pinned native Metal mpv/libplacebo plus their dependency closure relocated into `Contents/Frameworks` | reviewed Homebrew Python 3.14/yt-dlp/EJS runtime and Deno in `Contents/Helpers` | `scripts/package_macos.py`, `packaging/macos/sign-release.sh` |
+| Windows x86_64 | portable zip, per-user NSIS installer | private ABI-1 D3D11 mpv/libplacebo, pinned FFmpeg and verified UCRT64 DLL closure beside `oxplay.exe` | pinned `yt-dlp.exe`, `deno.exe` beside `oxplay.exe` | `packaging/windows/` |
+| Ubuntu 24.04 | `.deb` | private ABI-1 Vulkan mpv/libplacebo and pinned full FFmpeg in `/usr/lib/oxplay` | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
+| Fedora 44, Arch | `.rpm`, `.pkg.tar.zst` | private ABI-1 Vulkan mpv/libplacebo and pinned full FFmpeg in `/usr/lib/oxplay` | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
+| Linux x86_64 | AppImage, tarball | private ABI-1 Vulkan mpv/libplacebo, pinned FFmpeg and non-system closure in `usr/lib` | pinned, in `usr/lib/oxplay` | `packaging/appimage/build.py` |
 
 **Linux helper selection.** The application resolves helpers from explicit
 `--yt-dlp`/`--deno` paths or an owning macOS bundle and never searches `PATH`;
@@ -66,7 +66,9 @@ above. Signing, portability and the documented redistribution gaps remain open.
 Install the documented native prerequisites and build with the committed lock:
 
 ```sh
-cargo build --release --locked -p oxplay -p oxplay-network --bins
+python3 scripts/native-media/macos.py --jobs 2
+OXPLAY_NATIVE_MPV_PREFIX="$PWD/artifacts/native-media/macos/prefix" \
+  cargo build --release --locked -p oxplay -p oxplay-network --bins --features native-rendering
 python3 scripts/package_macos.py inspect --output artifacts/package-evidence
 python3 scripts/package_macos.py bundle --output artifacts/Oxplay-Development.app
 python3 scripts/package_macos.py bundle --bundle-helpers --output artifacts/Oxplay-WithHelpers.app
@@ -79,6 +81,32 @@ closure into `Contents/Frameworks`, signs only those owned copies ad hoc, and
 verifies the resulting signature. The original application and Homebrew files
 are never rewritten. It does not download anything or silently resolve a new
 Cargo lock. Offline Cargo metadata must already be available.
+
+Packaging requires the reviewed private Metal stack built by
+[`scripts/native-media/macos.py`](../scripts/native-media/macos.py). The
+default prefix is `artifacts/native-media/macos/prefix`; select another reviewed
+build with `--native-mpv-prefix`. The tool verifies the ABI header, installed
+mpv/libplacebo hashes, pinned source archive hashes and sizes, applied patch
+hashes and installed licenses against the native build manifest. It rejects a
+stock Homebrew mpv or a mixed native/stock media closure. Source archives,
+patches, licenses and build manifest are retained in `BuildInfo/native-media`.
+The existing Homebrew formula/notice inventory covers the other dependency and
+helper libraries. Complete corresponding-source review covers those inputs
+separately; retaining the native archives alone does not complete that review.
+
+`--build` explicitly selects `native-rendering` and supplies the chosen private
+prefix to Cargo. It never selects the legacy OpenGL feature configuration.
+Prebuilt mode remains useful for testing a retained native executable, but
+still cannot prove its source association or feature selection from current
+source metadata alone; verify native presentation in a packaged playback smoke.
+
+Use `--maximum-macos 26.0` in the macOS 26 release job. It rejects any bundled
+Mach-O input, including transitive media and helper libraries, whose load
+commands require a newer OS. Build the private stack and application on that
+runner with its own compatible dependencies. The local macOS 27 Homebrew
+closure requires macOS 27 and cannot be made macOS 26 compatible by changing
+`LSMinimumSystemVersion` or rewriting load-command minima. The bundle's declared
+minimum remains the greatest minimum of its actual inputs.
 
 Use `--build` to make the tool build both `oxplay` and `oxplay-dns` in one
 locked release invocation and select their executable paths from Cargo artifacts.

@@ -29,7 +29,9 @@ class PackagingBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             names = ["SPEC.md", "tools/media-baseline/main.c", "tools/media-baseline/README.md",
-                     "tools/unrelated/private.txt", "artifacts/local.log", "crates/app/Cargo.toml"]
+                     "tools/unrelated/private.txt", "artifacts/local.log", "crates/app/Cargo.toml",
+                     "vendor/femtovg/Cargo.toml", "vendor/femtovg/src/lib.rs", "vendor/femtovg/LICENSE-MIT",
+                     "rust-toolchain.toml", ".cargo/config.toml"]
             for name in names:
                 file = root / name
                 file.parent.mkdir(parents=True, exist_ok=True)
@@ -38,7 +40,9 @@ class PackagingBoundaryTests(unittest.TestCase):
             names.append("tools/media-baseline/linked")
             with patch.object(packaging, "ROOT", root), patch.object(packaging, "run", return_value="\0".join(names)):
                 selected = {str(file.relative_to(root)) for file in packaging.source_files()}
-            self.assertEqual(selected, {"SPEC.md", "tools/media-baseline/main.c", "tools/media-baseline/README.md", "crates/app/Cargo.toml"})
+            self.assertEqual(selected, {"SPEC.md", "tools/media-baseline/main.c", "tools/media-baseline/README.md", "crates/app/Cargo.toml",
+                                        "vendor/femtovg/Cargo.toml", "vendor/femtovg/src/lib.rs", "vendor/femtovg/LICENSE-MIT",
+                                        "rust-toolchain.toml", ".cargo/config.toml"})
 
     def test_locked_build_requires_exactly_both_first_party_binary_artifacts(self):
         def artifact(name, kind="bin"):
@@ -51,10 +55,87 @@ class PackagingBoundaryTests(unittest.TestCase):
             self.assertIn("--locked", command.call_args.args)
             self.assertIn("oxplay-network", command.call_args.args)
             self.assertIn("--bins", command.call_args.args)
+            self.assertNotIn("--no-default-features", command.call_args.args)
+            self.assertIn("native-rendering", command.call_args.args)
+            self.assertEqual(command.call_args.kwargs["env"]["OXPLAY_NATIVE_MPV_PREFIX"],
+                             str(packaging.NATIVE_PREFIX.resolve()))
         for malformed in ([records[0]], records + [records[1]], [records[0], artifact("oxplay-dns", "example")]):
             with self.subTest(records=malformed), patch.object(packaging, "run", return_value="\n".join(malformed)):
                 with self.assertRaises(packaging.PackagingError):
                     packaging.build_executables()
+
+    def native_fixture(self, root):
+        prefix = root / "artifacts/native-media/macos/prefix"
+        inputs = {"lib/libmpv.2.dylib": b"synthetic mpv; never executed",
+                  "lib/libplacebo.365.dylib": b"synthetic libplacebo; never executed",
+                  "include/mpv/render_mtl.h": b"#define OXPLAY_NATIVE_RENDER_ABI 1\n",
+                  "share/licenses/native-media/mpv/LICENSE": b"synthetic license fixture"}
+        for name, data in inputs.items():
+            path = prefix / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        archive = prefix.parent / "downloads/mpv-pinned.tar.gz"
+        archive.parent.mkdir()
+        archive.write_bytes(b"synthetic archive; never extracted")
+        pins = {"mpv": {"revision": "pinned", "bytes": archive.stat().st_size,
+                        "sha256": packaging.digest(archive)}}
+        source = root / "scripts/native-media/macos-sources.json"
+        source.parent.mkdir(parents=True)
+        packaging.json_write(source, {"sources": pins})
+        patch_file = source.parent / "patches/native.patch"
+        patch_file.parent.mkdir()
+        patch_file.write_text("synthetic patch; never applied")
+        packaging.json_write(prefix.parent / "build-result.json", {
+            "schema": 1, "status": "compiled_and_installed", "native_render_abi": 1,
+            "sources": pins, "patches": {patch_file.name: packaging.digest(patch_file)},
+            "installed_files": {name: packaging.digest(prefix / name) for name in inputs}})
+        return prefix
+
+    def test_native_media_inventory_binds_libraries_sources_patches_and_licenses(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prefix = self.native_fixture(root)
+            with patch.object(packaging, "ROOT", root):
+                inputs = packaging.native_media_inputs(prefix)
+                self.assertEqual(inputs["backend"], "metal")
+                self.assertEqual({x["target"] for x in inputs["evidence"]},
+                                 {"build-result.json", "macos-sources.json", "sources/mpv-pinned.tar.gz",
+                                  "patches/native.patch", "licenses/mpv/LICENSE"})
+                (prefix / "lib/libmpv.2.dylib").write_bytes(b"changed library")
+                with self.assertRaisesRegex(packaging.PackagingError, "changed after"):
+                    packaging.native_media_inputs(prefix)
+
+    def test_native_media_source_license_and_patch_tampering_fail(self):
+        for name in ("downloads/mpv-pinned.tar.gz", "prefix/share/licenses/native-media/mpv/LICENSE",
+                     "../../../../scripts/native-media/patches/native.patch"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                prefix = self.native_fixture(root)
+                file = prefix.parent / name
+                if name.startswith("../"):
+                    file = root / "scripts/native-media/patches/native.patch"
+                file.write_bytes(b"changed evidence")
+                with patch.object(packaging, "ROOT", root), self.assertRaises(packaging.PackagingError):
+                    packaging.native_media_inputs(prefix)
+
+    def test_native_media_closure_rejects_stock_and_mixed_mpv(self):
+        mpv = Path("/private/prefix/lib/libmpv.2.dylib")
+        placebo = Path("/private/prefix/lib/libplacebo.365.dylib")
+        inputs = {"installed": [{"source": str(x), "kind": "installed"} for x in (mpv, placebo)]}
+        packaging.require_native_media_closure({mpv: {}, placebo: {}}, inputs)
+        for graph in ({mpv: {}}, {Path("/opt/homebrew/lib/libmpv.2.dylib"): {}, placebo: {}},
+                      {mpv: {}, placebo: {}, Path("/stock/lib/libplacebo.360.dylib"): {}}):
+            with self.assertRaises(packaging.PackagingError):
+                packaging.require_native_media_closure(graph, inputs)
+
+    def test_macos_release_ceiling_rejects_newer_transitive_dependencies(self):
+        graph = {Path("/private/libmpv.dylib"): {"minimum_macos": "12.0"},
+                 Path("/homebrew/libavcodec.dylib"): {"minimum_macos": "26.0"}}
+        packaging.require_macos_ceiling(graph, "26")
+        packaging.require_macos_ceiling(graph, "26.0")
+        graph[Path("/homebrew/libavcodec.dylib")]["minimum_macos"] = "27.0"
+        with self.assertRaisesRegex(packaging.PackagingError, "libavcodec"):
+            packaging.require_macos_ceiling(graph, "26.0")
 
     def test_dns_offline_probe_uses_empty_stdin_clean_environment_and_timeout(self):
         import subprocess

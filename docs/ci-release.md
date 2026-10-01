@@ -1,6 +1,44 @@
 # CI and releases
 
-Latest feature checkpoint: `6b3729b46e8ff6ac250307084aa5a21a5677e5f9`
+Source builds now default to `native-rendering`. Stock libmpv cannot satisfy its
+private ABI. CI therefore separates the default macOS native build from explicit
+legacy OpenGL comparison builds on macOS, Linux and Windows. Historical passes
+and release artifacts below use the legacy stack; they do not qualify the native
+migration. The release workflow now builds the private native media stack and
+default Rust features for every platform. Linux uses pinned full FFmpeg rather
+than Fedora’s codec-limited system build, and Windows uses an explicit UCRT64
+DLL closure with source records. Hosted validation for this migration is pending.
+
+The `native-macos` job builds the checksum-pinned mpv/libplacebo sources and
+reviewed patches with [`macos.py`](../scripts/native-media/macos.py). It installs
+FFmpeg, libass, shaderc, libarchive, uchardet, CMake and pkgconf through Homebrew,
+and Meson 1.12.1/Ninja 1.13.2 into a private Python environment. Source archives
+are cached and reauthenticated; native libraries are rebuilt for each run.
+Homebrew packages and the SDK can advance, so the recorded package/SDK inventory
+and `build-result.json` remain part of the evidence. Rust cache keys include that
+inventory and native source/patch inputs.
+
+The job selects `OXPLAY_NATIVE_MPV_PREFIX` explicitly, checks formatting and the
+locked default workspace, runs strict all-target Clippy, workspace tests and
+libplacebo dependency tests, and builds the release workspace. Compilation of
+[`macos_smoke.m`](../scripts/native-media/macos_smoke.m) checks ABI 1 and struct
+layouts against the installed private headers. If the runner exposes Metal and
+H.264 hardware decoding, the headless smoke must verify bounded capacity wakes,
+15 VideoToolbox frames with at least ten distinct RGB hashes, and callback-safe
+teardown. Missing hardware is explicitly reported as skipped; ABI compilation
+and workspace checks still run. Standard hosted runner hardware is not assumed
+to match GitHub's separately documented
+[GPU-accelerated larger runners](https://docs.github.com/en/actions/reference/runners/larger-runners).
+Build logs and provenance are retained as the `native-metal-build-evidence`
+artifact even when a later check fails.
+
+The headless smoke deliberately reads diagnostic pixels and waits for GPU work.
+It is not a UI presentation, audio-sync or performance test. CI does not qualify
+native Linux/Windows drivers, accessibility, accounts, power/resource budgets,
+or portable native distributions. See [native rendering](native-rendering.md)
+and [platform recipes](native-media-platforms.md).
+
+Historical feature checkpoint: `6b3729b46e8ff6ac250307084aa5a21a5677e5f9`
 adds channel handles, local playlist search and explicit watch-link sharing.
 Formatting, strict all-target Clippy and the locked debug workspace build passed.
 Four new focused regression tests were compiled, not run. No native diagnostics,
@@ -22,9 +60,11 @@ spending-limit issue. No hosted build/test result exists for this checkpoint.
 [CI](../.github/workflows/ci.yml) runs on pushes to `main`, pull requests, manual
 dispatch and calls from the release workflow. It uses `rust-toolchain.toml`
 (Rust 1.98.1 with rustfmt and Clippy), the committed `Cargo.lock` and the selected
-production Slint features. It never enables every renderer feature at once.
+selected Slint features. It does not use `--all-features`.
 
-The matrix checks macOS ARM64 (`macos-26`) and Linux (`ubuntu-24.04`). Each job
+The legacy comparison matrix checks macOS ARM64 (`macos-26`) and Linux
+(`ubuntu-24.04`) with `--no-default-features` for every workspace Cargo build,
+lint and test invocation. Each job
 checks formatting, strict Clippy, automated Rust tests, Python tooling tests and
 a locked release workspace build. Ignored human-account, Keychain and external
 network tests stay ignored. Python tooling runs under an explicitly selected
@@ -35,7 +75,7 @@ on macOS lacks `os.waitid`; it became available there in
 Jobs do not launch GUI, performance or usage tests.
 No account credentials, signing identities or external service secrets are needed.
 
-macOS installs Homebrew libmpv and checks client API >=2.5. Ubuntu's system mpv
+The legacy macOS job installs Homebrew libmpv and checks client API >=2.5. Ubuntu's system mpv
 is too old for that API. [The CI installer](../scripts/ci/install-mpv-linux.sh)
 builds unmodified official mpv 0.41.0 from a SHA-256-verified archive into an
 isolated runner directory with EGL, X11 and Wayland enabled. It records its
@@ -94,7 +134,8 @@ capabilities, resource budgets, accessibility or portable installation. A
 separate `windows-latest` job fetches the pinned libmpv development archive
 ([build inputs](build-inputs.md#windows-libmpv-input)), sets `MPV_DIR` and runs
 formatting, strict Clippy, the automated Rust tests and a locked release build
-for `x86_64-pc-windows-msvc`. It skips the Python tools, which require Unix
+for the explicit legacy OpenGL build on `x86_64-pc-windows-msvc` using
+`--no-default-features`. It skips the Python tools, which require Unix
 process supervision, and never opens a native window. It also runs the ignored
 synthetic Credential Manager roundtrip, which is safe on the ephemeral runner.
 Its first full pass is [run 36793555368](https://github.com/ViceVerse-cz/oxplay/actions/runs/36793555368)
@@ -106,6 +147,16 @@ repository access; only the release workflow's `publish` job (and the Pages
 deploy job, when configured) can write. Checkout never retains Git credentials.
 
 ## Releases: nightly and production channels
+
+Release packages select default native Rust features and build the patched,
+private ABI-1 mpv/libplacebo prefix before compiling the app. macOS packages
+Metal libraries and their relocated closure; Linux packages Vulkan libraries
+with pinned full FFmpeg; Windows packages D3D11 media libraries and an explicit
+UCRT64 DLL closure alongside the DX12 UI. Original native sources, patches,
+licenses and build provenance accompany the packages. Corresponding-source
+coverage for the remaining Rust/Homebrew closure and physical-device playback
+qualification remain separate open items. Historical package results below
+refer to the stock-libmpv recipes that preceded this migration.
 
 The release pipeline is modelled on the reference project's
 (`~/Code/Serein`): one manually dispatched workflow with a **nightly** and a
@@ -203,8 +254,9 @@ Package layouts, helper selection and library bundling are described in
 
 ### Optional secrets and settings
 
-Nothing is required for a release. Without the settings below, releases still
-publish: the macOS app stays ad-hoc signed and repository publishing is skipped.
+The settings below are optional signing inputs. After the renderer/package
+compatibility work above is complete, a release without them remains ad-hoc
+signed on macOS and skips repository publishing.
 
 | Name | Kind | Enables |
 | --- | --- | --- |
@@ -248,18 +300,15 @@ An existing tag is never reused or moved.
 
 `linux-packages.yml` also runs on pull requests that touch packaging:
 
-- **Ubuntu 24.04 runner**: builds mpv 0.41.0 from the verified source (cached
-  with the same key scheme as CI), builds `oxplay` once, then the `.deb` (via
-  `dpkg-shlibdeps`, private `libmpv.so.2` with `RUNPATH=$ORIGIN`) and the
-  AppImage/tarball, and runs the synthetic signed-apt regression.
-- **fedora:44 and archlinux containers**: an unprivileged user installs the
-  pinned rustup-init and the checked-in toolchain, builds against the
-  distribution libmpv (client API ≥ 2.5 enforced) and builds/inspects the
-  rpm or Arch package.
-
-Every package is inspected before upload: metadata, dependencies, payload file
-set and bytes, modes and owners, no maintainer scripts, desktop entry
-validation and an `ldd` closure check. Nothing is installed or launched.
+- **Ubuntu 24.04 runner** builds private Vulkan mpv/libplacebo and full pinned
+  FFmpeg, then the default native app, Debian package, AppImage and tarball.
+  Portable packages collect exact Ubuntu source packages and copyright texts
+  for system libraries included in their dependency closure.
+- **Fedora 44 and Arch containers** build the same private native stack and
+  full FFmpeg rather than linking a distribution mpv or codec-limited FFmpeg.
+  RPM and Arch payloads include the private libraries and native source records.
+- Packaging failures stop the release. Native driver interaction and hardware
+  decoding on Linux still need qualification on physical machines.
 
 ### Differences from the reference pipeline
 

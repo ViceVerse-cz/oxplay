@@ -19,6 +19,164 @@ env:
   CARGO_BUILD_JOBS: '2'
 
 jobs:
+  native-macos:
+    name: macOS ARM64 native Metal build and headless checks
+    runs-on: macos-26
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select checked-in Rust toolchain
+        run: |
+          rustup show
+          rustc --version --verbose
+          cargo --version
+
+      - name: Select Python for native source builds
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.14.7'
+
+      - name: Install native media build dependencies
+        env:
+          HOMEBREW_NO_ANALYTICS: '1'
+        run: |
+          test "$(uname -m)" = arm64
+          brew install pkgconf cmake ffmpeg libass shaderc libarchive uchardet
+          python3 -m venv "$RUNNER_TEMP/native-media-tools"
+          "$RUNNER_TEMP/native-media-tools/bin/python" -m pip install meson==1.12.1 ninja==1.13.2
+          brew list --versions > "$RUNNER_TEMP/native-packages.txt"
+          xcodebuild -version >> "$RUNNER_TEMP/native-packages.txt"
+          xcrun --sdk macosx --show-sdk-version >> "$RUNNER_TEMP/native-packages.txt"
+          cat "$RUNNER_TEMP/native-packages.txt"
+
+      - name: Identify native build inventory
+        id: native
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          inventory = Path(os.environ['RUNNER_TEMP']) / 'native-packages.txt'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('hash=' + hashlib.sha256(inventory.read_bytes()).hexdigest(), file=output)
+          PY
+
+      - name: Cache checksum-verified source archives
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: artifacts/native-media/macos/downloads
+          key: native-metal-sources-${{ hashFiles('scripts/native-media/macos-sources.json') }}
+          # Private libraries are rebuilt; only authenticated source archives are cached.
+
+      - name: Build pinned private native media stack
+        run: |
+          python3 scripts/native-media/macos.py --tools "$RUNNER_TEMP/native-media-tools/bin" --jobs 2
+          echo "OXPLAY_NATIVE_MPV_PREFIX=$GITHUB_WORKSPACE/artifacts/native-media/macos/prefix" >> "$GITHUB_ENV"
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: native-metal-${{ steps.native.outputs.hash }}-${{ hashFiles('scripts/native-media/macos.py', 'scripts/native-media/macos-sources.json', 'scripts/native-media/patches/*.patch') }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          cache-on-failure: true
+
+      - name: Check formatting and locked default native features
+        run: |
+          cargo fmt --all -- --check
+          cargo check --workspace --all-targets --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Run default native workspace and dependency tests
+        # Media tests use null outputs; shared UI tests use the mock Slint backend.
+        run: |
+          cargo test --workspace --locked
+          "$RUNNER_TEMP/native-media-tools/bin/meson" test -C artifacts/native-media/macos/build-libplacebo --no-rebuild --print-errorlogs
+
+      - name: Test bounded native renderer caches without a GPU
+        # Dependency unit tests are not selected by cargo test --workspace.
+        # Use the release archive's locked standalone manifest; font fixtures
+        # are omitted upstream, so this selects no default text-layout features.
+        run: |
+          python3 scripts/check_femtovg_cache_policy.py --target-dir "$GITHUB_WORKSPACE/target" \
+            --output "$RUNNER_TEMP/femtovg-cache-policy.log"
+
+      - name: Build locked default native release workspace
+        run: cargo build --workspace --release --locked
+
+      - name: Compile native ABI and moving-frame smoke
+        run: |
+          clang -fobjc-arc -I "$OXPLAY_NATIVE_MPV_PREFIX/include" \
+            scripts/native-media/macos_smoke.m -L "$OXPLAY_NATIVE_MPV_PREFIX/lib" \
+            -lmpv -Wl,-rpath,"$OXPLAY_NATIVE_MPV_PREFIX/lib" \
+            -framework Foundation -framework Metal \
+            -o "$RUNNER_TEMP/native-metal-smoke"
+
+      - name: Check headless GPU and hardware decoder availability
+        id: hardware
+        run: |
+          cat > "$RUNNER_TEMP/native-metal-capability.m" <<'OBJC'
+          #import <Foundation/Foundation.h>
+          #import <Metal/Metal.h>
+          #import <VideoToolbox/VideoToolbox.h>
+          int main(void) {
+              @autoreleasepool {
+                  id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+                  bool decoder = VTIsHardwareDecodeSupported(kCMVideoCodecType_H264);
+                  printf("metal_device=%s h264_hardware=%d\n", device ? device.name.UTF8String : "none", decoder);
+                  return device && decoder ? 0 : 77;
+              }
+          }
+          OBJC
+          clang -fobjc-arc "$RUNNER_TEMP/native-metal-capability.m" \
+            -framework Foundation -framework Metal -framework VideoToolbox -framework CoreMedia \
+            -o "$RUNNER_TEMP/native-metal-capability"
+          if "$RUNNER_TEMP/native-metal-capability"; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            status=$?
+            test "$status" = 77
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo 'Headless Metal/VideoToolbox runtime smoke skipped: runner lacks required hardware. ABI compilation and native workspace checks still apply.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run headless native capacity, content and teardown smoke
+        if: steps.hardware.outputs.available == 'true'
+        timeout-minutes: 2
+        run: |
+          ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=30 \
+            -t 2 -c:v libx264 -pix_fmt yuv420p -y "$RUNNER_TEMP/native-fixture.mp4"
+          "$RUNNER_TEMP/native-metal-smoke" "$RUNNER_TEMP/native-fixture.mp4"
+
+      - name: Retain native dependency build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-metal-build-evidence
+          if-no-files-found: warn
+          path: |
+            artifacts/native-media/macos/build-result.json
+            artifacts/native-media/macos/*.log
+            artifacts/native-media/macos/build-libplacebo/meson-logs/testlog.txt
+            ${{ runner.temp }}/native-packages.txt
+            ${{ runner.temp }}/femtovg-cache-policy.log
+
+      - name: State native qualification scope
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          This job rebuilds the pinned native Metal stack, checks ABI 1 and default native features,
+          runs automated tests, and compiles the headless capacity/content/teardown smoke.
+          Runtime smoke is required when the runner exposes Metal and H.264 hardware decoding;
+          unavailable hardware is reported as skipped, never as a playback pass.
+          These checks do not qualify Slint window presentation, audio synchronization, UI features,
+          performance, power use, portable packaging, or native Linux/Windows playback.
+          EOF
+
   check:
     name: ${{ matrix.name }}
     strategy:
@@ -26,9 +184,9 @@ jobs:
       matrix:
         include:
           - runner: macos-26
-            name: macOS ARM64 build and tests
+            name: macOS ARM64 legacy OpenGL build and tests
           - runner: ubuntu-24.04
-            name: Linux X11 + Wayland build and tests
+            name: Linux X11 + Wayland legacy OpenGL build and tests
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     defaults:
@@ -123,38 +281,39 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: production-${{ matrix.runner }}-${{ steps.native.outputs.hash }}-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}
+          key: legacy-opengl-${{ matrix.runner }}-${{ steps.native.outputs.hash }}-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           cache-on-failure: true
 
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Lint locked production features
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Lint locked legacy comparison features
+        run: cargo clippy --workspace --all-targets --locked --no-default-features -- -D warnings
 
       - name: Run automated Rust tests
         # Ignored human-account, network integration and Keychain probes stay ignored.
         # Native media unit tests use null audio/video outputs, not a display session.
         # Shared-widget tests use the pinned development-only mock Slint backend.
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --locked --no-default-features
 
       - name: Test packaging and source-audit tools
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
-      - name: Build locked production workspace
-        run: cargo build --workspace --release --locked
+      - name: Build locked legacy comparison workspace
+        run: cargo build --workspace --release --locked --no-default-features
 
       - name: State qualification scope
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
-          This job checks the locked production feature set, automated tests and release compilation.
+          This job checks the explicit legacy OpenGL comparison feature set, tests and release compilation.
+          Stock libmpv does not provide the custom native renderer ABI; this is not the default build.
           It does not qualify native X11/Wayland/macOS presentation, hardware decoding,
           accessibility, accounts, resource budgets or a portable distribution bundle.
           EOF
 
   windows:
-    name: Windows x86_64 MSVC build and tests
+    name: Windows x86_64 MSVC legacy OpenGL build and tests
     runs-on: windows-latest
     timeout-minutes: 90
     defaults:
@@ -193,39 +352,40 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: production-windows-${{ hashFiles('scripts/ci/install-mpv-windows.sh') }}
+          key: legacy-opengl-windows-${{ hashFiles('scripts/ci/install-mpv-windows.sh') }}
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           cache-on-failure: true
 
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Lint locked production features
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Lint locked legacy comparison features
+        run: cargo clippy --workspace --all-targets --locked --no-default-features -- -D warnings
 
       - name: Run automated Rust tests
         # Same scope as the Unix jobs: ignored account/network/credential-store
         # probes stay ignored and media unit tests use null outputs. The media
         # build script places libmpv-2.dll on the Cargo test/run PATH.
         # Report every failing test binary, not just the first.
-        run: cargo test --workspace --locked --no-fail-fast
+        run: cargo test --workspace --locked --no-default-features --no-fail-fast
 
       - name: Exercise synthetic Credential Manager roundtrip
         # Ephemeral runner only: one random app-owned credential is created,
         # read, replaced and deleted. No account, cookie or browser data.
         run: >-
-          cargo test --locked -p oxplay-storage
+          cargo test --locked --no-default-features -p oxplay-storage
           vault::tests::windows_credential_manager_synthetic_roundtrip
           -- --ignored --exact --test-threads=1
 
-      - name: Build locked production workspace
-        run: cargo build --workspace --release --locked
+      - name: Build locked legacy comparison workspace
+        run: cargo build --workspace --release --locked --no-default-features
 
       - name: State qualification scope
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
           This job checks formatting, strict Clippy, automated tests and release compilation
-          for x86_64-pc-windows-msvc against the pinned libmpv development archive.
+          for the legacy OpenGL comparison on x86_64-pc-windows-msvc against stock libmpv.
+          The custom native D3D11/DX12 renderer and default build are not checked here.
           It does not open a native window or qualify Windows presentation, hardware decoding,
           accessibility, accounts, resource budgets or a portable distribution bundle.
           Python packaging/audit tools are not run here; they require Unix process supervision.

@@ -501,7 +501,15 @@ mod tests {
             (c"idle", c"yes"),
             (c"access-references", c"no"),
         ] {
-            assert!(unsafe { ffi::mpv_set_option_string(raw, key.as_ptr(), value.as_ptr()) } >= 0);
+            let code = unsafe { ffi::mpv_set_option_string(raw, key.as_ptr(), value.as_ptr()) };
+            assert!(
+                code >= 0
+                    || crate::absent_script_disable(
+                        key.to_str().unwrap(),
+                        value.to_str().unwrap(),
+                        code
+                    )
+            );
         }
         assert!(unsafe { ffi::mpv_initialize(raw) } >= 0);
         unsafe {

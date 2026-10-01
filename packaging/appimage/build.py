@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
+import json
 import os
 from pathlib import Path
 import platform
@@ -41,6 +43,53 @@ EXCLUDED = re.compile(r"^(?:" + "|".join([
 MAX_APPIMAGE = 1024 * 1024 * 1024
 
 
+def collect_distribution_sources(appdir: Path, prefix: Path, libraries: dict[str, str | None]) -> None:
+    """Bundle exact Ubuntu source packages and copyright for copied system libs.
+
+    Private pinned libraries already have full sources/patches in the native
+    builder's bundle. Host-excluded libraries are not shipped and remain the
+    distribution's responsibility. apt verifies the signed source-index hashes.
+    """
+    doc = appdir / "usr/share/doc/oxplay/oxplay-native"
+    sources = json.loads((doc / "sources.json").read_text())
+    packages = {}
+    for name, raw in sorted(libraries.items()):
+        if EXCLUDED.fullmatch(name):
+            continue
+        path = Path(raw).resolve(strict=True)
+        if path.is_relative_to(prefix.resolve()):
+            continue
+        line = package.output("dpkg-query", "-S", path).splitlines()[0]
+        owner = line.rsplit(": ", 1)[0]
+        source, version = package.output("dpkg-query", "-W", "-f=${source:Package}\t${source:Version}", owner).split("\t")
+        entry = packages.setdefault((source, version), {"source_package": source, "version": version,
+                                                        "binary_packages": [], "libraries": [], "files": []})
+        entry["libraries"].append({"soname": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        if owner not in entry["binary_packages"]:
+            entry["binary_packages"].append(owner)
+            copyright = Path("/usr/share/doc") / owner.split(":", 1)[0] / "copyright"
+            if not copyright.is_file():
+                raise ValueError(f"Missing distribution copyright for bundled {owner}")
+            target = doc / "licenses/ubuntu" / owner / "copyright"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(copyright, target)
+    for (name, version), entry in sorted(packages.items()):
+        if not re.fullmatch(r"[A-Za-z0-9+.-]+", name) or not re.fullmatch(r"[A-Za-z0-9+.~:-]+", version):
+            raise ValueError("Invalid distribution source package identity")
+        directory = doc / "runtime-sources" / name
+        directory.mkdir(parents=True)
+        package.checked("apt-get", "source", "--download-only", "--only-source", name + "=" + version,
+                        cwd=directory)
+        if not list(directory.glob("*.dsc")):
+            raise ValueError(f"Corresponding distribution source was not downloaded: {name}")
+        entry["files"] = [{"path": path.relative_to(doc).as_posix(),
+                           "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                          for path in sorted(directory.iterdir()) if path.is_file()]
+    sources["runtime_sources"] = list(packages.values())
+    sources["runtime_source_verification"] = "apt source packages verified against matching signed Ubuntu source indexes"
+    (doc / "sources.json").write_text(json.dumps(sources, indent=2) + "\n")
+
+
 def update_information(version: str, tag: str) -> tuple[str, str]:
     if not package.SEMVER.fullmatch(version):
         raise ValueError("Expected a semantic application version")
@@ -68,6 +117,8 @@ def bundle_libraries(appdir: Path, mpv_prefix: Path) -> list[str]:
     missing = [name for name, path in libraries.items() if path is None]
     if missing or "libmpv.so.2" not in libraries:
         raise ValueError(f"Unresolved build-host libraries: {', '.join(missing) or 'libmpv.so.2'}")
+    if (mpv_prefix / "native-media-provenance.json").is_file():
+        collect_distribution_sources(appdir, mpv_prefix, libraries)
     # A library that a host-provided library also needs (libffi for libwayland,
     # for example) must come from the host too: the loader shares one copy per soname.
     host = {name for name in libraries if EXCLUDED.match(name)}

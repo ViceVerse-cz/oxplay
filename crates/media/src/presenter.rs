@@ -47,13 +47,19 @@ pub struct RenderStats {
 // Private frames and private-target resize must only touch next. The opt-in
 // stable path may update already admitted pixels in that same GL command stream.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum FrameTarget {
+pub(crate) enum FrameTarget {
     Private,
     PublishNext,
     ReuseDisplayed,
 }
 impl FrameTarget {
-    fn choose(stable: bool, ready: bool, load: u64, published: u64, same_size: bool) -> Self {
+    pub(crate) fn choose(
+        stable: bool,
+        ready: bool,
+        load: u64,
+        published: u64,
+        same_size: bool,
+    ) -> Self {
         if !ready || load == 0 {
             Self::Private
         } else if stable && load == published && same_size {
@@ -63,9 +69,9 @@ impl FrameTarget {
         }
     }
 }
-struct PublicationPair<T> {
-    displayed: Option<T>,
-    next: Option<T>,
+pub(crate) struct PublicationPair<T> {
+    pub(crate) displayed: Option<T>,
+    pub(crate) next: Option<T>,
 }
 impl<T> Default for PublicationPair<T> {
     fn default() -> Self {
@@ -76,13 +82,13 @@ impl<T> Default for PublicationPair<T> {
     }
 }
 impl<T> PublicationPair<T> {
-    fn render_target(&self, target: FrameTarget) -> Option<&T> {
+    pub(crate) fn render_target(&self, target: FrameTarget) -> Option<&T> {
         match target {
             FrameTarget::ReuseDisplayed => self.displayed.as_ref(),
             FrameTarget::Private | FrameTarget::PublishNext => self.next.as_ref(),
         }
     }
-    fn finish_frame(&mut self, target: FrameTarget) -> Option<&T> {
+    pub(crate) fn finish_frame(&mut self, target: FrameTarget) -> Option<&T> {
         match target {
             FrameTarget::Private => None,
             FrameTarget::PublishNext => {
@@ -429,7 +435,7 @@ impl GlPresenter {
         #[cfg(target_os = "macos")]
         if self.player.inner.wake.clock.enabled.load(Ordering::Acquire) {
             if self.player.inner.wake.frame.load(Ordering::Acquire)
-                && !self.player.inner.wake.clock.ready.load(Ordering::Acquire)
+                && self.player.inner.wake.clock.waiting_for_tick()
             {
                 return Ok(None);
             }
@@ -982,7 +988,7 @@ impl Drop for GlState {
 
 /// Validate the source-reviewed nanosecond clock domain, then round *up* to
 /// Slint's millisecond timer resolution. Never spin with repeated zero-ms timers.
-fn deadline_delay(
+pub(crate) fn deadline_delay(
     target_ns: i64,
     now_ns: i64,
     lead_ms: u32,

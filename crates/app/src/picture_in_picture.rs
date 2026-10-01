@@ -265,6 +265,13 @@ impl Controller {
             window.set_enabled_buttons(saved.buttons);
             window.set_min_inner_size(Some(NORMAL_MINIMUM));
         });
+        // Winit rebuilds the macOS decoration mask without FullSizeContentView.
+        // Reapply the integrated titlebar before interpreting the saved client
+        // size; doing this on the later resize event changes that geometry.
+        // The video-only change may have reconciled while still borderless.
+        // Later Slint decoration updates see the requested state already set,
+        // so Winit's early return preserves this restored native style bit.
+        app.invoke_window_appearance_changed();
         app.window().set_size(slint::LogicalSize::new(
             size.width as f32,
             size.height as f32,

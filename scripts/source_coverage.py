@@ -314,6 +314,87 @@ def native_coverage(manifest: dict, evidence: Path, cache: Path, budget: Budget)
     return result
 
 
+def native_media_coverage(manifest: dict, evidence: Path, budget: Budget) -> dict | None:
+    """Verify retained private-media inputs without trusting installed binaries.
+
+    Receipt source paths are intentionally ignored: only packaged relative
+    targets, bound metadata and retained bytes participate in this audit.
+    """
+    media = manifest.get("native_media")
+    if media is None:
+        return None
+    if (not isinstance(media, dict) or media.get("evidence_bundle_path") != "native-media"
+            or media.get("native_render_abi") != 1):
+        raise CoverageError("Invalid native media evidence declaration")
+    backend = label(media.get("backend"))
+    recorded = {}
+    for item in manifest.get("evidence_input_files", []):
+        path = item.get("path", "")
+        if path.startswith("native-media/"):
+            if path in recorded:
+                raise CoverageError("Duplicate native media evidence input")
+            recorded[path] = sha(item.get("sha256"))
+
+    targets = {}
+    for item in media.get("evidence", []):
+        target = item.get("target")
+        if (not isinstance(target, str) or len(target) > 1024 or target in targets
+                or len(targets) >= 512):
+            raise CoverageError("Invalid native media evidence target")
+        child(evidence, "native-media", *target.split("/"))
+        checksum = sha(item.get("sha256"))
+        if recorded.get("native-media/" + target) != checksum:
+            raise CoverageError("Native media evidence is not bound to package inventory")
+        targets[target] = checksum
+
+    def metadata(target):
+        raw = read(child(evidence, "native-media", target))
+        if hashlib.sha256(raw).hexdigest() != targets.get(target):
+            raise CoverageError("Packaged native media metadata hash mismatch")
+        return parse_json(raw)
+
+    build = metadata("build-result.json")
+    configuration = metadata("macos-sources.json")
+    pins = configuration.get("sources")
+    if (configuration.get("schema") != 1 or build.get("schema") != 1
+            or build.get("status") != "compiled_and_installed" or build.get("native_render_abi") != 1
+            or not isinstance(pins, dict) or not 1 <= len(pins) <= 128 or build.get("sources") != pins
+            or not isinstance(build.get("patches"), dict) or not 1 <= len(build["patches"]) <= 128):
+        raise CoverageError("Native media build and source configuration disagree")
+
+    def verify(target, expected, *, archive=False):
+        if targets.get(target) != sha(expected):
+            raise CoverageError("Native media input checksum differs from build metadata")
+        path = child(evidence, "native-media", *target.split("/"))
+        result = verify_candidates([path] if path.exists() else [], expected, budget)
+        if result["status"] == "verified_archive_bytes":
+            result["candidate_label"] = "retained-native-media-evidence"
+            if not archive:
+                result["status"] = "verified_file_bytes"
+        return result
+
+    sources = []
+    for name, pin in sorted(pins.items()):
+        name = label(name)
+        revision = pin.get("revision")
+        if not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40}", revision):
+            raise CoverageError("Invalid native media source revision")
+        target = f"sources/{name}-{revision}.tar.gz"
+        archive = verify(target, pin.get("sha256"), archive=True)
+        if (type(pin.get("bytes")) is not int or pin["bytes"] <= 0
+                or archive.get("status") == "verified_archive_bytes" and archive["bytes"] != pin["bytes"]):
+            raise CoverageError("Native media archive size differs from source configuration")
+        notices = [{"name": label(target.rsplit("/", 1)[1]), **verify(target, checksum)}
+                   for target, checksum in sorted(targets.items()) if target.startswith(f"licenses/{name}/")]
+        sources.append({"component": name, "revision": revision, "archive": archive,
+                        "license_evidence": notices, "license_evidence_declared": bool(notices)})
+    patches = [{"name": label(name), **verify("patches/" + label(name), checksum)}
+               for name, checksum in sorted(build["patches"].items())]
+    return {"backend": backend, "native_render_abi": 1, "sources": sources, "patches": patches,
+            "limits": ["Retained original archives, patch bytes and license evidence only; patches were not applied or sources extracted",
+                       "Matching hashes do not prove compilation, installed binary correspondence, publisher authentication or transitive source completeness"]}
+
+
 def audit(evidence: Path, cargo_home: Path, brew_cache: Path, max_hash_bytes: int) -> dict:
     manifest_bytes = read(child(evidence, "build-manifest.json"))
     manifest = parse_json(manifest_bytes)
@@ -327,12 +408,13 @@ def audit(evidence: Path, cargo_home: Path, brew_cache: Path, max_hash_bytes: in
                              manifest["cargo_lock_sha256"], budget)
     cargo = cargo_coverage(parse_json(graph_bytes)["packages"], lock, cargo_home, budget)
     native = native_coverage(manifest, evidence, brew_cache, budget)
+    native_media = native_media_coverage(manifest, evidence, budget)
     return {"schema": 1, "purpose": "offline_source_availability_only", "complete_corresponding_source": False,
             "publisher_authenticated": False, "packaged_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
             "cargo_graph_sha256": graph_hash, "cargo_lock_sha256": manifest["cargo_lock_sha256"],
             "application_source_archive_sha256": manifest["application_source_archive_sha256"],
             "hashed_input_bytes": budget.hashed, "max_hashed_input_bytes": max_hash_bytes,
-            "cargo": cargo, "native_recipe_inputs": native,
+            "cargo": cargo, "native_recipe_inputs": native, "native_media_inputs": native_media,
             "limits": ["No download, build, extraction, native tool execution or cache mutation performed",
                        "Package evidence and lockfile must come from an independently trusted artifact; matching hashes do not authenticate a publisher",
                        "Verified archive bytes prove local availability, not patch application, source completeness or reproducible compilation",

@@ -20,11 +20,23 @@ mod native_child;
 pub use native_child::{NativeChildGeometry, NativeChildPresenter, NativeChildStats, NativeRect};
 mod pause_intent;
 mod presenter;
+mod rendering;
+pub use rendering::VideoPresenter;
+#[cfg(all(feature = "native-rendering", target_os = "linux"))]
+pub async fn native_gpu_configuration(
+    settings: slint::wgpu_30::WGPUSettings,
+) -> Result<slint::wgpu_30::WGPUConfiguration> {
+    native_presenter::linux_gpu_configuration(settings).await
+}
+#[cfg(feature = "native-rendering")]
+mod native_presenter;
 mod seek_confirmation;
 pub mod streams;
 mod subtitle_off;
 #[cfg(test)]
 mod tls_tests;
+#[cfg(feature = "native-rendering")]
+mod wgpu_ambient;
 #[cfg(windows)]
 mod windows_power;
 pub use presenter::{GlPresenter, RenderStats};
@@ -539,14 +551,17 @@ impl Player {
             ("tls-verify", "yes"),
         ] {
             unsafe {
-                checked(
-                    ffi::mpv_set_option_string(
-                        raw,
-                        cstring(name)?.as_ptr(),
-                        cstring(value)?.as_ptr(),
-                    ),
-                    "Media option",
-                )?;
+                let code = ffi::mpv_set_option_string(
+                    raw,
+                    cstring(name)?.as_ptr(),
+                    cstring(value)?.as_ptr(),
+                );
+                // Builds without Lua/JS omit their built-in script switches.
+                // An absent switch cannot launch that script; every other
+                // option failure (including TLS/config controls) remains fatal.
+                if !absent_script_disable(name, value, code) {
+                    checked(code, &format!("Configure media option {name}"))?;
+                }
             }
         }
         if let Some(ca_file) = ca_file {
@@ -1484,9 +1499,7 @@ impl Player {
     pub fn frame_pending(&self) -> bool {
         let frame = self.inner.wake.frame.load(Ordering::Acquire);
         #[cfg(target_os = "macos")]
-        let frame = frame
-            && (!self.inner.wake.clock.enabled.load(Ordering::Acquire)
-                || self.inner.wake.clock.ready.load(Ordering::Acquire));
+        let frame = frame && !self.inner.wake.clock.waiting_for_tick();
         frame || self.inner.wake.due.load(Ordering::Acquire)
     }
     pub fn snapshot(&self) -> Snapshot {
@@ -2112,6 +2125,23 @@ impl Player {
         snapshot.clone()
     }
 }
+
+fn absent_script_disable(name: &str, value: &str, code: i32) -> bool {
+    code == -5
+        && value == "no"
+        && matches!(
+            name,
+            "load-stats-overlay"
+                | "load-console"
+                | "load-select"
+                | "load-positioning"
+                | "load-commands"
+                | "load-context-menu"
+                | "load-auto-profiles"
+                | "ytdl"
+                | "osc"
+        )
+}
 // mpv0.41 cmd_loadfile returns a bounded map containing playlist_entry_id.
 // Borrow only while consuming COMMAND_REPLY; never retain provider/native nodes.
 unsafe fn command_playlist_entry(data: *mut c_void) -> Option<i64> {
@@ -2287,6 +2317,15 @@ fn clear_unavailable_media_property(s: &mut Snapshot, id: u64) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn compiled_out_script_switches_do_not_relax_media_configuration() {
+        assert!(super::absent_script_disable("osc", "no", -5));
+        assert!(!super::absent_script_disable("osc", "yes", -5));
+        assert!(!super::absent_script_disable("osc", "no", -7));
+        for name in ["tls-verify", "config", "load-scripts", "cookies", "hwdec"] {
+            assert!(!super::absent_script_disable(name, "no", -5));
+        }
+    }
     #[test]
     fn playback_failure_preserves_engine_category_without_inventing_network_cause() {
         let unavailable = super::playback_error("Playback failed", -13);

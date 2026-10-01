@@ -6,6 +6,7 @@ const MIN_CLIENT_API: (u32, u32) = (2, 5);
 fn main() {
     println!("cargo:rerun-if-changed=src/native_child.m");
     println!("cargo:rerun-if-env-changed=MPV_DIR");
+    println!("cargo:rerun-if-env-changed=OXPLAY_NATIVE_MPV_PREFIX");
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     if target_os == "macos" {
         cc::Build::new()
@@ -16,6 +17,23 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=AppKit");
         println!("cargo:rustc-link-lib=framework=QuartzCore");
         println!("cargo:rustc-link-lib=framework=OpenGL");
+    }
+    if std::env::var_os("CARGO_FEATURE_NATIVE_RENDERING").is_some() {
+        let prefix = std::env::var_os("OXPLAY_NATIVE_MPV_PREFIX")
+            .or_else(|| {
+                (target_os == "windows")
+                    .then(|| std::env::var_os("MPV_DIR"))
+                    .flatten()
+            })
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").expect("manifest directory"))
+                    .join("../../artifacts/native-media")
+                    .join(&target_os)
+                    .join("prefix")
+            });
+        link_native_mpv(&prefix, &target_os);
+        return;
     }
     if target_os == "windows"
         && let Some(directory) = std::env::var_os("MPV_DIR").filter(|value| !value.is_empty())
@@ -30,6 +48,52 @@ fn main() {
             "libmpv development files required (macOS: brew install mpv; Linux: libmpv-dev; \
              Windows: set MPV_DIR to an extracted mpv-dev archive, see README)",
         );
+}
+
+/// Native rendering uses an explicitly versioned, private media ABI. A stock
+/// libmpv exposes the same client symbols, so a successful link is insufficient.
+fn link_native_mpv(prefix: &Path, target_os: &str) {
+    let prefix = prefix.canonicalize().unwrap_or_else(|_| {
+        panic!(
+            "Native media prefix {} is missing. Build scripts/native-media/{target_os}.py first, \
+         or set OXPLAY_NATIVE_MPV_PREFIX to its installed prefix. For the GL comparison \
+         use --no-default-features.",
+            prefix.display()
+        )
+    });
+    let api = match target_os {
+        "macos" => "mtl",
+        "linux" => "vk",
+        "windows" => "d3d11",
+        _ => panic!("Native media is unsupported on {target_os}"),
+    };
+    let header = prefix.join(format!("include/mpv/render_{api}.h"));
+    let text = std::fs::read_to_string(&header)
+        .unwrap_or_else(|_| panic!("Native media prefix is missing {}", header.display()));
+    assert!(
+        text.lines()
+            .any(|line| line.trim() == "#define OXPLAY_NATIVE_RENDER_ABI 1"),
+        "{} must provide OXPLAY_NATIVE_RENDER_ABI 1; stock/other experimental libmpv is incompatible",
+        header.display()
+    );
+    println!("cargo:rerun-if-changed={}", header.display());
+    if target_os == "windows" {
+        link_windows_mpv_dir(&prefix);
+    } else {
+        let lib = prefix.join("lib");
+        let filename = if target_os == "macos" {
+            "libmpv.dylib"
+        } else {
+            "libmpv.so"
+        };
+        assert!(
+            lib.join(filename).is_file(),
+            "Native prefix is missing {filename}"
+        );
+        println!("cargo:rustc-link-search=native={}", lib.display());
+        println!("cargo:rustc-link-lib=dylib=mpv");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,{}", lib.display());
+    }
 }
 
 /// Windows: `MPV_DIR` names an extracted libmpv development archive such as

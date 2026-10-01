@@ -23,7 +23,8 @@ MAX_TOTAL = 128 * 1024 * 1024
 MAX_GIT_OUTPUT = 8 * 1024 * 1024
 TOP_LEVEL = {"Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml"}
 CONFIGS = {".cargo/config", ".cargo/config.toml"}
-PATHS = ["crates", *sorted(TOP_LEVEL), *sorted(CONFIGS)]
+SOURCE_ROOTS = ("crates", "vendor/femtovg", "scripts/native-media")
+PATHS = [*SOURCE_ROOTS, *sorted(TOP_LEVEL), *sorted(CONFIGS)]
 
 
 class InputError(Exception):
@@ -31,7 +32,7 @@ class InputError(Exception):
 
 
 def selected(path: str) -> bool:
-    return path.startswith("crates/") or path in TOP_LEVEL or path in CONFIGS
+    return any(path.startswith(root + "/") for root in SOURCE_ROOTS) or path in TOP_LEVEL or path in CONFIGS
 
 
 def relative(raw: bytes) -> str:
@@ -216,14 +217,17 @@ def capture(root: Path) -> dict:
             "git_object_format": object_format, "inputs_match_commit": all(item["state"] == "matches_commit" for item in files),
             "repository_clean": None, "binary_build_association_verified": False,
             "file_count": len(files), "total_file_bytes": total, "files": files,
-            "scope": ["crates/** including Rust, native glue, build scripts and assets", *sorted(TOP_LEVEL), *sorted(CONFIGS)],
+            "scope": ["crates/** including Rust, native glue, build scripts and assets",
+                      "vendor/femtovg/** including patched renderer, manifests and licenses",
+                      "scripts/native-media/** including native source pins, patches, build recipes and ABI checks",
+                      *sorted(TOP_LEVEL), *sorted(CONFIGS)],
             "limits": ["Untracked ignored files are excluded by git ls-files --exclude-standard; tracked ignored files remain included",
                        "HEAD tree comparison uses raw file bytes/modes, not editable index content or Git clean filters",
                        "Only selected build inputs are compared; unrelated repository changes are not a repository-clean claim",
                        "Capture is not atomic across files; keep inputs quiescent throughout capture and the separately recorded build",
                        "Filesystem deadline checks are cooperative between reads; one blocked regular-file operation cannot be preempted",
                        "No Cargo/build command or binary inspection ran; this inventory alone proves no binary association",
-                       "Environment overrides, external/generated inputs, dependency source, compiler/SDK/native libraries are outside this inventory",
+                       "Environment overrides, downloaded dependency source, external/generated inputs, compiler/SDK/native libraries are outside this inventory",
                        "Bounded Unix Git supervision is required; other hosts are not qualified"]}
 
 

@@ -160,6 +160,98 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual({item["mpv_patch_revision"] for item in result[1:]}, set(coverage.MPV_PATCHES))
         self.assertEqual(result[0]["kind"], "source_or_resource")
 
+    def native_media_fixture(self):
+        _, manifest = self.fixture()
+        revision = "a" * 40
+        original = b"Synthetic original source archive; no executable code\n"
+        pins = {"synthetic": {"repository": "example/fixture", "revision": revision,
+                              "url": "https://example.invalid/source.tar.gz", "sha256": digest(original),
+                              "bytes": len(original), "license": "Synthetic fixture", "destination": "synthetic"}}
+        patch = b"Synthetic reviewed native patch\n"
+        build = {"schema": 1, "status": "compiled_and_installed", "native_render_abi": 1,
+                 "sources": pins, "patches": {"synthetic.patch": digest(patch)}}
+        files = {"build-result.json": json.dumps(build).encode(),
+                 "macos-sources.json": json.dumps({"schema": 1, "sources": pins}).encode(),
+                 f"sources/synthetic-{revision}.tar.gz": original,
+                 "patches/synthetic.patch": patch, "licenses/synthetic/LICENSE": b"Synthetic license fixture\n"}
+        media = {"prefix": "/private/not-an-audit-input", "root": "/private/not-an-audit-input",
+                 "backend": "metal", "native_render_abi": 1, "evidence_bundle_path": "native-media", "evidence": []}
+        for target, raw in files.items():
+            path = self.evidence / "native-media" / target
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+            media["evidence"].append({"target": target, "sha256": digest(raw), "source": "/private/original-input"})
+            manifest["evidence_input_files"].append({"path": "native-media/" + target, "sha256": digest(raw)})
+        manifest["native_media"] = media
+        (self.evidence / "build-manifest.json").write_text(json.dumps(manifest))
+        return manifest, files
+
+    def test_retained_native_sources_patches_and_licenses_have_separate_coverage(self):
+        self.native_media_fixture()
+        report = self.run_audit()
+        native = report["native_media_inputs"]
+        self.assertEqual(native["backend"], "metal")
+        self.assertEqual(native["sources"][0]["archive"]["status"], "verified_archive_bytes")
+        self.assertEqual(native["patches"][0]["status"], "verified_file_bytes")
+        self.assertEqual(native["sources"][0]["license_evidence"][0]["status"], "verified_file_bytes")
+        self.assertFalse(report["complete_corresponding_source"])
+        self.assertFalse(report["publisher_authenticated"])
+        self.assertNotIn("/private/", json.dumps(report))
+        self.assertNotIn("example.invalid", json.dumps(native))
+        self.assertEqual(report, self.run_audit())
+
+    def test_native_archive_missing_tampered_or_budget_limited_never_verifies(self):
+        manifest, files = self.native_media_fixture()
+        relative = next(name for name in files if name.startswith("sources/"))
+        archive = self.evidence / "native-media" / relative
+        archive.unlink()
+        report = coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+        self.assertEqual(report["sources"][0]["archive"]["status"], "absent")
+        archive.write_bytes(b"Synthetic changed source bytes")
+        report = coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+        self.assertEqual(report["sources"][0]["archive"]["status"], "hash_mismatch")
+        archive.write_bytes(files[relative])
+        report = coverage.native_media_coverage(manifest, self.evidence, coverage.Budget(1))
+        self.assertEqual(report["sources"][0]["archive"]["status"], "hash_budget_or_file_limit")
+
+    def test_native_metadata_and_inventory_must_agree_before_archive_verification(self):
+        manifest, _ = self.native_media_fixture()
+        path = self.evidence / "native-media/build-result.json"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(coverage.CoverageError, "metadata hash mismatch"):
+            coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+        manifest, _ = self.native_media_fixture()
+        manifest["native_media"]["evidence"][0]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(coverage.CoverageError, "bound to package inventory"):
+            coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+
+    def test_native_build_pin_disagreement_and_unsafe_targets_are_rejected(self):
+        manifest, _ = self.native_media_fixture()
+        path = self.evidence / "native-media/build-result.json"
+        build = json.loads(path.read_bytes())
+        build["sources"]["synthetic"]["revision"] = "b" * 40
+        raw = json.dumps(build).encode()
+        path.write_bytes(raw)
+        for item in manifest["native_media"]["evidence"]:
+            if item["target"] == "build-result.json":
+                item["sha256"] = digest(raw)
+        for item in manifest["evidence_input_files"]:
+            if item["path"] == "native-media/build-result.json":
+                item["sha256"] = digest(raw)
+        with self.assertRaisesRegex(coverage.CoverageError, "configuration disagree"):
+            coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+        for target in ("../outside", "/outside", "sources/../outside"):
+            manifest, _ = self.native_media_fixture()
+            manifest["native_media"]["evidence"][0]["target"] = target
+            with self.subTest(target=target), self.assertRaises(coverage.CoverageError):
+                coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+        manifest, _ = self.native_media_fixture()
+        archive = next((self.evidence / "native-media/sources").iterdir())
+        archive.unlink()
+        archive.symlink_to(self.evidence / "cargo-graph.json")
+        with self.assertRaises(coverage.CoverageError):
+            coverage.native_media_coverage(manifest, self.evidence, coverage.Budget())
+
     def test_bottles_do_not_count_and_native_formula_tampering_rejected(self):
         raw = b'source bytes'
         url = 'https://example.invalid/source.tar.gz'

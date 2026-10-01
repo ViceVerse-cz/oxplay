@@ -10,12 +10,14 @@ Layout (all formats):
   /usr/bin/oxplay                   launcher selecting the packaged helpers
   /usr/lib/oxplay/oxplay            application ELF
   /usr/lib/oxplay/{yt-dlp,deno}     pinned, SHA-256-verified helpers
-  /usr/lib/oxplay/libmpv.so.2       only with --mpv-prefix (private libmpv; RUNPATH $ORIGIN)
+  /usr/lib/oxplay/*.so.*           private native mpv/libplacebo/FFmpeg; RUNPATH $ORIGIN
 """
 from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
+import json
 import os
 from pathlib import Path
 import platform
@@ -102,12 +104,58 @@ def mpv_library(prefix: Path) -> Path:
 def mpv_description(prefix: Path | None, portable: bool = False) -> str:
     if prefix is None:
         return "the distribution's libmpv package (not bundled)"
+    record = native_record(prefix)
+    if record:
+        return (f"Oxplay native Vulkan ABI 1, patched mpv {record['mpv']['revision']} "
+                f"and libplacebo {record['libplacebo']['version']}; private native media "
+                "libraries are bundled. Exact source archives, patches, recipes, license "
+                "texts and dependency/build inventories are in oxplay-native/ beside this notice. "
+                "mpv is GPL-2.0-or-later; libplacebo LGPL-2.1-or-later; FFmpeg license/configuration "
+                "is recorded in its corresponding source bundle.")
     source = (prefix / "ci-source.txt").read_text(encoding="utf-8").strip()
     where = ("bundled in usr/lib with its non-system shared-library closure (FFmpeg and others, "
              "copied from Ubuntu 24.04 packages)" if portable else "bundled as /usr/lib/oxplay/libmpv.so.2, "
              "linking the distribution's FFmpeg and libraries")
     return (f"private build of {source}; {where}. Unmodified upstream source "
             "https://github.com/mpv-player/mpv (GPL-2.0-or-later)")
+
+
+def native_record(prefix: Path) -> dict | None:
+    path = prefix / "native-media-provenance.json"
+    if not path.is_file():
+        return None  # Retained for explicit historical/legacy packaging comparisons.
+    record = json.loads(path.read_text())
+    if record.get("native_render_abi") != 1 or record.get("platform") != "linux-vulkan":
+        raise ValueError("Private media prefix does not provide native Vulkan ABI 1")
+    header = prefix / "include/mpv/render_vk.h"
+    if "#define OXPLAY_NATIVE_RENDER_ABI 1" not in header.read_text():
+        raise ValueError("Native Vulkan header ABI is missing")
+    inventory = json.loads((prefix / "native-media-inventory.json").read_text())
+    for item in inventory:
+        relative = Path(item["path"])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("Unsafe native inventory path")
+        path = prefix / relative
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
+            raise ValueError(f"Native media input differs from its build inventory: {relative}")
+    return record
+
+
+def private_libraries(prefix: Path) -> dict[str, Path]:
+    """One physical copy per SONAME, including private FFmpeg and libplacebo."""
+    libraries = {}
+    for path in sorted((prefix / "lib").glob("*.so*")):
+        native_elf(path.resolve(strict=True))
+        soname = output("patchelf", "--print-soname", path)
+        if not re.fullmatch(r"[A-Za-z0-9_+.-]+\.so(?:\.[0-9]+)+", soname):
+            raise ValueError(f"Invalid private library SONAME: {soname!r}")
+        real = path.resolve(strict=True)
+        if soname in libraries and libraries[soname] != real:
+            raise ValueError(f"Conflicting private library: {soname}")
+        libraries[soname] = real
+    if "libmpv.so.2" not in libraries or not any(name.startswith("libplacebo.so.") for name in libraries):
+        raise ValueError("Native prefix must contain both libmpv and libplacebo")
+    return libraries
 
 
 def executables(prefix: str) -> set[str]:
@@ -146,11 +194,26 @@ def stage_payload(stage: Path, binary: Path, helpers: Path, mpv_prefix: Path | N
                                     encoding="utf-8")
     doc = usr / "share/doc/oxplay"
     if mpv_prefix is not None:
+        native = native_record(mpv_prefix)
         if not portable:
-            copy_file(mpv_library(mpv_prefix), lib / "libmpv.so.2")
+            libraries = private_libraries(mpv_prefix) if native else {"libmpv.so.2": mpv_library(mpv_prefix)}
+            for soname, source in libraries.items():
+                copy_file(source, lib / soname)
+                checked("patchelf", "--set-rpath", "$ORIGIN", lib / soname)
             # Resolve the private libmpv beside the executable without LD_LIBRARY_PATH,
             # which would leak into helpers and browsers started by the app.
             checked("patchelf", "--set-rpath", "$ORIGIN", lib / "oxplay")
+        if native:
+            for filename in ("native-media-provenance.json", "native-media-inventory.json"):
+                copy_file(mpv_prefix / filename, doc / "oxplay-native" / filename)
+            for source in sorted((mpv_prefix / "share/oxplay-native").rglob("*")):
+                if source.is_file():
+                    copy_file(source, doc / "oxplay-native" / source.relative_to(mpv_prefix / "share/oxplay-native"))
+            copy_file(mpv_prefix / "include/mpv/render_vk.h", doc / "oxplay-native/render_vk.h")
+            if not portable:
+                (doc / "oxplay-native/payload-libraries.json").write_text(json.dumps({
+                    name: hashlib.sha256((lib / name).read_bytes()).hexdigest() for name in libraries
+                }, indent=2) + "\n")
         copy_file(mpv_prefix / "ci-source.txt", doc / "MPV-SOURCE.txt")
         copy_file(mpv_prefix / "ci-build-options.json", doc / "mpv-build-options.json")
     copy_file(ROOT / "packaging/linux" / f"{APP_ID}.desktop", usr / "share/applications" / f"{APP_ID}.desktop")
@@ -178,7 +241,8 @@ def check_payload(stage: Path, extracted: Path, ignore: tuple[str, ...] = ()) ->
 
 
 def closure_check(stage: Path) -> str:
-    libraries = output("ldd", stage / "usr/lib/oxplay/oxplay")
+    env = {key: value for key, value in os.environ.items() if key != "LD_LIBRARY_PATH"}
+    libraries = output("ldd", stage / "usr/lib/oxplay/oxplay", env=env)
     if "not found" in libraries:
         raise ValueError(f"Unresolved packaged executable dependencies:\n{libraries}")
     return libraries
@@ -214,7 +278,7 @@ def deb_package(workdir: Path, stage: Path, version: str, private_mpv: bool) -> 
     if not private_mpv and "libmpv" not in depends:
         raise ValueError("The system libmpv dependency was not detected")
     # dlopen()ed by winit/Slint and not visible as ELF DT_NEEDED.
-    depends += ", libegl1, libgl1, libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libwayland-egl1, " \
+    depends += ", libvulkan1, libva2, libva-drm2, libdrm2, libegl1, libgl1, libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libwayland-egl1, " \
                "libx11-6, libxcursor1, libxi6, libxrandr2, libfontconfig1"
     installed_kib = sum(1 if path.is_dir() else max(1, (path.stat().st_size + 1023) // 1024)
                         for path in stage.rglob("*") if not path.relative_to(stage).as_posix().startswith("DEBIAN"))
@@ -271,16 +335,24 @@ def rpm_package(workdir: Path, stage: Path, version: str, distro: str) -> Path:
     release = "1.fc" + platform.freedesktop_os_release()["VERSION_ID"] if distro == "fedora" else "1.suse"
     if not re.fullmatch(r"1\.(?:fc[0-9]+|suse)", release):
         raise ValueError("Unsupported RPM distribution version")
-    # rpmbuild adds the ELF SONAME requirements (including libmpv.so.2) itself.
+    # Keep bundled media SONAMEs private: no system mpv dependency or global
+    # library Provides that could accidentally satisfy another package.
+    bundled = [path.name for path in elf_payload(stage) if ".so." in path.name]
+    private_filters = ""
+    if bundled:
+        names = "|".join(re.escape(name) for name in bundled)
+        private_filters = ("%global __provides_exclude_from ^/usr/lib/oxplay/.*$\n"
+                           f"%global __requires_exclude ^({names})(\\(.*)?$\n")
     requires = [f"{soname}()(64bit)" for soname in (
         "libEGL.so.1", "libxkbcommon.so.0", "libwayland-client.so.0", "libX11.so.6", "libXcursor.so.1",
-        "libXi.so.6", "libXrandr.so.2", "libfontconfig.so.1")]
+        "libXi.so.6", "libXrandr.so.2", "libfontconfig.so.1", "libvulkan.so.1", "libva.so.2", "libdrm.so.2")]
     files = [f"/{name}" for name in payload_files(stage)]
     spec = workdir / "oxplay.spec"
     spec.write_text(
         # Never strip or split: PyInstaller's yt-dlp stores its archive past the ELF image.
         "%global debug_package %{nil}\n%global __os_install_post %{nil}\n%global _build_id_links none\n"
-        f"Name: oxplay\nVersion: {package_version}\nRelease: {release}\n"
+        + private_filters
+        + f"Name: oxplay\nVersion: {package_version}\nRelease: {release}\n"
         "Summary: Experimental native YouTube client\nLicense: GPL-3.0-or-later\n"
         "URL: https://github.com/ViceVerse-cz/oxplay\n"
         + "".join(f"Requires: {item}\n" for item in requires)
@@ -288,8 +360,10 @@ def rpm_package(workdir: Path, stage: Path, version: str, distro: str) -> Path:
         "\n%description\nNative Rust/Slint YouTube client with in-process libmpv playback.\n"
         "Bundles pinned yt-dlp and Deno helpers. Experimental and unofficial.\n"
         "\n%install\nmkdir -p %{buildroot}\ncp -a %{_oxplay_payload}/. %{buildroot}/\n"
-        "\n%files\n%defattr(-,root,root,-)\n%dir /usr/lib/oxplay\n%dir /usr/share/doc/oxplay\n"
-        "%dir /usr/share/doc/oxplay/licenses\n" + "\n".join(files) + "\n", encoding="utf-8")
+        "\n%files\n%defattr(-,root,root,-)\n%dir /usr/lib/oxplay\n"
+        + "".join(f"%dir /{directory.relative_to(stage).as_posix()}\n" for directory in
+                  [stage / "usr/share/doc/oxplay", *sorted((stage / "usr/share/doc/oxplay").rglob("*"))] if directory.is_dir())
+        + "\n".join(files) + "\n", encoding="utf-8")
     # Paths become RPM macro values; reject macro and shell metacharacters.
     if not re.fullmatch(r"[/A-Za-z0-9_.-]+", str(workdir)):
         raise ValueError("RPM work directory must have a simple absolute path")
@@ -317,8 +391,11 @@ def rpm_package(workdir: Path, stage: Path, version: str, distro: str) -> Path:
         subprocess.run(["cpio", "-id", "--no-absolute-filenames", "--quiet"], stdin=stream, cwd=extracted, check=True)
     check_payload(stage, extracted)
     actual_requires = output("rpm", "-qp", "--requires", artifact).splitlines()
-    if not set(requires + ["libmpv.so.2()(64bit)"]).issubset(actual_requires):
+    required = requires + ([] if bundled else ["libmpv.so.2()(64bit)"])
+    if not set(required).issubset(actual_requires):
         raise ValueError("Missing RPM runtime dependencies")
+    if bundled and any(any(item.startswith(name + "(") for name in bundled) for item in actual_requires):
+        raise ValueError("RPM incorrectly requires a system copy of bundled media")
     print("RPM smoke passed: metadata, libmpv/SONAME requirements, payload contents, modes, owners and no scripts.")
     return artifact
 
@@ -333,10 +410,13 @@ def arch_version(version: str) -> str:
 def arch_package(workdir: Path, stage: Path, version: str) -> Path:
     package_version = arch_version(version)
     depends = {"libglvnd", "libxkbcommon", "libxkbcommon-x11", "wayland", "libx11", "libxcursor", "libxi",
-               "libxrandr", "fontconfig"}
+               "libxrandr", "fontconfig", "vulkan-icd-loader", "libva", "libdrm"}
+    bundled = {path.name for path in elf_payload(stage) if ".so." in path.name}
     for elf in elf_payload(stage):
-        libraries = output("ldd", elf)
+        libraries = output("ldd", elf, env={key: value for key, value in os.environ.items() if key != "LD_LIBRARY_PATH"})
         for path in re.findall(r"(?:=>\s+|^\s*)(/\S+)", libraries, re.MULTILINE):
+            if Path(path).name in bundled:
+                continue
             owner = output("pacman", "-Qqo", path)
             name, installed = output("pacman", "-Q", owner).split()
             if name in {"zlib", "zlib-ng-compat"} or Path(path).name.startswith("libz.so"):
@@ -345,7 +425,7 @@ def arch_package(workdir: Path, stage: Path, version: str) -> Path:
             depends.add(f"{name}>={installed}")
     if any(not re.fullmatch(r"[A-Za-z0-9@._+:>=-]+", item) for item in depends):
         raise ValueError("Invalid native Arch dependency metadata")
-    if not any(item.startswith("mpv>=") for item in depends):
+    if not bundled and not any(item.startswith("mpv>=") for item in depends):
         raise ValueError("The system mpv dependency was not detected")
     (workdir / "payload").symlink_to(stage, target_is_directory=True)
     (workdir / "PKGBUILD").write_text(
@@ -409,8 +489,6 @@ def package(format: str, binary: Path, helpers: Path, mpv_prefix: Path | None, v
         raise ValueError(f"Build {format} natively on its supported distribution, not {distro['ID']}")
     if format == "arch" and os.getuid() == 0:
         raise ValueError("Run Arch builds as an unprivileged user; makepkg refuses root")
-    if format != "deb" and mpv_prefix is not None:
-        raise ValueError("RPM and Arch packages use the distribution's libmpv")
     with tempfile.TemporaryDirectory(prefix="oxplay-linux-package-") as directory:
         workdir = Path(directory).resolve()
         stage = workdir / "debian/oxplay"
@@ -435,11 +513,15 @@ def main() -> int:
     parser.add_argument("format", choices=("deb", "rpm", "arch", "dir"))
     parser.add_argument("--binary", type=Path, default=ROOT / "target/release/oxplay")
     parser.add_argument("--helpers", type=Path, required=True, help="Directory from scripts/fetch_pinned.py")
-    parser.add_argument("--mpv-prefix", type=Path, help="Private libmpv prefix from scripts/ci/install-mpv-linux.sh")
+    parser.add_argument("--mpv-prefix", type=Path, required=True,
+                        help="Native ABI 1 prefix from scripts/native-media/linux.py --build-ffmpeg")
     parser.add_argument("--version", default=None, help="Defaults to the workspace version")
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     try:
+        record = native_record(args.mpv_prefix.resolve(strict=True))
+        if not record or "ffmpeg" not in record:
+            raise ValueError("Release packaging requires the native ABI 1 prefix with pinned full FFmpeg")
         package(args.format, args.binary.resolve(strict=True), args.helpers.resolve(strict=True),
                 args.mpv_prefix.resolve(strict=True) if args.mpv_prefix else None,
                 args.version or workspace_version(), args.output.resolve())

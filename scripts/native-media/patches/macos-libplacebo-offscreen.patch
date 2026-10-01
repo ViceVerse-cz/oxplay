@@ -1,0 +1,377 @@
+--- a/src/include/libplacebo/metal.h
++++ b/src/include/libplacebo/metal.h
+@@ -108,6 +108,14 @@
+ // `pl_tex` created by `pl_metal_wrap`. Do not CFRelease the result.
+ PL_API void *pl_metal_unwrap(pl_gpu gpu, pl_tex tex);
+ 
++// Offscreen submission capacity. Serialized on the owning render thread.
++// At most three frames are submitted; availability never waits for the GPU.
++PL_API bool pl_metal_offscreen_available(pl_gpu gpu);
++PL_API bool pl_metal_offscreen_submit(pl_gpu gpu, void (*wakeup)(void *), void *data);
++PL_API void pl_metal_offscreen_finish(pl_gpu gpu);
++// Retains a CoreFoundation object until work currently being encoded completes.
++PL_API void pl_metal_hold(pl_gpu gpu, const void *object);
++
+ PL_API_END
+ 
+ #endif // LIBPLACEBO_METAL_H_--- a/src/metal/gpu.h
++++ b/src/metal/gpu.h
+@@ -16,6 +16,7 @@
+  */
+ 
+ #pragma once
++#include <os/lock.h>
+ 
+ #include "../gpu.h"
+ #include "../glsl/spirv.h"
+@@ -81,6 +82,10 @@
+     // Advanced by the swapchain in submit_frame; read by pass_run to pick the
+     // correct per-frame ring slot for push-constant and vertex buffers.
+     uint32_t frame_index;
++    void *offscreen_cmds[METAL_MAX_IN_FLIGHT];
++    uint32_t offscreen_slot;
++    os_unfair_lock offscreen_lock;
++    bool offscreen_waiting;
+ 
+     // GPU timestamp counter support (macOS 11+, MTLCounterSamplingPointAtStageBoundary).
+     bool has_gpu_timer;
+--- a/src/metal/metal_ops.h
++++ b/src/metal/metal_ops.h
+@@ -63,6 +63,8 @@
+ static inline void metal_cmd_submit(struct pl_gpu_metal *p, bool wait)
+ {
+     metal_blit_enc_end(p);
++    if (!p->cmd_buf && wait)
++        metal_cmd_get(p); // Ordered barrier also covers previously committed uploads.
+     if (!p->cmd_buf) return;
+     id<MTLCommandBuffer> cmd = (__bridge id<MTLCommandBuffer>) p->cmd_buf;
+     [cmd commit];
+--- a/src/metal/gpu.m
++++ b/src/metal/gpu.m
+@@ -56,6 +56,7 @@
+ {
+     struct pl_gpu_metal *p = PL_PRIV(gpu);
+     metal_cmd_submit(p, true);
++    pl_metal_offscreen_finish(gpu);
+ 
+     pl_spirv_destroy(&p->spirv);
+ 
+@@ -346,6 +347,79 @@
+     metal_cmd_submit(p, true);
+ }
+ 
++bool pl_metal_offscreen_available(pl_gpu gpu)
++{
++    struct pl_gpu_metal *p = PL_PRIV(gpu);
++    void *opaque = p->offscreen_cmds[p->offscreen_slot];
++    if (!opaque)
++        return true;
++    id<MTLCommandBuffer> cmd = (__bridge id<MTLCommandBuffer>)opaque;
++    // Serialize the BUSY decision with its completion notification. Arming
++    // before an unlocked status query can spuriously wake a ready host; arming
++    // after it can miss completion. This tiny CPU lock never waits for the GPU.
++    os_unfair_lock_lock(&p->offscreen_lock);
++    MTLCommandBufferStatus status = cmd.status;
++    bool ready = status == MTLCommandBufferStatusCompleted ||
++                 status == MTLCommandBufferStatusError;
++    p->offscreen_waiting = !ready;
++    os_unfair_lock_unlock(&p->offscreen_lock);
++    return ready;
++}
++
++bool pl_metal_offscreen_submit(pl_gpu gpu, void (*wakeup)(void *), void *data)
++{
++    struct pl_gpu_metal *p = PL_PRIV(gpu);
++    if (!pl_metal_offscreen_available(gpu))
++        return false;
++    uint32_t slot = p->offscreen_slot;
++    if (p->offscreen_cmds[slot])
++        CFBridgingRelease(p->offscreen_cmds[slot]);
++    id<MTLCommandBuffer> cmd = metal_cmd_get(p);
++    if (!cmd)
++        return false;
++    p->offscreen_cmds[slot] = (void *)CFBridgingRetain(cmd);
++    if (wakeup) {
++        [cmd addCompletedHandler:^(id<MTLCommandBuffer> completed) {
++            (void)completed;
++            os_unfair_lock_lock(&p->offscreen_lock);
++            bool notify = p->offscreen_waiting;
++            p->offscreen_waiting = false;
++            os_unfair_lock_unlock(&p->offscreen_lock);
++            if (notify)
++                wakeup(data);
++        }];
++    }
++    metal_cmd_submit(p, false);
++    p->offscreen_slot = (slot + 1) % METAL_MAX_IN_FLIGHT;
++    return true;
++}
++
++void pl_metal_offscreen_finish(pl_gpu gpu)
++{
++    struct pl_gpu_metal *p = PL_PRIV(gpu);
++    // Teardown alone drains pending native work; steady-state never waits.
++    metal_cmd_submit(p, true);
++    for (int i = 0; i < METAL_MAX_IN_FLIGHT; i++) {
++        if (p->offscreen_cmds[i]) {
++            [(__bridge id<MTLCommandBuffer>)p->offscreen_cmds[i] waitUntilCompleted];
++            CFBridgingRelease(p->offscreen_cmds[i]);
++            p->offscreen_cmds[i] = NULL;
++        }
++    }
++}
++
++void pl_metal_hold(pl_gpu gpu, const void *object)
++{
++    if (!object)
++        return;
++    struct pl_gpu_metal *p = PL_PRIV(gpu);
++    CFTypeRef retained = CFRetain(object);
++    [metal_cmd_get(p) addCompletedHandler:^(id<MTLCommandBuffer> completed) {
++        (void)completed;
++        CFRelease(retained);
++    }];
++}
++
+ bool pl_metal_gpu_is_failed(pl_gpu gpu)
+ {
+     struct pl_gpu_metal *p = PL_PRIV(gpu);
+--- a/src/metal/gpu_pass.m
++++ b/src/metal/gpu_pass.m
+@@ -405,19 +405,8 @@
+     pass_p->is_compute = true;
+     pass_p->pso = (void *) CFBridgingRetain(pso);
+ 
+-    if (has_pushc) {
+-        for (int i = 0; i < METAL_MAX_IN_FLIGHT; i++) {
+-            id<MTLBuffer> pcbuf =
+-                [device newBufferWithLength:params->push_constants_size
+-                                    options:MTLResourceStorageModeShared];
+-            if (!pcbuf) {
+-                PL_ERR(gpu, "Failed to allocate push-constant buffer (slot %d)", i);
+-                goto error;
+-            }
+-            pass_p->pushc_bufs[i] = (void *) CFBridgingRetain(pcbuf);
+-        }
++    if (params->push_constants_size)
+         pass_p->pushc_slot = METAL_PUSH_CONST_BUF_IDX;
+-    }
+ 
+     if (!from_cache)
+         metal_update_msl_cache(gpu, obj.key, NULL, NULL, msl);
+@@ -525,19 +514,8 @@
+     pass_p->is_compute = false;
+     pass_p->pso = (void *) CFBridgingRetain(pso);
+ 
+-    if (has_pushc) {
+-        for (int i = 0; i < METAL_MAX_IN_FLIGHT; i++) {
+-            id<MTLBuffer> pcbuf =
+-                [device newBufferWithLength:params->push_constants_size
+-                                    options:MTLResourceStorageModeShared];
+-            if (!pcbuf) {
+-                PL_ERR(gpu, "Failed to allocate push-constant buffer (slot %d)", i);
+-                goto error;
+-            }
+-            pass_p->pushc_bufs[i] = (void *) CFBridgingRetain(pcbuf);
+-        }
++    if (params->push_constants_size)
+         pass_p->pushc_slot = METAL_PUSH_CONST_BUF_IDX;
+-    }
+ 
+     if (!from_cache)
+         metal_update_msl_cache(gpu, obj.key, vert_msl, frag_msl, NULL);
+@@ -693,12 +671,6 @@
+     pl_pass pass               = params->pass;
+     struct pl_pass_metal *pass_p   = PL_PRIV(pass);
+ 
+-    void *cur_pushc = pass_p->pushc_bufs[p->frame_index];
+-    if (cur_pushc && params->push_constants) {
+-        id<MTLBuffer> pcbuf = (__bridge id<MTLBuffer>) cur_pushc;
+-        memcpy(pcbuf.contents, params->push_constants,
+-               pass->params.push_constants_size);
+-    }
+ 
+     id<MTLCommandBuffer> cmd = metal_cmd_get(p);
+     id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+@@ -707,10 +679,10 @@
+         (__bridge id<MTLComputePipelineState>) pass_p->pso;
+     [enc setComputePipelineState:pso];
+ 
+-    if (cur_pushc)
+-        [enc setBuffer:(__bridge id<MTLBuffer>) cur_pushc
+-                offset:0
+-               atIndex:pass_p->pushc_slot];
++    if (params->push_constants && pass->params.push_constants_size)
++        [enc setBytes:params->push_constants
++               length:pass->params.push_constants_size
++              atIndex:pass_p->pushc_slot];
+ 
+     bind_descriptors_compute(gpu, pass, params, enc);
+ 
+@@ -738,12 +710,6 @@
+     struct pl_pass_metal *pass_p   = PL_PRIV(pass);
+     pl_tex target              = params->target;
+ 
+-    void *cur_pushc = pass_p->pushc_bufs[p->frame_index];
+-    if (cur_pushc && params->push_constants) {
+-        id<MTLBuffer> pcbuf = (__bridge id<MTLBuffer>) cur_pushc;
+-        memcpy(pcbuf.contents, params->push_constants,
+-               pass->params.push_constants_size);
+-    }
+ 
+     struct pl_tex_metal *tp = PL_PRIV(target);
+     id<MTLTexture> target_tex = (__bridge id<MTLTexture>) tp->tex;
+@@ -783,10 +749,13 @@
+         .height = sc.y1 - sc.y0,
+     }];
+ 
+-    if (cur_pushc) {
+-        id<MTLBuffer> pcbuf = (__bridge id<MTLBuffer>) cur_pushc;
+-        [enc setVertexBuffer:pcbuf offset:0 atIndex:pass_p->pushc_slot];
+-        [enc setFragmentBuffer:pcbuf offset:0 atIndex:pass_p->pushc_slot];
++    if (params->push_constants && pass->params.push_constants_size) {
++        [enc setVertexBytes:params->push_constants
++                     length:pass->params.push_constants_size
++                    atIndex:pass_p->pushc_slot];
++        [enc setFragmentBytes:params->push_constants
++                       length:pass->params.push_constants_size
++                      atIndex:pass_p->pushc_slot];
+     }
+ 
+     bind_descriptors_raster(gpu, pass, params, enc);
+@@ -800,37 +769,17 @@
+                          length:vtx_size
+                         atIndex:0];
+         } else {
+-            // Larger data: copy into the current frame's slot of the vtx_buf
+-            // ring.  This avoids CPU/GPU races when frames overlap on the GPU.
+-            int fslot = (int) p->frame_index;
+-
+-            if (vtx_size > p->vtx_buf_size) {
+-                // New size needed: free all ring slots (Metal retains its own
+-                // references on any in-flight command buffers, so this is safe).
+-                for (int i = 0; i < METAL_MAX_IN_FLIGHT; i++) {
+-                    if (p->vtx_bufs[i]) {
+-                        CFBridgingRelease(p->vtx_bufs[i]);
+-                        p->vtx_bufs[i] = NULL;
+-                    }
+-                }
+-                p->vtx_buf_size = vtx_size;
++            // Encoder-retained immutable storage also handles repeated draws
++            // in one frame; no shared ring slot can be overwritten by the CPU.
++            id<MTLDevice> device = (__bridge id<MTLDevice>)p->ctx->metal->device;
++            id<MTLBuffer> vtx_buf = [device newBufferWithBytes:params->vertex_data
++                                                      length:vtx_size
++                                                     options:MTLResourceStorageModeShared];
++            if (!vtx_buf) {
++                PL_ERR(gpu, "Failed to allocate vertex data");
++                [enc endEncoding];
++                return;
+             }
+-
+-            if (!p->vtx_bufs[fslot]) {
+-                id<MTLDevice> device = (__bridge id<MTLDevice>) p->ctx->metal->device;
+-                id<MTLBuffer> buf = [device newBufferWithLength:p->vtx_buf_size
+-                                                       options:MTLResourceStorageModeShared];
+-                if (!buf) {
+-                    PL_ERR(gpu, "Failed to allocate vertex buffer (slot %d, size %zu)",
+-                           fslot, p->vtx_buf_size);
+-                    [enc endEncoding];
+-                    return;
+-                }
+-                p->vtx_bufs[fslot] = (void *) CFBridgingRetain(buf);
+-            }
+-
+-            id<MTLBuffer> vtx_buf = (__bridge id<MTLBuffer>) p->vtx_bufs[fslot];
+-            memcpy(vtx_buf.contents, params->vertex_data, vtx_size);
+             [enc setVertexBuffer:vtx_buf offset:0 atIndex:0];
+         }
+     } else if (params->vertex_buf) {
+@@ -855,33 +804,15 @@
+ 
+         if (params->index_data) {
+             size_t idx_size = pl_index_buf_size(params);
+-            int fslot = (int) p->frame_index;
+-
+-            if (idx_size > p->idx_buf_size) {
+-                for (int i = 0; i < METAL_MAX_IN_FLIGHT; i++) {
+-                    if (p->idx_bufs[i]) {
+-                        CFBridgingRelease(p->idx_bufs[i]);
+-                        p->idx_bufs[i] = NULL;
+-                    }
+-                }
+-                p->idx_buf_size = idx_size;
++            id<MTLDevice> device = (__bridge id<MTLDevice>)p->ctx->metal->device;
++            id<MTLBuffer> idx_buf = [device newBufferWithBytes:params->index_data
++                                                      length:idx_size
++                                                     options:MTLResourceStorageModeShared];
++            if (!idx_buf) {
++                PL_ERR(gpu, "Failed to allocate index data");
++                [enc endEncoding];
++                return;
+             }
+-
+-            if (!p->idx_bufs[fslot]) {
+-                id<MTLDevice> device = (__bridge id<MTLDevice>) p->ctx->metal->device;
+-                id<MTLBuffer> buf = [device newBufferWithLength:p->idx_buf_size
+-                                                       options:MTLResourceStorageModeShared];
+-                if (!buf) {
+-                    PL_ERR(gpu, "Failed to allocate index buffer (slot %d, size %zu)",
+-                           fslot, p->idx_buf_size);
+-                    [enc endEncoding];
+-                    return;
+-                }
+-                p->idx_bufs[fslot] = (void *) CFBridgingRetain(buf);
+-            }
+-
+-            id<MTLBuffer> idx_buf = (__bridge id<MTLBuffer>) p->idx_bufs[fslot];
+-            memcpy(idx_buf.contents, params->index_data, idx_size);
+             [enc drawIndexedPrimitives:prim
+                             indexCount:params->vertex_count
+                              indexType:idx_type
+--- a/src/metal/gpu_buf.m
++++ b/src/metal/gpu_buf.m
+@@ -91,12 +91,6 @@
+     struct pl_buf_metal *buf_p = PL_PRIV(buf);
+     id<MTLBuffer> mtl_buf = (__bridge id<MTLBuffer>) buf_p->buf;
+ 
+-    if (buf_p->host_visible) {
+-        // MTLStorageModeShared is always CPU-coherent on macOS.
+-        memcpy((char *) mtl_buf.contents + offset, data, size);
+-        return;
+-    }
+-
+     // newBufferWithBytes:length:options: copies `data` immediately, so the
+     // caller's pointer is safe to reuse on return. The staging buffer is
+     // released asynchronously once the GPU blit completes.
+--- a/src/metal/gpu_tex.m
++++ b/src/metal/gpu_tex.m
+@@ -276,16 +276,6 @@
+     if (!params->ptr)
+         return false;
+ 
+-    if (tex_p->host_visible) {
+-        [mtl_tex replaceRegion:region
+-                   mipmapLevel:0
+-                         slice:0
+-                     withBytes:params->ptr
+-                   bytesPerRow:bytes_per_row
+-                 bytesPerImage:bytes_per_image];
+-        return true;
+-    }
+-
+     // Private texture: upload via a temporary Shared staging buffer.
+     // newBufferWithBytes:length:options: copies params->ptr into the MTLBuffer
+     // immediately, so the caller's host pointer is safe to reuse on return.
+@@ -405,6 +395,11 @@
+ 
+     id<MTLTexture> mtl_tex = (__bridge id<MTLTexture>) params->texture;
+ 
++    pl_metal metal = pl_metal_get(gpu);
++    if ((__bridge void *)mtl_tex.device != metal->device) {
++        PL_ERR(gpu, "pl_metal_wrap: texture belongs to another Metal device");
++        return NULL;
++    }
+     if (mtl_tex.mipmapLevelCount != 1) {
+         PL_ERR(gpu, "pl_metal_wrap: mipmapped textures not supported "
+                "(%lu mip levels)", (unsigned long) mtl_tex.mipmapLevelCount);
