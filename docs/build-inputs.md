@@ -63,7 +63,9 @@ when the target OS is Windows (pkg-config remains the default everywhere else).
 The directory must contain `include/mpv/client.h` declaring client API 2.5 or
 newer (checked by the build script), the runtime `libmpv-2.dll`, and an import
 library: an MSVC `mpv.lib` if present, otherwise `libmpv.dll.a`, linked
-verbatim. The latter's COFF short-import members are accepted by MSVC
+verbatim. The release workflow generates `mpv.lib` with
+`packaging/windows/mpv_import_lib.py` (dumpbin/lib.exe) and so links it; CI
+links `libmpv.dll.a` directly. The latter's COFF short-import members are accepted by MSVC
 `link.exe`, so no import library is regenerated. The build script copies the DLL
 into its `OUT_DIR` so `cargo run`/`cargo test` find it; packages must ship
 `libmpv-2.dll` beside `oxplay.exe`.

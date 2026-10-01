@@ -58,6 +58,11 @@ Platform adapters implemented for Windows:
   file import, ephemeral extractor cookie jars and the caption cache use the
   same checks. An ignored synthetic Credential Manager roundtrip exists
   (`windows_credential_manager_synthetic_roundtrip`).
+- Downloads use the same Job Object supervisor (`run_streaming`: line-by-line
+  progress, idle and overall deadlines, line bound, stderr tail; tested in CI
+  with synthetic batch helpers). FFmpeg for merging is only `ffmpeg.exe`
+  beside `oxplay.exe`; release packages do not bundle it (as on macOS), so
+  they download the single-file format unless the user adds it.
 - Display sleep is prevented only during observed video playback
   (`SetThreadExecutionState`), mirroring the macOS assertion.
 - Media DNS uses the in-process system resolver as on Linux. The macOS

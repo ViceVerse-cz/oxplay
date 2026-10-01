@@ -94,7 +94,8 @@ window; command-line diagnostics started from a terminal still print there.
 Helpers are taken from beside `oxplay.exe` first (`yt-dlp.exe`, `deno.exe`),
 then from an absolute `PATH` entry (for example after `winget install yt-dlp.yt-dlp`
 and `winget install DenoLand.Deno`), or from explicit `--yt-dlp`/`--deno` paths. yt-dlp runs in a
-kill-on-close Job Object. Data lives under `%LOCALAPPDATA%\Oxplay`; remembered
+kill-on-close Job Object, including downloads; put `ffmpeg.exe` beside
+`oxplay.exe` to merge qualities above the single-file format. Data lives under `%LOCALAPPDATA%\Oxplay`; remembered
 account sessions use Credential Manager. The macOS `oxplay-dns` helper is not
 used: the scoped media transport resolves in process, as on Linux. Browser
 sign-in (use the session file import) and the Unix-only diagnostics are
