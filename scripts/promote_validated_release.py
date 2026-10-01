@@ -61,10 +61,10 @@ def validate_run(data, jobs, main):
     for name, required_steps in REQUIRED_JOBS.items():
         job = by_name[name]
         require(job.get('status') == 'completed' and job.get('conclusion') == 'success', f'Mandatory job did not pass: {name}')
-        steps = {step['name']: step for step in job.get('steps', [])}
-        require(len(steps) == len(job.get('steps', [])), f'Duplicate steps: {name}')
         for step_name in required_steps:
-            step = steps.get(step_name, {})
+            matches = [step for step in job.get('steps', []) if step['name'] == step_name]
+            require(len(matches) == 1, f'Mandatory step missing or duplicated: {name}/{step_name}')
+            step = matches[0]
             require(step.get('status') == 'completed' and step.get('conclusion') == 'success', f'Mandatory test/build/smoke was skipped or failed: {name}/{step_name}')
     for name in by_name.keys() - REQUIRED_JOBS.keys():
         require((name in {'publish', 'repositories'} or name.startswith('repositories /')) and by_name[name].get('conclusion') == 'skipped', f'Unexpected source job: {name}')

@@ -75,6 +75,12 @@ class RefusalTests(unittest.TestCase):
             promoter.validate_run(run, jobs + [{'name': name, 'conclusion': 'skipped'}], main)
             with self.assertRaises(RuntimeError): promoter.validate_run(run, jobs + [{'name': name, 'conclusion': 'success'}], main)
 
+    def test_repeated_nonmandatory_download_action_names_are_allowed(self):
+        run, jobs, main = successful_inventory()
+        step = {'name': 'Run actions/download-artifact@pinned', 'status': 'completed', 'conclusion': 'success'}
+        jobs[-1]['steps'].extend([step.copy(), step.copy()])
+        promoter.validate_run(run, jobs, main)
+
     def test_dispatch_refuses_before_any_network_or_mutation(self):
         for channel, dry_run in [('nightly', 'false'), ('production', 'true'), ('production', ''), ('', 'false')]:
             with patch.dict(promoter.os.environ, {'PROMOTE_CHANNEL': channel, 'PROMOTE_DRY_RUN': dry_run}, clear=True), patch.object(promoter, 'command') as command, patch.object(promoter, 'api') as api:
