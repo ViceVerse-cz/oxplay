@@ -1,446 +1,90 @@
-name: Release (manual)
-run-name: ${{ inputs.channel }} release${{ inputs.dry_run && ' (dry run)' || '' }} by @${{ github.actor }}
+name: Promote validated native v0.1.0 (one time)
+run-name: Promote v0.1.0 from validated run 36839089100 by @${{ github.actor }}
 
 on:
   workflow_dispatch:
     inputs:
       channel:
-        description: Release channel
+        description: Only production is accepted by this one-time promoter
         type: choice
         options: [nightly, production]
-        default: nightly
+        default: production
         required: true
       dry_run:
-        description: Build and assemble everything, but create no commit, tag, release, cask update or repository deploy
+        description: Must be false; source build validation already ran separately
         type: boolean
-        default: false
+        default: true
 
 permissions:
-  contents: read
-
-env:
-  RELEASE_CHANNEL: ${{ inputs.channel }}
-  DRY_RUN: ${{ inputs.dry_run }}
-  CARGO_TERM_COLOR: always
-  CARGO_BUILD_JOBS: '2'
+  contents: write
+  actions: read
 
 concurrency:
-  # One publishing release at a time; dry runs queue per branch instead.
-  group: oxplay-release-${{ inputs.dry_run && github.ref || 'publish' }}
+  group: oxplay-release-publish
   cancel-in-progress: false
 
 jobs:
-  prepare:
+  promote:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    outputs:
-      release: ${{ steps.plan.outputs.release }}
-      tag: ${{ steps.plan.outputs.tag }}
-      version: ${{ steps.plan.outputs.version }}
-      git_head: ${{ steps.plan.outputs.git_head }}
-      repositories: ${{ steps.configuration.outputs.repositories }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.14.7'
-      - name: Release tooling regression (offline)
-        run: python3 -m unittest discover -s scripts -p 'test_release*.py'
-      - name: Calculate semantic version and notes
-        id: plan
-        run: python3 scripts/release.py plan
-      - name: Apply planned version to manifests
-        if: steps.plan.outputs.release == 'true'
-        env:
-          VERSION: ${{ steps.plan.outputs.version }}
-        run: python3 scripts/release.py apply-version "$VERSION"
-      - name: Detect optional repository publishing
-        id: configuration
-        env:
-          PACKAGE_SIGNING_KEY: ${{ secrets.PACKAGE_SIGNING_KEY }}
-          PACKAGE_SIGNING_FINGERPRINT: ${{ vars.PACKAGE_SIGNING_FINGERPRINT }}
-        run: |
-          if [ -n "$PACKAGE_SIGNING_KEY" ] && [ -n "$PACKAGE_SIGNING_FINGERPRINT" ]; then
-            echo repositories=true >> "$GITHUB_OUTPUT"
-          else
-            echo repositories=false >> "$GITHUB_OUTPUT"
-            echo "::notice::PACKAGE_SIGNING_KEY/PACKAGE_SIGNING_FINGERPRINT are not configured; signed package repositories are skipped."
-          fi
-      - name: Summarize plan
-        if: steps.plan.outputs.release == 'true'
-        env:
-          TAG: ${{ steps.plan.outputs.tag }}
-          GIT_HEAD: ${{ steps.plan.outputs.git_head }}
-        run: |
-          {
-            echo "## Planned $RELEASE_CHANNEL release $TAG"
-            echo
-            echo "Commit \`$GIT_HEAD\`; dry run: \`$DRY_RUN\`."
-            echo
-            python3 -c 'import json; print(json.load(open("target/release-plan.json"))["notes"])'
-          } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: steps.plan.outputs.release == 'true'
-        with:
-          name: release-manifests
-          path: |
-            Cargo.toml
-            Cargo.lock
-            target/release-plan.json
-          if-no-files-found: error
-          retention-days: 14
-
-  checks:
-    needs: prepare
-    if: needs.prepare.outputs.release == 'true'
-    uses: ./.github/workflows/ci.yml
-
-  build:
-    name: ${{ matrix.name }}
-    needs: prepare
-    if: needs.prepare.outputs.release == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-26
-            name: macOS ARM64 app bundle
-          - os: windows-latest
-            name: Windows X64 zip and installer
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
-    env:
-      TAG: ${{ needs.prepare.outputs.tag }}
-      VERSION: ${{ needs.prepare.outputs.version }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: release-manifests
-          path: .
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.14.7'
-      - name: Select checked-in Rust toolchain
-        run: |
-          rustup show
-          rustc --version --verbose
-          mkdir -p dist release-assets
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          key: release-${{ runner.os }}-${{ runner.arch }}
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cache-on-failure: true
-
-      # macOS: private native Metal media stack plus the bundled helper runtime.
-      - name: Install native dependencies and bundled helper runtime
-        if: runner.os == 'macOS'
-        env:
-          HOMEBREW_NO_ANALYTICS: '1'
-        run: |
-          test "$(uname -m)" = arm64
-          # Runner images ship a stale formula index; the reviewed helper
-          # dependency set needs the current yt-dlp formula revision.
-          brew update
-          brew install pkgconf yt-dlp cmake ffmpeg libass shaderc libarchive uchardet vulkan-headers
-          python3 -m venv "$RUNNER_TEMP/native-media-tools"
-          "$RUNNER_TEMP/native-media-tools/bin/python" -m pip install meson==1.12.1 ninja==1.13.2
-          test -x /opt/homebrew/bin/yt-dlp
-          test -x /opt/homebrew/bin/deno
-          brew list --versions ffmpeg libass yt-dlp deno
-      - name: Build pinned private Metal media libraries
-        if: runner.os == 'macOS'
-        run: python3 scripts/native-media/macos.py --tools "$RUNNER_TEMP/native-media-tools/bin" --jobs 2
-      - name: Build and bundle the app
-        if: runner.os == 'macOS'
-        env:
-          OXPLAY_BUNDLE_VERSION: ${{ github.run_number }}.${{ github.run_attempt }}
-        run: |
-          python3 scripts/package_macos.py bundle --build --bundle-helpers \
-            --native-mpv-prefix "$GITHUB_WORKSPACE/artifacts/native-media/macos/prefix" \
-            --maximum-macos 26.0 --output dist/Oxplay.app
-      - name: Detect Mac signing credentials
-        id: signing
-        if: runner.os == 'macOS'
-        env:
-          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: |
-          enabled=true
-          for name in MACOS_CERTIFICATE_BASE64 MACOS_CERTIFICATE_PASSWORD MACOS_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_SPECIFIC_PASSWORD; do
-            [ -n "${!name}" ] || enabled=false
-          done
-          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
-          if [ "$enabled" != true ]; then
-            echo "::notice::Mac signing secrets are incomplete; the app stays ad-hoc signed and is not notarized."
-          fi
-      - name: Sign, notarize and verify Mac app
-        if: runner.os == 'macOS' && steps.signing.outputs.enabled == 'true'
-        env:
-          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: |
-          bash packaging/macos/sign-release.sh dist/Oxplay.app
-          python3 scripts/package_macos.py reinventory --output dist/Oxplay.app
-      - name: Verify and archive Mac package
-        if: runner.os == 'macOS'
-        run: |
-          python3 scripts/verify_package.py dist/Oxplay.app
-          ditto -c -k --sequesterRsrc --keepParent dist/Oxplay.app "release-assets/oxplay-$TAG-macOS-ARM64.zip"
-          cp dist/Oxplay.app.inventory.json "release-assets/oxplay-$TAG-macOS-ARM64.inventory.json"
-
-      # Windows: private D3D11 media/FFmpeg libraries shared with native DX12 UI.
-      - name: Prepare UCRT64 native media build tools
-        if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            git make patch tar
-            mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-binutils
-            mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-python
-            mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-nasm
-            mingw-w64-ucrt-x86_64-gnutls mingw-w64-ucrt-x86_64-libass
-            mingw-w64-ucrt-x86_64-shaderc mingw-w64-ucrt-x86_64-spirv-cross
-            mingw-w64-ucrt-x86_64-luajit mingw-w64-ucrt-x86_64-dav1d
-      - name: Build private D3D11 media libraries and runtime source closure
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        env:
-          CC: gcc
-          CXX: g++
-        run: |
-          set -euo pipefail
-          prefix="$(cygpath -m "$RUNNER_TEMP")/oxplay-native-windows"
-          work="$(cygpath -m "$RUNNER_TEMP")/oxplay-native-windows-work"
-          python scripts/native-media/windows.py --prefix "$prefix" --work-dir "$work" \
-            --dependencies "$(cygpath -m /ucrt64)" --build-ffmpeg --collect-runtime-sources --jobs 2
-          test -f "$prefix/libmpv-2.dll"
-          test -f "$prefix/native-media-provenance.json"
-          printf 'OXPLAY_NATIVE_MPV_PREFIX=%s\nMPV_DIR=%s\n' "$prefix" "$prefix" >> "$(cygpath -u "$GITHUB_ENV")"
-          printf '%s\n' "$prefix" >> "$(cygpath -u "$GITHUB_PATH")"
-      - name: Generate private media MSVC import library
-        if: runner.os == 'Windows'
-        run: python packaging/windows/mpv_import_lib.py "$MPV_DIR" --github-env "$GITHUB_ENV"
-      - name: Fetch pinned Windows helpers
-        if: runner.os == 'Windows'
-        run: |
-          python scripts/fetch_pinned.py yt-dlp-windows-x86_64 deno-windows-x86_64 --dest target/pinned
-      - name: Check, test and build locked native Windows release
-        if: runner.os == 'Windows'
-        env:
-          # Static Rust CRT; the private C DLL closure is inventoried separately.
-          CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
-        run: |
-          test -f "$MPV_DIR/mpv.lib"
-          cargo check --workspace --all-targets --locked
-          cargo clippy --workspace --all-targets --locked -- -D warnings
-          cargo test --workspace --locked --no-fail-fast
-          cargo build --workspace --release --locked
-      - name: Native Windows packaging regression (offline)
-        if: runner.os == 'Windows'
-        run: |
-          python -m unittest discover -s scripts -p 'test_release_packaging.py' -k Windows
-          python -m unittest discover -s scripts -p 'test_native_windows_packaging.py'
-      - name: Stage and archive Windows package
-        if: runner.os == 'Windows'
-        run: |
-          python packaging/windows/package.py --binary target/release/oxplay.exe --mpv-dir "$MPV_DIR" \
-            --helpers target/pinned --version "$VERSION" --output dist/windows --native-media \
-            --uninstall-include dist/windows-uninstall.nsh \
-            --zip "release-assets/oxplay-$TAG-Windows-X64.zip"
-          dist/windows/yt-dlp.exe --version
-          dist/windows/deno.exe --version
-      - name: Build Windows installer
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
-            choco install nsis --version=3.11 --no-progress -y
-            $env:PATH = "${env:ProgramFiles(x86)}\NSIS;$env:PATH"
-          }
-          makensis -V2 "-DVERSION=$env:VERSION" "-DDIST_DIR=$PWD\dist\windows" `
-            "-DUNINSTALL_INCLUDE=$PWD\dist\windows-uninstall.nsh" `
-            "-DOUTPUT_FILE=$PWD\release-assets\oxplay-$env:TAG-Windows-X64-Setup.exe" packaging\windows\installer.nsi
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: Retain native Mac package build evidence
-        if: always() && runner.os == 'macOS'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: native-metal-package-build-evidence
-          path: |
-            artifacts/native-media/macos/build-result.json
-            artifacts/native-media/macos/*.log
-            artifacts/native-media/macos/build-*/meson-logs/
-          if-no-files-found: warn
-          retention-days: 14
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: oxplay-${{ runner.os }}-${{ runner.arch }}
-          path: release-assets/*
-          if-no-files-found: error
-          retention-days: 14
-
-  linux:
-    needs: prepare
-    if: needs.prepare.outputs.release == 'true'
-    uses: ./.github/workflows/linux-packages.yml
-    with:
-      release: true
-      tag: ${{ needs.prepare.outputs.tag }}
-
-  preview:
-    name: Assemble release (dry run, nothing published)
-    needs: [prepare, checks, build, linux]
-    if: needs.prepare.outputs.release == 'true' && inputs.dry_run
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      TAG: ${{ needs.prepare.outputs.tag }}
-      GIT_HEAD: ${{ needs.prepare.outputs.git_head }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.14.7'
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: release-manifests
-          path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: oxplay-*
-          path: release-assets
-          merge-multiple: true
-      - name: Local release commit (production)
-        id: commit
-        if: inputs.channel == 'production'
-        run: python3 scripts/release.py commit-version
-      - name: Source archive of the tagged commit
-        env:
-          REVISION: ${{ steps.commit.outputs.commit || needs.prepare.outputs.git_head }}
-        run: |
-          python3 scripts/release_source.py --tag "$TAG" --revision "$REVISION" --output target/source-release
-          cp target/source-release/oxplay-*-source.tar.gz target/source-release/release.json release-assets/
-      - name: Checksums
-        working-directory: release-assets
-        run: sha256sum ./* > SHA256SUMS.txt
-      - name: Release notes
-        env:
-          MACOS_SIGNED: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
-        run: python3 scripts/release.py notes
-      - name: Summarize the release that would be published
-        run: |
-          {
-            echo "## Dry run: $RELEASE_CHANNEL $TAG (not published)"
-            echo
-            echo '```'
-            cat release-assets/SHA256SUMS.txt
-            echo '```'
-            echo
-            cat target/release-notes.md
-          } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: release-preview
-          path: |
-            release-assets/SHA256SUMS.txt
-            release-assets/release.json
-            release-assets/oxplay-*-source.tar.gz
-            target/release-notes.md
-            target/release-plan.json
-          if-no-files-found: error
-          retention-days: 14
-
-  publish:
-    needs: [prepare, checks, build, linux]
-    if: needs.prepare.outputs.release == 'true' && !inputs.dry_run
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: write
+    timeout-minutes: 45
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ needs.prepare.outputs.tag }}
-      GIT_HEAD: ${{ needs.prepare.outputs.git_head }}
+      PROMOTE_CHANNEL: ${{ inputs.channel }}
+      PROMOTE_DRY_RUN: ${{ inputs.dry_run }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Refuse unsupported dispatch inputs
+        run: |
+          test "$PROMOTE_CHANNEL" = production
+          test "$PROMOTE_DRY_RUN" = false
+      - name: Check out isolated promoter controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
+          path: controls
+          persist-credentials: false
+      - name: Check out exact validated application source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 360eda2b7dd871791742fdaf8302b3c26f29dc9b
+          path: source
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.14.7'
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Install archive readers (payloads are never executed or extracted)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libarchive-tools squashfs-tools zstd
+      - name: Test promoter refusal and verification contracts offline
+        run: python3 -m unittest discover -s controls/scripts -p test_promote_validated_release.py
+      - name: Validate completed build run, mandatory gates and current main
+        run: python3 controls/scripts/promote_validated_release.py validate --source source --evidence controls/target/promotion-evidence
+      - name: Download the exact existing binary artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: release-manifests
-          path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: '36839089100'
           pattern: oxplay-*
-          path: release-assets
           merge-multiple: true
-      - name: Commit versions and cask to main (production)
-        id: commit
-        if: inputs.channel == 'production'
-        run: |
-          python3 scripts/release.py commit-version
-          git fetch --no-tags origin main
-      - name: Source archive of the tagged commit
-        id: target
+          path: source/release-assets
+      - name: Download source run's assembled preview checksum evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: '36839089100'
+          name: release-preview
+          path: source/preview
+      - name: Verify payload, make standard release commit and publish exact assets
         env:
-          REVISION: ${{ steps.commit.outputs.commit || needs.prepare.outputs.git_head }}
-        run: |
-          python3 scripts/release_source.py --tag "$TAG" --revision "$REVISION" --output target/source-release
-          cp target/source-release/oxplay-*-source.tar.gz target/source-release/release.json release-assets/
-          echo "revision=$REVISION" >> "$GITHUB_OUTPUT"
-      - name: Checksums
-        working-directory: release-assets
-        run: sha256sum ./* > SHA256SUMS.txt
-      - name: Release notes
-        env:
-          MACOS_SIGNED: ${{ secrets.MACOS_CERTIFICATE_BASE64 != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' }}
-        run: python3 scripts/release.py notes
-      - name: Publish release with notes and assets
-        env:
-          REVISION: ${{ steps.target.outputs.revision }}
-        run: python3 scripts/release.py publish --target "$REVISION"
-
-  repositories:
-    needs: [prepare, publish]
-    if: needs.prepare.outputs.release == 'true' && !inputs.dry_run && needs.prepare.outputs.repositories == 'true'
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/package-repositories.yml
-    with:
-      tag: ${{ needs.prepare.outputs.tag }}
-      channel: ${{ inputs.channel }}
-      base_url: https://viceverse-cz.github.io/oxplay
-      deploy: true
-    secrets: inherit
+          MACOS_SIGNED: 'false'
+        run: python3 controls/scripts/promote_validated_release.py promote --source source --evidence controls/target/promotion-evidence
+      - name: Retain internal promotion verification and source metadata
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v0.1.0-promotion-verification-${{ github.run_id }}
+          path: controls/target/promotion-evidence/
+          if-no-files-found: warn
+          retention-days: 30
