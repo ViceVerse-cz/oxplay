@@ -330,6 +330,18 @@ def rpm_version(version: str) -> str:
     return version.replace("-", "~", 1).replace("-", ".")
 
 
+def rpm_private_requires_pattern(sonames: list[str]) -> str:
+    # RPM expands backslash escapes in macro values before compiling the POSIX
+    # regex. Bracket literals survive that expansion, including literal '(' in
+    # generated dependencies such as libmpv.so.2()(64bit).
+    names = []
+    for name in sonames:
+        if not re.fullmatch(r"[A-Za-z0-9_+.-]+", name):
+            raise ValueError(f"Unsafe private library SONAME: {name}")
+        names.append(name.replace(".", "[.]").replace("+", "[+]"))
+    return "^(" + "|".join(names) + ")([(].*)?$"
+
+
 def rpm_package(workdir: Path, stage: Path, version: str, distro: str) -> Path:
     package_version = rpm_version(version)
     release = "1.fc" + platform.freedesktop_os_release()["VERSION_ID"] if distro == "fedora" else "1.suse"
@@ -340,9 +352,9 @@ def rpm_package(workdir: Path, stage: Path, version: str, distro: str) -> Path:
     bundled = [path.name for path in elf_payload(stage) if ".so." in path.name]
     private_filters = ""
     if bundled:
-        names = "|".join(re.escape(name) for name in bundled)
+        pattern = rpm_private_requires_pattern(bundled)
         private_filters = ("%global __provides_exclude_from ^/usr/lib/oxplay/.*$\n"
-                           f"%global __requires_exclude ^({names})(\\(.*)?$\n")
+                           f"%global __requires_exclude {pattern}\n")
     requires = [f"{soname}()(64bit)" for soname in (
         "libEGL.so.1", "libxkbcommon.so.0", "libwayland-client.so.0", "libX11.so.6", "libXcursor.so.1",
         "libXi.so.6", "libXrandr.so.2", "libfontconfig.so.1", "libvulkan.so.1", "libva.so.2", "libdrm.so.2")]

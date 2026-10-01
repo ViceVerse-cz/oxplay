@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import sys
 import subprocess
@@ -17,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts/native-media"))
 import platform_build
 import windows as windows_builder
+sys.path.insert(0, str(ROOT / "packaging/appimage"))
+import build as appimage_builder
 
 
 class NativeReleaseContracts(unittest.TestCase):
@@ -140,6 +143,50 @@ class NativeReleaseContracts(unittest.TestCase):
         subprocess.run(["git", "-c", "core.autocrlf=true", "checkout-index", "-a",
                         "--prefix=" + str(negative) + os.sep], cwd=repo, check=True)
         self.assertIn(b"\r\n", (negative / relative).read_bytes())
+
+    def test_portable_source_collection_follows_actual_bundled_closure(self):
+        appdir, prefix, system = [self.root / name for name in ("appdir", "prefix", "system")]
+        executable = appdir / "usr/lib/oxplay/oxplay"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"ELF")
+        prefix.mkdir()
+        (prefix / "native-media-provenance.json").write_text("{}")
+        system.mkdir()
+        libraries = {"libmpv.so.2": str(prefix / "libmpv.so.2"),
+                     "libass.so.9": str(system / "libass.so.9"),
+                     "libsystemd.so.0": str(system / "libsystemd.so.0"),
+                     "libapparmor.so.1": str(system / "libapparmor.so.1")}
+        for path in libraries.values():
+            Path(path).write_bytes(b"ELF")
+
+        def fake_ldd(path, library_path):
+            if path == executable:
+                if library_path:
+                    return libraries
+                return {name: str(appdir / "usr/lib" / name) if name in ("libmpv.so.2", "libass.so.9")
+                        else original for name, original in libraries.items()}
+            self.assertEqual(path.name, "libsystemd.so.0")
+            return {"libapparmor.so.1": libraries["libapparmor.so.1"]}
+
+        with patch.object(appimage_builder, "ldd", side_effect=fake_ldd), patch.object(
+                appimage_builder.package, "checked"), patch.object(
+                appimage_builder, "collect_distribution_sources") as collect:
+            bundled = appimage_builder.bundle_libraries(appdir, prefix)
+        self.assertEqual(set(bundled), {"libmpv.so.2", "libass.so.9"})
+        collect.assert_called_once_with(appdir, prefix,
+                                        {name: libraries[name] for name in bundled})
+        self.assertFalse((appdir / "usr/lib/libapparmor.so.1").exists())
+
+    def test_rpm_filter_matches_only_bundled_soname_dependencies(self):
+        pattern = linux.rpm_private_requires_pattern(["libmpv.so.2", "libplacebo.so.360", "libavcodec.so.63"])
+        # No backslash can be consumed by RPM's macro expansion stage.
+        self.assertNotIn("\\", pattern)
+        for dependency in ("libmpv.so.2()(64bit)", "libavcodec.so.63(LIBAVCODEC_63)(64bit)",
+                           "libplacebo.so.360", "libplacebo.so.360()(64bit)"):
+            self.assertRegex(dependency, pattern)
+        for dependency in ("libmpvXsoX2()(64bit)", "libmpv.so.20()(64bit)",
+                           "libvulkan.so.1()(64bit)", "libass.so.9()(64bit)"):
+            self.assertIsNone(re.match(pattern, dependency))
 
     def test_msys_source_mirror_preserves_version_epochs(self):
         self.assertEqual(windows_builder.source_recipe_url("mingw-w64-spirv-cross", "1:1.4.357.0-1"),

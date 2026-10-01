@@ -117,8 +117,6 @@ def bundle_libraries(appdir: Path, mpv_prefix: Path) -> list[str]:
     missing = [name for name, path in libraries.items() if path is None]
     if missing or "libmpv.so.2" not in libraries:
         raise ValueError(f"Unresolved build-host libraries: {', '.join(missing) or 'libmpv.so.2'}")
-    if (mpv_prefix / "native-media-provenance.json").is_file():
-        collect_distribution_sources(appdir, mpv_prefix, libraries)
     # A library that a host-provided library also needs (libffi for libwayland,
     # for example) must come from the host too: the loader shares one copy per soname.
     host = {name for name in libraries if EXCLUDED.match(name)}
@@ -133,6 +131,11 @@ def bundle_libraries(appdir: Path, mpv_prefix: Path) -> list[str]:
         destination.chmod(0o644)
         package.checked("patchelf", "--set-rpath", "$ORIGIN", destination)
         bundled.append(name)
+    if (mpv_prefix / "native-media-provenance.json").is_file():
+        # Collect corresponding sources only for the exact copied closure.
+        # Transitive host dependencies (e.g. systemd's libapparmor) are neither
+        # shipped nor ours to collect, even when absent from EXCLUDED directly.
+        collect_distribution_sources(appdir, mpv_prefix, {name: libraries[name] for name in bundled})
     package.checked("patchelf", "--set-rpath", "$ORIGIN/..", executable)
     # Re-resolve without the build prefix: bundled names must load from usr/lib.
     for name, path in ldd(executable, None).items():
