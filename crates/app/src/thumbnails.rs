@@ -126,6 +126,34 @@ struct Batch {
     requests: Vec<Request>,
 }
 #[derive(Default)]
+struct BatchAdmission {
+    purging: Option<u64>,
+    deferred: Option<Batch>,
+}
+impl BatchAdmission {
+    fn begin_purge(&mut self, id: u64) {
+        self.purging = Some(id);
+        self.deferred = None;
+    }
+    fn receive(&mut self, batch: Option<Batch>) -> Option<Batch> {
+        if self.purging.is_some() {
+            // EndPurge and the watch update use different channels. Even a
+            // biased select can observe the fresh batch before its EndPurge.
+            self.deferred = batch;
+            None
+        } else {
+            batch
+        }
+    }
+    fn end_purge(&mut self, id: u64) -> Option<Batch> {
+        if self.purging != Some(id) {
+            return None;
+        }
+        self.purging = None;
+        self.deferred.take()
+    }
+}
+#[derive(Default)]
 struct CompletionWake {
     generation: u64,
 }
@@ -228,7 +256,7 @@ impl Worker {
                 let mut jobs = tokio::task::JoinSet::new();
                 let mut pending: std::collections::VecDeque<(u64, Request)> = std::collections::VecDeque::new();
                 let mut completion_wake = CompletionWake::default();
-                let mut purging = None;
+                let mut admission = BatchAdmission::default();
                 let mut deferred_limit = None;
                 loop {
                     while jobs.len() < 4 {
@@ -275,7 +303,7 @@ impl Worker {
                             let Some(control) = control else { break };
                             match control {
                                 Control::Purge(id) => {
-                                    purging = Some(id);
+                                    admission.begin_purge(id);
                                     // UI blocks replace synchronously before the next event.
                                     // Drop only pre-barrier batches here, never post-End work.
                                     commands.borrow_and_update();
@@ -288,12 +316,21 @@ impl Worker {
                                     acks.lock().unwrap().purge = Some((id, result));
                                     wake.send();
                                 }
-                                Control::EndPurge(id) if purging == Some(id) => {
-                                    purging = None;
+                                Control::EndPurge(id) if admission.purging == Some(id) => {
+                                    // A newer preference may still be waiting on its
+                                    // watch channel when End wins the select.
+                                    if limit_rx.has_changed().unwrap_or(false) {
+                                        deferred_limit = *limit_rx.borrow_and_update();
+                                    }
                                     if let Some(limit) = deferred_limit.take() {
                                         let result = configure_cache(&cache, &cache_path, limit);
                                         acks.lock().unwrap().limit = Some((limit.mib(), result));
                                         wake.send();
+                                    }
+                                    if let Some(batch) = admission.end_purge(id) {
+                                        pending.extend(batch.requests.into_iter().take(40).map(|r| (batch.generation, r)));
+                                        metrics.pending.store(pending.len() as u64, Ordering::SeqCst);
+                                        metrics.admitted_generation.store(batch.generation, Ordering::SeqCst);
                                     }
                                 }
                                 Control::EndPurge(_) => {}
@@ -302,7 +339,7 @@ impl Worker {
                         changed = limit_rx.changed() => {
                             if changed.is_err() { break; }
                             let Some(limit) = *limit_rx.borrow_and_update() else { continue; };
-                            if purging.is_some() {
+                            if admission.purging.is_some() {
                                 deferred_limit = Some(limit);
                             } else {
                                 let result = configure_cache(&cache, &cache_path, limit);
@@ -319,7 +356,7 @@ impl Worker {
                             // Apply a coalesced preference before admitting any image jobs.
                             if limit_rx.has_changed().unwrap_or(false) {
                                 let Some(limit) = *limit_rx.borrow_and_update() else { continue; };
-                                if purging.is_some() {
+                                if admission.purging.is_some() {
                                     deferred_limit = Some(limit);
                                 } else {
                                     let result = configure_cache(&cache, &cache_path, limit);
@@ -327,7 +364,7 @@ impl Worker {
                                     wake.send();
                                 }
                             }
-                            if purging.is_none() && let Some(batch) = batch {
+                            if let Some(batch) = admission.receive(batch) {
                                 pending.extend(batch.requests.into_iter().take(40).map(|r| (batch.generation, r)));
                                 metrics.pending.store(pending.len() as u64, Ordering::SeqCst);
                                 metrics.admitted_generation.store(batch.generation, Ordering::SeqCst);
@@ -845,6 +882,39 @@ mod tests {
         assert_eq!(metrics.snapshot().cache_errors, 0);
         drop(cache);
         std::fs::remove_dir_all(path).unwrap();
+    }
+
+    #[test]
+    fn post_end_batch_survives_watch_update_before_control_receive() {
+        let batch = |generation, row| Batch {
+            generation,
+            requests: vec![Request {
+                row,
+                source: Source::CachedVideo(VideoId::new("aqz-KE-bpKQ").unwrap()),
+            }],
+        };
+        let mut admission = BatchAdmission::default();
+        assert_eq!(admission.receive(Some(batch(1, 2))).unwrap().generation, 1);
+        admission.begin_purge(7);
+        // The UI sent EndPurge then both replacements, but select polled the
+        // control channel before those sends and observed the watch update first.
+        assert!(admission.receive(Some(batch(2, 3))).is_none());
+        assert!(admission.receive(Some(batch(3, 4))).is_none());
+        assert!(admission.end_purge(6).is_none());
+        assert_eq!(admission.purging, Some(7));
+        let released = admission.end_purge(7).unwrap();
+        assert_eq!(released.generation, 3);
+        assert_eq!(released.requests.len(), 1);
+        assert_eq!(released.requests[0].row, 4);
+        assert!(admission.end_purge(7).is_none());
+
+        admission.begin_purge(8);
+        assert!(admission.receive(Some(batch(4, 5))).is_none());
+        admission.begin_purge(9); // A new barrier cancels older deferred work.
+        assert!(admission.end_purge(8).is_none());
+        assert_eq!(admission.purging, Some(9));
+        assert!(admission.end_purge(9).is_none());
+        assert_eq!(admission.receive(Some(batch(5, 6))).unwrap().generation, 5);
     }
 
     #[cfg(unix)]
