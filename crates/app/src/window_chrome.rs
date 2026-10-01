@@ -100,8 +100,15 @@ impl Controller {
                     && app.get_window_blur_enabled()
                     && !app.get_fullscreen_active()
                     && !app.get_picture_in_picture();
+                // macOS never calls Winit's set_blur: it blurs the whole square
+                // window rectangle outside AppKit's rounded corners. A frame-
+                // clipped AppKit material is reconciled on every call instead
+                // (writes only on mismatch), because PiP replaces the frame view.
+                #[cfg(target_os = "macos")]
+                macos::set_backdrop(window, requested);
                 let blur_state = (window.id(), requested);
                 if self.requested_blur.get() != Some(blur_state) {
+                    #[cfg(not(target_os = "macos"))]
                     window.set_blur(requested);
                     self.requested_blur.set(Some(blur_state));
                 }
@@ -165,27 +172,93 @@ pub fn bind(app: &App) -> Rc<Controller> {
 mod macos {
     use objc2::MainThreadMarker;
     use objc2_app_kit::{
-        NSView, NSWindow, NSWindowButton, NSWindowStyleMask, NSWindowTitleVisibility,
+        NSAutoresizingMaskOptions, NSView, NSVisualEffectBlendingMode, NSVisualEffectMaterial,
+        NSVisualEffectState, NSVisualEffectView, NSWindow, NSWindowButton, NSWindowOrderingMode,
+        NSWindowStyleMask, NSWindowTitleVisibility,
     };
     use slint::winit_030::winit::{
         raw_window_handle::{HasWindowHandle, RawWindowHandle},
         window::Window,
     };
 
-    pub(super) fn integrate(window: &Window, header_height: f64) -> bool {
-        let Some(_main_thread) = MainThreadMarker::new() else {
-            return false;
-        };
-        let Ok(handle) = window.window_handle() else {
-            return false;
-        };
+    /// Of the compared system materials this one let the most of the blurred
+    /// backdrop through; the shared canvas adds the application's own tint.
+    const MATERIAL: NSVisualEffectMaterial = NSVisualEffectMaterial::HUDWindow;
+
+    /// Borrows Winit's content view for one synchronous main-thread call.
+    fn with_content_view<R>(
+        window: &Window,
+        f: impl FnOnce(MainThreadMarker, &NSView) -> Option<R>,
+    ) -> Option<R> {
+        let main_thread = MainThreadMarker::new()?;
+        let handle = window.window_handle().ok()?;
         let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
-            return false;
+            return None;
         };
         // SAFETY: the borrowed AppKit raw window handle contains Winit's live
         // NSView. This synchronous UI-thread call keeps the owning Window alive;
         // no native pointer or reference is retained beyond this scope.
-        let view = unsafe { handle.ns_view.cast::<NSView>().as_ref() };
+        f(main_thread, unsafe {
+            handle.ns_view.cast::<NSView>().as_ref()
+        })
+    }
+
+    /// Shows or removes a behind-window material under Winit's content view.
+    ///
+    /// Winit's `set_blur` asks the window server for a background blur over
+    /// the whole square window rectangle, which leaks past the rounded frame
+    /// that AppKit clips the content to. A public `NSVisualEffectView` placed in
+    /// the frame view as the content view's sibling is clipped by that same
+    /// system corner shape and window shadow, follows resizes through its
+    /// autoresizing mask, and needs no private API. Idempotent: it writes only
+    /// when the current frame view does not already match the request.
+    pub(super) fn set_backdrop(window: &Window, enabled: bool) {
+        with_content_view(window, |main_thread, content| {
+            // SAFETY: synchronous main-thread access to live AppKit views.
+            let frame = unsafe { content.superview() }?;
+            // Only a direct frame-view sibling with exactly this configuration
+            // is ours; AppKit's own effect views are never touched.
+            let existing = frame.subviews().iter().find_map(|view| {
+                view.downcast::<NSVisualEffectView>().ok().filter(|view| {
+                    view.blendingMode() == NSVisualEffectBlendingMode::BehindWindow
+                        && view.material() == MATERIAL
+                        && view.state() == NSVisualEffectState::Active
+                })
+            });
+            match (existing, enabled) {
+                (Some(_), true) | (None, false) => return Some(()),
+                (Some(existing), false) => existing.removeFromSuperview(),
+                (None, true) => {
+                    let backdrop =
+                        NSVisualEffectView::initWithFrame(main_thread.alloc(), content.frame());
+                    backdrop.setMaterial(MATERIAL);
+                    backdrop.setBlendingMode(NSVisualEffectBlendingMode::BehindWindow);
+                    // Match Winit's previous blur, which did not fade when the
+                    // window became inactive.
+                    backdrop.setState(NSVisualEffectState::Active);
+                    backdrop.setAutoresizingMask(
+                        NSAutoresizingMaskOptions::ViewWidthSizable
+                            | NSAutoresizingMaskOptions::ViewHeightSizable,
+                    );
+                    frame.addSubview_positioned_relativeTo(
+                        &backdrop,
+                        NSWindowOrderingMode::Below,
+                        Some(content),
+                    );
+                }
+            }
+            // Non-opaque windows derive their shadow from drawn alpha.
+            content.window()?.invalidateShadow();
+            Some(())
+        });
+    }
+
+    pub(super) fn integrate(window: &Window, header_height: f64) -> bool {
+        with_content_view(window, |_, view| Some(integrate_view(view, header_height)))
+            .unwrap_or(false)
+    }
+
+    fn integrate_view(view: &NSView, header_height: f64) -> bool {
         let Some(native) = view.window() else {
             return false;
         };

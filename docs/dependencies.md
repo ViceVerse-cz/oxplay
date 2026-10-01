@@ -343,8 +343,37 @@ qualification. See [window appearance](window-appearance.md).
 Slint's exact revision, Rust toolchain and Cargo.lock are unchanged. macOS-only
 objc2-app-kit 0.3.2 now additionally enables `NSButton,NSControl` to access the real
 standard traffic lights; no new crate/version or native UI framework is added.
+The rounded-corner blur fix additionally enables `NSVisualEffectView,NSGraphics`
+so macOS uses a public AppKit material instead of Winit's private CGS blur; the
+lockfile is unchanged.
 The refreshed comments action uses unchanged official Lucide `refresh-cw.svg`
 from revision `66d8f9fc394b8530377e5f6112f0b8908ba01280`; its hash/source are added
 alongside the existing ISC/MIT notices. Shared English count/calendar formatting
 adds no runtime dependency. See [comments](comments.md), [portraits](channel-avatars.md),
 [history](local-library-ui.md) and [native header](window-appearance.md).
+
+## Video-card clipboard (2026-10-01)
+
+The card context menu writes text and thumbnail pixels to the system clipboard
+through a direct application dependency on `arboard = "=3.6.1"`, default features
+off, `image-data` on. arboard 3.6.1 was already locked through Slint's Winit
+backend (which uses it for text with default features off); the exact version is
+unchanged. `image-data` unifies onto that one package and adds: on macOS,
+`objc2-core-graphics`/`objc2-core-foundation` edges (already locked) and image's
+`tiff` codec; on Linux the `png` codec; on Windows `png`/`bmp`. The deliberate
+lock update added only `tiff 0.11.3` and `fax 0.2.7` (both from the local
+registry cache) plus these edges; no existing package version, Slint revision or
+renderer feature moved. An offline unfiltered `cargo metadata` still stops at the
+uncached Windows-only `ipconfig`, as recorded above. See
+[sharing](sharing.md#video-card-menu) for behavior and limits.
+
+## Downloads manifest (2026-10-01)
+
+The application crate now depends directly on `serde` (derive) and `serde_json`
+for the [downloads](downloads.md) manifest. Both were already locked through
+`oxplay-storage`/`oxplay-youtube`; the lock update adds only these two edges to
+the `oxplay` package, with no new package or version. The Lucide `download.svg`
+icon is copied unchanged from the pinned revision (see `crates/app/ui/icons/SOURCE.md`).
+FFmpeg is not bundled or added as a dependency: downloads use an existing
+executable only from the explicit helper location, and otherwise fall back to a
+single progressive file.

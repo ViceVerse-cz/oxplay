@@ -50,11 +50,26 @@ The mini-player shows a **Close player** button (top-right, visible with the
 controls or while paused). It stops the single media load and retires
 watch-scoped captions, chapters, comments, share and metadata state; browsing
 and its catalog are untouched, and account playback uses the existing account
-teardown. A user play/pause (video click, play button, Space/K) briefly shows
-the resulting action's icon in the centre, fading and growing out over 420 ms.
+teardown. A user play/pause (video click, play button, Space/K) shows
+the resulting action's icon in the centre: it appears within 90 ms, stays fully
+visible for 500 ms (a repeated toggle restarts the hold), then fades and grows
+out over another 500 ms.
 While started playback is stalled on the network (`Buffering`, not paused) a
 centre spinner appears; the loading overlay uses the same spinner. Both
 animations exist only for those states, so no redraw loop outlives them.
 Reduced-motion preferences are not yet observed. `close_player` is covered by a
 compiled-Slint test for visibility and dispatch; the stop sequence itself was
 not exercised natively because this capture session cannot present video.
+
+## Rounded player corners
+
+The video host is a 12 px rounded rectangle in the regular watch view and 10 px
+in the corner mini-player; theatre, fullscreen, picture-in-picture and the
+native-child diagnostic stay square. The host is one `clip: true` rectangle with
+a border radius, so the picture, its black backing and every overlay share the
+rounded shape; the bottom transport gradient is a sibling and rounds its own
+bottom corners with the same radius. FemtoVG cannot clip to a rounded rectangle
+with a scissor: a rounded clip renders the host into a cached offscreen layer
+and fills the rounded path with it, which costs one extra render and composite
+of the video area per video frame. The clip is therefore switched off (radius 0)
+wherever it is not shown. The extra GPU cost was not measured here.

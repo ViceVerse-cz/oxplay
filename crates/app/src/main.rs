@@ -8,6 +8,7 @@ mod ambient_ui;
 mod caption_cache;
 mod caption_files;
 mod caption_ui;
+mod card_menu;
 mod catalog;
 mod channel_avatar;
 mod chapters_ui;
@@ -21,6 +22,8 @@ mod comments_ui;
 mod controls_ui;
 mod decode_warning;
 mod display_format;
+mod downloads;
+mod downloads_ui;
 mod feed_focus;
 mod fixture_quiescence;
 mod focus_intent;
@@ -106,6 +109,8 @@ struct UiState {
     progress: Timer,
     controls_ui: controls_ui::State,
     share_ui: share_ui::State,
+    card_menu: card_menu::State,
+    downloads: downloads_ui::State,
     jump_ui: jump_ui::State,
     local_media: local_media_ui::State,
     clock_ui: clock_ui::State,
@@ -565,6 +570,7 @@ fn video_row(video: &oxplay_core::VideoSummary) -> VideoRow {
         id: video.id.as_str().into(),
         duration: video.duration.map(clock_text).unwrap_or_default().into(),
         meta: video.metadata.clone().unwrap_or_default().into(),
+        channel_known: video.channel_id.is_some(),
         ..VideoRow::default()
     }
 }
@@ -881,6 +887,10 @@ fn bind_browsing(app: &App, state: &Rc<UiState>) {
             // Browser sign-in choices are detected only when the account page opens.
             account_ui::refresh_browsers(&app, &s);
         }
+        if page == 5 {
+            // The downloads manifest is read only when its page first opens.
+            downloads_ui::open(&app, &s);
+        }
         s.worker.borrow_mut().cancel();
         app.set_busy(false);
         if s.native_child.enabled && page != 2 {
@@ -1077,6 +1087,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .parent()
         .ok_or("invalid application data directory")?
         .join("sessions");
+    let downloads_directory = library_path
+        .parent()
+        .ok_or("invalid application data directory")?
+        .join("downloads");
     // The fresh private root is already admitted. Only this exact copied MP4,
     // never the original path reopened after hashing, reaches the diagnostic.
     // Declared before App/Player so normal and error paths release media first.
@@ -1184,6 +1198,25 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let channel_avatar = channel_avatar::State::new(app.as_weak(), resolver.clone());
     let watch_meta = watch_meta::State::new(app.as_weak(), resolver.clone());
     let comments_ui = comments_ui::State::new(app.as_weak(), resolver.clone());
+    // Explicit downloads: an idle coordinator thread only; the downloads
+    // directory and manifest are touched when the user opens Downloads or
+    // starts a download. Unavailable in the native-child diagnostic.
+    let downloads = if options.native_video_child {
+        None
+    } else {
+        let weak = app.as_weak();
+        downloads::Manager::new(
+            downloads::Config {
+                dir: downloads_directory,
+                resolver: resolver.clone(),
+                merger: Some(helpers.ffmpeg.clone()),
+            },
+            move || {
+                let _ = weak.upgrade_in_event_loop(|app| app.global::<DownloadsUi>().invoke_wake());
+            },
+        )
+        .ok()
+    };
     let account_ui =
         account_ui::State::new(app.as_weak(), account_directory, resolver, restore_account);
     let state = Rc::new(UiState {
@@ -1212,6 +1245,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         controls_ui: controls_ui::State::default(),
         chapters_ui: chapters_ui::State::default(),
         share_ui: share_ui::State::default(),
+        card_menu: card_menu::State::default(),
+        downloads: downloads_ui::State::new(downloads),
         jump_ui: jump_ui::State::default(),
         local_media: local_media_ui::State::new(app.as_weak())?,
         clock_ui: clock_ui::State::new(options.stage_progress),
@@ -1425,6 +1460,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     });
     controls_ui::connect(&app, &state);
     share_ui::connect(&app, &state);
+    card_menu::connect(&app, &state);
+    downloads_ui::bind(&app, &state);
     jump_ui::connect(&app, &state);
     local_media_ui::bind(&app, &state);
     chapters_ui::bind(&app, &state);
@@ -2439,6 +2476,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     state.account_ui.stop_picker();
     state.library_ui.stop_picker();
     state.local_media.stop_picker();
+    // Cancel running download helpers and remove their partial files.
+    state.downloads.shutdown();
     state.progress.stop();
     state.clock_ui.invalidate();
     native_child::hide(&state);

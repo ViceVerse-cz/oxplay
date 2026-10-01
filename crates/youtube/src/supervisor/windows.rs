@@ -8,14 +8,14 @@
 //! the last job handle) all terminate the complete process tree. This matches
 //! the Unix process-group supervisor: bounded capture, a finite deadline and
 //! cooperative cancellation checked at least every 20 ms.
-use super::Output;
+use super::{LineSplitter, Output, StreamLimits, Streamed};
 use oxplay_core::{OperationContext, ProviderError};
 use std::{
     ffi::OsString,
     io::{ErrorKind, Read},
     os::windows::{fs::MetadataExt, io::AsRawHandle, process::CommandExt},
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
+    process::{Child, ChildStderr, ChildStdout, Command, Stdio},
     time::{Duration, Instant},
 };
 use windows_sys::Win32::{
@@ -176,10 +176,9 @@ enum Drain {
 
 /// Read only bytes already buffered in the pipe, so no read can block and
 /// starve deadline/cancellation checks. A finite batch bounds each call.
-fn drain(
+fn read_batch(
     reader: &mut (impl Read + AsRawHandle),
-    output: &mut Vec<u8>,
-    limit: usize,
+    sink: &mut dyn FnMut(&[u8]) -> Result<(), ProviderError>,
 ) -> Result<Drain, ProviderError> {
     let mut buffer = [0u8; 8192];
     let mut progressed = false;
@@ -212,11 +211,8 @@ fn drain(
         match reader.read(&mut buffer[..wanted]) {
             Ok(0) => return Ok(Drain::Closed),
             Ok(n) => {
-                if output.len() + n > limit {
-                    return Err(ProviderError::OutputTooLarge);
-                }
-                output.extend_from_slice(&buffer[..n]);
                 progressed = true;
+                sink(&buffer[..n])?;
             }
             Err(e) if e.kind() == ErrorKind::Interrupted => continue,
             Err(e) if e.kind() == ErrorKind::BrokenPipe => return Ok(Drain::Closed),
@@ -224,6 +220,32 @@ fn drain(
         }
     }
     Ok(Drain::Open { progressed })
+}
+
+/// Drain one pipe unless it already closed. Returns whether bytes arrived.
+fn pump(
+    done: &mut bool,
+    reader: &mut (impl Read + AsRawHandle),
+    sink: &mut dyn FnMut(&[u8]) -> Result<(), ProviderError>,
+) -> Result<bool, ProviderError> {
+    if *done {
+        return Ok(false);
+    }
+    Ok(match read_batch(reader, sink)? {
+        Drain::Closed => {
+            *done = true;
+            false
+        }
+        Drain::Open { progressed } => progressed,
+    })
+}
+
+/// Anonymous pipes have no readiness wait; poll only while an operation owns
+/// live helper work, never while the app is idle.
+fn idle_wait(progressed: bool) {
+    if !progressed {
+        std::thread::sleep(Duration::from_millis(10));
+    }
 }
 
 /// The Windows directory: always present, never the caller's working directory.
@@ -234,19 +256,12 @@ fn system_root() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(r"C:\Windows"))
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn run_guarded(
+/// Spawn one isolated helper suspended, place it in a fresh kill-on-close job
+/// and only then resume it. Every early return tears the job down.
+fn spawn(
     binary: &Path,
     args: &[String],
-    operation: &OperationContext,
-    timeout: Duration,
-    stdout_limit: usize,
-    stderr_limit: usize,
-    cancelled: &dyn Fn() -> bool,
-) -> Result<Output, ProviderError> {
-    if operation.cancel.is_cancelled() || cancelled() {
-        return Err(ProviderError::Cancelled);
-    }
+) -> Result<(OwnedProcess, ChildStdout, ChildStderr), ProviderError> {
     let root = system_root();
     let mut path = OsString::from(root.join("System32"));
     path.push(";");
@@ -294,16 +309,45 @@ pub(crate) fn run_guarded(
     if !resume_suspended(process.child.id()) {
         return Err(ProviderError::ExtractorFailed);
     }
-    let mut stdout = process
+    let stdout = process
         .child
         .stdout
         .take()
         .ok_or(ProviderError::ExtractorFailed)?;
-    let mut stderr = process
+    let stderr = process
         .child
         .stderr
         .take()
         .ok_or(ProviderError::ExtractorFailed)?;
+    Ok((process, stdout, stderr))
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn run_guarded(
+    binary: &Path,
+    args: &[String],
+    operation: &OperationContext,
+    timeout: Duration,
+    stdout_limit: usize,
+    stderr_limit: usize,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<Output, ProviderError> {
+    fn bounded(
+        output: &mut Vec<u8>,
+        limit: usize,
+    ) -> impl FnMut(&[u8]) -> Result<(), ProviderError> + '_ {
+        move |bytes| {
+            if output.len() + bytes.len() > limit {
+                return Err(ProviderError::OutputTooLarge);
+            }
+            output.extend_from_slice(bytes);
+            Ok(())
+        }
+    }
+    if operation.cancel.is_cancelled() || cancelled() {
+        return Err(ProviderError::Cancelled);
+    }
+    let (mut process, mut stdout, mut stderr) = spawn(binary, args)?;
     let deadline = Instant::now() + timeout;
     let mut output = Output {
         success: false,
@@ -319,19 +363,16 @@ pub(crate) fn run_guarded(
         if Instant::now() >= deadline {
             return Err(ProviderError::Timeout);
         }
-        let mut progressed = false;
-        if !out_done {
-            match drain(&mut stdout, &mut output.stdout, stdout_limit)? {
-                Drain::Closed => out_done = true,
-                Drain::Open { progressed: read } => progressed |= read,
-            }
-        }
-        if !err_done {
-            match drain(&mut stderr, &mut output.stderr, stderr_limit)? {
-                Drain::Closed => err_done = true,
-                Drain::Open { progressed: read } => progressed |= read,
-            }
-        }
+        let mut progressed = pump(
+            &mut out_done,
+            &mut stdout,
+            &mut bounded(&mut output.stdout, stdout_limit),
+        )?;
+        progressed |= pump(
+            &mut err_done,
+            &mut stderr,
+            &mut bounded(&mut output.stderr, stderr_limit),
+        )?;
         if status.is_none() {
             status = process
                 .child
@@ -345,11 +386,77 @@ pub(crate) fn run_guarded(
             output.success = exit.success();
             return Ok(output);
         }
-        // Anonymous pipes have no readiness wait; poll only while this
-        // operation owns live helper work, never while the app is idle.
-        if !progressed {
-            std::thread::sleep(Duration::from_millis(10));
+        idle_wait(progressed);
+    }
+}
+
+/// Windows twin of the Unix `run_streaming`: each complete stdout line goes
+/// to `on_line` as it arrives; only one partial line and the stderr tail are
+/// retained. Cancellation, the idle and overall deadlines, an overlong line
+/// and every early return terminate the whole job.
+pub(crate) fn run_streaming(
+    binary: &Path,
+    args: &[String],
+    operation: &OperationContext,
+    limits: StreamLimits,
+    cancelled: &dyn Fn() -> bool,
+    on_line: &mut dyn FnMut(&str),
+) -> Result<Streamed, ProviderError> {
+    if operation.cancel.is_cancelled() || cancelled() {
+        return Err(ProviderError::Cancelled);
+    }
+    let (mut process, mut stdout, mut stderr) = spawn(binary, args)?;
+    let started = Instant::now();
+    let mut last_activity = started;
+    let mut lines = LineSplitter {
+        partial: Vec::new(),
+        limit: limits.line,
+    };
+    let mut tail = Vec::new();
+    let (mut out_done, mut err_done) = (false, false);
+    let mut status = None;
+    loop {
+        if operation.cancel.is_cancelled() || cancelled() {
+            return Err(ProviderError::Cancelled);
         }
+        let now = Instant::now();
+        if now.duration_since(started) >= limits.overall
+            || now.duration_since(last_activity) >= limits.idle
+        {
+            return Err(ProviderError::Timeout);
+        }
+        let mut progressed = pump(&mut out_done, &mut stdout, &mut |bytes| {
+            lines.push(bytes, on_line)
+        })?;
+        progressed |= pump(&mut err_done, &mut stderr, &mut |bytes| {
+            tail.extend_from_slice(bytes);
+            if tail.len() > limits.stderr_tail {
+                tail.drain(..tail.len() - limits.stderr_tail);
+            }
+            Ok(())
+        })?;
+        if progressed {
+            last_activity = Instant::now();
+        }
+        if status.is_none() {
+            status = process
+                .child
+                .try_wait()
+                .map_err(|_| ProviderError::ExtractorFailed)?;
+        }
+        if let Some(exit) = status
+            && out_done
+            && err_done
+        {
+            if !lines.partial.is_empty() {
+                on_line(&String::from_utf8_lossy(&lines.partial));
+            }
+            return Ok(Streamed {
+                success: exit.success(),
+                stderr: tail,
+            });
+        }
+        idle_wait(progressed);
     }
 }
 
@@ -549,5 +656,138 @@ mod tests {
             ),
             Err(ProviderError::HelperUnavailable)
         ));
+    }
+
+    fn limits(idle: Duration, line: usize) -> StreamLimits {
+        StreamLimits {
+            overall: Duration::from_secs(20),
+            idle,
+            line,
+            stderr_tail: 8,
+        }
+    }
+    impl Script {
+        fn stream(
+            &self,
+            context: &OperationContext,
+            limits: StreamLimits,
+            lines: &mut Vec<String>,
+        ) -> Result<Streamed, ProviderError> {
+            run_streaming(
+                &self.helper(),
+                &[],
+                context,
+                limits,
+                &|| false,
+                &mut |line| lines.push(line.to_owned()),
+            )
+        }
+    }
+
+    #[test]
+    fn streaming_delivers_lines_as_they_arrive_and_keeps_only_a_stderr_tail() {
+        let script = Script::new(
+            "stream-lines",
+            "@echo off\r\necho one\r\necho two\r\n1>&2 <nul set /p =early-diagnostic-late\r\n<nul set /p =last\r\nexit /b 0\r\n",
+        );
+        let mut lines = Vec::new();
+        let result = script
+            .stream(&op(), limits(Duration::from_secs(10), 64), &mut lines)
+            .unwrap();
+        assert!(result.success);
+        assert_eq!(lines, ["one", "two", "last"]);
+        assert_eq!(result.stderr, b"tic-late");
+        // Total output far above any per-line bound is fine when lines are short.
+        let many = Script::new(
+            "stream-many",
+            "@echo off\r\nfor /L %%i in (1,1,2000) do echo 0123456789\r\nexit /b 3\r\n",
+        );
+        let mut lines = Vec::new();
+        let result = many
+            .stream(&op(), limits(Duration::from_secs(10), 16), &mut lines)
+            .unwrap();
+        assert!(!result.success);
+        assert_eq!(lines.len(), 2000);
+        assert!(lines.iter().all(|line| line == "0123456789"));
+    }
+
+    #[test]
+    fn streaming_rejects_an_unbounded_line_and_stops_a_silent_helper() {
+        let unbounded = Script::new(
+            "stream-unbounded",
+            "@echo off\r\n:loop\r\n<nul set /p =1234567890\r\ngoto loop\r\n",
+        );
+        let mut lines = Vec::new();
+        assert!(matches!(
+            unbounded.stream(&op(), limits(Duration::from_secs(10), 100), &mut lines),
+            Err(ProviderError::OutputTooLarge)
+        ));
+        let silent = Script::new(
+            "stream-silent",
+            "@echo off\r\necho started\r\nping -n 30 127.0.0.1 >nul\r\n",
+        );
+        let started = Instant::now();
+        assert!(matches!(
+            silent.stream(&op(), limits(Duration::from_secs(1), 100), &mut lines),
+            Err(ProviderError::Timeout)
+        ));
+        assert!(started.elapsed() < Duration::from_secs(6));
+        assert_eq!(lines, ["started"]);
+    }
+
+    #[test]
+    fn streaming_overall_deadline_and_guard_stop_the_job() {
+        let chatty = Script::new(
+            "stream-chatty",
+            "@echo off\r\n:loop\r\necho tick\r\nping -n 2 127.0.0.1 >nul\r\ngoto loop\r\n",
+        );
+        let mut lines = Vec::new();
+        let started = Instant::now();
+        let overall = StreamLimits {
+            overall: Duration::from_millis(1500),
+            ..limits(Duration::from_secs(10), 100)
+        };
+        assert!(matches!(
+            chatty.stream(&op(), overall, &mut lines),
+            Err(ProviderError::Timeout)
+        ));
+        assert!(started.elapsed() < Duration::from_secs(6));
+        assert!(!lines.is_empty());
+        let generation = std::sync::atomic::AtomicBool::new(false);
+        let result = run_streaming(
+            &chatty.helper(),
+            &[],
+            &op(),
+            limits(Duration::from_secs(10), 100),
+            &|| generation.load(std::sync::atomic::Ordering::Acquire),
+            &mut |_| generation.store(true, std::sync::atomic::Ordering::Release),
+        );
+        assert!(matches!(result, Err(ProviderError::Cancelled)));
+    }
+
+    #[test]
+    fn streaming_cancellation_kills_the_helper_job() {
+        let script = Script::new(
+            "stream-cancel",
+            "@echo off\r\necho ready\r\nping -n 30 127.0.0.1 >nul\r\n",
+        );
+        let context = op();
+        let cancellation = context.cancel.clone();
+        let started = Instant::now();
+        let mut seen = 0;
+        let result = run_streaming(
+            &script.helper(),
+            &[],
+            &context,
+            limits(Duration::from_secs(10), 100),
+            &|| false,
+            &mut |_| {
+                seen += 1;
+                cancellation.cancel();
+            },
+        );
+        assert!(matches!(result, Err(ProviderError::Cancelled)));
+        assert_eq!(seen, 1);
+        assert!(started.elapsed() < Duration::from_secs(6));
     }
 }

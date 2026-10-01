@@ -13,6 +13,18 @@ import package_helpers
 
 
 class PackagingBoundaryTests(unittest.TestCase):
+    def test_bundle_versions_are_numeric_for_nightlies_and_ci_builds(self):
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(packaging.bundle_versions("0.1.0"), ("0.1.0", "0.1.0"))
+            self.assertEqual(packaging.bundle_versions("0.2.0-nightly.20261001.12"), ("0.2.0", "0.2.0"))
+        with patch.dict("os.environ", {"OXPLAY_BUNDLE_VERSION": "57.2"}):
+            self.assertEqual(packaging.bundle_versions("0.2.0-nightly.20261001.12"), ("0.2.0", "57.2"))
+        for version, build in (("0.2", ""), ("v0.2.0", ""), ("0.2.0", "57-2"), ("0.2.0", "1.2.3.4")):
+            with self.subTest(version=version, build=build), \
+                    patch.dict("os.environ", {"OXPLAY_BUNDLE_VERSION": build}), \
+                    self.assertRaises(packaging.PackagingError):
+                packaging.bundle_versions(version)
+
     def test_source_snapshot_includes_contract_and_standalone_baseline_only(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

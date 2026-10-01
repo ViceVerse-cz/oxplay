@@ -137,9 +137,10 @@ impl Options {
                                         "library" => 1,
                                         "settings" => 3,
                                         "account" => 4,
+                                        "downloads" => 5,
                                         _ => {
                                             return Err(
-                                                "--ui-page expects browse, library, settings or account",
+                                                "--ui-page expects browse, library, settings, account or downloads",
                                             );
                                         }
                                     })
@@ -741,7 +742,7 @@ pub const HELP: &str = "Oxplay experimental native client
   --paused          Start local playback paused
   --minimized       Minimized idle diagnostic
   --data-root DIR   Store local data under DIR/Oxplay (absolute path)
-  --ui-page PAGE    Diagnostic: browse/library/settings/account
+  --ui-page PAGE    Diagnostic: browse/library/settings/account/downloads
   --ui-theme THEME  Diagnostic: system/light/dark (not saved)
   --ui-size WxH     Diagnostic logical window size
   --snapshot PATH   One diagnostic PNG at 15 seconds (not for benchmarks)

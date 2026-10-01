@@ -747,10 +747,44 @@ impl PlaybackSpeed {
     }
 }
 
+/// How far the ambient-mode glow reaches beyond the video edge.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GlowSize {
+    Small,
+    #[default]
+    Medium,
+    Large,
+    ExtraLarge,
+}
+impl GlowSize {
+    pub const ALL: [Self; 4] = [Self::Small, Self::Medium, Self::Large, Self::ExtraLarge];
+    pub fn from_index(index: i32) -> Option<Self> {
+        usize::try_from(index)
+            .ok()
+            .and_then(|index| Self::ALL.get(index).copied())
+    }
+    pub fn index(self) -> i32 {
+        Self::ALL.iter().position(|size| *size == self).unwrap() as i32
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PlaybackPreferences {
     pub quality: QualityCeiling,
     pub speed: PlaybackSpeed,
+    /// Ambient-mode glow behind the watch-page video (dark theme only).
+    pub ambient_mode: bool,
+    pub glow_size: GlowSize,
+}
+impl Default for PlaybackPreferences {
+    fn default() -> Self {
+        Self {
+            quality: QualityCeiling::default(),
+            speed: PlaybackSpeed::default(),
+            ambient_mode: true,
+            glow_size: GlowSize::default(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -759,6 +793,18 @@ mod url_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn glow_size_indexes_roundtrip_and_default_is_one_step_above_small() {
+        for (index, size) in GlowSize::ALL.into_iter().enumerate() {
+            assert_eq!(size.index(), index as i32);
+            assert_eq!(GlowSize::from_index(index as i32), Some(size));
+        }
+        assert_eq!(GlowSize::from_index(-1), None);
+        assert_eq!(GlowSize::from_index(4), None);
+        let defaults = PlaybackPreferences::default();
+        assert_eq!(defaults.glow_size, GlowSize::Medium);
+        assert!(defaults.ambient_mode);
+    }
     #[test]
     fn playback_presets_roundtrip_and_reject_unsupported_values() {
         assert_eq!(PlaybackPreferences::default().quality.height(), 1080);

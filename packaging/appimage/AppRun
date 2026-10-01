@@ -1,0 +1,6 @@
+#!/bin/sh
+# Oxplay AppImage/tarball entry point. APPDIR is set by the AppImage runtime;
+# the portable tarball resolves its own directory instead.
+set -eu
+appdir=${APPDIR:-$(dirname -- "$(readlink -f -- "$0")")}
+exec "$appdir/usr/bin/oxplay" "$@"

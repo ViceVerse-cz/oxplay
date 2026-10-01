@@ -12,19 +12,25 @@ export component PlayerSettingsPanel inherits Rectangle {
     in property <bool> quality-busy;
     in property <bool> remote-video;
     in property <bool> subtitle-available;
-    // Session preference; the glow itself is drawn only in the dark theme.
+    // Saved preferences (Rust confirms them); the glow itself is drawn only in
+    // the dark theme. Sizes follow oxplay_core::GlowSize::ALL.
     in-out property <bool> ambient-mode: true;
+    in-out property <int> glow-size: 1;
     callback volume(float);
     callback speed(int);
     callback quality(int);
     callback subtitle();
+    callback ambient-mode-changed(bool);
+    callback glow-size-changed(int);
     callback close();
     private property <int> section;
     private property <[string]> speeds: ["0.5×", "Normal", "1.5×", "2×"];
     private property <[string]> qualities: ["Up to 2160p (4K)", "Up to 1440p", "Up to 1080p", "Up to 720p", "Up to 480p", "Up to 360p", "Up to 240p", "Up to 144p"];
+    private property <[string]> glow-sizes: ["Small", "Medium", "Large", "Extra large"];
+    private property <string> current-glow: root.glow-size >= 0 && root.glow-size < root.glow-sizes.length ? root.glow-sizes[root.glow-size] : "Unknown";
     private property <string> current-speed: root.speed-index >= 0 && root.speed-index < root.speeds.length ? root.speeds[root.speed-index] : "Unknown";
     private property <string> current-quality: root.quality-index >= 0 && root.quality-index < root.qualities.length ? root.qualities[root.quality-index] : "Unknown";
-    preferred-height: root.section == 2 ? 424px : root.section == 1 ? 256px : root.remote-video ? 344px : 384px;
+    preferred-height: root.section == 2 ? 424px : root.section == 1 || root.section == 3 ? 256px : root.remote-video ? 392px : 432px;
     background: Colors.dialog;
     border-width: 1px; border-color: Colors.border; border-radius: 16px;
     forward-focus: header-action;
@@ -40,7 +46,7 @@ export component PlayerSettingsPanel inherits Rectangle {
         header-action := Action {
             x: 8px; y: 8px; width: parent.width - 16px; height: 40px;
             icon-name: root.section == 0 ? "x" : "chevron-left";
-            label: root.section == 1 ? "Playback speed" : root.section == 2 ? "Video quality" : "Playback settings";
+            label: root.section == 1 ? "Playback speed" : root.section == 2 ? "Video quality" : root.section == 3 ? "Glow size" : "Playback settings";
             accessible-label: root.section == 0 ? "Close playback settings" : "Back to playback settings";
             clicked => { root.back(); }
         }
@@ -73,7 +79,7 @@ export component PlayerSettingsPanel inherits Rectangle {
                 x: 0px; y: 168px; width: parent.width; height: 44px;
                 label: "Ambient mode"; checkable: true; selected: root.ambient-mode;
                 accessible-label: Colors.dark ? "Ambient mode" : "Ambient mode (dark theme only)";
-                clicked => { root.ambient-mode = !root.ambient-mode; }
+                clicked => { root.ambient-mode = !root.ambient-mode; root.ambient-mode-changed(root.ambient-mode); }
                 if !Colors.dark: Text { x: parent.width - 176px; y: 0px; width: 112px; height: parent.height; text: "Dark theme only"; color: Colors.muted; font-size: 12px; horizontal-alignment: right; vertical-alignment: center; }
                 // Compact switch: track and knob follow the preference.
                 Rectangle {
@@ -87,13 +93,20 @@ export component PlayerSettingsPanel inherits Rectangle {
                     }
                 }
             }
+            Action {
+                x: 0px; y: 216px; width: parent.width; height: 44px;
+                label: "Glow size"; accessible-label: "Ambient glow size: " + root.current-glow;
+                enabled: root.ambient-mode;
+                clicked => { root.section = 3; header-action.focus(); }
+                Text { x: parent.width - 118px; y: 0px; width: 106px; height: parent.height; text: root.current-glow; color: Colors.muted; horizontal-alignment: right; vertical-alignment: center; opacity: root.ambient-mode ? 1 : 0.4; }
+            }
             if !root.remote-video: Action {
-                x: 0px; y: 216px; width: parent.width; height: 40px;
+                x: 0px; y: 264px; width: parent.width; height: 40px;
                 label: "Load subtitle file…"; icon-name: "captions"; enabled: root.subtitle-available;
                 clicked => { root.subtitle(); }
             }
             Text {
-                x: 12px; y: root.remote-video ? 224px : 260px; width: parent.width - 24px; height: 36px;
+                x: 12px; y: root.remote-video ? 272px : 308px; width: parent.width - 24px; height: 36px;
                 text: root.remote-video ? "Quality uses the best available stream within your selected limit." : "Quality selection applies to YouTube videos.";
                 color: Colors.muted; font-size: 12px; wrap: word-wrap;
             }
@@ -106,6 +119,16 @@ export component PlayerSettingsPanel inherits Rectangle {
                 selected: index == root.speed-index; enabled: !root.speed-busy;
                 accessible-label: "Playback speed " + item;
                 clicked => { root.speed(index); }
+            }
+        }
+        if root.section == 3: VerticalLayout {
+            x: 8px; y: 64px; width: parent.width - 16px; height: 176px;
+            spacing: 4px;
+            for item[index] in root.glow-sizes: Action {
+                height: 40px; label: item; selectable: true;
+                selected: index == root.glow-size;
+                accessible-label: "Glow size " + item;
+                clicked => { root.glow-size = index; root.glow-size-changed(index); }
             }
         }
         if root.section == 2: VerticalLayout {

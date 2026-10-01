@@ -991,6 +991,33 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
 }
 
+/// A card menu's explicit "Open channel" for a public video's known creator.
+/// Uses the same admission as selecting a channel card.
+pub(crate) fn open_channel(app: &App, s: &Rc<UiState>, id: oxplay_core::ChannelId) -> bool {
+    if app.get_native_video_child() || s.caption_cache.active() {
+        return false;
+    }
+    if app.get_busy() && !app.get_watch_loading() {
+        return false;
+    }
+    if !crate::playback_preferences::admit_search(app, s) {
+        return false;
+    }
+    load(
+        app,
+        s,
+        Location {
+            request: CatalogRequest::Channel {
+                id,
+                tab: ChannelTab::Videos,
+            },
+            cursor: None,
+        },
+        true,
+    );
+    true
+}
+
 fn select_item(app: &App, s: &Rc<UiState>, item: Option<CatalogItem>) {
     if app.get_busy() && !app.get_watch_loading() {
         return;

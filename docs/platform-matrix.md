@@ -7,8 +7,8 @@ PiP temporarily removes decorations. Theatre mode and watch/library/loading
 layouts remain shared Slint UI. At the user's explicit request, whole-window
 translucency and blur are requested by default, gated by backend capabilities
 and with session-local opt-out. The canvas/shared surfaces use neutral alpha;
-decoded video stays opaque. Blur is exposed only as an experimental macOS
-request through Winit's private CGS API, with no success/active-state getter;
+decoded video stays opaque. Blur is exposed only on macOS, as a public AppKit
+`NSVisualEffectView` clipped to the rounded system frame (no success getter);
 Windows/X11/native Wayland blur remains unavailable. These changes have no new
 native visual qualification. Historical capture attempts encountered native
 display-clock error `-6661`; older results below retain their exact source scope.

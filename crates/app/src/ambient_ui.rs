@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Ambient mode: a soft glow behind the watch-page video whose colours follow
 //! the picture. The presenter supplies a 16×9 colour summary at most 4 Hz; this
-//! module smooths it and renders a tiny 76×48 RGBA image that Slint scales up
-//! with bilinear filtering behind the video host. Colour updates piggyback on
+//! module smooths it and renders a tiny RGBA image (84×56 for the default
+//! glow size) that Slint scales up with bilinear filtering behind the video host. Colour updates piggyback on
 //! frames that already publish a new video image, so the glow adds no redraws
 //! of its own while playing and freezes (keeping its colours) while paused.
 use crate::{App, UiState};
+use oxplay_core::GlowSize;
 use oxplay_media::{AMBIENT_CELLS, AMBIENT_COLUMNS, AMBIENT_ROWS, AmbientSample, GlPresenter};
 use slint::{ComponentHandle, Rgba8Pixel, SharedPixelBuffer, Timer, TimerMode};
 use std::{
@@ -16,30 +17,45 @@ use std::{
 
 /// Texels per sample cell in the glow image.
 const SCALE: usize = 4;
-/// Glow texels beyond each video edge. app.slint positions the image with the
-/// same ratios: MARGIN / VIDEO_W of the width and MARGIN / VIDEO_H of the height.
-pub const MARGIN: usize = 6;
 pub const VIDEO_W: usize = AMBIENT_COLUMNS * SCALE; // 64
 pub const VIDEO_H: usize = AMBIENT_ROWS * SCALE; // 36
-pub const GLOW_W: usize = VIDEO_W + 2 * MARGIN; // 76
-pub const GLOW_H: usize = VIDEO_H + 2 * MARGIN; // 48
+/// Glow texels beyond each video edge. app.slint positions the image with the
+/// same ratios (`ambient-margin` is published together with the image):
+/// margin / VIDEO_W of the width and margin / VIDEO_H of the height. Small is
+/// the original glow; each step reaches about 4 texels (≈6% of the video width)
+/// further, so the image stays between 76×48 and 100×72 texels.
+pub const fn margin(size: GlowSize) -> usize {
+    match size {
+        GlowSize::Small => 6,
+        GlowSize::Medium => 10,
+        GlowSize::Large => 14,
+        GlowSize::ExtraLarge => 18,
+    }
+}
 /// Peak glow opacity next to the video edge.
 const MAX_ALPHA: f32 = 0.55;
-/// Gaussian spread, in glow texels (one sample cell is SCALE texels).
-const SIGMA: f32 = 4.5;
+/// Gaussian spread as a fraction of the margin (4.5 texels for the small glow;
+/// one sample cell is SCALE texels), so larger glows stay just as soft.
+const SIGMA_PER_MARGIN: f32 = 0.75;
 /// Mild saturation lift so the glow reads as colour rather than grey.
 const SATURATION: f32 = 1.3;
 /// Exponential approach toward the newest sample (≈95% after 0.9 s).
 const TIME_CONSTANT: f32 = 0.3;
 /// Largest step applied at once, so resuming after a pause still eases.
 const MAX_STEP: Duration = Duration::from_millis(100);
-/// Image regeneration cap (~24 Hz) even for high-frame-rate video.
-const MIN_IMAGE_INTERVAL: Duration = Duration::from_millis(40);
+/// Image regeneration cap (~15 Hz) even for high-frame-rate video. Each
+/// publish uploads a fresh texture; with the 0.3 s time constant and a
+/// pre-blurred image, finer steps are not visible.
+const MIN_IMAGE_INTERVAL: Duration = Duration::from_millis(66);
 /// Matches `animate opacity` on the glow in app.slint: a replaced video's
 /// colours fade out completely before the new video's colours fade in.
 const FADE: Duration = Duration::from_millis(600);
 /// Below this per-channel difference the transition is complete.
-const SETTLED: f32 = 0.5 / 255.;
+const SETTLED: f32 = 1. / 255.;
+/// Samples differing from the current target by less than this in every
+/// channel are sampling noise, not a scene change; ignoring them lets moving
+/// video settle instead of re-rendering the glow for the whole playback.
+const DEAD_BAND: f32 = 2. / 255.;
 
 pub type Grid = [[f32; 3]; AMBIENT_CELLS];
 
@@ -95,7 +111,7 @@ impl Smoother {
     pub fn retarget(&mut self, grid: Grid) {
         if !self.has_colours {
             self.snap(grid);
-        } else if grid != self.target {
+        } else if max_difference(&grid, &self.target) >= DEAD_BAND {
             self.target = grid;
             self.settled = false;
         }
@@ -122,21 +138,33 @@ impl Smoother {
     }
 }
 
+fn max_difference(a: &Grid, b: &Grid) -> f32 {
+    a.iter()
+        .flatten()
+        .zip(b.iter().flatten())
+        .fold(0., |max, (x, y)| max.max((x - y).abs()))
+}
+
 /// Precomputed separable Gaussian weights and edge falloff. Rendering a grid
 /// costs ~45k multiply-adds and allocates one 14.6 KB pixel buffer.
 pub struct GlowRenderer {
+    width: usize,
+    height: usize,
     wx: Vec<[f32; AMBIENT_COLUMNS]>,
     wy: Vec<[f32; AMBIENT_ROWS]>,
     alpha: Vec<u8>,
+    /// Horizontal-pass scratch, reused across renders.
+    rows: Vec<[f32; 3]>,
 }
-fn weights<const N: usize>(texels: usize) -> Vec<[f32; N]> {
+fn weights<const N: usize>(margin: usize, texels: usize) -> Vec<[f32; N]> {
+    let sigma = margin as f32 * SIGMA_PER_MARGIN;
     (0..texels)
         .map(|x| {
             let p = x as f32 + 0.5;
             let mut w = [0.; N];
             for (i, weight) in w.iter_mut().enumerate() {
-                let centre = MARGIN as f32 + (i as f32 + 0.5) * SCALE as f32;
-                *weight = (-0.5 * ((p - centre) / SIGMA).powi(2)).exp();
+                let centre = margin as f32 + (i as f32 + 0.5) * SCALE as f32;
+                *weight = (-0.5 * ((p - centre) / sigma).powi(2)).exp();
             }
             // Normalised kernel regression: outside the video the nearest
             // edge cells dominate, extending edge colours outward.
@@ -147,25 +175,18 @@ fn weights<const N: usize>(texels: usize) -> Vec<[f32; N]> {
 }
 /// Opacity at a texel centre: full over the video, easing to exactly zero at
 /// the outermost texels so the scaled image has no visible border.
-pub fn falloff(x: usize, y: usize) -> f32 {
+pub fn falloff(margin: usize, x: usize, y: usize) -> f32 {
     let distance = |p: usize, len: usize| {
         let p = p as f32 + 0.5;
-        (MARGIN as f32 - p).max(p - (MARGIN + len) as f32).max(0.)
+        (margin as f32 - p).max(p - (margin + len) as f32).max(0.)
     };
     let (dx, dy) = (distance(x, VIDEO_W), distance(y, VIDEO_H));
-    let t = ((dx * dx + dy * dy).sqrt() / (MARGIN as f32 - 0.5)).min(1.);
+    let t = ((dx * dx + dy * dy).sqrt() / (margin as f32 - 0.5)).min(1.);
     MAX_ALPHA * (1. - t) * (1. - t)
 }
 impl Default for GlowRenderer {
     fn default() -> Self {
-        let alpha = (0..GLOW_H)
-            .flat_map(|y| (0..GLOW_W).map(move |x| (falloff(x, y) * 255.).round() as u8))
-            .collect();
-        Self {
-            wx: weights(GLOW_W),
-            wy: weights(GLOW_H),
-            alpha,
-        }
+        Self::new(GlowSize::default())
     }
 }
 fn accumulate(sum: &mut [f32; 3], value: &[f32; 3], weight: f32) {
@@ -174,11 +195,30 @@ fn accumulate(sum: &mut [f32; 3], value: &[f32; 3], weight: f32) {
     }
 }
 impl GlowRenderer {
-    pub fn render(&self, grid: &Grid) -> SharedPixelBuffer<Rgba8Pixel> {
+    pub fn new(size: GlowSize) -> Self {
+        let margin = margin(size);
+        let (width, height) = (VIDEO_W + 2 * margin, VIDEO_H + 2 * margin);
+        let alpha = (0..height)
+            .flat_map(|y| (0..width).map(move |x| (falloff(margin, x, y) * 255.).round() as u8))
+            .collect();
+        Self {
+            width,
+            height,
+            wx: weights(margin, width),
+            wy: weights(margin, height),
+            alpha,
+            rows: vec![[0.; 3]; AMBIENT_ROWS * width],
+        }
+    }
+    pub fn render(&mut self, grid: &Grid) -> SharedPixelBuffer<Rgba8Pixel> {
+        let width = self.width;
         // Horizontal pass: sample rows -> glow columns.
-        let mut rows = vec![[0f32; 3]; AMBIENT_ROWS * GLOW_W];
-        let (lines, _) = rows.as_chunks_mut::<GLOW_W>();
-        for (out, cells) in lines.iter_mut().zip(grid.as_chunks::<AMBIENT_COLUMNS>().0) {
+        let rows = &mut self.rows;
+        rows.fill([0.; 3]);
+        for (out, cells) in rows
+            .chunks_exact_mut(width)
+            .zip(grid.as_chunks::<AMBIENT_COLUMNS>().0)
+        {
             for (value, w) in out.iter_mut().zip(&self.wx) {
                 for (cell, weight) in cells.iter().zip(w) {
                     accumulate(value, cell, *weight);
@@ -186,18 +226,17 @@ impl GlowRenderer {
             }
         }
         // Vertical pass into non-premultiplied RGBA8 with the baked falloff.
-        let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(GLOW_W as u32, GLOW_H as u32);
-        let pixels = buffer.make_mut_slice();
-        let (lines, _) = pixels.as_chunks_mut::<GLOW_W>();
-        for ((line, w), alpha) in lines
-            .iter_mut()
+        let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(width as u32, self.height as u32);
+        for ((line, w), alpha) in buffer
+            .make_mut_slice()
+            .chunks_exact_mut(width)
             .zip(&self.wy)
-            .zip(self.alpha.as_chunks::<GLOW_W>().0)
+            .zip(self.alpha.chunks_exact(width))
         {
             for (x, (pixel, a)) in line.iter_mut().zip(alpha).enumerate() {
                 let mut rgb = [0f32; 3];
                 for (row, weight) in w.iter().enumerate() {
-                    accumulate(&mut rgb, &rows[row * GLOW_W + x], *weight);
+                    accumulate(&mut rgb, &rows[row * width + x], *weight);
                 }
                 let [r, g, b] = rgb.map(|c| (c.clamp(0., 1.) * 255.).round() as u8);
                 *pixel = Rgba8Pixel::new(r, g, b, *a);
@@ -209,6 +248,7 @@ impl GlowRenderer {
 
 #[derive(Default)]
 struct Inner {
+    size: GlowSize,
     renderer: Option<GlowRenderer>,
     smoother: Smoother,
     load: u64,
@@ -228,10 +268,12 @@ pub struct State {
 
 impl Inner {
     fn publish(&mut self, app: &App) {
-        let renderer = self.renderer.get_or_insert_with(GlowRenderer::default);
+        let size = self.size;
+        let renderer = self.renderer.get_or_insert_with(|| GlowRenderer::new(size));
         app.set_ambient_image(slint::Image::from_rgba8(
             renderer.render(self.smoother.current()),
         ));
+        app.set_ambient_margin(margin(size) as i32);
     }
     /// Show held colours once any fade-out has finished. Returns the time
     /// still to wait, if any.
@@ -253,6 +295,21 @@ impl Inner {
             app.set_ambient_ready(true);
         }
         None
+    }
+}
+
+/// Apply the glow size preference. The image and its margin change together;
+/// a hidden glow is regenerated when its colours next appear.
+pub fn set_size(app: &App, state: &UiState, size: GlowSize) {
+    let mut inner = state.ambient_ui.inner.borrow_mut();
+    if inner.size == size {
+        return;
+    }
+    inner.size = size;
+    inner.renderer = None;
+    app.set_ambient_margin(margin(size) as i32);
+    if inner.shown {
+        inner.publish(app);
     }
 }
 
@@ -347,6 +404,21 @@ mod tests {
     }
 
     #[test]
+    fn sampling_noise_does_not_restart_a_settled_glow() {
+        let mut s = Smoother::default();
+        s.retarget(uniform([0.5; 3]));
+        assert!(s.settled());
+        // One step in one channel of one cell is below the dead band.
+        let mut noisy = uniform([0.5; 3]);
+        noisy[7][1] += 1. / 255.;
+        s.retarget(noisy);
+        assert!(s.settled() && !s.step(Duration::from_millis(50)));
+        // A real change still eases toward the new colours.
+        s.retarget(uniform([0.6; 3]));
+        assert!(!s.settled() && s.step(Duration::from_millis(50)));
+    }
+
+    #[test]
     fn summary_normalises_and_lifts_saturation_without_changing_greys() {
         let mut pixels = [[128, 128, 128, 255]; AMBIENT_CELLS];
         pixels[0] = [200, 100, 50, 255];
@@ -425,34 +497,56 @@ mod tests {
                 grid[row * AMBIENT_COLUMNS + column] = [1., 0., 0.];
             }
         }
-        let image = GlowRenderer::default().render(&grid);
-        assert_eq!(
-            (image.width(), image.height()),
-            (GLOW_W as u32, GLOW_H as u32)
-        );
-        let px = |x: usize, y: usize| image.as_slice()[y * GLOW_W + x];
-        let mid = GLOW_H / 2;
-        // Colours outside the video follow the nearest edge.
-        let left = px(MARGIN / 2, mid);
-        let right = px(GLOW_W - 1 - MARGIN / 2, mid);
-        assert!(left.r > 240 && left.b < 15, "{left:?}");
-        assert!(right.b > 240 && right.r < 15, "{right:?}");
-        // Opacity peaks at the video edge and reaches zero on every border.
-        assert_eq!(px(MARGIN, mid).a, (MAX_ALPHA * 255.).round() as u8);
-        assert!(px(MARGIN - 1, mid).a > px(MARGIN - 3, mid).a);
-        for x in 0..GLOW_W {
-            assert_eq!(px(x, 0).a, 0);
-            assert_eq!(px(x, GLOW_H - 1).a, 0);
+        for size in GlowSize::ALL {
+            let m = margin(size);
+            let (w, h) = (VIDEO_W + 2 * m, VIDEO_H + 2 * m);
+            let image = GlowRenderer::new(size).render(&grid);
+            assert_eq!((image.width(), image.height()), (w as u32, h as u32));
+            let px = |x: usize, y: usize| image.as_slice()[y * w + x];
+            let mid = h / 2;
+            // Colours outside the video follow the nearest edge.
+            let left = px(m / 2, mid);
+            let right = px(w - 1 - m / 2, mid);
+            assert!(left.r > 240 && left.b < 15, "{size:?} {left:?}");
+            assert!(right.b > 240 && right.r < 15, "{size:?} {right:?}");
+            // Opacity peaks at the video edge and reaches zero on every border.
+            assert_eq!(px(m, mid).a, (MAX_ALPHA * 255.).round() as u8);
+            assert!(px(m - 1, mid).a > px(m - 3, mid).a);
+            for x in 0..w {
+                assert_eq!(px(x, 0).a, 0);
+                assert_eq!(px(x, h - 1).a, 0);
+            }
+            for y in 0..h {
+                assert_eq!(px(0, y).a, 0);
+                assert_eq!(px(w - 1, y).a, 0);
+            }
+            // Corners fall off radially, so they are dimmer than the edge centre.
+            assert!(px(2, 2).a < px(2, mid).a);
+            // Symmetric geometry.
+            assert_eq!(falloff(m, 1, mid), falloff(m, w - 2, mid));
+            assert_eq!(falloff(m, w / 2, 1), falloff(m, w / 2, h - 2));
         }
-        for y in 0..GLOW_H {
-            assert_eq!(px(0, y).a, 0);
-            assert_eq!(px(GLOW_W - 1, y).a, 0);
-        }
-        // Corners fall off radially, so they are dimmer than the edge centre.
-        assert!(px(2, 2).a < px(2, mid).a);
-        // Symmetric geometry.
-        assert_eq!(falloff(1, mid), falloff(GLOW_W - 2, mid));
-        assert_eq!(falloff(GLOW_W / 2, 1), falloff(GLOW_W / 2, GLOW_H - 2));
+    }
+
+    #[test]
+    fn glow_grows_with_each_size_step_and_default_is_bigger_than_small() {
+        let margins = GlowSize::ALL.map(margin);
+        assert_eq!(margins[0], 6, "small keeps the original glow");
+        assert!(margins.windows(2).all(|pair| pair[0] < pair[1]));
+        assert!(margin(GlowSize::default()) > margin(GlowSize::Small));
+        assert_eq!(GlowSize::default(), GlowSize::Medium);
+        // The image stays tiny even for the largest glow.
+        let largest = margins[3];
+        assert!((VIDEO_W + 2 * largest) * (VIDEO_H + 2 * largest) < 8_000);
+        // A bigger glow reaches beyond the small one at the same distance.
+        let alpha_at = |size: GlowSize, from_video: usize| {
+            let m = margin(size);
+            let mid = (VIDEO_H + 2 * m) / 2;
+            let image = GlowRenderer::new(size).render(&uniform([1.; 3]));
+            image.as_slice()[mid * (VIDEO_W + 2 * m) + m - from_video].a
+        };
+        assert!(alpha_at(GlowSize::Large, 6) > 0);
+        assert!(alpha_at(GlowSize::Large, 6) > alpha_at(GlowSize::Small, 5));
     }
 
     /// Opt-in release microbenchmark of the per-update CPU work:
@@ -460,43 +554,53 @@ mod tests {
     #[test]
     #[ignore = "timing microbenchmark; run explicitly in release"]
     fn update_cost() {
-        let renderer = GlowRenderer::default();
         let mut pixels = [[0u8; 4]; AMBIENT_CELLS];
         for (i, pixel) in pixels.iter_mut().enumerate() {
             *pixel = [(i * 7) as u8, (i * 13) as u8, (i * 29) as u8, 255];
         }
         let mut smoother = Smoother::default();
         smoother.snap(grid_from_sample(&[[0; 4]; AMBIENT_CELLS]));
-        let mut medians = Vec::new();
-        for _ in 0..21 {
-            let start = Instant::now();
-            for _ in 0..200 {
-                smoother.retarget(grid_from_sample(&pixels));
-                smoother.step(Duration::from_millis(40));
-                let image = slint::Image::from_rgba8(renderer.render(smoother.current()));
-                std::hint::black_box(image);
-                smoother.snap(grid_from_sample(&[[0; 4]; AMBIENT_CELLS]));
+        for size in GlowSize::ALL {
+            let mut renderer = GlowRenderer::new(size);
+            let mut medians = Vec::new();
+            for _ in 0..21 {
+                let start = Instant::now();
+                for _ in 0..200 {
+                    smoother.retarget(grid_from_sample(&pixels));
+                    smoother.step(Duration::from_millis(40));
+                    let image = slint::Image::from_rgba8(renderer.render(smoother.current()));
+                    std::hint::black_box(image);
+                    smoother.snap(grid_from_sample(&[[0; 4]; AMBIENT_CELLS]));
+                }
+                medians.push(start.elapsed().as_secs_f64() * 1e6 / 200.);
             }
-            medians.push(start.elapsed().as_secs_f64() * 1e6 / 200.);
+            medians.sort_by(f64::total_cmp);
+            eprintln!(
+                "ambient update {size:?} (summary+step+render+Image): median {:.2} µs",
+                medians[10]
+            );
         }
-        medians.sort_by(f64::total_cmp);
-        eprintln!(
-            "ambient update (summary+step+render+Image): median {:.2} µs",
-            medians[10]
-        );
     }
 
     #[test]
     fn slint_glow_geometry_matches_the_rendered_image() {
         let ui = include_str!("../ui/app.slint");
         for ratio in [
-            format!("root.video-width * {MARGIN} / {VIDEO_W}"),
-            format!("root.video-height * {MARGIN} / {VIDEO_H}"),
-            format!("root.video-width * {GLOW_W} / {VIDEO_W}"),
-            format!("root.video-height * {GLOW_H} / {VIDEO_H}"),
+            format!("root.video-width * root.ambient-margin / {VIDEO_W}"),
+            format!("root.video-height * root.ambient-margin / {VIDEO_H}"),
+            format!("root.video-width * ({VIDEO_W} + 2 * root.ambient-margin) / {VIDEO_W}"),
+            format!("root.video-height * ({VIDEO_H} + 2 * root.ambient-margin) / {VIDEO_H}"),
         ] {
             assert!(ui.contains(&ratio), "app.slint glow geometry lacks {ratio}");
         }
+        // Until Rust publishes the first image, the placeholder matches the default.
+        assert!(
+            ui.contains(&format!(
+                "in property <int> ambient-margin: {};",
+                margin(GlowSize::default())
+            )),
+            "default ambient-margin drifted"
+        );
         assert!(
             ui.contains(&format!("duration: {}ms", FADE.as_millis())),
             "fade duration drifted"

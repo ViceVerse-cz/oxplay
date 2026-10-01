@@ -19,3 +19,5 @@ Comment refresh uses unchanged `refresh-cw.svg` from the same pinned official Lu
 The guide's Explore shortcuts use unchanged `music.svg`, `gamepad-2.svg`, `newspaper.svg`, `trophy.svg` and `graduation-cap.svg`, and drop-down fields use unchanged `chevron-down.svg`, all copied byte-for-byte from `icons/` at this same pinned revision, with checksums added to `SHA256SUMS`.
 
 The watch-page rating control uses unchanged `thumbs-up.svg` and `thumbs-down.svg`, fetched byte-for-byte from `icons/` at this same pinned revision (raw.githubusercontent.com, 2026-09-30), with checksums added to `SHA256SUMS`.
+
+The Downloads guide entry, watch-page download button and Downloads page use unchanged `download.svg`, fetched byte-for-byte from `icons/` at this same pinned revision (raw.githubusercontent.com, 2026-10-01; the same fetch reproduced the recorded `plus.svg` checksum), with its checksum added to `SHA256SUMS`.

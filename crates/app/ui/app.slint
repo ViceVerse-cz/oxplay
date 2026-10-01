@@ -15,6 +15,10 @@ import { MediaSlider, Spinner } from "player-controls.slint";
 import { StatusMessage } from "status.slint";
 import { TabStrip, TabsUi, WatchTab } from "tabs.slint";
 export { TabsUi, WatchTab }
+import { CardMenuUi, CardToast } from "card-menu.slint";
+export { CardMenuUi }
+import { DownloadsPage, DownloadsUi, DownloadRow } from "downloads.slint";
+export { DownloadsUi, DownloadRow }
 export { VideoRow, VideoGroup, AccountRow, LibraryUi, LibraryRow, SaveUi, CommentsUi, CommentRow, CaptionsUi, ChaptersUi, JumpUi }
 // Guide section chrome: a hairline divider and a compact section title.
 component GuideDivider inherits Rectangle {
@@ -79,13 +83,15 @@ export component App inherits Window {
     }
     public function show-captions() { root.prepare-native-overlay(); captions-popup.show(); }
     public function show-local-save() -> bool {
-        if SaveUi.begin() {
-            // A destination is a local draft for this frozen dialog snapshot,
-            // not an acknowledged save. Preserve it only for an in-flight save.
-            if !SaveUi.busy { root.save-destination = SaveUi.collections.length > 0 ? 0 : -1; }
-            root.prepare-native-overlay(); save-popup.show(); return true;
-        }
+        if SaveUi.begin() { root.open-local-save(); return true; }
         return false;
+    }
+    // Rust has already captured the dialog target (current video or a card).
+    function open-local-save() {
+        // A destination is a local draft for this frozen dialog snapshot,
+        // not an acknowledged save. Preserve it only for an in-flight save.
+        if !SaveUi.busy { root.save-destination = SaveUi.collections.length > 0 ? 0 : -1; }
+        root.prepare-native-overlay(); save-popup.show();
     }
     public function close-local-save() { save-popup.close(); }
     in property <bool> share-available;
@@ -229,14 +235,18 @@ export component App inherits Window {
     private property <string> osd-text;
     function show-osd(text: string) { root.osd-text = text; osd-timer.running = false; osd-timer.running = true; }
     callback close-player();
-    // Brief centre acknowledgement of a user play/pause, like YouTube's.
+    // Centre acknowledgement of a user play/pause, like YouTube's: it pops in,
+    // holds fully visible (flash-timer) and only then fades and grows out.
     private property <bool> flash-on;
+    out property <bool> play-flash-visible: root.flash-on;
     private property <bool> flash-play;
     function user-toggle-pause() {
         if root.loaded && !root.playback-failed && !root.watch-loading {
             root.flash-play = root.paused;
             root.flash-on = true;
+            // Start it, or push the hold out again on a quick repeated toggle.
             flash-timer.running = true;
+            flash-timer.restart();
         }
         root.toggle-pause();
     }
@@ -301,6 +311,11 @@ export component App inherits Window {
     out property <bool> mini-player-active: root.loaded && !root.watching && !root.video-only && !root.native-video-child;
     out property <bool> video-visible: root.watching || root.mini-player-active;
     private property <bool> compact-video: root.video-only || root.mini-player-active;
+    // YouTube-style rounded player in the regular watch view and the corner
+    // mini-player; theatre, fullscreen, picture-in-picture and the native-child
+    // diagnostic stay square. A non-zero radius makes FemtoVG render the host
+    // into a cached layer, so keep it at zero wherever it is not shown.
+    private property <length> video-radius: root.video-only || root.theatre-active || root.native-video-child ? 0px : root.mini-player-active ? 10px : 12px;
     // Top margin inside the watch scroll content: content scrolls up to the
     // header instead of being cut off a fixed gap below it.
     private property <length> watch-inset: root.compact-video ? 0px : 20px;
@@ -316,18 +331,24 @@ export component App inherits Window {
     out property <length> video-height: video.height;
     out property <length> video-window-x: watch.x + video.x;
     out property <length> video-window-y: watch.y + watch.content-y + video.y;
-    // Ambient mode ("Filmové osvětlení"): session preference, on by default.
-    // Rust publishes the glow image (ambient_ui.rs) and fades it in with
-    // ambient-ready. The glow is only drawn on the watch page, dark theme.
+    // Ambient mode ("Filmové osvětlení"): a saved preference, on by default,
+    // with a saved glow size (oxplay_core::GlowSize::ALL order, 1 = medium).
+    // Rust publishes the glow image (ambient_ui.rs) and its margin in texels
+    // together, and fades it in with ambient-ready. The glow is only drawn on
+    // the watch page, dark theme.
     in-out property <bool> ambient-mode: true;
+    in-out property <int> glow-size: 1;
+    callback ambient-mode-changed(bool);
+    callback glow-size-changed(int);
     in property <image> ambient-image;
+    in property <int> ambient-margin: 10;
     in property <bool> ambient-ready;
     private property <bool> ambient-shown: root.ambient-mode && Colors.dark && root.watching && root.loaded
         && !root.video-only && !root.native-video-child && !root.watch-loading && root.watch-load-error == "" && !root.playback-failed;
     // Sampling runs only while some part of the glow can be on screen.
     out property <bool> ambient-active: root.ambient-shown
-        && root.video-window-y + root.video-height * 42 / 36 > 0px
-        && root.video-window-y - root.video-height * 6 / 36 < root.height;
+        && root.video-window-y + root.video-height * (36 + root.ambient-margin) / 36 > 0px
+        && root.video-window-y - root.video-height * root.ambient-margin / 36 < root.height;
     out property <length> watch-offset: watch.content-y;
     out property <length> related-height: related.height;
     out property <int> visible-related-count: max(0, related-last - related-first);
@@ -506,15 +527,16 @@ export component App inherits Window {
         background: Colors.canvas;
     }
     // Ambient glow: directly above the canvas and below every other element,
-    // including the header and guide. The 76×48 image's central 64×36 texels
-    // sit exactly behind the video host (see ambient_ui.rs); bilinear
+    // including the header and guide. The image's central 64×36 texels (plus
+    // ambient-margin texels all around) sit exactly behind the video host
+    // (see ambient_ui.rs); bilinear
     // upscaling of the pre-blurred image keeps it soft. A leaf Image with
     // opacity uses global alpha, not an offscreen layer.
     Image {
         visible: root.ambient-shown;
-        x: root.video-window-x - root.video-width * 6 / 64;
-        y: root.video-window-y - root.video-height * 6 / 36;
-        width: root.video-width * 76 / 64; height: root.video-height * 48 / 36;
+        x: root.video-window-x - root.video-width * root.ambient-margin / 64;
+        y: root.video-window-y - root.video-height * root.ambient-margin / 36;
+        width: root.video-width * (64 + 2 * root.ambient-margin) / 64; height: root.video-height * (36 + 2 * root.ambient-margin) / 36;
         source: root.ambient-image;
         image-fit: fill; image-rendering: smooth;
         opacity: root.ambient-ready ? 1 : 0;
@@ -525,7 +547,7 @@ export component App inherits Window {
         triggered => { root.osd-text = ""; self.running = false; }
     }
     flash-timer := Timer {
-        interval: 80ms; running: false;
+        interval: 500ms; running: false;
         triggered => { root.flash-on = false; self.running = false; }
     }
     shortcuts := FocusScope {
@@ -696,6 +718,9 @@ export component App inherits Window {
                 speed-busy: root.speed-busy; quality-busy: root.busy; remote-video: root.remote-video;
                 subtitle-available: root.local-subtitle-available && !root.local-file-busy;
                 ambient-mode <=> root.ambient-mode;
+                glow-size <=> root.glow-size;
+                ambient-mode-changed(on) => { root.ambient-mode-changed(on); }
+                glow-size-changed(index) => { root.glow-size-changed(index); }
                 volume(value) => { root.volume(value); }
                 speed(index) => { root.speed((index + 1) * 0.5); }
                 quality(index) => { root.quality(index); }
@@ -761,6 +786,7 @@ export component App inherits Window {
                 Action { icon-name: "users"; label: "Local subscriptions"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 1; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(1); } }
                 Action { icon-name: "list-video"; label: "Local playlists"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 0; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(0); } }
                 if LibraryUi.history-enabled: Action { icon-name: "history"; label: "History"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 1 && LibraryUi.tab == 2; enabled: !LibraryUi.busy && LibraryUi.confirmation == 0; clicked => { root.open-local-tab(2); } }
+                Action { icon-name: "download"; label: "Downloads"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; selectable: true; selected: root.page == 5; enabled: !root.native-video-child; clicked => { root.navigate(5); } }
                 Action { icon-name: "clapperboard"; label: root.local-file-busy ? "Opening file…" : "Open video file"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; enabled: !root.native-video-child && !root.local-file-busy && !LibraryUi.busy; clicked => { root.open-video-file(); } }
                 if root.local-file-cancellable: Action { label: "Cancel file selection"; icon-name: "chevron-left"; compact: root.guide-compact; dense: true; corner-radius: 10px; height: root.guide-compact ? 40px : 36px; clicked => { root.cancel-local-file(); } }
                 if !root.guide-compact: GuideDivider {}
@@ -785,8 +811,10 @@ export component App inherits Window {
         width: root.width - self.x - 24px; height: root.height - self.y;
         visible: root.page == 0;
         private property <bool> channel-header: root.guest-scope == 1;
-        // Home has no title block; its toolbar row starts at the top.
-        private property <length> toolbar-y: root.home-active ? 0px : self.channel-header ? 112px : 80px;
+        // Home and search results (scope 0) have no title block; their toolbar
+        // row starts at the top. Channel, playlist and error pages keep theirs.
+        private property <bool> title-shown: !root.home-active && root.guest-scope != 0;
+        private property <length> toolbar-y: !self.title-shown ? 0px : self.channel-header ? 112px : 80px;
         private property <bool> skeleton: root.videos.length == 0 && (root.home-loading || (root.busy && !root.home-active)) && !root.native-video-child;
         if self.channel-header: Rectangle {
             x: 2px; y: 2px; width: 80px; height: 80px; border-radius: 40px; clip: true; background: Colors.surface;
@@ -808,8 +836,8 @@ export component App inherits Window {
             }
             Rectangle { border-width: parent.has-focus ? 2px : 0px; border-color: Colors.focus; border-radius: 12px; background: transparent; }
         }
-        if !root.home-active: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
-        if !root.home-active: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
+        if browse.title-shown: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 6px : 0px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Your local library" : root.catalog-title; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
+        if browse.title-shown: Text { x: browse.channel-header ? 104px : 0px; y: browse.channel-header ? 76px : 40px; width: parent.width - self.x; overflow: elide; text: root.page == 1 ? "Collections saved on this device. Separate from your YouTube account." : root.catalog-subtitle; color: Colors.muted; font-size: 14px; height: 22px; }
         HorizontalLayout { y: browse.toolbar-y; height: 36px; spacing: 8px;
             if root.home-active && root.account-connected: Action { height: 36px; width: 128px; horizontal-stretch: 0; label: "Recommended"; variant: root.home-source == 1 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 1; enabled: !root.busy && !root.native-video-child && (root.home-source == 1 || !root.account-busy); clicked => { root.home-source-changed(1); } }
             if root.home-active && root.account-connected: Action { height: 36px; width: 80px; horizontal-stretch: 0; label: "Saved"; variant: root.home-source == 0 ? ActionVariant.primary : ActionVariant.secondary; selectable: true; selected: root.home-source == 0; enabled: !root.busy && !root.native-video-child; clicked => { root.home-source-changed(0); } }
@@ -847,6 +875,7 @@ export component App inherits Window {
                         focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                         clicked => { root.select-video(group.start + index); }
                         open-in-new-tab => { TabsUi.open(0, group.start + index); }
+                        menu-action(action) => { if CardMenuUi.action(0, group.start + index, action) { root.open-local-save(); } }
                     }
                     if group.items.length < root.columns: Rectangle { horizontal-stretch: root.columns - group.items.length; }
                 }
@@ -871,7 +900,7 @@ export component App inherits Window {
             }
         }
         if root.videos.length == 0 && !browse.skeleton: Rectangle {
-            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : root.home-active ? 80px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
+            x: max(0px, (parent.width - 480px) / 2); y: root.page == 1 ? 190px : !browse.title-shown ? 80px : 160px; width: min(480px, parent.width); height: root.home-active || root.catalog-title == "Find your next watch" ? 278px : 230px;
             Rectangle { x: (parent.width - 72px) / 2; y: 0px; width: 72px; height: 72px; border-radius: 36px; background: Colors.hover;
                 Image { x: (parent.width - 32px) / 2; y: (parent.height - 32px) / 2; width: 32px; height: 32px; source: root.busy ? @image-url("icons/search.svg") : root.page == 1 ? @image-url("icons/library-big.svg") : @image-url("icons/play.svg"); colorize: Colors.accent; }
             }
@@ -914,6 +943,10 @@ export component App inherits Window {
         x: root.sidebar-width + 24px; y: root.top-height + 16px;
         width: root.width - self.x - 24px; height: root.height - self.y - 16px;
     }
+    if root.page == 5: DownloadsPage {
+        x: root.sidebar-width + 36px; y: root.top-height + 24px;
+        width: min(1080px, root.width - self.x - 36px); height: root.height - self.y - 20px;
+    }
     if root.page == 3: Rectangle {
         x: root.sidebar-width + 36px; y: root.top-height + 24px; width: min(720px, root.width - self.x - 36px); height: root.height - self.y - 20px;
         ScrollView { width: parent.width; height: parent.height; horizontal-scrollbar-policy: always-off;
@@ -942,8 +975,13 @@ export component App inherits Window {
             Text { text: "Keep artwork from guest browsing on this device. These images can reveal browsing interests even when history is off. Home reads them without contacting YouTube. Clear local data removes them with your local library."; color: Colors.muted; wrap: word-wrap; }
             Text { text: "Autoplay, video thumbnail previews and background refresh are off. Public playback uses guest requests."; color: Colors.muted; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
+            Text { text: "Ambient mode"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+            ConfirmedToggle { text: "Glow behind the video on the watch page"; acknowledged-checked: root.ambient-mode; choose(checked) => { root.ambient-mode-changed(checked); } }
+            ConfirmedChoice { max-width: 360px; accessible-label: "Ambient glow size"; enabled: root.ambient-mode; model: ["Small", "Medium", "Large", "Extra large"]; acknowledged-index: root.glow-size; choose(index) => { root.glow-size-changed(index); } }
+            Text { text: "The glow follows the picture's colours and is shown only with the dark theme. A larger glow reaches further beyond the video."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
+            Rectangle { height: 1px; background: Colors.border; }
             Text { text: "Keyboard shortcuts"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
-            Text { text: "Ctrl / Cmd + O  Open video file\nCtrl + Tab / Ctrl + Shift + Tab  Next / previous video tab\nCtrl / Cmd + W  Close the video tab\nMiddle-click, Cmd/Ctrl + click or right-click a video  Open in a new tab\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
+            Text { text: "Ctrl / Cmd + O  Open video file\nCtrl + Tab / Ctrl + Shift + Tab  Next / previous video tab\nCtrl / Cmd + W  Close the video tab\nMiddle-click, Cmd/Ctrl + click or right-click a video  Open in a new tab\nRight-click, Menu key or Shift + F10 on a video  Copy link, title or thumbnail; open channel; save; download\n/  Focus search · ?  Show all shortcuts\nSpace or K  Play / pause\nG  Jump to time\nJ / L  Back / forward 10 seconds\n← / →  Back / forward 5 seconds\n0 – 9  Jump to 0–90 %\nShift + < / >  Slower / faster\n↑ / ↓  Volume\nM  Mute\nF  Fullscreen · T  Theatre · P  Picture in picture\nEsc  Return to the main player"; color: Colors.text; wrap: word-wrap; }
             Text { text: "Playback shortcuts work with the player focused. They stay inactive while you type in a text field."; color: Colors.muted; font-size: 12px; wrap: word-wrap; }
             Rectangle { height: 1px; background: Colors.border; }
             HorizontalLayout { height: 36px; Action { icon-name: "info"; label: "Connection and playback details"; variant: ActionVariant.secondary; height: 36px; width: 290px; horizontal-stretch: 0; clicked => { root.show-status-message(); } } Rectangle { horizontal-stretch: 1; } }
@@ -1044,6 +1082,10 @@ export component App inherits Window {
             height: root.compact-video ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : root.theatre-active ? min(self.width * 9 / 16, max(240px, watch.visible-height * 0.82)) : self.width * 9 / 16;
             visible: root.video-visible;
             background: #000000;
+            // One clipping rectangle rounds the picture, its black backing and
+            // every overlay at once. The transport strip below is a sibling, so
+            // it rounds its own bottom corners to match.
+            border-radius: root.video-radius; clip: root.video-radius > 0px;
             focus := FocusScope {
                 width: parent.width; height: parent.height;
                 video-touch := TouchArea {
@@ -1077,15 +1119,18 @@ export component App inherits Window {
             }
             Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; visible: root.loaded && !root.watch-loading; }
             // Fades and grows out after a user play/pause; invisible at rest.
+            // Opacity below 1 on an element with children takes an offscreen
+            // layer even at 0, so hide it outright once the fade has finished.
             Rectangle {
+                visible: root.flash-on || self.opacity > 0.001;
                 width: root.compact-video && !root.video-only ? 52px : 68px; height: self.width;
                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
                 border-radius: self.width / 2; background: #000000a6;
                 opacity: root.flash-on ? 1 : 0;
                 transform-scale-x: root.flash-on ? 100% : 145%;
                 transform-scale-y: root.flash-on ? 100% : 145%;
-                animate opacity { duration: 420ms; easing: ease-out; }
-                animate transform-scale-x, transform-scale-y { duration: 420ms; easing: ease-out; }
+                animate opacity { duration: root.flash-on ? 90ms : 500ms; easing: ease-out; }
+                animate transform-scale-x, transform-scale-y { duration: root.flash-on ? 90ms : 500ms; easing: ease-out; }
                 Image {
                     width: parent.width * 0.44; height: self.width;
                     x: (parent.width - self.width) / 2 + (root.flash-play ? parent.width * 0.03 : 0px); y: (parent.height - self.height) / 2;
@@ -1148,6 +1193,7 @@ export component App inherits Window {
             width: video.width; height: root.native-video-child ? 72px : 100px;
             visible: root.video-visible && !root.watch-loading && root.watch-load-error == "" && (root.controls-visible || root.paused || root.controls-held || root.native-video-child);
             background: root.native-video-child ? #111315 : @linear-gradient(180deg, #00000000 0%, #00000050 38%, #000000bd 100%);
+            border-bottom-left-radius: root.video-radius; border-bottom-right-radius: root.video-radius;
             // The ancestor observes hover before children, without stealing a
             // slider's pointer grab or a button's activation.
             transport-hover := TouchArea {
@@ -1197,7 +1243,7 @@ export component App inherits Window {
             if !root.video-only: HorizontalLayout {
                 x: 0px; y: 62px; width: parent.width; height: 44px; spacing: 8px; cross-axis-alignment: center;
                 creator-action := Action {
-                    horizontal-stretch: 0; width: min(max(creator-name.preferred-width, creator-subs.preferred-width) + 62px, max(54px, parent.width - (root.remote-video ? 492px : 332px))); height: 44px; compact: true;
+                    horizontal-stretch: 0; width: min(max(creator-name.preferred-width, creator-subs.preferred-width) + 62px, max(54px, parent.width - (root.remote-video ? 536px : 376px))); height: 44px; compact: true;
                     label: "Open " + root.video-channel + " channel";
                     enabled: root.watch-channel-available && !root.watch-loading;
                     opacity: 1; clicked => { root.open-watch-channel(); }
@@ -1221,6 +1267,7 @@ export component App inherits Window {
                 Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "list-video"; label: "Video chapters"; enabled: root.loaded && root.remote-video && !root.native-video-child; clicked => { root.prepare-native-overlay(); chapters-popup.show(); } }
                 share-button := Action { variant: ActionVariant.secondary; width: 76px; height: 36px; horizontal-stretch: 0; label: "Share"; enabled: root.share-available; clicked => { root.show-share(); } }
                 Action { variant: ActionVariant.secondary; width: 92px; height: 36px; horizontal-stretch: 0; label: "Save"; icon-name: "plus"; enabled: root.remote-video && root.loaded && !root.busy && !LibraryUi.busy && !root.account-playback-active && !root.native-video-child; clicked => { root.show-local-save(); } }
+                Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "download"; label: "Download"; enabled: DownloadsUi.available && root.remote-video && root.loaded && !root.watch-loading && root.watch-load-error == "" && !root.account-playback-active && !root.native-video-child; clicked => { DownloadsUi.download-current(); } }
                 Action { variant: ActionVariant.secondary; width: 36px; height: 36px; horizontal-stretch: 0; compact: true; icon-name: "info"; label: "Playback details"; enabled: root.loaded && !root.watch-loading; checkable: true; selected: root.show-info; clicked => { root.prepare-native-overlay(); root.show-info = !root.show-info; } }
             }
 
@@ -1281,6 +1328,7 @@ export component App inherits Window {
                 focus-complete(serial, focused) => { root.feed-focus-complete(serial, focused); }
                 clicked => { root.select-related(index); }
                 open-in-new-tab => { TabsUi.open(1, index); }
+                menu-action(action) => { if CardMenuUi.action(1, index, action) { root.open-local-save(); } }
             }
         }
     }
@@ -1296,6 +1344,11 @@ export component App inherits Window {
         allowed: !root.video-only && !root.native-video-child;
         preview(text) => { search.text = text; }
         activate(text) => { search.text = text; suggestions.close(); root.search(text); }
+    }
+    // Card-menu confirmation ("Link copied"), above feeds and the watch page.
+    if !root.video-only: CardToast {
+        x: root.sidebar-width + (root.width - root.sidebar-width - self.width) / 2;
+        y: root.height - self.height - 28px;
     }
     // Popups are composited above the shared scene. Dim only modal content,
     // leaving transient playback settings and tooltips lightweight.

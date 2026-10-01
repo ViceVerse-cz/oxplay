@@ -14,7 +14,7 @@ use oxplay_core::{CancellationToken, CommentSummary, OperationContext, ProviderE
 use oxplay_youtube::comments::{REPLY_PAGE_SIZE, ReplyCursor, ReplyPage};
 use slint::{Model, ModelRc, SharedString, VecModel};
 use std::{
-    cell::{Cell, RefCell},
+    cell::{Cell, OnceCell, RefCell},
     collections::VecDeque,
     rc::Rc,
     sync::{Arc, Condvar, Mutex},
@@ -50,67 +50,78 @@ struct Mailbox {
     stop: bool,
 }
 
+type Spawn = Box<dyn FnOnce() -> thread::JoinHandle<()>>;
+
 /// One finite FIFO worker. `Default` is idle (no thread), for tests.
 #[derive(Default)]
 pub struct Worker {
     mailbox: Arc<(Mutex<Mailbox>, Condvar)>,
     results: Arc<Mutex<Vec<Ready>>>,
-    thread: Option<thread::JoinHandle<()>>,
+    /// Starts the thread on the first job, so sessions that never open a
+    /// reply thread pay for no extra thread.
+    spawn: RefCell<Option<Spawn>>,
+    thread: RefCell<Option<thread::JoinHandle<()>>>,
 }
 impl Worker {
     /// The transport is the resolver's shared anonymous instance, so its 429
-    /// cooldown also covers reply reads. No network client exists until the
-    /// first job.
+    /// cooldown also covers reply reads. Neither the thread nor a network
+    /// client exists until the first job.
     fn new(resolver: crate::resolver::SharedResolver, wake: impl Fn() + Send + 'static) -> Self {
         let mailbox = Arc::new((Mutex::new(Mailbox::default()), Condvar::new()));
         let results = Arc::new(Mutex::new(Vec::new()));
         let (work, out) = (mailbox.clone(), results.clone());
-        let thread = thread::spawn(move || {
-            loop {
-                let job = {
-                    let (lock, ready) = &*work;
-                    let mut mailbox = lock.lock().unwrap_or_else(|e| e.into_inner());
-                    while mailbox.queue.is_empty() && !mailbox.stop {
-                        mailbox = ready.wait(mailbox).unwrap_or_else(|e| e.into_inner());
-                    }
-                    if mailbox.stop {
-                        break;
-                    }
-                    let job = mailbox.queue.pop_front().unwrap();
-                    mailbox.active = Some(job.cancel.clone());
-                    job
-                };
-                let operation = OperationContext {
-                    request_id: job.id,
-                    session_generation: 0,
-                    cancel: job.cancel.clone(),
-                };
-                let result = resolver.native_on_worker().and_then(|transport| {
-                    oxplay_youtube::comments::native_replies(
-                        &transport,
-                        &job.video,
-                        &job.cursor,
-                        &operation,
-                    )
-                });
-                if !job.cancel.is_cancelled() {
-                    out.lock().unwrap_or_else(|e| e.into_inner()).push(Ready {
-                        generation: job.generation,
-                        id: job.id,
-                        row: job.row,
-                        result,
+        let spawn: Spawn = Box::new(move || {
+            thread::spawn(move || {
+                loop {
+                    let job = {
+                        let (lock, ready) = &*work;
+                        let mut mailbox = lock.lock().unwrap_or_else(|e| e.into_inner());
+                        while mailbox.queue.is_empty() && !mailbox.stop {
+                            mailbox = ready.wait(mailbox).unwrap_or_else(|e| e.into_inner());
+                        }
+                        if mailbox.stop {
+                            break;
+                        }
+                        let job = mailbox.queue.pop_front().unwrap();
+                        mailbox.active = Some(job.cancel.clone());
+                        job
+                    };
+                    let operation = OperationContext {
+                        request_id: job.id,
+                        session_generation: 0,
+                        cancel: job.cancel.clone(),
+                    };
+                    let result = resolver.native_on_worker().and_then(|transport| {
+                        oxplay_youtube::comments::native_replies(
+                            &transport,
+                            &job.video,
+                            &job.cursor,
+                            &operation,
+                        )
                     });
-                    wake();
+                    if !job.cancel.is_cancelled() {
+                        out.lock().unwrap_or_else(|e| e.into_inner()).push(Ready {
+                            generation: job.generation,
+                            id: job.id,
+                            row: job.row,
+                            result,
+                        });
+                        wake();
+                    }
                 }
-            }
+            })
         });
         Self {
             mailbox,
             results,
-            thread: Some(thread),
+            spawn: RefCell::new(Some(spawn)),
+            thread: RefCell::default(),
         }
     }
     fn submit(&self, job: Job) {
+        if let Some(spawn) = self.spawn.take() {
+            *self.thread.borrow_mut() = Some(spawn());
+        }
         let (lock, ready) = &*self.mailbox;
         lock.lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -147,7 +158,7 @@ impl Drop for Worker {
             .unwrap_or_else(|e| e.into_inner())
             .stop = true;
         self.mailbox.1.notify_one();
-        if let Some(thread) = self.thread.take() {
+        if let Some(thread) = self.thread.get_mut().take() {
             let _ = thread.join();
         }
     }
@@ -183,7 +194,10 @@ pub struct Replies {
     jobs: Cell<u64>,
     threads: RefCell<Vec<Option<Thread>>>,
     worker: Worker,
-    avatars: Option<Avatars>,
+    /// Built on the first portrait request; its thread creates a runtime and
+    /// TLS client, which sessions that never open replies should not pay for.
+    avatars: OnceCell<Avatars>,
+    start_avatars: RefCell<Option<Box<dyn FnOnce() -> Avatars>>>,
     /// (top-level row, reply index, URL) of the portraits last requested.
     avatar_slots: RefCell<Vec<(usize, usize, String)>>,
 }
@@ -208,9 +222,12 @@ impl Replies {
         resolver: crate::resolver::SharedResolver,
         wake: impl Fn() + Send + Sync + Clone + 'static,
     ) -> Self {
+        let portraits = wake.clone();
         Self {
-            worker: Worker::new(resolver, wake.clone()),
-            avatars: Some(Avatars::with_limits(AVATAR_EDGE, REPLY_PAGE_SIZE, wake)),
+            worker: Worker::new(resolver, wake),
+            start_avatars: RefCell::new(Some(Box::new(move || {
+                Avatars::with_limits(AVATAR_EDGE, REPLY_PAGE_SIZE, portraits)
+            }))),
             ..Default::default()
         }
     }
@@ -224,7 +241,7 @@ impl Replies {
             }
         }
         self.avatar_slots.borrow_mut().clear();
-        if let Some(avatars) = &self.avatars {
+        if let Some(avatars) = self.avatars.get() {
             avatars.cancel();
         }
     }
@@ -405,7 +422,14 @@ impl Replies {
     /// Replace the portrait job: missing portraits of `first`, then of the
     /// other expanded threads, within one reply page.
     fn request_avatars(&self, first: usize) {
-        let Some(avatars) = &self.avatars else { return };
+        if self.avatars.get().is_none()
+            && let Some(start) = self.start_avatars.take()
+        {
+            let _ = self.avatars.set(start());
+        }
+        let Some(avatars) = self.avatars.get() else {
+            return;
+        };
         let threads = self.threads.borrow();
         let order = std::iter::once(first).chain((0..threads.len()).filter(|row| *row != first));
         let mut slots = Vec::new();
@@ -440,7 +464,9 @@ impl Replies {
         *self.avatar_slots.borrow_mut() = slots;
     }
     fn take_avatars(&self) {
-        let Some(avatars) = &self.avatars else { return };
+        let Some(avatars) = self.avatars.get() else {
+            return;
+        };
         let slots = self.avatar_slots.borrow();
         let threads = self.threads.borrow();
         for ready in avatars.take() {

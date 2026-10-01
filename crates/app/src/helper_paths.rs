@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 pub struct HelperPaths {
     pub yt_dlp: PathBuf,
     pub deno: PathBuf,
+    /// Candidate FFmpeg for merging explicit downloads. It may be absent:
+    /// downloads then use a single progressive file. Never searched on PATH.
+    pub ffmpeg: PathBuf,
     pub media_ca: Option<PathBuf>,
     pub dns_helper: Option<PathBuf>,
     bundle_resources: Option<PathBuf>,
@@ -73,6 +76,7 @@ impl HelperPaths {
         let paths = Self {
             yt_dlp: yt_dlp.unwrap_or_else(|| directory.join("yt-dlp")),
             deno: deno.unwrap_or_else(|| directory.join("deno")),
+            ffmpeg: directory.join("ffmpeg"),
             media_ca,
             dns_helper,
             bundle_resources,
@@ -233,6 +237,10 @@ mod tests {
         assert_eq!(
             paths.deno,
             Path::new("/nonexistent/Oxplay.app/Contents/Helpers/deno")
+        );
+        assert_eq!(
+            paths.ffmpeg,
+            Path::new("/nonexistent/Oxplay.app/Contents/Helpers/ffmpeg")
         );
         assert_eq!(
             paths.media_ca.as_deref(),

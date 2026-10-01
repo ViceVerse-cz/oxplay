@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Playback defaults are local preferences. Native speed acknowledgement and
 //! SQLite acknowledgement are separate, bounded, event-driven operations.
-use crate::{App, UiState, library_ui};
+use crate::{App, UiState, ambient_ui, library_ui};
 use oxplay_core::{PlaybackPreferences, PlaybackSpeed};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
@@ -88,7 +88,17 @@ pub fn reset(app: &App, state: &Rc<UiState>, prefs: PlaybackPreferences) {
     app.set_default_quality_index(prefs.quality.index());
     state.quality_index.set(prefs.quality.index() as usize);
     app.set_quality_index(prefs.quality.index());
+    apply_ambient(app, state, prefs);
     request_native(app, state, prefs.speed, false);
+}
+/// Show the admitted (saved or pending) ambient preferences.
+pub fn sync_ambient(app: &App, state: &UiState) {
+    apply_ambient(app, state, library_ui::desired_preferences(state).playback);
+}
+fn apply_ambient(app: &App, state: &UiState, prefs: PlaybackPreferences) {
+    app.set_ambient_mode(prefs.ambient_mode);
+    app.set_glow_size(prefs.glow_size.index());
+    ambient_ui::set_size(app, state, prefs.glow_size);
 }
 pub fn cancel_for_clear(app: &App, state: &Rc<UiState>) {
     state.playback_preferences.startup.borrow_mut().take();

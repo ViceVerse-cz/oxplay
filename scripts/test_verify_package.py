@@ -99,6 +99,26 @@ class VerificationTests(unittest.TestCase):
         with self.assertRaises(verifier.VerificationError):
             self.fixture.verify()
 
+    def test_reinventory_after_signing_keeps_evidence_binding(self):
+        import package_macos
+        binary = self.fixture.bundle / "Contents/MacOS/oxplay"
+        binary.write_bytes(binary.read_bytes() + b" + synthetic Developer ID signature")
+        signature = self.fixture.bundle / "Contents/_CodeSignature/CodeResources"
+        signature.parent.mkdir()
+        signature.write_bytes(b"synthetic seal")
+        with self.assertRaises(verifier.VerificationError):
+            self.fixture.verify()
+        package_macos.reinventory(self.fixture.bundle)
+        self.assertEqual(self.fixture.verify()["integrity"], "passed")
+        # Evidence tampering is still caught after a refreshed inventory.
+        manifest = self.fixture.bundle / verifier.MANIFEST
+        manifest.write_text(manifest.read_text().replace("aarch64-apple-darwin", "x86_64-apple-darwin"))
+        package_macos.reinventory(self.fixture.bundle)
+        with self.assertRaises(verifier.VerificationError):
+            self.fixture.verify()
+        with self.assertRaises(package_macos.PackagingError):
+            package_macos.reinventory(self.root / "Missing.app")
+
     def test_valid_bundle_is_read_only_and_move_safe(self):
         before = {path: (path.stat().st_mtime_ns, path.read_bytes()) for path in self.root.rglob("*") if path.is_file()}
         checksum = verifier.sha256(self.fixture.inventory.read_bytes())

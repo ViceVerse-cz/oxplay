@@ -7,6 +7,7 @@ pub mod catalog;
 mod channel_avatar;
 mod chapters;
 pub mod comments;
+pub mod download;
 mod guest_catalog;
 pub mod innertube;
 mod renderers;

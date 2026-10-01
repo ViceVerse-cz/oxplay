@@ -1299,3 +1299,372 @@ fn ambient_mode_toggle_and_glow_scope_follow_the_watch_page() {
         assert!(app.get_ambient_active(), "{label} restored");
     }
 }
+
+#[test]
+fn glow_size_is_chosen_beside_ambient_mode_and_reported_for_saving() {
+    let app = app();
+    app.set_theme(2);
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    settle();
+    assert_eq!(app.get_glow_size(), 1, "medium by default, one above small");
+    let toggled = Rc::new(Cell::new(None));
+    let output = toggled.clone();
+    app.on_ambient_mode_changed(move |on| output.set(Some(on)));
+    let chosen = Rc::new(Cell::new(None));
+    let output = chosen.clone();
+    app.on_glow_size_changed(move |index| output.set(Some(index)));
+    element(&app, "Playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Ambient mode").invoke_accessible_default_action();
+    settle();
+    assert_eq!(toggled.get(), Some(false));
+    assert!(
+        !element(&app, "Ambient glow size: Medium")
+            .accessible_enabled()
+            .unwrap_or(true),
+        "size is inert while the glow is off"
+    );
+    element(&app, "Ambient mode").invoke_accessible_default_action();
+    settle();
+    assert_eq!(toggled.get(), Some(true));
+    element(&app, "Ambient glow size: Medium").invoke_accessible_default_action();
+    settle();
+    element(&app, "Glow size Extra large").invoke_accessible_default_action();
+    settle();
+    assert_eq!(chosen.get(), Some(3));
+    assert_eq!(app.get_glow_size(), 3);
+    // Back in the list, the row shows the new size.
+    element(&app, "Back to playback settings").invoke_accessible_default_action();
+    settle();
+    element(&app, "Ambient glow size: Extra large");
+}
+
+#[test]
+fn search_results_drop_their_title_block_but_channel_and_playlist_keep_theirs() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    app.set_catalog_title("Results for “synthetic”".into());
+    app.set_catalog_subtitle("Public YouTube results · synthetic".into());
+    let headers = |app: &App| {
+        settle();
+        ElementHandle::find_by_accessible_label(app, "Results for “synthetic”").count()
+            + ElementHandle::find_by_accessible_label(app, "Public YouTube results · synthetic")
+                .count()
+    };
+    app.set_guest_scope(0);
+    assert_eq!(headers(&app), 0, "search has no title or description");
+    // The result-type toolbar stays available.
+    element(&app, "Search result type");
+    app.set_guest_scope(1);
+    assert!(headers(&app) > 0, "channel keeps its header");
+    app.set_guest_scope(2);
+    assert!(headers(&app) > 0, "playlist keeps its header");
+    app.set_guest_scope(0);
+    assert_eq!(headers(&app), 0);
+}
+
+#[test]
+fn play_pause_acknowledgement_holds_before_it_fades() {
+    let app = app();
+    app.set_page(2);
+    app.set_remote_video(true);
+    app.set_loaded(true);
+    settle();
+    assert!(!app.get_play_flash_visible());
+    element(&app, "Play").invoke_accessible_default_action();
+    settle();
+    assert!(app.get_play_flash_visible());
+    for _ in 0..4 {
+        mock_elapsed_time(Duration::from_millis(100));
+        slint::platform::update_timers_and_animations();
+    }
+    assert!(app.get_play_flash_visible(), "still held after 400 ms");
+    for _ in 0..2 {
+        mock_elapsed_time(Duration::from_millis(100));
+        slint::platform::update_timers_and_animations();
+    }
+    assert!(!app.get_play_flash_visible(), "fade starts after the hold");
+}
+
+#[test]
+fn video_card_menu_forwards_copy_channel_and_save_commands_by_surface() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    let rows = vec![
+        VideoRow {
+            kind: "Video".into(),
+            title: "TEST FIXTURE unknown creator".into(),
+            id: "fixtureCard".into(),
+            ..VideoRow::default()
+        },
+        VideoRow {
+            kind: "Video".into(),
+            title: "TEST FIXTURE known creator".into(),
+            id: "fixtureKnow".into(),
+            channel_known: true,
+            ..VideoRow::default()
+        },
+    ];
+    app.set_videos(Rc::new(slint::VecModel::from(rows.clone())).into());
+    app.set_groups(
+        Rc::new(slint::VecModel::from(vec![VideoGroup {
+            start: 0,
+            items: Rc::new(slint::VecModel::from(rows.clone())).into(),
+        }]))
+        .into(),
+    );
+    let events = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = events.clone();
+    app.global::<CardMenuUi>()
+        .on_action(move |surface, index, action| {
+            output
+                .borrow_mut()
+                .push(format!("{surface} {index} {action:?}"));
+            // Rust asks the shared Save dialog to open only for this command.
+            action == CardAction::AddToPlaylist
+        });
+    let selected = Rc::new(Cell::new(0));
+    let output = selected.clone();
+    app.on_select_video(move |_| output.set(output.get() + 1));
+    settle();
+    let menu_item = |title: &str| {
+        ElementHandle::find_by_accessible_label(&app, title)
+            .next()
+            .unwrap_or_else(|| panic!("menu item {title}"))
+    };
+    let first = element(&app, "Video, TEST FIXTURE unknown creator, ");
+    let second = element(&app, "Video, TEST FIXTURE known creator, ");
+    first.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Copy link").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    // Without a known channel ID the entry is visible but cannot activate.
+    first.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Open channel").mock_single_click(slint::platform::PointerEventButton::Left);
+    key(&app, Key::Escape);
+    settle();
+    second.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Open channel").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        events.take(),
+        ["0 0 CopyLink", "0 1 OpenChannel"].map(String::from)
+    );
+    // Keyboard: the Menu key and Shift+F10 open the same menu on a focused card.
+    first.mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(selected.get(), 1);
+    key(&app, Key::Menu);
+    settle();
+    menu_item("Copy title").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    first.mock_single_click(slint::platform::PointerEventButton::Left);
+    modified_key(&app, &[Key::Shift], &SharedString::from(Key::F10));
+    settle();
+    menu_item("Copy thumbnail").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        events.take(),
+        ["0 0 CopyTitle", "0 0 CopyThumbnail"].map(String::from)
+    );
+    // Add to local playlist opens the shared Save dialog only on acceptance.
+    assert!(!app.get_playback_overlay_open());
+    second.mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Add to local playlist").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["0 1 AddToPlaylist"].map(String::from));
+    assert!(app.get_playback_overlay_open());
+    key(&app, Key::Escape);
+    settle();
+
+    // Confirmation is a polite live region with the toast text as its label.
+    app.global::<CardMenuUi>().set_toast("Link copied".into());
+    settle();
+    let toast = ElementHandle::find_by_accessible_label(&app, "Link copied")
+        .next()
+        .expect("toast");
+    assert_eq!(
+        toast.accessible_live_region(),
+        Some(i_slint_backend_testing::AccessibleLiveness::Polite)
+    );
+    app.global::<CardMenuUi>().set_toast("".into());
+
+    // Related cards on the watch page offer the same menu as surface 1.
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_watch_videos(Rc::new(slint::VecModel::from(rows)).into());
+    settle();
+    // (At this compact width the list sits below the player; row 0 is visible.)
+    element(&app, "Video, TEST FIXTURE unknown creator, ")
+        .mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    menu_item("Copy link").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["1 0 CopyLink"].map(String::from));
+}
+
+#[test]
+fn download_menu_item_guide_entry_watch_button_and_downloads_page_route_commands() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    let rows = vec![VideoRow {
+        kind: "Video".into(),
+        title: "TEST FIXTURE download card".into(),
+        id: "fixtureDown".into(),
+        ..VideoRow::default()
+    }];
+    app.set_videos(Rc::new(slint::VecModel::from(rows.clone())).into());
+    app.set_groups(
+        Rc::new(slint::VecModel::from(vec![VideoGroup {
+            start: 0,
+            items: Rc::new(slint::VecModel::from(rows)).into(),
+        }]))
+        .into(),
+    );
+    let events = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = events.clone();
+    app.global::<CardMenuUi>()
+        .on_action(move |surface, index, action| {
+            output
+                .borrow_mut()
+                .push(format!("{surface} {index} {action:?}"));
+            false
+        });
+    settle();
+    // The shared card menu offers Download and forwards it by surface/index.
+    element(&app, "Video, TEST FIXTURE download card, ")
+        .mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    ElementHandle::find_by_accessible_label(&app, "Download")
+        .next()
+        .expect("Download menu item")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["0 0 Download"].map(String::from));
+    // Unlike Add to local playlist, it opens no dialog.
+    assert!(!app.get_playback_overlay_open());
+
+    // The guide entry navigates to page 5 and is selected there.
+    let navigated = Rc::new(Cell::new(-1));
+    let output = navigated.clone();
+    app.on_navigate(move |page| output.set(page));
+    element(&app, "Downloads").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(navigated.get(), 5);
+    let ui = app.global::<DownloadsUi>();
+    let commands = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let record = |name: &'static str| {
+        let output = commands.clone();
+        move |id: SharedString| output.borrow_mut().push(format!("{name} {id}"))
+    };
+    ui.on_cancel(record("cancel"));
+    ui.on_play(record("play"));
+    ui.on_reveal(record("reveal"));
+    ui.on_delete(record("delete"));
+    app.set_page(5);
+    ui.set_loaded(true);
+    settle();
+    assert_eq!(
+        element(&app, "Downloads").accessible_item_selected(),
+        Some(true)
+    );
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "No downloads yet")
+            .next()
+            .is_some(),
+        "empty state"
+    );
+    ui.set_note("FFmpeg wasn't found".into());
+    ui.set_active(
+        Rc::new(slint::VecModel::from(vec![DownloadRow {
+            id: "activeVideo".into(),
+            title: "TEST FIXTURE running".into(),
+            status: "42% · 12 MB of 46 MB".into(),
+            progress: 0.42,
+            ..DownloadRow::default()
+        }]))
+        .into(),
+    );
+    ui.set_completed(
+        Rc::new(slint::VecModel::from(vec![DownloadRow {
+            id: "finishedVid".into(),
+            title: "TEST FIXTURE finished".into(),
+            channel: "Creator".into(),
+            detail: "120 MB · Sep 21, 2026 · 1080p".into(),
+            progress: 1.0,
+            ..DownloadRow::default()
+        }]))
+        .into(),
+    );
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "No downloads yet")
+            .next()
+            .is_none()
+    );
+    assert_eq!(
+        ElementHandle::find_by_accessible_label(&app, "Download progress for TEST FIXTURE running")
+            .next()
+            .expect("progress bar")
+            .accessible_value()
+            .as_deref(),
+        Some("42%")
+    );
+    element(&app, "Cancel download of TEST FIXTURE running")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Play TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Show in folder: TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    // Delete asks first; Keep backs out without a command.
+    element(&app, "Delete TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(absent(&app, "Play TEST FIXTURE finished"));
+    element(&app, "Keep TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(absent(&app, "Confirm deleting TEST FIXTURE finished"));
+    element(&app, "Delete TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    element(&app, "Confirm deleting TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        commands.take(),
+        [
+            "cancel activeVideo",
+            "play finishedVid",
+            "reveal finishedVid",
+            "delete finishedVid"
+        ]
+        .map(String::from)
+    );
+    assert_eq!(ui.get_confirm_delete(), "");
+
+    // The watch page's compact Download button requests the current video.
+    let requested = Rc::new(Cell::new(0));
+    let output = requested.clone();
+    ui.on_download_current(move || output.set(output.get() + 1));
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    settle();
+    element(&app, "Download").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(requested.get(), 1);
+    // Unavailable (diagnostic mode, unsupported platform): disabled.
+    ui.set_available(false);
+    settle();
+    assert_eq!(element(&app, "Download").accessible_enabled(), Some(false));
+}

@@ -84,15 +84,24 @@ impl Reads {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SaveOrigin {
+    /// The watch page's Save: pinned to this native guest load request.
+    Playback(u64),
+    /// A video card's explicit "Add to local playlist": the captured public
+    /// summary itself is the target, independent of playback.
+    Card,
+}
 #[derive(Clone)]
 struct SaveTarget {
     video: VideoSummary,
-    load: u64,
+    origin: SaveOrigin,
     collections: Vec<oxplay_storage::LocalPlaylist>,
 }
 impl SaveTarget {
     fn matches(&self, video: &VideoSummary, snapshot: &oxplay_media::Snapshot) -> bool {
-        self.video.id == video.id && self.load == snapshot.load_request_id && savable_load(snapshot)
+        matches!(self.origin, SaveOrigin::Playback(load)
+            if self.video.id == video.id && load == snapshot.load_request_id && savable_load(snapshot))
     }
 }
 struct PendingSave {
@@ -442,6 +451,16 @@ pub fn save_quality(app: &App, state: &UiState, quality: oxplay_core::QualityCei
     prefs.playback.quality = quality;
     save_preferences(app, state, prefs)
 }
+pub fn save_ambient_mode(app: &App, state: &UiState, enabled: bool) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.playback.ambient_mode = enabled;
+    save_preferences(app, state, prefs)
+}
+pub fn save_glow_size(app: &App, state: &UiState, size: oxplay_core::GlowSize) -> bool {
+    let mut prefs = desired_preferences(state);
+    prefs.playback.glow_size = size;
+    save_preferences(app, state, prefs)
+}
 pub fn save_speed(app: &App, state: &UiState, speed: oxplay_core::PlaybackSpeed) -> bool {
     let mut prefs = desired_preferences(state);
     prefs.playback.speed = speed;
@@ -631,6 +650,43 @@ fn begin_save(app: &App, state: &UiState) -> bool {
         );
         return false;
     };
+    open_save_target(
+        app,
+        state,
+        video,
+        SaveOrigin::Playback(snapshot.load_request_id),
+    );
+    true
+}
+
+/// Card saves never depend on playback, but keep the same local-only guards.
+fn card_save_available(app: &App, state: &UiState) -> bool {
+    !app.get_native_video_child()
+        && !state.caption_cache.active()
+        && state.library_fixture.is_none()
+}
+
+/// Prepares the shared Save dialog for a public video chosen from a card menu.
+/// `Ok` means the dialog may open (possibly showing an in-flight save).
+pub(crate) fn begin_card_save(
+    app: &App,
+    state: &UiState,
+    video: VideoSummary,
+) -> Result<(), &'static str> {
+    if state.library_ui.pending_save.borrow().is_some() {
+        return Ok(());
+    }
+    if state.library_ui.pending.get() {
+        return Err("The local library is busy. Try again shortly.");
+    }
+    if !card_save_available(app, state) {
+        return Err("Saving to a local playlist isn't available right now.");
+    }
+    open_save_target(app, state, video, SaveOrigin::Card);
+    Ok(())
+}
+
+fn open_save_target(app: &App, state: &UiState, video: VideoSummary, origin: SaveOrigin) {
     let collections = state.playlists.borrow().clone();
     let ui = app.global::<SaveUi>();
     ui.set_collections(slint::ModelRc::new(slint::VecModel::from(
@@ -649,10 +705,9 @@ fn begin_save(app: &App, state: &UiState) -> bool {
     ui.set_status("Choose a playlist or create one below.".into());
     *state.library_ui.save_target.borrow_mut() = Some(SaveTarget {
         video,
-        load: snapshot.load_request_id,
+        origin,
         collections,
     });
-    true
 }
 
 fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: Option<String>) {
@@ -660,17 +715,34 @@ fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: O
         return;
     }
     let target = state.library_ui.save_target.borrow().clone();
-    let current = current_savable_video(app, state);
-    let Some((target, (_, snapshot))) = target
-        .zip(current)
-        .filter(|(target, (video, snapshot))| target.matches(video, snapshot))
-    else {
+    let Some(target) = target else {
         save_status(
             app,
             "Playback changed or is unavailable. Close this dialog and choose Save again.",
         );
         return;
     };
+    // Watch-page saves recheck the pinned native load; card saves recheck
+    // only the local-only guards because playback is not their target.
+    let admitted = match target.origin {
+        SaveOrigin::Playback(_) => current_savable_video(app, state)
+            .is_some_and(|(video, snapshot)| target.matches(&video, &snapshot)),
+        SaveOrigin::Card => card_save_available(app, state),
+    };
+    if !admitted {
+        save_status(
+            app,
+            match target.origin {
+                SaveOrigin::Playback(_) => {
+                    "Playback changed or is unavailable. Close this dialog and choose Save again."
+                }
+                SaveOrigin::Card => {
+                    "Saving is unavailable right now. Close this dialog and try again."
+                }
+            },
+        );
+        return;
+    }
     // The popup owns this bounded destination snapshot. A refreshed library
     // model must not redirect its selected index to a different collection.
     let (destination, collection_name) = if let Some(index) = existing {
@@ -705,7 +777,6 @@ fn enqueue_video_save(app: &App, state: &UiState, existing: Option<i32>, name: O
     // The native identity above is checked immediately before this bounded
     // worker admission. Once accepted, the explicit write completes even if
     // playback changes or the popup closes; its response retains this serial.
-    debug_assert_eq!(target.load, snapshot.load_request_id);
     if submit(
         app,
         state,
@@ -1387,6 +1458,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                         app.set_theme(theme_index(desired_preferences(&s).theme));
                     }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
+                    crate::playback_preferences::sync_ambient(&app, &s);
                     app.global::<LibraryUi>()
                         .set_history_enabled(s.preferences.get().privacy.local_history);
                     status(&app, if latest && write.value.playback != s.preferences.get().playback {
@@ -1407,6 +1479,7 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
                     // override a session-only diagnostic appearance.
                     if theme_changed { app.set_theme(theme_index(desired_preferences(&s).theme)); }
                     app.set_default_quality_index(desired_preferences(&s).playback.quality.index());
+                    crate::playback_preferences::sync_ambient(&app, &s);
                     app.global::<LibraryUi>()
                         .set_history_enabled(prefs.privacy.local_history);
                     status(
@@ -2012,6 +2085,23 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     });
     let weak = app.as_weak();
     let s = state.clone();
+    app.on_ambient_mode_changed(move |enabled| {
+        let Some(app) = weak.upgrade() else { return };
+        save_ambient_mode(&app, &s, enabled);
+        // The controls show the admitted value, even after a rejected write.
+        crate::playback_preferences::sync_ambient(&app, &s);
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
+    app.on_glow_size_changed(move |index| {
+        let Some(app) = weak.upgrade() else { return };
+        if let Some(size) = oxplay_core::GlowSize::from_index(index) {
+            save_glow_size(&app, &s, size);
+        }
+        crate::playback_preferences::sync_ambient(&app, &s);
+    });
+    let weak = app.as_weak();
+    let s = state.clone();
     app.on_thumbnail_cache_changed(move |index| {
         let Some(app) = weak.upgrade() else { return };
         if let Some(mib) = thumbnail_cache_mib(index) {
@@ -2371,7 +2461,7 @@ mod tests {
         };
         let target = SaveTarget {
             video: video.clone(),
-            load: 42,
+            origin: SaveOrigin::Playback(42),
             collections: Vec::new(),
         };
         let snapshot = oxplay_media::Snapshot {
@@ -2382,6 +2472,13 @@ mod tests {
             ..Default::default()
         };
         assert!(target.matches(&video, &snapshot));
+        // A card-menu target is never admitted through the playback check,
+        // even for the same video and an identical started load.
+        let card = SaveTarget {
+            origin: SaveOrigin::Card,
+            ..target.clone()
+        };
+        assert!(!card.matches(&video, &snapshot));
         let mut renamed = video.clone();
         renamed.title = "Updated actual metadata".into();
         assert!(target.matches(&renamed, &snapshot));
@@ -2458,6 +2555,7 @@ mod tests {
             playback: oxplay_core::PlaybackPreferences {
                 quality: oxplay_core::QualityCeiling::P720,
                 speed: oxplay_core::PlaybackSpeed::OneAndHalf,
+                ..Default::default()
             },
             ..Default::default()
         };
