@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { ListView } from "std-widgets.slint";
+import { Colors, Action, ActionVariant } from "components.slint";
+
+// One download. progress is 0–1, or negative while its size is unknown.
+// Running rows use status; finished rows use detail.
+export struct DownloadRow {
+    id: string, title: string, channel: string, detail: string, status: string,
+    progress: float, thumbnail: image, thumbnail-ready: bool, cancelling: bool,
+}
+
+// Explicit downloads (downloads_ui.rs). Rust owns every list and message.
+export global DownloadsUi {
+    in property <[DownloadRow]> active;
+    in property <[DownloadRow]> completed;
+    in property <bool> loaded;
+    // False in diagnostic modes and on platforms without helper supervision.
+    in property <bool> available: true;
+    in property <bool> read-only;
+    // Quality limits or manifest problems, shown above the lists.
+    in property <string> note;
+    in property <string> reveal-label: "Show in folder";
+    // Finished download awaiting delete confirmation (UI draft only).
+    in-out property <string> confirm-delete;
+    callback download-current();
+    callback cancel(string);
+    callback play(string);
+    callback reveal(string);
+    callback delete(string);
+    callback wake();
+}
+
+component Thumbnail inherits Rectangle {
+    in property <image> source;
+    in property <bool> ready;
+    width: 160px; height: 90px;
+    border-radius: 8px; clip: true; background: Colors.raised;
+    if root.ready: Image { width: parent.width; height: parent.height; source: root.source; image-fit: cover; }
+    if !root.ready: Image {
+        x: (parent.width - 26px) / 2; y: (parent.height - 26px) / 2; width: 26px; height: 26px;
+        source: @image-url("icons/download.svg"); colorize: Colors.muted;
+    }
+}
+
+// Static bar: no animation, so a running download never drives redraws by itself.
+component ProgressBar inherits Rectangle {
+    in property <float> value;
+    height: 4px; border-radius: 2px; background: Colors.hover;
+    accessible-role: progress-indicator;
+    accessible-value: root.value >= 0 ? round(root.value * 100) + "%" : "";
+    if root.value >= 0: Rectangle {
+        x: 0px; width: parent.width * clamp(root.value, 0, 1); height: parent.height;
+        border-radius: parent.border-radius; background: Colors.accent;
+    }
+}
+
+export component DownloadsPage inherits Rectangle {
+    private property <length> active-height: min(DownloadsUi.active.length, 3) * 78px;
+    private property <bool> empty: DownloadsUi.loaded && DownloadsUi.active.length == 0 && DownloadsUi.completed.length == 0;
+    VerticalLayout {
+        spacing: 10px;
+        Text { text: "Downloads"; color: Colors.text; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; height: 36px; }
+        Text { text: "Videos you chose to save on this device. They play without an internet connection and are never uploaded."; color: Colors.muted; font-size: 14px; wrap: word-wrap; }
+        if DownloadsUi.note != "": Rectangle {
+            height: note-text.preferred-height + 20px;
+            border-radius: 10px; background: Colors.hover;
+            Image { x: 12px; y: 11px; width: 18px; height: 18px; source: @image-url("icons/info.svg"); colorize: Colors.muted; }
+            note-text := Text {
+                x: 40px; y: 10px; width: parent.width - 52px;
+                text: DownloadsUi.note; color: Colors.text; font-size: 13px; wrap: word-wrap;
+                accessible-role: text; accessible-label: self.text;
+            }
+        }
+        if DownloadsUi.active.length > 0: Text { text: "In progress"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+        if DownloadsUi.active.length > 0: ListView {
+            height: root.active-height; horizontal-scrollbar-policy: always-off;
+            for row in DownloadsUi.active: Rectangle {
+                height: 78px;
+                VerticalLayout {
+                    x: 0px; width: parent.width - 124px; padding-top: 8px; spacing: 4px; alignment: start;
+                    Text { text: row.title; color: Colors.text; font-size: 14px; font-weight: 600; overflow: elide; }
+                    Text { text: row.channel != "" ? row.channel + " · " + row.status : row.status; color: Colors.muted; font-size: 12px; overflow: elide; accessible-role: text; accessible-label: row.title + ": " + row.status; }
+                    ProgressBar { value: row.progress; accessible-label: "Download progress for " + row.title; }
+                }
+                Action {
+                    x: parent.width - 112px; y: 18px; width: 104px; height: 32px;
+                    variant: ActionVariant.secondary; label: row.cancelling ? "Cancelling…" : "Cancel";
+                    accessible-label: "Cancel download of " + row.title;
+                    enabled: !row.cancelling;
+                    clicked => { DownloadsUi.cancel(row.id); }
+                }
+            }
+        }
+        if DownloadsUi.completed.length > 0: Text { text: "Downloaded"; color: Colors.text; font-size: 16px; font-weight: 600; height: 26px; }
+        if DownloadsUi.completed.length > 0: ListView {
+            vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
+            for row in DownloadsUi.completed: row-item := Rectangle {
+                property <bool> confirming: DownloadsUi.confirm-delete == row.id;
+                property <bool> narrow: self.width < 640px;
+                height: 106px;
+                Thumbnail { x: 0px; y: 8px; source: row.thumbnail; ready: row.thumbnail-ready; }
+                VerticalLayout {
+                    x: 172px; y: 8px; width: row-item.width - self.x - (row-item.narrow ? 8px : 346px); height: 90px;
+                    spacing: 3px; alignment: start;
+                    Text { text: row.title; color: Colors.text; font-size: 14px; font-weight: 600; wrap: word-wrap; overflow: elide; max-height: 38px; }
+                    if row.channel != "": Text { text: row.channel; color: Colors.muted; font-size: 12px; overflow: elide; }
+                    Text { text: row.detail; color: Colors.muted; font-size: 12px; overflow: elide; }
+                }
+                HorizontalLayout {
+                    x: row-item.narrow ? 172px : row-item.width - self.width; y: row-item.narrow ? 66px : 37px;
+                    width: row-item.narrow ? row-item.width - 172px : 338px; height: 32px; spacing: 6px;
+                    alignment: row-item.narrow ? start : end;
+                    if !row-item.confirming: Action {
+                        width: 92px; height: 32px; horizontal-stretch: 0;
+                        variant: ActionVariant.primary; icon-name: "play"; label: "Play";
+                        accessible-label: "Play " + row.title;
+                        enabled: DownloadsUi.available;
+                        clicked => { DownloadsUi.play(row.id); }
+                    }
+                    if !row-item.confirming: Action {
+                        width: 136px; height: 32px; horizontal-stretch: 0;
+                        variant: ActionVariant.secondary; label: DownloadsUi.reveal-label;
+                        accessible-label: DownloadsUi.reveal-label + ": " + row.title;
+                        clicked => { DownloadsUi.reveal(row.id); }
+                    }
+                    if !row-item.confirming: Action {
+                        width: 84px; height: 32px; horizontal-stretch: 0;
+                        variant: ActionVariant.secondary; label: "Delete";
+                        accessible-label: "Delete " + row.title;
+                        enabled: !DownloadsUi.read-only;
+                        clicked => { DownloadsUi.confirm-delete = row.id; }
+                    }
+                    if row-item.confirming: Text { text: "Delete this video from your device?"; color: Colors.text; font-size: 13px; vertical-alignment: center; overflow: elide; }
+                    if row-item.confirming: Action {
+                        width: 84px; height: 32px; horizontal-stretch: 0;
+                        variant: ActionVariant.destructive; label: "Delete";
+                        accessible-label: "Confirm deleting " + row.title;
+                        clicked => { DownloadsUi.confirm-delete = ""; DownloadsUi.delete(row.id); }
+                    }
+                    if row-item.confirming: Action {
+                        width: 72px; height: 32px; horizontal-stretch: 0;
+                        variant: ActionVariant.secondary; label: "Keep";
+                        accessible-label: "Keep " + row.title;
+                        clicked => { DownloadsUi.confirm-delete = ""; }
+                    }
+                }
+            }
+        }
+        if root.empty: Rectangle {
+            height: 250px;
+            Rectangle { x: (parent.width - 72px) / 2; y: 40px; width: 72px; height: 72px; border-radius: 36px; background: Colors.hover;
+                Image { x: (parent.width - 32px) / 2; y: (parent.height - 32px) / 2; width: 32px; height: 32px; source: @image-url("icons/download.svg"); colorize: Colors.accent; }
+            }
+            Text { y: 126px; width: parent.width; height: 32px; text: "No downloads yet"; color: Colors.text; font-size: 22px; font-weight: 700; horizontal-alignment: center; }
+            Text {
+                x: max(0px, (parent.width - 460px) / 2); y: 166px; width: min(460px, parent.width); height: 60px;
+                text: "Right-click a video and choose Download, or use the download button on the watch page. Only public videos can be saved.";
+                color: Colors.muted; font-size: 14px; horizontal-alignment: center; wrap: word-wrap;
+            }
+        }
+        if !root.empty && DownloadsUi.completed.length == 0: Rectangle { vertical-stretch: 1; }
+        if !DownloadsUi.loaded: Rectangle { vertical-stretch: 1; }
+    }
+}

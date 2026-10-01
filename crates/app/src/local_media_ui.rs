@@ -95,9 +95,16 @@ impl Drop for Worker {
         }
     }
 }
+/// Stored title and creator for a downloaded video, shown instead of the
+/// filename. The download itself is still opened as an ordinary local file.
+struct Display {
+    title: String,
+    channel: String,
+}
 struct Handoff {
     path: PathBuf,
     scope: Scope,
+    display: Option<Display>,
 }
 struct Subtitle {
     path: Arc<PathBuf>,
@@ -110,6 +117,7 @@ pub struct State {
     operation: Cell<Option<Operation>>,
     handoff: RefCell<Option<Handoff>>,
     subtitle: RefCell<Option<Subtitle>>,
+    display: RefCell<Option<Display>>,
     deadline: Timer,
 }
 impl State {
@@ -121,6 +129,7 @@ impl State {
             operation: Cell::new(None),
             handoff: RefCell::new(None),
             subtitle: RefCell::new(None),
+            display: RefCell::new(None),
             deadline: Timer::default(),
         })
     }
@@ -131,6 +140,7 @@ impl State {
         self.operation.set(None);
         self.handoff.borrow_mut().take();
         self.subtitle.borrow_mut().take();
+        self.display.borrow_mut().take();
         self.deadline.stop();
     }
 }
@@ -339,6 +349,53 @@ fn begin(app: &App, state: &Rc<UiState>, kind: Kind) {
     }
 }
 
+/// Play a finished download through the same validation worker and
+/// stop-before-load handoff as a picked file, showing its stored metadata.
+pub fn open_download(
+    app: &App,
+    state: &Rc<UiState>,
+    path: PathBuf,
+    title: String,
+    channel: String,
+) -> Result<(), &'static str> {
+    if state.caption_cache.active() || app.get_native_video_child() {
+        return Err("Local playback is unavailable right now.");
+    }
+    if !state.playback_preferences.ready() {
+        return Err("Wait for saved playback settings before opening a file.");
+    }
+    if app.get_local_file_busy() {
+        return Err("Another file is opening. Try again shortly.");
+    }
+    let serial = state
+        .local_media
+        .serial
+        .get()
+        .checked_add(1)
+        .ok_or("File selection identifiers are exhausted. Restart Oxplay.")?;
+    state.local_media.stop_picker();
+    state.local_media.serial.set(serial);
+    let operation = Operation {
+        serial,
+        scope: Scope::current(state),
+        kind: Kind::Video,
+    };
+    let sent = state
+        .local_media
+        .worker
+        .requests
+        .as_ref()
+        .is_some_and(|worker| worker.try_send(Request { operation, path }).is_ok());
+    if !sent {
+        return Err("File validation is busy. Try again.");
+    }
+    state.local_media.operation.set(Some(operation));
+    *state.local_media.display.borrow_mut() = Some(Display { title, channel });
+    app.set_local_file_busy(true);
+    app.set_status("Checking the downloaded file…".into());
+    Ok(())
+}
+
 fn deadline(app: &App, state: &Rc<UiState>) {
     let weak = app.as_weak();
     let state_weak = Rc::downgrade(state);
@@ -385,9 +442,11 @@ fn selected_video(app: &App, state: &Rc<UiState>, path: PathBuf) {
         finish(app, state, &error.to_string());
         return;
     }
+    let display = state.local_media.display.borrow_mut().take();
     *state.local_media.handoff.borrow_mut() = Some(Handoff {
         path,
         scope: Scope::current(state),
+        display,
     });
     // The original picker scope is intentionally retired at this handoff.
     state.local_media.operation.set(None);
@@ -451,16 +510,27 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &Snapshot) {
         } else {
             match state.player.load_local(&handoff.path) {
                 Ok(()) => {
-                    app.set_video_title(
-                        handoff
-                            .path
-                            .file_name()
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .into_owned()
-                            .into(),
-                    );
-                    app.set_video_channel("Local file · Not saved to history".into());
+                    let (title, channel) = match &handoff.display {
+                        Some(display) => (
+                            display.title.clone(),
+                            if display.channel.is_empty() {
+                                "Downloaded video".to_owned()
+                            } else {
+                                format!("{} · Downloaded", display.channel)
+                            },
+                        ),
+                        None => (
+                            handoff
+                                .path
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .into_owned(),
+                            "Local file · Not saved to history".to_owned(),
+                        ),
+                    };
+                    app.set_video_title(title.into());
+                    app.set_video_channel(channel.into());
                     app.set_page(2);
                     app.set_loaded(true);
                     crate::watch_loading::local_finished(app, state);
@@ -468,7 +538,11 @@ pub fn observe(app: &App, state: &Rc<UiState>, snapshot: &Snapshot) {
                     finish(
                         app,
                         state,
-                        "Local playback · No YouTube request was made for this file.",
+                        if handoff.display.is_some() {
+                            "Downloaded video · No YouTube request was made to play it."
+                        } else {
+                            "Local playback · No YouTube request was made for this file."
+                        },
                     );
                 }
                 Err(error) => finish(app, state, &error.to_string()),
