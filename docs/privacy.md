@@ -67,6 +67,12 @@ can reveal interests even when history is off, so bounded caches and clear-local
 data controls are required. Signed media URLs are transient secrets and must not
 be kept in ordinary storage or logs.
 
+Explicit [downloads](downloads.md) are anonymous guest requests started only by
+the user. Their files, artwork and manifest (titles, creators, dates) stay in
+the app-owned downloads folder until the user deletes them; they reveal viewing
+interests on this device. Clear local data does not delete downloaded videos;
+the Downloads page and the folder itself do. Nothing is uploaded.
+
 The account adapter uses an explicitly selected cookie export and verifies
 identity before enabling account operations. Its real-account acceptance tests
 have not been run. Never provide a password, authentication code or cookie file through
