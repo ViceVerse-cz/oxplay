@@ -26,6 +26,9 @@ FFMPEG_URL = f"https://ffmpeg.org/releases/ffmpeg-{FFMPEG_VERSION}.tar.xz"
 FFMPEG_SHA256 = "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e"
 PATCHES = Path(__file__).resolve().parent / "patches"
 AUXILIARY = {
+    # Exact v7.360.1 gitlink. The Ubuntu 24.04 loader is sufficient at runtime,
+    # but libplacebo's compilation requires Vulkan 1.4 header declarations.
+    "Vulkan-Headers": ("KhronosGroup/Vulkan-Headers", "450bd2232225d6c7728a4108055ac2e37cef6475", "26df9841c30806a994e2fdf42f7c87bcb1ced9db9a06033469123939fb3fa075"),
     "jinja": ("pallets/jinja", "15206881c006c79667fe5154fe80c01c65410679", "b88a20dcc2e34072fcf4159325bc6c34cd4b29a81a8b83d15d2f28ba561da296"),
     "markupsafe": ("pallets/markupsafe", "297fc8e356e6836a62087949245d09a28e9f1b13", "da7c010c9c81a66ac73036558c1fcb6212b50482f43211cd1254035b94f82414"),
     "fast_float": ("fastfloat/fast_float", "97b54ca9e75f5303507699d27c6b4f4efe4641a1", "2b132274539286e41f37857cac22aa8441d21bd86d55de825a3342b149f66801"),
@@ -188,7 +191,8 @@ def check_installed_abi(prefix: Path, work: Path, env: dict, *, vulkan: bool) ->
             str(PATCHES.parent / "check_abi.c"), "-I" + str(prefix / "include"),
             "-o", str(work / "native-render-abi.o")]
     if vulkan:
-        args += ["-DCHECK_VULKAN", *shlex.split(subprocess.check_output(
+        args += ["-DCHECK_VULKAN", "-I" + str(work / "libplacebo/3rdparty/Vulkan-Headers/include"),
+                 *shlex.split(subprocess.check_output(
             ["pkg-config", "--cflags", "vulkan"], text=True, env=env))]
     run(args, env=env)
     library = prefix / ("lib/libmpv.so.2" if vulkan else "libmpv-2.dll")
