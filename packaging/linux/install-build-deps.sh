@@ -15,7 +15,7 @@ case "$ID:${VERSION_ID:-rolling}" in
     DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y --no-install-recommends \
       build-essential ca-certificates curl git pkg-config meson ninja-build python3 \
       nasm cmake libgnutls28-dev libass-dev libluajit-5.1-dev \
-      libshaderc-dev libvulkan-dev libva-dev libdrm-dev \
+      libshaderc-dev libvulkan-dev libva-dev libdrm-dev libdisplay-info-dev \
       libegl1-mesa-dev libgl1-mesa-dev libwayland-dev wayland-protocols \
       libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxss-dev \
       libxext-dev libxpresent-dev libxrandr-dev libxi-dev libxcursor-dev \
@@ -26,7 +26,7 @@ case "$ID:${VERSION_ID:-rolling}" in
     dnf install -y --setopt=install_weak_deps=False gcc gcc-c++ make pkgconf-pkg-config \
       curl git ca-certificates tar gzip xz python3 coreutils findutils shadow-utils util-linux \
       meson ninja-build nasm cmake gnutls-devel libass-devel luajit-devel \
-      libshaderc-devel vulkan-loader-devel vulkan-headers libva-devel libdrm-devel \
+      libshaderc-devel vulkan-loader-devel vulkan-headers libva-devel libdrm-devel libdisplay-info-devel \
       alsa-lib-devel pulseaudio-libs-devel patchelf \
       rpm-build cpio desktop-file-utils file glibc-common \
       fontconfig-devel freetype-devel libxkbcommon-devel libxkbcommon-x11-devel \
@@ -35,7 +35,7 @@ case "$ID:${VERSION_ID:-rolling}" in
   arch:*)
     pacman -Syu --noconfirm --needed base-devel pkgconf curl git ca-certificates tar gzip xz \
       python coreutils desktop-file-utils file meson ninja nasm cmake \
-      gnutls libass luajit shaderc vulkan-headers vulkan-icd-loader libva libdrm \
+      gnutls libass luajit shaderc vulkan-headers vulkan-icd-loader libva libdrm libdisplay-info \
       alsa-lib libpulse patchelf fontconfig freetype2 libxkbcommon \
       libxkbcommon-x11 wayland libx11 libxi libxrandr libxcursor libglvnd
     ;;
