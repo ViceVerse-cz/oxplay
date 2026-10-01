@@ -113,8 +113,9 @@ playlist continuation search.
    user-bound protection adapter; Linux: Secret Service, with locked/unavailable
    service explicitly handled. If protection fails, offer session-only memory
    use; never silently persist plaintext. macOS now has an independently tested
-   Keychain adapter; Linux/Windows return unsupported rather than persisting
-   plaintext. Platform references:
+   Keychain adapter. Windows uses a Credential Manager generic credential
+   (implemented; only its ignored synthetic roundtrip exists). Linux returns
+   unsupported rather than persisting plaintext. Platform references:
    [Apple](https://developer.apple.com/documentation/security/keychain-services),
    [Microsoft](https://learn.microsoft.com/en-us/windows/win32/api/wincred/ns-wincred-credentialw),
    [Secret Service](https://specifications.freedesktop.org/secret-service/latest/).
@@ -231,8 +232,9 @@ cleanup reference. A private directory lock prevents multiple app instances
 from modifying the same saved profile concurrently. Startup inspection never
 loads secrets or reconnects; an explicit reconnect decrypts, reparses and
 re-verifies identity. Save failure is reported as session-only rather than
-plaintext persistence. Windows file import currently fails closed pending a
-reviewed native file-handle path; the protected vault remains macOS-only.
+plaintext persistence. On Windows, file import opens the canonical path without
+following reparse points and the vault uses Credential Manager; both are
+implemented but have no native account test.
 
 Startup inspection also asks the provider to remove stale, narrowly identified
 app-owned extractor jars without reading their contents. Explicit authenticated

@@ -90,8 +90,15 @@ is documented separately in [local-home.md](local-home.md).
 
 Compilation with both Linux backends is not an X11 or native Wayland runtime
 qualification. Neither CI job establishes working hardware decoding, account
-capabilities, resource budgets, accessibility or portable installation. Windows
-is not in this build matrix while its native integration remains unfinished.
+capabilities, resource budgets, accessibility or portable installation. A
+separate `windows-latest` job fetches the pinned libmpv development archive
+([build inputs](build-inputs.md#windows-libmpv-input)), sets `MPV_DIR` and runs
+formatting, strict Clippy, the automated Rust tests and a locked release build
+for `x86_64-pc-windows-msvc`. It skips the Python tools, which require Unix
+process supervision, and never opens a native window. It also runs the ignored
+synthetic Credential Manager roundtrip, which is safe on the ephemeral runner.
+Its first full pass is [run 36793555368](https://github.com/ViceVerse-cz/oxplay/actions/runs/36793555368)
+(577 Rust tests, five ignored); see [platform matrix](platform-matrix.md#windows-port-x86_64-pc-windows-msvc).
 See [platform matrix](platform-matrix.md) and [progress](progress.md).
 
 Actions use verified full commit IDs. Workflow tokens default to read-only

@@ -93,6 +93,9 @@ caption diagnostic passed with this private-cache location and clean shutdown;
 see [packaging evidence](packaging.md). That run predates the coordinated-clear
 and engine-held playback-lease changes below. This does not promise forensic
 erasure, filesystem availability, or validated Windows protected-file behavior.
+Windows now has an implemented path-based cache (`caption_files/windows.rs`) with
+the same lock/reap model, owner-only DACLs and reparse-point rejection; only its
+synthetic unit tests have run (in CI), not a native caption selection.
 
 
 ## Coordinated local-data clearing

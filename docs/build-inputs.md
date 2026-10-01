@@ -55,3 +55,34 @@ corresponding source are separate provenance requirements. The inventory does
 not scan a user's home directory, compile dependencies, fetch Git objects, or
 run application/native helpers. It is an application input record, not a full
 build-environment or licensing SBOM.
+
+## Windows libmpv input
+
+Windows has no pkg-config. `crates/media/build.rs` links libmpv from `MPV_DIR`
+when the target OS is Windows (pkg-config remains the default everywhere else).
+The directory must contain `include/mpv/client.h` declaring client API 2.5 or
+newer (checked by the build script), the runtime `libmpv-2.dll`, and an import
+library: an MSVC `mpv.lib` if present, otherwise `libmpv.dll.a`, linked
+verbatim. The latter's COFF short-import members are accepted by MSVC
+`link.exe`, so no import library is regenerated. The build script copies the DLL
+into its `OUT_DIR` so `cargo run`/`cargo test` find it; packages must ship
+`libmpv-2.dll` beside `oxplay.exe`.
+
+CI and packaging use exactly one pinned archive, fetched and verified by
+`scripts/ci/install-mpv-windows.sh` before extraction:
+
+| Field | Value |
+|---|---|
+| Source | [shinchiro/mpv-winbuild-cmake release `20260928`](https://github.com/shinchiro/mpv-winbuild-cmake/releases/tag/20260928) |
+| Asset | `mpv-dev-x86_64-20260928-git-e470f8986e.7z` (mpv git `e470f8986e`, client API 2.5) |
+| SHA-256 | `81795d759e01016f1550fd71651a1a5d59ab5c28ef31c0b6793224e9cff39459` |
+| Contents | `libmpv-2.dll` (static FFmpeg, OpenSSL TLS with Windows store support), `libmpv.dll.a`, `include/mpv/*.h` |
+
+This is an mpv development snapshot, not the 0.41.0 release used on Linux; the
+official mpv 0.41.0 Windows assets contain only the player, not libmpv. The
+x86-64 baseline build is used rather than the `-v3` (AVX2) variant. shinchiro
+retains only about 30 releases, so the pin will eventually disappear upstream:
+CI caches the extracted archive by installer hash, and a refresh must update
+tag, asset name and SHA-256 together in the installer and this table. The
+archive's FFmpeg/mpv source correspondence and licensing (GPL build) must be
+audited before any Windows binary distribution; see [licensing](licensing.md).

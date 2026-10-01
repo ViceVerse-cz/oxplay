@@ -22,6 +22,70 @@ See [progress](progress.md).
 
 All targets are experimental. A native compile/run is not release support.
 
+## Windows port (x86_64-pc-windows-msvc)
+
+Windows now compiles, lints and runs the automated test suite in a hosted
+`windows-latest` CI job (see [CI](ci-release.md) and the evidence below). It
+links libmpv from `MPV_DIR`, an extracted, SHA-256-pinned shinchiro
+`mpv-dev-x86_64` archive (self-contained `libmpv-2.dll` with static FFmpeg;
+[build inputs](build-inputs.md#windows-libmpv-input)). The Winit/FemtoVG shell
+uses a WGL OpenGL context and the same shared OpenGL presenter as Linux;
+macOS-only pieces (display clock, native child, AppKit header integration) stay
+behind `cfg(target_os = "macos")`, so frames are scheduled by mpv's render
+update callback. Windows keeps native window decorations: the OS frame owns
+dragging, resizing and the minimize/maximize/close buttons.
+
+Platform adapters implemented for Windows:
+
+- yt-dlp supervision uses one Job Object per run with
+  `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`. The helper starts suspended, joins the
+  job, then resumes, so all descendants are born inside it. Timeout,
+  cancellation, session change, output bounds and success terminate the whole
+  tree (`TerminateJobObject`); an Oxplay crash closes the job and kills it too.
+  CI tests cover bounded capture, timeout, cancellation and a detached
+  grandchild that must not survive. The former fail-closed gate is removed.
+  Each run gets a private TEMP, removed once the job reports no live process:
+  the one-file `yt-dlp.exe` (PyInstaller) unpacks itself there on every run and
+  would otherwise leak `_MEI*` directories when a run is cancelled. The
+  one-directory `yt-dlp_win.zip` distribution avoids that per-run unpacking
+  and is the better choice for packages.
+- Helpers resolve to `yt-dlp.exe`/`deno.exe` beside `oxplay.exe`, then one
+  absolute `PATH` entry (development), or explicit `--yt-dlp`/`--deno`.
+- Remembered account sessions: the per-profile key is a Credential Manager
+  generic credential (DPAPI-protected, local machine persistence), separate
+  from the XChaCha20Poly1305 envelope. New private directories get a protected
+  owner-only DACL; reparse points (symlinks/junctions) are rejected. Session
+  file import, ephemeral extractor cookie jars and the caption cache use the
+  same checks. An ignored synthetic Credential Manager roundtrip exists
+  (`windows_credential_manager_synthetic_roundtrip`).
+- Display sleep is prevented only during observed video playback
+  (`SetThreadExecutionState`), mirroring the macOS assertion.
+- Media DNS uses the in-process system resolver as on Linux. The macOS
+  `oxplay-dns` helper is not used; its Windows build is an inert stub that
+  exits with status 2 and need not be packaged.
+- Release builds use the GUI subsystem (no console window); diagnostics
+  reattach to a launching terminal, and startup errors show a message box.
+
+Not available on Windows: browser sign-in (Chromium on Windows uses DPAPI and
+app-bound encryption that Oxplay does not implement; the UI shows the existing
+"not supported on this platform yet" message and the file import remains),
+the optional guest artwork disk cache (fails closed), the Unix-only smoke
+diagnostics, and blur. Not verified on any Windows machine: opening the native
+window, WGL presentation, hardware decoding (`hwdec=auto-safe` may select a
+copy-back decoder), audio output, HTTPS media trust (FFmpeg uses OpenSSL with
+the Windows certificate store), DPI/multi-monitor behavior, translucency,
+real yt-dlp/Deno execution, Credential Manager on a user desktop, and
+accessibility. CI never opens a window.
+
+Evidence: [CI run 36793555368](https://github.com/ViceVerse-cz/oxplay/actions/runs/36793555368)
+for source `2d3a68e` passed all three jobs. On `windows-latest` (MSVC) it passed
+formatting, strict all-target Clippy, 577 Rust tests (five explicitly ignored),
+the synthetic Credential Manager roundtrip and the locked release workspace
+build, linking the pinned archive's `libmpv-2.dll` (SHA-256
+`0d5b9dbe…7254e2e`). The 64 media tests initialized the real libmpv with the
+production option set and null outputs; the Job Object, private-directory,
+caption-cache and cookie-jar tests ran against the real Windows APIs.
+
 The local-first Home slice passed debug/release functional checks on the same
 macOS host: bounded local pagination, unchanged refresh, navigation and committed
 collection mutations. Dark1000×720 and light760×600 captures were inspected.
@@ -63,7 +127,7 @@ equivalent Windows, X11 or native Wayland result exists.
 | Target | Build / native shell | Embedded media | Hardware evidence | Release status |
 |---|---|---|---|---|
 | macOS 27.0 arm64, Apple M1 | Debug/release compiled and native Winit/FemtoVG window run | Local and public YouTube H.264 video advance in shared Slint window; scripted pause/seek/resize/fullscreen and teardown exercised | `hwdec-current=videotoolbox` for H.264 input at 1920×1080/60 fps; OpenGL 4.1 Metal - 91.7 observed; bounded native display-clock path has zero warm VO drops in 60-second sample; A/V timing unqualified | Unqualified: repeatable playback CPU qualification remains open; default presenter still misses the ceiling in repeated measurements, and the restricted native-child candidate misses the target; sound/sync perception, accessibility, real-account and security gates pending |
-| Windows | Not compiled/run | Not tested | None | Experimental; safe helper supervision currently fails closed |
+| Windows x86_64 (MSVC) | Debug/release compilation, strict Clippy and automated tests pass in `windows-latest` CI; native shell not run | No native presentation test | None | Experimental; Job Object helper supervision implemented and tested with synthetic helpers |
 | Linux / X11 | Release compilation and automated tests pass in Ubuntu 24.04 CI; native shell not run | No native presentation test | None | Experimental |
 | Linux / native Wayland | Same CI build enables Wayland; native shell not run | No native presentation test | None | Experimental; XWayland is not a substitute |
 
@@ -162,8 +226,9 @@ private UI results. Provider/worker/network/UI tests use synthetic fixtures only
 Account captions/comments and profile-scoped private local storage are
 unsupported; anonymous local history and Save/Follow-current do not accept
 account playback metadata. macOS protected persistence has separate synthetic
-Keychain evidence, not proof of account login. Windows remains blocked by its
-unqualified file/helper supervision; Linux/X11 and native Wayland remain unrun.
+Keychain evidence, not proof of account login. Windows now has implemented
+Credential Manager, file-import and Job Object adapters, but no account login
+has run there; Linux/X11 and native Wayland remain unrun.
 See [account-media.md](account-media.md). Existing packaged guest artifacts above
 predate this coordinator and do not qualify it.
 

@@ -69,11 +69,14 @@ the storage adapter cannot invalidate provider/UI tasks by itself. Deletion
 removes the key before ciphertext and reports keychain denial even while trying
 to remove the file. It does not revoke Google's browser session. No silent
 plaintext persistence or automatic fallback exists. Offer explicit memory-only
-connection if secure storage is unavailable. Linux/Windows currently fail closed
-as unsupported adapters; they are not validated secure-storage platforms.
+connection if secure storage is unavailable. Windows stores the key record as a
+Credential Manager generic credential and creates owner-only protected-DACL
+directories (`src/windows_private.rs`); it is implemented but not validated on
+a user desktop. Linux still fails closed as an unsupported adapter.
 
 Default tests inject private in-memory keys and use synthetic data. The ignored
-`macos_keychain_synthetic_roundtrip` test requires explicit local invocation,
+`macos_keychain_synthetic_roundtrip` test (Windows:
+`windows_credential_manager_synthetic_roundtrip`) requires explicit local invocation,
 uses one random app-owned key, refuses collisions and deletes it on completion/
 unwind. It neither uses real cookies nor scans browser or existing keychain items.
 Runtime Keychain qualification must be recorded from that actual test and the

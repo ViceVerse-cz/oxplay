@@ -39,8 +39,42 @@ The inspected development environment is Apple Silicon macOS 27.0. Other targets
 remain experimental; see [platform matrix](docs/platform-matrix.md). Linux builds
 need libmpv development files and Winit/X11/Wayland development prerequisites;
 the [CI workflow](docs/ci-release.md) compiles and tests the selected features
-on Ubuntu. Native X11 and Wayland playback remain unvalidated. Windows extraction currently fails
-closed until process-tree supervision is implemented.
+on Ubuntu. Native X11 and Wayland playback remain unvalidated. Windows builds and
+tests in CI (see below); its native window and playback are not yet validated.
+
+## Build on Windows (experimental)
+
+Target: `x86_64-pc-windows-msvc`. Install Rust 1.98.1 through rustup (the pinned
+toolchain is selected automatically), the Visual Studio 2022 Build Tools with the
+"Desktop development with C++" workload (MSVC linker and Windows SDK), and
+[7-Zip](https://www.7-zip.org/). There is no pkg-config on Windows: download a
+libmpv development archive and point `MPV_DIR` at its extracted directory. CI
+uses the exact archive pinned in
+[`scripts/ci/install-mpv-windows.sh`](scripts/ci/install-mpv-windows.sh)
+(shinchiro's `mpv-dev-x86_64-…7z`; `bash scripts/ci/install-mpv-windows.sh DIR`
+in Git Bash downloads and SHA-256-verifies it). It must contain
+`include/mpv/client.h` (client API 2.5 or newer), `libmpv-2.dll` and either an
+MSVC `mpv.lib` or `libmpv.dll.a`, which the MSVC linker accepts directly.
+
+```powershell
+$env:MPV_DIR = "C:\deps\mpv-dev"
+cargo build --locked --release --workspace
+Copy-Item "$env:MPV_DIR\libmpv-2.dll" target\release\
+.\target\release\oxplay.exe
+```
+
+`cargo run` and `cargo test` find `libmpv-2.dll` automatically (the media build
+script places a copy on Cargo's run/test path); a directly started `oxplay.exe`
+needs the DLL beside it. Release builds are GUI applications without a console
+window; command-line diagnostics started from a terminal still print there.
+Helpers are taken from beside `oxplay.exe` first (`yt-dlp.exe`, `deno.exe`),
+then from an absolute `PATH` entry (for example after `winget install yt-dlp.yt-dlp`
+and `winget install DenoLand.Deno`), or from explicit `--yt-dlp`/`--deno` paths. yt-dlp runs in a
+kill-on-close Job Object. Data lives under `%LOCALAPPDATA%\Oxplay`; remembered
+account sessions use Credential Manager. The macOS `oxplay-dns` helper is not
+used: the scoped media transport resolves in process, as on Linux. Browser
+sign-in (use the session file import) and the Unix-only diagnostics are
+unavailable on Windows. See the [platform matrix](docs/platform-matrix.md).
 
 Slint runtime/build compiler use the identical upstream Git revision recorded in
 [dependencies](docs/dependencies.md). Normal builds use `--locked`; upstream
@@ -163,7 +197,7 @@ ISC and retained Feather MIT notices. The current [developer macOS bundle](docs/
 is not a portable, signed release: helper packaging, source association and notices
 remain release work.
 
-[CI and manual preview releases (source and binaries)](docs/ci-release.md) describe the macOS/Linux
+[CI and manual preview releases (source and binaries)](docs/ci-release.md) describe the macOS/Linux/Windows
 build matrix and the manual prerelease workflow, which attaches unsigned macOS
 ARM64 and experimental Linux x86_64 builds. Signing, portability and licensing
 gates remain open.
