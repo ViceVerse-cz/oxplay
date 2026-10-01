@@ -15,6 +15,30 @@ import subprocess
 import tempfile
 
 
+# Unmodified Cargo.lock from the femtovg-0.27.0.crate release archive recorded
+# in vendor/femtovg/OXPLAY-PROVENANCE.md. The upstream .gitignore ignores this
+# file, so retaining it explicitly is necessary for clean-checkout --locked tests.
+RELEASE_LOCK_SHA256 = "69bcc6664c572852d3d760546ed7264d8baba89c88dabafe16716b86dd9f1c14"
+
+
+def prepare_package(vendored, package):
+    lock = vendored / "Cargo.lock"
+    if not lock.is_file():
+        raise ValueError("Missing retained vendor/femtovg/Cargo.lock; the cache gate requires the original release lock")
+    if hashlib.sha256(lock.read_bytes()).hexdigest() != RELEASE_LOCK_SHA256:
+        raise ValueError("The retained FemtoVG lock does not match the original release archive")
+    shutil.copytree(vendored, package)
+    copied = package / "src/renderer/wgpu.rs"
+    # copytree preserves old mtimes. A shared target directory may contain
+    # the previous negative-control binary, newer than these copied files.
+    # Force Cargo to check the copied production source before its test.
+    copied.touch()
+    manifest = package / "Cargo.toml"
+    with manifest.open("a") as output:
+        output.write("\n[workspace]\n")
+    return manifest, copied
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--target-dir", type=Path)
@@ -30,15 +54,10 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix="oxplay-femtovg-policy-") as temporary:
         package = Path(temporary) / "femtovg"
-        shutil.copytree(vendored, package)
-        copied = package / "src/renderer/wgpu.rs"
-        # copytree preserves old mtimes. A shared target directory may contain
-        # the previous negative-control binary, newer than these copied files.
-        # Force Cargo to check the copied production source before its test.
-        copied.touch()
-        manifest = package / "Cargo.toml"
-        with manifest.open("a") as output:
-            output.write("\n[workspace]\n")
+        try:
+            manifest, copied = prepare_package(vendored, package)
+        except ValueError as error:
+            parser.error(str(error))
         base = [
             "cargo", "test", "--manifest-path", str(manifest), "--lib",
             "--no-default-features", "--features", "wgpu", "--locked", "-j2",
