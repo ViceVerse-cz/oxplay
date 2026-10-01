@@ -3618,7 +3618,7 @@ dependencies = [
 
 [[package]]
 name = "oxplay"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "arboard",
  "i-slint-backend-testing",
@@ -3669,7 +3669,7 @@ dependencies = [
 
 [[package]]
 name = "oxplay-network"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "hickory-resolver",
  "libc",
