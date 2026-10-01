@@ -57,7 +57,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libarchive-tools squashfs-tools zstd
       - name: Test promoter refusal and verification contracts offline
         run: python3 -m unittest discover -s controls/scripts -p test_promote_validated_release.py
-      - name: Validate completed build run, mandatory gates and current main
+      - name: Validate completed build run, mandatory gates and exact resume commit
         run: python3 controls/scripts/promote_validated_release.py validate --source source --evidence controls/target/promotion-evidence
       - name: Download the exact existing binary artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -76,7 +76,7 @@ jobs:
           run-id: '36839089100'
           name: release-preview
           path: source/preview
-      - name: Verify payload, make standard release commit and publish exact assets
+      - name: Reverify payload and resume exact existing release commit publication
         env:
           MACOS_SIGNED: 'false'
         run: python3 controls/scripts/promote_validated_release.py promote --source source --evidence controls/target/promotion-evidence

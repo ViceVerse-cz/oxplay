@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
+import tempfile
 import shutil
 import subprocess
 import sys
@@ -15,6 +17,7 @@ REPOSITORY = 'ViceVerse-cz/oxplay'
 RUN = 36839089100
 HEAD = '360eda2b7dd871791742fdaf8302b3c26f29dc9b'
 TAG = 'v0.1.0'
+RESUME_REVISION = '932c5fe95bb583fbb6d4721d2cffed47731ddcb4'
 CONTROLS = Path(__file__).resolve().parent
 RUN_URL = f'https://github.com/{REPOSITORY}/actions/runs/{RUN}'
 REQUIRED_JOBS = {
@@ -49,12 +52,12 @@ def api(endpoint):
     return json.loads(command(['gh', 'api', f'repos/{REPOSITORY}/{endpoint}'], timeout=120))
 
 
-def validate_run(data, jobs, main):
+def validate_run(data, jobs, main, *, expected_main=HEAD):
     require(data.get('id') == RUN and data.get('status') == 'completed' and data.get('conclusion') == 'success', 'Source run is not completed/success')
     require(data.get('head_sha') == HEAD and data.get('head_branch') == 'main', 'Source run revision/branch changed')
     require(data.get('path') == '.github/workflows/release.yml' and data.get('event') == 'workflow_dispatch', 'Wrong source workflow/event')
     require(data.get('repository', {}).get('full_name') == REPOSITORY, 'Wrong source repository')
-    require(main.get('object', {}).get('sha') == HEAD and main['object'].get('type') == 'commit', 'Actual remote main moved beyond the validated build')
+    require(main.get('object', {}).get('sha') == expected_main and main['object'].get('type') == 'commit', 'Actual remote main moved beyond the validated build')
     by_name = {job['name']: job for job in jobs}
     require(len(by_name) == len(jobs), 'Duplicate source job names')
     require(REQUIRED_JOBS.keys() <= by_name.keys(), 'Mandatory source job is missing')
@@ -82,6 +85,44 @@ def require_release_absent():
     validate_release_absent(data)
 
 
+def validate_resume_commit(commit, main):
+    require(commit.get('sha') == RESUME_REVISION, 'Wrong one-time resume revision')
+    require([parent['sha'] for parent in commit['parents']] == [HEAD], 'Resume commit has the wrong source parent')
+    require(len(commit['files']) == 1 and commit['files'][0]['filename'] == 'Casks/oxplay.rb' and commit['files'][0]['status'] == 'modified', 'Resume commit changed application source')
+    require(main.get('object', {}).get('sha') == RESUME_REVISION and main['object'].get('type') == 'commit', 'Actual main is not the exact resume commit')
+
+
+def validate_resume_tree(source):
+    require(command(['git', 'diff', '--name-only', HEAD, RESUME_REVISION], cwd=source) == 'Casks/oxplay.rb', 'Resume tree changed application source')
+    for name in ('Cargo.toml', 'Cargo.lock'):
+        original = subprocess.check_output(['git', 'show', f'{HEAD}:{name}'], cwd=source, timeout=60)
+        resumed = subprocess.check_output(['git', 'show', f'{RESUME_REVISION}:{name}'], cwd=source, timeout=60)
+        require(original == resumed == (source / name).read_bytes(), f'Resume changed built {name} bytes')
+
+
+def validate_resume_cask(source, assets):
+    # Use the standard source helper to verify the complete Cask bytes, not only
+    # a matching checksum substring in potentially changed Cask source.
+    release = runpy.run_path(str(source / 'scripts/release.py'))
+    original = subprocess.check_output(['git', 'show', f'{HEAD}:Casks/oxplay.rb'], cwd=source, timeout=60)
+    actual = subprocess.check_output(['git', 'show', f'{RESUME_REVISION}:Casks/oxplay.rb'], cwd=source, timeout=60)
+    with tempfile.TemporaryDirectory() as directory:
+        cask = Path(directory) / 'oxplay.rb'
+        cask.write_bytes(original)
+        release['update_cask']({'tag': TAG, 'version': '0.1.0'}, assets, cask)
+        require(cask.read_bytes() == actual, 'Resume Cask differs from exact verified Mac asset/version')
+
+
+def rewrite_notes(text, source, revision):
+    release = runpy.run_path(str(source / 'scripts/release.py'))
+    standard = release['install_notes']('production', '0.1.0', False)
+    matches = [paragraph for paragraph in standard.split('\n\n') if 'was built by CI from the tagged commit' in paragraph]
+    require(len(matches) == 1 and text.count(matches[0]) == 1, 'Standard tagged-build note changed; review required')
+    quote = chr(96)
+    replacement = f'The exact binary assets were built by CI from {quote}{HEAD}{quote} with the pinned Rust toolchain and locked dependencies, then passed [validation run {RUN}]({RUN_URL}). The tag targets the subsequent standard release commit {quote}{revision}{quote}; application manifest bytes match the validated build.'
+    return text.replace(matches[0], replacement)
+
+
 def validate(source, evidence):
     require(os.environ.get('PROMOTE_CHANNEL') == 'production' and os.environ.get('PROMOTE_DRY_RUN') == 'false', 'Only explicit production/false dispatch is accepted')
     require(os.environ.get('GITHUB_REPOSITORY') == REPOSITORY, 'Wrong dispatch repository')
@@ -95,10 +136,14 @@ def validate(source, evidence):
         if len(jobs) == batch['total_count']:
             break
     require(len(jobs) == batch['total_count'], 'Source jobs exceeded the bounded inventory')
-    validate_run(data, jobs, main)
+    validate_run(data, jobs, main, expected_main=RESUME_REVISION)
+    commit = api(f'commits/{RESUME_REVISION}')
+    validate_resume_commit(commit, main)
+    command(['git', 'fetch', '--no-tags', 'origin', RESUME_REVISION], cwd=source, log=evidence / 'fetch-resume-commit.log' if evidence.exists() else None)
+    validate_resume_tree(source)
     require_release_absent()
     evidence.mkdir(parents=True, exist_ok=True)
-    receipt = {'schema': 1, 'run': data, 'jobs': jobs, 'remote_main': main, 'required_jobs': list(REQUIRED_JOBS)}
+    receipt = {'schema': 1, 'run': data, 'jobs': jobs, 'remote_main': main, 'required_jobs': list(REQUIRED_JOBS), 'resume_commit': commit}
     (evidence / 'validated-source-run.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
     return receipt
 
@@ -163,22 +208,11 @@ def promote(source, evidence):
         expected = subprocess.check_output(['git', 'show', f'{HEAD}:{name}'], cwd=source, timeout=60)
         require((source / name).read_bytes() == expected, f'{name} bytes differ from the binary build')
     shutil.copy2(plan_path, evidence / 'production-release-plan.json')
-    # Repeat all live main/run checks immediately before the first remote mutation.
+    # The failed prior attempt already created this exact Cask-only commit.
+    # Re-attest everything, then resume without any commit-version mutation.
     validate(source, evidence)
-    commit_output = evidence / 'commit-output.txt'
-    env['GITHUB_OUTPUT'] = str(commit_output)
-    command([sys.executable, 'scripts/release.py', 'commit-version'], cwd=source, env=env, log=evidence / 'commit-version.log')
-    outputs = dict(line.split('=', 1) for line in commit_output.read_text().splitlines())
-    revision = outputs.get('commit', '')
-    require(re.fullmatch(r'[a-f0-9]{40}', revision) is not None, 'Standard release commit output is missing')
-    command(['git', 'fetch', '--no-tags', 'origin', revision], cwd=source, log=evidence / 'fetch-release-commit.log')
-    commit = api(f'commits/{revision}')
-    require([parent['sha'] for parent in commit['parents']] == [HEAD], 'Release commit has the wrong source parent')
-    changed = {entry['filename'] for entry in commit['files']}
-    require('Casks/oxplay.rb' in changed and changed <= {'Cargo.toml', 'Cargo.lock', 'Casks/oxplay.rb'}, 'Release commit changed application source')
-    require(api('git/ref/heads/main')['object']['sha'] == revision, 'Main does not point at the standard release commit')
-    for name in ('Cargo.toml', 'Cargo.lock'):
-        require(subprocess.check_output(['git', 'show', f'{revision}:{name}'], cwd=source, timeout=60) == (source / name).read_bytes(), f'Release commit changed built {name} bytes')
+    revision = RESUME_REVISION
+    validate_resume_cask(source, assets)
     source_output = source / 'target/promoted-source'
     command([sys.executable, 'scripts/release_source.py', '--tag', TAG, '--revision', revision, '--output', str(source_output)], cwd=source, env=env, log=evidence / 'source-export.log')
     for name in ('release.json', f'oxplay-{TAG}-source.tar.gz'):
@@ -189,12 +223,7 @@ def promote(source, evidence):
     shutil.copy2(assets / 'SHA256SUMS.txt', evidence / 'published-SHA256SUMS.txt')
     command([sys.executable, 'scripts/release.py', 'notes'], cwd=source, env=env, log=evidence / 'release-notes.log')
     notes = source / 'target/release-notes.md'
-    text = notes.read_text()
-    previous = 'This production release (0.1.0) was built by CI from the tagged commit with the pinned\nRust toolchain and `--locked` dependencies.'
-    require(text.count(previous) == 1, 'Standard tagged-build note changed; review required')
-    quote = chr(96)
-    replacement = f'The exact binary assets were built by CI from {quote}{HEAD}{quote} with the pinned Rust toolchain and locked dependencies, then passed [validation run {RUN}]({RUN_URL}). The tag targets the subsequent standard release commit {quote}{revision}{quote}; application manifest bytes match the validated build.'
-    notes.write_text(text.replace(previous, replacement))
+    notes.write_text(rewrite_notes(notes.read_text(), source, revision))
     shutil.copy2(notes, evidence / 'published-release-notes.md')
     (evidence / 'promotion.json').write_text(json.dumps({'schema': 1, 'build_revision': HEAD, 'source_run': RUN, 'source_run_url': RUN_URL, 'release_revision': revision, 'tag': TAG}, indent=2) + '\n')
     require(api('git/ref/heads/main')['object']['sha'] == revision, 'Actual main changed before publication')

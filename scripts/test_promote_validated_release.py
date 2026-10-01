@@ -99,6 +99,74 @@ class RefusalTests(unittest.TestCase):
             with self.assertRaises(RuntimeError): promoter.validate_release_absent({'data': {'repository': repository}})
 
 
+class ResumeTests(unittest.TestCase):
+    def inventory(self):
+        return ({'sha':promoter.RESUME_REVISION,'parents':[{'sha':promoter.HEAD}],
+                 'files':[{'filename':'Casks/oxplay.rb','status':'modified'}]},
+                {'object':{'sha':promoter.RESUME_REVISION,'type':'commit'}})
+
+    def test_only_exact_resume_revision_parent_main_and_cask_tree_pass(self):
+        commit,main=self.inventory()
+        promoter.validate_resume_commit(commit,main)
+        for changed in [dict(commit,sha='f'*40),dict(commit,parents=[{'sha':'f'*40}]),
+                        dict(commit,files=[{'filename':'crates/app/src/main.rs','status':'modified'}]),
+                        dict(commit,files=commit['files']+[{'filename':'Cargo.toml','status':'modified'}])]:
+            with self.assertRaises(RuntimeError): promoter.validate_resume_commit(changed,main)
+        for sha in [promoter.HEAD,'f'*40]:
+            with self.assertRaises(RuntimeError): promoter.validate_resume_commit(commit,{'object':{'sha':sha,'type':'commit'}})
+
+    def test_original_build_attestation_stays_pinned_when_main_is_resume(self):
+        run,jobs,main=successful_inventory();main['object']['sha']=promoter.RESUME_REVISION
+        promoter.validate_run(run,jobs,main,expected_main=promoter.RESUME_REVISION)
+        run['head_sha']=promoter.RESUME_REVISION
+        with self.assertRaises(RuntimeError): promoter.validate_run(run,jobs,main,expected_main=promoter.RESUME_REVISION)
+
+    def test_wrong_source_checkout_refuses_before_network(self):
+        env={'PROMOTE_CHANNEL':'production','PROMOTE_DRY_RUN':'false','GITHUB_REPOSITORY':promoter.REPOSITORY}
+        with patch.dict(promoter.os.environ,env,clear=True),patch.object(promoter,'command',return_value=promoter.RESUME_REVISION),patch.object(promoter,'api') as api:
+            with self.assertRaises(RuntimeError): promoter.validate(Path('/unused'),Path('/unused'))
+            api.assert_not_called()
+
+    def test_resume_tree_and_manifest_changes_refuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)
+            for name in ['Cargo.toml','Cargo.lock']:(source/name).write_bytes(b'original')
+            with patch.object(promoter,'command',return_value='Casks/oxplay.rb'),patch.object(promoter.subprocess,'check_output',return_value=b'original'):
+                promoter.validate_resume_tree(source)
+                (source/'Cargo.lock').write_bytes(b'changed')
+                with self.assertRaises(RuntimeError): promoter.validate_resume_tree(source)
+            with patch.object(promoter,'command',return_value='Casks/oxplay.rb\nCargo.toml'):
+                with self.assertRaises(RuntimeError): promoter.validate_resume_tree(source)
+
+    def test_actual_standard_production_notes_are_rewritten(self):
+        import runpy
+        source=Path(__file__).resolve().parents[1]
+        notes=runpy.run_path(str(source/'scripts/release.py'))['install_notes']('production','0.1.0',False)
+        self.assertIn('This release (0.1.0)',notes)
+        result=promoter.rewrite_notes(notes,source,promoter.RESUME_REVISION)
+        self.assertNotIn('was built by CI from the tagged commit',result)
+        for value in [promoter.HEAD,promoter.RESUME_REVISION,promoter.RUN_URL]:self.assertIn(value,result)
+        self.assertIn('## Downloads',result)
+        for invalid in [notes.replace('was built by CI','may have been built by CI'),notes+notes]:
+            with self.assertRaises(RuntimeError):promoter.rewrite_notes(invalid,source,promoter.RESUME_REVISION)
+
+    def test_resume_cask_must_equal_standard_asset_derived_update(self):
+        import runpy
+        source=Path(__file__).resolve().parents[1]
+        original=(source/'Casks/oxplay.rb').read_bytes()
+        with tempfile.TemporaryDirectory() as directory:
+            assets=Path(directory);(assets/f'oxplay-{promoter.TAG}-macOS-ARM64.zip').write_bytes(b'verified synthetic asset')
+            cask=assets/'expected.rb';cask.write_bytes(original)
+            runpy.run_path(str(source/'scripts/release.py'))['update_cask']({'tag':promoter.TAG,'version':'0.1.0'},assets,cask)
+            expected=cask.read_bytes()
+            with patch.object(promoter.subprocess,'check_output',side_effect=[original,expected]):promoter.validate_resume_cask(source,assets)
+            with patch.object(promoter.subprocess,'check_output',side_effect=[original,expected+b'changed']):
+                with self.assertRaises(RuntimeError):promoter.validate_resume_cask(source,assets)
+            (assets/f'oxplay-{promoter.TAG}-macOS-ARM64.zip').write_bytes(b'altered asset')
+            with patch.object(promoter.subprocess,'check_output',side_effect=[original,expected]):
+                with self.assertRaises(RuntimeError):promoter.validate_resume_cask(source,assets)
+
+
 class PreviewTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -183,16 +251,13 @@ class LinuxBoundsTests(unittest.TestCase):
                         info=tarfile.TarInfo(name); info.size=1; tar.addfile(info,io.BytesIO(b'x'))
                 with self.assertRaises(RuntimeError): linux.Archive(path)
 
-    def test_payload_verification_precedes_remote_mutation_and_ref_checks_repeat(self):
+    def test_resume_has_no_remote_commit_mutation_and_verifies_before_publish(self):
         text=(Path(__file__).parent/'promote_validated_release.py').read_text()
         body=text[text.index('def promote(source, evidence):'):]
-        self.assertLess(body.index('verify_release_assets.py'),body.index("'commit-version'"))
-        self.assertLess(body.index('compare_preview(assets'),body.index("'commit-version'"))
-        self.assertLess(body.index('verify_linux_native_payloads.py'),body.index("'commit-version'"))
-        self.assertLess(body.index('bytes differ from the binary build'),body.index("'commit-version'"))
-        self.assertGreater(body.index('Actual main changed before publication'),body.index("'commit-version'"))
-        self.assertLess(body.index('Actual main changed before publication'),body.index("'publish'"))
-        self.assertGreater(body.rindex('require_release_absent()'),body.index("'commit-version'"))
+        self.assertNotIn("'commit-version'", body)
+        for marker in ['verify_release_assets.py','compare_preview(assets','verify_linux_native_payloads.py','bytes differ from the binary build','validate_resume_cask(source, assets)','Actual main changed before publication']:
+            self.assertLess(body.index(marker),body.index("'publish'"))
+        self.assertLess(body.rindex('require_release_absent()'),body.index("'publish'"))
 
     def test_workflow_uses_exact_control_source_and_run(self):
         workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/release.yml').read_text()
