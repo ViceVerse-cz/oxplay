@@ -132,7 +132,7 @@ pub fn entry_detail(entry: &Entry) -> String {
 
 fn note(merger: Merger, notice: Option<&str>) -> String {
     let mut lines = Vec::new();
-    if cfg!(not(unix)) {
+    if cfg!(not(any(unix, windows))) {
         lines.push("Downloads aren't supported on this platform yet.");
     }
     if let Some(notice) = notice {
@@ -168,8 +168,16 @@ fn reveal(path: &Path) -> bool {
     };
     #[cfg(target_os = "windows")]
     let mut command = {
-        let mut command = Command::new("explorer.exe");
-        command.arg(format!("/select,{}", path.display()));
+        use std::os::windows::process::CommandExt;
+        // Never resolve explorer through PATH or the working directory.
+        let root = std::env::var_os("SystemRoot")
+            .map(std::path::PathBuf::from)
+            .filter(|root| root.is_absolute())
+            .unwrap_or_else(|| std::path::PathBuf::from(r"C:\Windows"));
+        let mut command = Command::new(root.join("explorer.exe"));
+        // Explorer parses `/select,"path"` itself rather than argv quoting;
+        // Windows paths cannot contain a double quote.
+        command.raw_arg(format!("/select,\"{}\"", path.display()));
         command
     };
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
@@ -398,7 +406,9 @@ pub fn bind(app: &App, state: &Rc<UiState>) {
     global.set_completed(slint::ModelRc::from(state.downloads.completed.clone()));
     global.set_reveal_label(reveal_label().into());
     global.set_available(
-        cfg!(unix) && state.downloads.manager.borrow().is_some() && !app.get_native_video_child(),
+        cfg!(any(unix, windows))
+            && state.downloads.manager.borrow().is_some()
+            && !app.get_native_video_child(),
     );
     let (weak, s) = (app.as_weak(), Rc::downgrade(state));
     global.on_wake(move || {

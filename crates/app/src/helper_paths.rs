@@ -71,12 +71,20 @@ impl HelperPaths {
                 PathBuf::from("/usr/bin")
             }
         });
+        // FFmpeg is never searched for: on Windows only a sibling of oxplay.exe.
+        #[cfg(windows)]
+        let ffmpeg = executable.parent().map_or_else(
+            || directory.join("ffmpeg"),
+            |directory| directory.join("ffmpeg.exe"),
+        );
+        #[cfg(not(windows))]
+        let ffmpeg = directory.join("ffmpeg");
         // Keep missing bundled paths: the worker reports unavailable instead of
         // silently executing an unrelated system/Homebrew helper.
         let paths = Self {
             yt_dlp: yt_dlp.unwrap_or_else(|| directory.join("yt-dlp")),
             deno: deno.unwrap_or_else(|| directory.join("deno")),
-            ffmpeg: directory.join("ffmpeg"),
+            ffmpeg,
             media_ca,
             dns_helper,
             bundle_resources,
@@ -211,6 +219,8 @@ mod windows {
                 helper(&executable, "yt-dlp.exe"),
                 Some(application.join("yt-dlp.exe"))
             );
+            let paths = super::super::HelperPaths::discover(&executable, None, None).unwrap();
+            assert_eq!(paths.ffmpeg, application.join("ffmpeg.exe"));
             std::fs::remove_dir_all(root).unwrap();
         }
     }

@@ -502,7 +502,8 @@ mod tests {
 
     #[test]
     fn selection_merges_up_to_the_ceiling_only_with_an_explicit_merger() {
-        let merged = selection(2160, Some(Path::new("/reviewed/ffmpeg"))).unwrap();
+        let reviewed = crate::test_absolute("/reviewed/ffmpeg");
+        let merged = selection(2160, Some(&reviewed)).unwrap();
         let format = &merged[merged.iter().position(|a| a == "--format").unwrap() + 1];
         assert!(format.starts_with("bestvideo[height<=2160][protocol=https]+bestaudio"));
         // A progressive file under the ceiling is the fallback, never a larger one.
@@ -512,7 +513,7 @@ mod tests {
         assert!(
             merged
                 .windows(2)
-                .any(|w| w == ["--ffmpeg-location", "/reviewed/ffmpeg"])
+                .any(|w| w[0] == "--ffmpeg-location" && Path::new(&w[1]) == reviewed)
         );
         assert!(
             merged
