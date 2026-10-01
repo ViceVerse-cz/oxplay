@@ -8,8 +8,8 @@ focused card. This works on the shared video cards: Home, search results,
 public channel/playlist pages and the related list. Channel and playlist cards
 are not tabs. The new tab is added at the right end in the background and shows
 the card's title. A video that is already open is not duplicated. The same
-menu also offers copy, channel and save commands; see
-[sharing](sharing.md#video-card-menu).
+menu also offers copy, channel, save and download commands; see
+[sharing](sharing.md#video-card-menu) and [downloads](downloads.md).
 
 ## Strip
 

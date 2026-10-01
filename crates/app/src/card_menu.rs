@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Video-card context-menu commands. Every command is an explicit user action
 //! on one visible card: copy its canonical link, title or already-decoded
-//! thumbnail, open its creator's public channel, or save it into a local
-//! playlist. Nothing here makes a network request or reads a media URL.
+//! thumbnail, open its creator's public channel, save it into a local
+//! playlist, or queue an explicit download (see downloads_ui.rs). Nothing
+//! here makes a network request or reads a media URL.
 use crate::{App, CardAction, CardMenuUi, UiState, VideoRow};
 use oxplay_core::{CatalogItem, VideoId, VideoSummary};
 use slint::{ComponentHandle, Model, Timer, TimerMode};
@@ -200,6 +201,7 @@ fn run(app: &App, state: &Rc<UiState>, surface: i32, index: i32, action: CardAct
             Ok(()) => return true,
             Err(message) => message,
         },
+        CardAction::Download => crate::downloads_ui::enqueue(app, state, video),
     };
     toast(app, state, message);
     false

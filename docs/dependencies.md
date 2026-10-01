@@ -366,3 +366,14 @@ registry cache) plus these edges; no existing package version, Slint revision or
 renderer feature moved. An offline unfiltered `cargo metadata` still stops at the
 uncached Windows-only `ipconfig`, as recorded above. See
 [sharing](sharing.md#video-card-menu) for behavior and limits.
+
+## Downloads manifest (2026-10-01)
+
+The application crate now depends directly on `serde` (derive) and `serde_json`
+for the [downloads](downloads.md) manifest. Both were already locked through
+`oxplay-storage`/`oxplay-youtube`; the lock update adds only these two edges to
+the `oxplay` package, with no new package or version. The Lucide `download.svg`
+icon is copied unchanged from the pinned revision (see `crates/app/ui/icons/SOURCE.md`).
+FFmpeg is not bundled or added as a dependency: downloads use an existing
+executable only from the explicit helper location, and otherwise fall back to a
+single progressive file.

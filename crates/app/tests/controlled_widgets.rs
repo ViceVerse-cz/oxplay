@@ -1509,3 +1509,162 @@ fn video_card_menu_forwards_copy_channel_and_save_commands_by_surface() {
     settle();
     assert_eq!(events.take(), ["1 0 CopyLink"].map(String::from));
 }
+
+#[test]
+fn download_menu_item_guide_entry_watch_button_and_downloads_page_route_commands() {
+    let app = app();
+    app.set_page(0);
+    app.set_home_active(false);
+    let rows = vec![VideoRow {
+        kind: "Video".into(),
+        title: "TEST FIXTURE download card".into(),
+        id: "fixtureDown".into(),
+        ..VideoRow::default()
+    }];
+    app.set_videos(Rc::new(slint::VecModel::from(rows.clone())).into());
+    app.set_groups(
+        Rc::new(slint::VecModel::from(vec![VideoGroup {
+            start: 0,
+            items: Rc::new(slint::VecModel::from(rows)).into(),
+        }]))
+        .into(),
+    );
+    let events = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let output = events.clone();
+    app.global::<CardMenuUi>()
+        .on_action(move |surface, index, action| {
+            output
+                .borrow_mut()
+                .push(format!("{surface} {index} {action:?}"));
+            false
+        });
+    settle();
+    // The shared card menu offers Download and forwards it by surface/index.
+    element(&app, "Video, TEST FIXTURE download card, ")
+        .mock_single_click(slint::platform::PointerEventButton::Right);
+    settle();
+    ElementHandle::find_by_accessible_label(&app, "Download")
+        .next()
+        .expect("Download menu item")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(events.take(), ["0 0 Download"].map(String::from));
+    // Unlike Add to local playlist, it opens no dialog.
+    assert!(!app.get_playback_overlay_open());
+
+    // The guide entry navigates to page 5 and is selected there.
+    let navigated = Rc::new(Cell::new(-1));
+    let output = navigated.clone();
+    app.on_navigate(move |page| output.set(page));
+    element(&app, "Downloads").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(navigated.get(), 5);
+    let ui = app.global::<DownloadsUi>();
+    let commands = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let record = |name: &'static str| {
+        let output = commands.clone();
+        move |id: SharedString| output.borrow_mut().push(format!("{name} {id}"))
+    };
+    ui.on_cancel(record("cancel"));
+    ui.on_play(record("play"));
+    ui.on_reveal(record("reveal"));
+    ui.on_delete(record("delete"));
+    app.set_page(5);
+    ui.set_loaded(true);
+    settle();
+    assert_eq!(
+        element(&app, "Downloads").accessible_item_selected(),
+        Some(true)
+    );
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "No downloads yet")
+            .next()
+            .is_some(),
+        "empty state"
+    );
+    ui.set_note("FFmpeg wasn't found".into());
+    ui.set_active(
+        Rc::new(slint::VecModel::from(vec![DownloadRow {
+            id: "activeVideo".into(),
+            title: "TEST FIXTURE running".into(),
+            status: "42% · 12 MB of 46 MB".into(),
+            progress: 0.42,
+            ..DownloadRow::default()
+        }]))
+        .into(),
+    );
+    ui.set_completed(
+        Rc::new(slint::VecModel::from(vec![DownloadRow {
+            id: "finishedVid".into(),
+            title: "TEST FIXTURE finished".into(),
+            channel: "Creator".into(),
+            detail: "120 MB · Sep 21, 2026 · 1080p".into(),
+            progress: 1.0,
+            ..DownloadRow::default()
+        }]))
+        .into(),
+    );
+    settle();
+    assert!(
+        ElementHandle::find_by_accessible_label(&app, "No downloads yet")
+            .next()
+            .is_none()
+    );
+    assert_eq!(
+        ElementHandle::find_by_accessible_label(&app, "Download progress for TEST FIXTURE running")
+            .next()
+            .expect("progress bar")
+            .accessible_value()
+            .as_deref(),
+        Some("42%")
+    );
+    element(&app, "Cancel download of TEST FIXTURE running")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Play TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    element(&app, "Show in folder: TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    // Delete asks first; Keep backs out without a command.
+    element(&app, "Delete TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(absent(&app, "Play TEST FIXTURE finished"));
+    element(&app, "Keep TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert!(absent(&app, "Confirm deleting TEST FIXTURE finished"));
+    element(&app, "Delete TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    element(&app, "Confirm deleting TEST FIXTURE finished")
+        .mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(
+        commands.take(),
+        [
+            "cancel activeVideo",
+            "play finishedVid",
+            "reveal finishedVid",
+            "delete finishedVid"
+        ]
+        .map(String::from)
+    );
+    assert_eq!(ui.get_confirm_delete(), "");
+
+    // The watch page's compact Download button requests the current video.
+    let requested = Rc::new(Cell::new(0));
+    let output = requested.clone();
+    ui.on_download_current(move || output.set(output.get() + 1));
+    app.set_page(2);
+    app.set_loaded(true);
+    app.set_remote_video(true);
+    settle();
+    element(&app, "Download").mock_single_click(slint::platform::PointerEventButton::Left);
+    settle();
+    assert_eq!(requested.get(), 1);
+    // Unavailable (diagnostic mode, unsupported platform): disabled.
+    ui.set_available(false);
+    settle();
+    assert_eq!(element(&app, "Download").accessible_enabled(), Some(false));
+}

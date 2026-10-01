@@ -42,8 +42,8 @@ qualification remain pending; compilation is not evidence for those gates.
 Right-clicking a video card (Home, search results, public channel/playlist pages
 and the watch page's related list), or pressing the Menu key or Shift+F10 on a
 focused card, opens a shared Slint context menu: **Open in new tab**, **Copy
-link**, **Copy title**, **Copy thumbnail**, **Open channel** and **Add to local
-playlist**. Channel and playlist cards have no menu. Menu item titles are their
+link**, **Copy title**, **Copy thumbnail**, **Open channel**, **Add to local
+playlist** and **Download**. Channel and playlist cards have no menu. Menu item titles are their
 accessible labels. `crates/app/src/card_menu.rs` handles every command; it
 re-reads the card's public catalog item by surface and index at activation and
 reports "That video is no longer shown" if the page changed.
@@ -60,6 +60,8 @@ reports "That video is no longer shown" if the page changed.
   opens the public channel page with the same admission as a channel card.
 - **Add to local playlist** opens the existing Save dialog for that card's
   video. See [local playlist save](local-playlist-save.md).
+- **Download** queues an explicit guest download of that video at the default
+  quality ceiling. See [downloads](downloads.md).
 
 Unlike the popup's `LineEdit.copy()`, these writes go through `arboard`, which
 returns the platform's result. A short toast ("Link copied", "Thumbnail

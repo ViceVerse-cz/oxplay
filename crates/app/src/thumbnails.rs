@@ -607,7 +607,7 @@ pub(crate) async fn fetch_sized(
 fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
     decode_sized(bytes, 320, 180)
 }
-fn decode_sized(bytes: &[u8], width: u32, height: u32) -> Option<image::RgbaImage> {
+pub(crate) fn decode_sized(bytes: &[u8], width: u32, height: u32) -> Option<image::RgbaImage> {
     if width == 0 || height == 0 {
         return None;
     }
