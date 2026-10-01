@@ -11,11 +11,24 @@ import hashlib
 import subprocess
 import tarfile
 import urllib.request
+from functools import lru_cache
 
 from platform_build import (MPV_REVISION, PLACEBO_VERSION, build_environment,
                             prepare, provenance, require_tools, run,
                             source_bundle, check_installed_abi, fetch_source,
                             FFMPEG_URL, FFMPEG_SHA256, FFMPEG_VERSION)
+
+
+@lru_cache(maxsize=None)
+def msys_executable(name: str) -> str:
+    """Bypass CreateProcess's system-directory lookup (notably WSL bash.exe)."""
+    cygpath = shutil.which("cygpath")
+    if not cygpath:
+        raise RuntimeError("MSYS2 cygpath is required for the Windows native source build")
+    path = subprocess.check_output([cygpath, "-w", f"/usr/bin/{name}.exe"], text=True).strip()
+    if not Path(path).is_file():
+        raise RuntimeError(f"Required MSYS2 executable is missing: {path}")
+    return path
 
 
 def imported_dlls(image: Path) -> list[str]:
@@ -62,6 +75,33 @@ def dll_closure(prefix: Path, dependencies: Path) -> list[dict]:
     return records
 
 
+def source_recipe_url(base: str, version: str) -> str:
+    # MSYS2 mirror filenames preserve pacman epochs using ~ instead of :.
+    return f"https://mirror.msys2.org/mingw/sources/{base}-{version.replace(':', '~')}.src.tar.zst"
+
+
+def download_source_recipe(url: str, target: Path, max_bytes: int = 512 * 1024 * 1024) -> str:
+    # GCC's source package is over 100 MiB. Stream authenticated HTTPS inputs
+    # with a finite bound instead of holding the entire source archive in RAM.
+    digest = hashlib.sha256()
+    try:
+        with urllib.request.urlopen(url, timeout=120) as response:
+            if not response.url.startswith("https://"):
+                raise RuntimeError("Runtime source redirected outside HTTPS")
+            size = 0
+            with target.open("wb") as output:
+                while chunk := response.read(1024 * 1024):
+                    size += len(chunk)
+                    if size > max_bytes:
+                        raise RuntimeError(f"Runtime source archive exceeds {max_bytes} bytes")
+                    output.write(chunk)
+                    digest.update(chunk)
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    return digest.hexdigest()
+
+
 def msys2_package_record(dll: Path) -> dict:
     unix = subprocess.check_output(["cygpath", "-u", str(dll)], text=True).strip()
     name = subprocess.check_output(["pacman", "-Qqo", unix], text=True).strip()
@@ -75,7 +115,7 @@ def msys2_package_record(dll: Path) -> dict:
     return {"package": name, "version": version, "base": base,
             "licenses": fields.get("Licenses", "unknown"),
             "upstream": fields.get("URL", ""),
-            "source_recipe_url": f"https://mirror.msys2.org/mingw/sources/{base}-{version.split(':')[-1]}.src.tar.zst"}
+            "source_recipe_url": source_recipe_url(base, version)}
 
 
 def collect_runtime_sources(prefix: Path, dependencies: Path, records: list[dict], work: Path) -> None:
@@ -97,19 +137,13 @@ def collect_runtime_sources(prefix: Path, dependencies: Path, records: list[dict
         directory = work / "runtime-sources" / base
         directory.mkdir(parents=True)
         recipe = directory / "recipe.src.tar.zst"
-        with urllib.request.urlopen(package["source_recipe_url"], timeout=120) as response:
-            if not response.url.startswith("https://"):
-                raise RuntimeError("Runtime source redirected outside HTTPS")
-            recipe.write_bytes(response.read(64 * 1024 * 1024 + 1))
-        if recipe.stat().st_size > 64 * 1024 * 1024:
-            raise RuntimeError("Runtime source recipe exceeds 64 MiB")
-        package["source_recipe_sha256"] = hashlib.sha256(recipe.read_bytes()).hexdigest()
-        run(["tar", "-xf", str(recipe), "-C", str(directory)])
+        package["source_recipe_sha256"] = download_source_recipe(package["source_recipe_url"], recipe)
+        run([msys_executable("tar"), "--force-local", "-xf", str(recipe), "-C", str(directory)])
         buildfiles = list(directory.rglob("PKGBUILD"))
         if len(buildfiles) != 1:
             raise RuntimeError(f"Expected one PKGBUILD for {base}")
         unix = subprocess.check_output(["cygpath", "-u", str(buildfiles[0].parent)], text=True).strip()
-        run(["bash", "-lc", 'cd "$1"; makepkg --allsource --nodeps --noconfirm --skippgpcheck', "source", unix])
+        run([msys_executable("bash"), "-lc", 'cd "$1" && exec /usr/bin/makepkg --allsource --nodeps --noconfirm --skippgpcheck', "source", unix])
         sources = list(buildfiles[0].parent.glob("*.src.tar.*"))
         if len(sources) != 1:
             raise RuntimeError(f"Expected one upstream-inclusive source package for {base}")
@@ -165,18 +199,20 @@ def main() -> int:
         fetch_source(FFMPEG_URL, FFMPEG_SHA256, ffmpeg,
                      args.work_dir.resolve() / "source-archives" / f"ffmpeg-{FFMPEG_VERSION}.tar.xz")
         unix_prefix = subprocess.check_output(["cygpath", "-u", str(prefix)], text=True).strip()
-        run(["bash", str(ffmpeg / "configure"), "--prefix=" + unix_prefix,
+        run([msys_executable("bash"), str(ffmpeg / "configure"), "--prefix=" + unix_prefix,
              "--enable-shared", "--disable-static", "--disable-programs", "--disable-doc",
              "--enable-gpl", "--enable-gnutls", "--enable-w32threads", "--enable-d3d11va"], cwd=ffmpeg, env=env)
-        run(["make", "-j", str(args.jobs)], cwd=ffmpeg, env=env)
-        run(["make", "install"], cwd=ffmpeg, env=env)
+        run([msys_executable("make"), "-j", str(args.jobs)], cwd=ffmpeg, env=env)
+        run([msys_executable("make"), "install"], cwd=ffmpeg, env=env)
     native = ["--native-file", str(args.native_file.resolve())] if args.native_file else []
     run(["meson", "setup", str(placebo / "build"), str(placebo), f"--prefix={prefix}", "--libdir=lib", "--buildtype=release", "--wrap-mode=nofallback",
          "-Dvulkan=disabled", "-Dopengl=disabled", "-Dd3d11=enabled", "-Dshaderc=enabled", "-Dglslang=disabled", "-Dlcms=disabled", "-Ddovi=disabled", "-Dtests=false", "-Ddemos=false", *native], env=env)
     run(["meson", "compile", "-C", str(placebo / "build"), "-j", str(args.jobs)], env=env)
     run(["meson", "install", "-C", str(placebo / "build"), "--no-rebuild"], env=env)
     run(["meson", "setup", str(mpv / "build"), str(mpv), f"--prefix={prefix}", "--libdir=lib", "--buildtype=release", "--wrap-mode=nofallback",
-         "-Dauto_features=disabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true", "-Dbuild-date=false", "-Dgl=disabled", "-Dshaderc=enabled", "-Dspirv-cross=enabled", "-Dd3d11=enabled", "-Dd3d-hwaccel=enabled", "-Dwasapi=enabled", "-Dlua=luajit", "-Dmanpage-build=disabled", *native], env=env)
+         # The upstream encoding test uses av://lavfi:testsrc; libavfilter is
+         # mandatory, but registering lavfi inputs requires libavdevice too.
+         "-Dauto_features=disabled", "-Dlibavdevice=enabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true", "-Dbuild-date=false", "-Dgl=disabled", "-Dshaderc=enabled", "-Dspirv-cross=enabled", "-Dd3d11=enabled", "-Dd3d-hwaccel=enabled", "-Dwasapi=enabled", "-Dlua=luajit", "-Dmanpage-build=disabled", *native], env=env)
     run(["meson", "compile", "-C", str(mpv / "build"), "-j", str(args.jobs)], env=env)
     run(["meson", "test", "-C", str(mpv / "build"), "--print-errorlogs", "--timeout-multiplier=2"], env=env)
     run(["meson", "install", "-C", str(mpv / "build"), "--no-rebuild"], env=env)

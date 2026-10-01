@@ -53,7 +53,9 @@ def main() -> int:
     run(["meson", "compile", "-C", str(placebo / "build"), "-j", str(args.jobs)], env=env)
     run(["meson", "install", "-C", str(placebo / "build"), "--no-rebuild"], env=env)
     run(["meson", "setup", str(mpv / "build"), str(mpv), f"--prefix={prefix}", "--libdir=lib", "--buildtype=release", "--wrap-mode=nofallback",
-         "-Dauto_features=disabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true", "-Dbuild-date=false", "-Dgl=disabled", "-Dvulkan=enabled", "-Dvaapi=enabled", "-Dvaapi-drm=enabled", "-Ddrm=enabled",
+         # The upstream encoding test uses av://lavfi:testsrc; libavfilter is
+         # mandatory, but registering lavfi inputs requires libavdevice too.
+         "-Dauto_features=disabled", "-Dlibavdevice=enabled", "-Dlibmpv=true", "-Dcplayer=true", "-Dtests=true", "-Dbuild-date=false", "-Dgl=disabled", "-Dvulkan=enabled", "-Dvaapi=enabled", "-Dvaapi-drm=enabled", "-Ddrm=enabled",
          # Slint owns X11/Wayland windows; standalone mpv surface backends are
          # unused by the offscreen API and demand Wayland newer than Ubuntu24.
          "-Dx11=disabled", "-Dwayland=disabled", "-Dalsa=enabled", "-Dpulse=enabled", "-Dlua=luajit", "-Dmanpage-build=disabled"], env=env)

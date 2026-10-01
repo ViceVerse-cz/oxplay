@@ -1,5 +1,6 @@
 """Offline release contracts; no graphics, native compiler, package install or network."""
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -139,6 +140,46 @@ class NativeReleaseContracts(unittest.TestCase):
         subprocess.run(["git", "-c", "core.autocrlf=true", "checkout-index", "-a",
                         "--prefix=" + str(negative) + os.sep], cwd=repo, check=True)
         self.assertIn(b"\r\n", (negative / relative).read_bytes())
+
+    def test_msys_source_mirror_preserves_version_epochs(self):
+        self.assertEqual(windows_builder.source_recipe_url("mingw-w64-spirv-cross", "1:1.4.357.0-1"),
+                         "https://mirror.msys2.org/mingw/sources/mingw-w64-spirv-cross-1~1.4.357.0-1.src.tar.zst")
+
+    def test_source_archive_download_is_streamed_and_bounded(self):
+        target = self.root / "source.tar.zst"
+        data = b"source data with upstream files"
+        response = io.BytesIO(data)
+        response.url = "https://mirror.msys2.org/source"
+        with patch.object(windows_builder.urllib.request, "urlopen", return_value=response):
+            digest = windows_builder.download_source_recipe(response.url, target, max_bytes=len(data))
+        self.assertEqual(target.read_bytes(), data)
+        self.assertEqual(digest, hashlib.sha256(data).hexdigest())
+        response = io.BytesIO(data)
+        response.url = "https://mirror.msys2.org/source"
+        with patch.object(windows_builder.urllib.request, "urlopen", return_value=response):
+            with self.assertRaisesRegex(RuntimeError, "archive exceeds"):
+                windows_builder.download_source_recipe(response.url, target, max_bytes=len(data) - 1)
+        self.assertFalse(target.exists())
+
+    def test_msys_tool_resolution_passes_an_absolute_executable(self):
+        executable = self.root / "msys64/usr/bin/bash.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"MSYS Bash")
+        windows_builder.msys_executable.cache_clear()
+        self.addCleanup(windows_builder.msys_executable.cache_clear)
+        with patch.object(windows_builder.shutil, "which", return_value="/explicit/msys/cygpath.exe"), patch.object(
+                windows_builder.subprocess, "check_output", return_value=str(executable) + "\n") as cygpath:
+            actual = windows_builder.msys_executable("bash")
+        self.assertEqual(actual, str(executable))
+        self.assertTrue(Path(actual).is_absolute())
+        cygpath.assert_called_once_with(["/explicit/msys/cygpath.exe", "-w", "/usr/bin/bash.exe"], text=True)
+
+    def test_missing_msys_tool_cannot_fall_back_to_wsl(self):
+        windows_builder.msys_executable.cache_clear()
+        self.addCleanup(windows_builder.msys_executable.cache_clear)
+        with patch.object(windows_builder.shutil, "which", return_value=None):
+            with self.assertRaisesRegex(RuntimeError, "MSYS2 cygpath"):
+                windows_builder.msys_executable("bash")
 
 
 if __name__ == "__main__":
