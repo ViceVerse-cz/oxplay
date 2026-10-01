@@ -1,15 +1,65 @@
+# Packaging
+
+The [release workflow](ci-release.md#releases-nightly-and-production-channels)
+builds macOS, Windows and Linux packages in CI. All are experimental builds,
+not portable or release-qualified products; runtime behaviour on Windows,
+Linux/X11 and native Wayland has not been validated.
+
+## Release packages by platform
+
+| Platform | Package | libmpv | yt-dlp / Deno | Tooling |
+| --- | --- | --- | --- | --- |
+| macOS ARM64 | `Oxplay.app` zip, Homebrew cask | Homebrew libmpv closure relocated into `Contents/Frameworks` | reviewed Homebrew Python 3.14/yt-dlp/EJS runtime and Deno in `Contents/Helpers` | `scripts/package_macos.py`, `packaging/macos/sign-release.sh` |
+| Windows x86_64 | portable zip, per-user NSIS installer | pinned shinchiro `libmpv-2.dll` beside `oxplay.exe` | pinned `yt-dlp.exe`, `deno.exe` beside `oxplay.exe` | `packaging/windows/` |
+| Ubuntu 24.04 | `.deb` | private mpv 0.41.0 build, `/usr/lib/oxplay/libmpv.so.2`, system FFmpeg | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
+| Fedora 44, Arch | `.rpm`, `.pkg.tar.zst` | distribution libmpv (client API ≥ 2.5) | pinned, in `/usr/lib/oxplay` | `packaging/linux/package.py` |
+| Linux x86_64 | AppImage, tarball | private mpv 0.41.0 with its non-system closure in `usr/lib` | pinned, in `usr/lib/oxplay` | `packaging/appimage/build.py` |
+
+**Linux helper selection.** The application resolves helpers from explicit
+`--yt-dlp`/`--deno` paths or an owning macOS bundle and never searches `PATH`;
+elsewhere it defaults to `/usr/bin`. Linux packages therefore install the real
+executable as `/usr/lib/oxplay/oxplay` and a small `/usr/bin/oxplay` launcher
+(the AppImage/tarball use the same launcher relative to their own directory)
+that adds the packaged `--yt-dlp` and `--deno` paths unless the caller passes
+its own, `--help` or a `*-smoke-test`/`*-check` diagnostic mode. The private
+libmpv is found through `RUNPATH` (`$ORIGIN`, or `$ORIGIN/..` and `$ORIGIN` in
+the AppImage), never `LD_LIBRARY_PATH`, so helpers and browsers started by the
+app do not inherit bundled libraries. The AppImage keeps host GPU drivers,
+glibc, X11/Wayland, audio servers, VA-API/VDPAU/Vulkan loaders and fontconfig
+from the system (the AppImage exclude list); it needs glibc 2.39 or newer.
+
+**Windows.** The release job sets `MPV_DIR` to the extracted pinned
+`mpv-dev-x86_64` archive (`include/mpv/*.h`, `libmpv-2.dll`, `libmpv.dll.a`)
+and adds an MSVC import library `mpv.lib` generated from the DLL's export table
+(`packaging/windows/mpv_import_lib.py`). The Windows port's build script links
+libmpv from `MPV_DIR`. `oxplay.exe` is built with a static CRT. The installer
+installs per user to `%LOCALAPPDATA%\Programs\Oxplay` without elevation and its
+uninstaller removes only the files it installed.
+
+**macOS signing.** Without secrets the bundle stays ad-hoc signed. With the six
+Developer ID/notarization secrets, `sign-release.sh` re-signs every nested
+Mach-O inside-out with the hardened runtime and a timestamp (JIT entitlements
+only for Deno, the bundled Python interpreter and the app, whose libmpv embeds
+LuaJIT), signs the bundle, notarizes, staples and assesses it.
+`package_macos.py reinventory` then refreshes the final file inventory; the
+build manifest, evidence and helper resources keep their recorded hashes and
+`verify_package.py` still checks them. `OXPLAY_BUNDLE_VERSION` sets
+`CFBundleVersion` (CI: run number and attempt); `CFBundleShortVersionString`
+drops the nightly suffix.
+
+Every Linux package lists its bundled helpers and libmpv provenance in
+`THIRD-PARTY-NOTICES.md` and carries the unmodified helper license texts from
+[`packaging/licenses`](../packaging/licenses/README.md); the Windows zip has the
+same in `THIRD-PARTY-NOTICES.txt` plus `BUILD-INFO.json` with payload hashes.
+Complete corresponding-source coverage for the libmpv/FFmpeg builds is still
+open (see [licensing](licensing.md)).
+
 # macOS developer packaging
 
-The available target is Apple Silicon on macOS 27. This workflow creates a
-reviewable **development bundle**, not a portable or release-qualified product.
-No Developer ID identity, account credential, notarization service, publication
-endpoint or automatic updater is used. Windows, Linux/X11 and native Wayland
-packaging have not been validated.
-
-The [manual GitHub release workflow](ci-release.md) builds this bundle in CI with
-`--build --bundle-helpers` and attaches it to a prerelease as an unsigned
-development build. Signing, portability and the documented redistribution gaps
-remain open.
+The available development target is Apple Silicon on macOS 27. The tooling
+below creates a reviewable **development bundle**; the release workflow runs it
+with `--build --bundle-helpers` and optionally signs the result as described
+above. Signing, portability and the documented redistribution gaps remain open.
 
 ## Run the offline tooling
 

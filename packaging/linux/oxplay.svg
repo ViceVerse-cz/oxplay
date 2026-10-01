@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff5a4e"/>
+      <stop offset="1" stop-color="#d4231b"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="40" width="224" height="176" rx="48" fill="url(#face)"/>
+  <path d="M106 88 L174 128 L106 168 Z" fill="#ffffff" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+</svg>

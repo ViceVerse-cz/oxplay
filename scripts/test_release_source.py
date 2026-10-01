@@ -50,13 +50,33 @@ class SourceReleaseTests(unittest.TestCase):
         output = self.base / name
         return output, release.release(self.repo, "v0.1.0-dev.1", output)
 
-    def test_only_exact_version_prerelease_tags_are_accepted(self):
+    def test_stable_nightly_and_preview_tags_are_accepted(self):
+        self.assertEqual(release.validate_tag("v0.1.0", "0.1.0"), "production")
+        self.assertEqual(release.validate_tag("v0.1.1-nightly.20261001.12", "0.1.0"), "nightly")
         for channel in ("dev", "alpha", "beta", "rc"):
-            release.validate_tag(f"v0.1.0-{channel}.1", "0.1.0")
-        for tag in ("v0.1.0", "v0.1.1-dev.1", "v0.1.0-nightly.1", "v0.1.0-dev.01",
-                    "v0.1.0-dev.-1", "v0.1.0-dev.1/extra", "v0.1.0-dev.1\n", "--output=x"):
+            self.assertEqual(release.validate_tag(f"v0.1.0-{channel}.1", "0.1.0"), "preview")
+        for tag in ("v0.1.1", "v0.1.1-dev.1", "v0.1.0-nightly.1", "v0.1.0-nightly.2026101.1",
+                    "v0.1.0-dev.01", "v0.1.0-dev.-1", "v0.1.0-dev.1/extra", "v0.1.0-dev.1\n",
+                    "v0.1.0\n", "--output=x"):
             with self.subTest(tag=tag), self.assertRaises(release.ReleaseError):
                 release.validate_tag(tag, "0.1.0")
+
+    def test_explicit_revision_archives_that_commit_only(self):
+        first = self.git("rev-parse", "HEAD").decode().strip()
+        (self.repo / "later.txt").write_text("Synthetic later change\n")
+        self.commit()
+        metadata = release.release(self.repo, "v0.1.1-nightly.20261001.3", self.base / "nightly", first)
+        self.assertEqual((metadata["revision"], metadata["channel"], metadata["build_version"]),
+                         (first, "nightly", "0.1.1-nightly.20261001.3"))
+        self.assertTrue(metadata["prerelease"])
+        with tarfile.open(self.base / "nightly" / metadata["archive"], "r:gz") as archive:
+            self.assertNotIn("oxplay-v0.1.1-nightly.20261001.3/later.txt", archive.getnames())
+        stable = release.release(self.repo, "v0.1.0", self.base / "stable")
+        self.assertEqual(stable["channel"], "production")
+        self.assertFalse(stable["prerelease"])
+        for revision in ("main", "HEAD~1", "--all", first[:12]):
+            with self.subTest(revision=revision), self.assertRaises(release.ReleaseError):
+                release.release(self.repo, "v0.1.0", self.base / f"bad-{len(revision)}", revision)
 
     def test_next_tag_is_the_first_unused_prerelease_number(self):
         self.assertEqual(release.next_tag("0.1.0", []), "v0.1.0-dev.1")
@@ -93,9 +113,11 @@ class SourceReleaseTests(unittest.TestCase):
             for name, expected in self.files.items():
                 self.assertEqual(archive.extractfile(members[name]).read(), expected)
         self.assertEqual(json.loads((output / "release.json").read_text()), metadata)
-        self.assertIn("not a production release", (output / "RELEASE_NOTES.md").read_text())
+        self.assertEqual((metadata["channel"], metadata["prerelease"]), ("preview", True))
+        self.assertEqual(sorted(p.name for p in output.iterdir()),
+                         sorted([metadata["archive"], "release.json", "SHA256SUMS.txt"]))
 
-    def test_outputs_are_deterministic_and_checksums_cover_all_three_payloads(self):
+    def test_outputs_are_deterministic_and_checksums_cover_both_payloads(self):
         first, metadata = self.make_release("first")
         second, _ = self.make_release("second")
         self.assertEqual({p.name: p.read_bytes() for p in first.iterdir()},
@@ -103,8 +125,8 @@ class SourceReleaseTests(unittest.TestCase):
         raw = (first / metadata["archive"]).read_bytes()
         self.assertEqual(int.from_bytes(raw[4:8], "little"), 0)
         self.assertTrue(gzip.decompress(raw))
-        rows = [line.split("  ") for line in (first / "SHA256SUMS").read_text().splitlines()]
-        self.assertEqual({name for _, name in rows}, {metadata["archive"], "release.json", "RELEASE_NOTES.md"})
+        rows = [line.split("  ") for line in (first / "SHA256SUMS.txt").read_text().splitlines()]
+        self.assertEqual({name for _, name in rows}, {metadata["archive"], "release.json"})
         for digest, name in rows:
             self.assertEqual(digest, hashlib.sha256((first / name).read_bytes()).hexdigest())
 
@@ -116,7 +138,7 @@ class SourceReleaseTests(unittest.TestCase):
         self.assertEqual(before, {p.name: p.read_bytes() for p in output.iterdir()})
         invalid = self.base / "invalid"
         with self.assertRaises(release.ReleaseError):
-            release.release(self.repo, "v0.1.0", invalid)
+            release.release(self.repo, "v0.2.0", invalid)
         self.assertFalse(invalid.exists())
 
     def test_archive_cannot_omit_committed_license_via_export_ignore(self):

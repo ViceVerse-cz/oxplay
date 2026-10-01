@@ -1,0 +1,178 @@
+name: Linux packages
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/linux/**'
+      - 'packaging/appimage/**'
+      - 'packaging/repositories/**'
+      - 'packaging/notices.py'
+      - 'packaging/licenses/**'
+      - 'scripts/fetch_pinned.py'
+      - 'scripts/ci/install-mpv-linux.sh'
+      - '.github/workflows/linux-packages.yml'
+      - '.github/workflows/package-repositories.yml'
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+      tag:
+        type: string
+        default: development
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_BUILD_JOBS: '2'
+
+jobs:
+  ubuntu:
+    # One build with the private libmpv 0.41 (Ubuntu 24.04's is too old):
+    # the .deb links it from /usr/lib/oxplay; the AppImage/tarball bundle its closure.
+    name: Ubuntu 24.04 deb, AppImage and tarball
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      TAG: ${{ inputs.tag || 'development' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: inputs.release == true
+        with:
+          name: release-manifests
+          path: .
+      - name: Install native build and packaging tools
+        run: |
+          bash packaging/linux/install-build-deps.sh
+          dpkg-query -W -f='${Package}=${Version}\n' | LC_ALL=C sort > "$RUNNER_TEMP/native-packages.txt"
+      - name: Identify actual native dependency versions
+        id: native
+        run: echo "hash=$(sha256sum "$RUNNER_TEMP/native-packages.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Cache exact Linux libmpv build
+        id: mpv-cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ${{ runner.temp }}/oxplay-mpv-0.41.0
+          key: libmpv-package-${{ runner.os }}-${{ runner.arch }}-0.41.0-${{ hashFiles('scripts/ci/install-mpv-linux.sh') }}-${{ steps.native.outputs.hash }}
+      - name: Build verified Linux libmpv source
+        if: steps.mpv-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 20
+        run: bash scripts/ci/install-mpv-linux.sh "$RUNNER_TEMP/oxplay-mpv-0.41.0"
+      - name: Select checked-in Rust toolchain
+        run: |
+          rustup show
+          rustc --version --verbose
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: linux-package-ubuntu-${{ steps.native.outputs.hash }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-on-failure: true
+      - name: Build locked release binary
+        env:
+          PKG_CONFIG_PATH: ${{ runner.temp }}/oxplay-mpv-0.41.0/lib/pkgconfig
+        run: cargo build --release --locked -p oxplay
+      - name: Packaging regression (offline)
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*packag*.py'
+      - name: Fetch pinned helpers and AppImage tools
+        run: |
+          python3 scripts/fetch_pinned.py yt-dlp-linux-x86_64 deno-linux-x86_64 appimagetool-x86_64 \
+            appimage-runtime-x86_64 --dest target/pinned
+          target/pinned/yt-dlp --version
+          target/pinned/deno --version
+      - name: Build and inspect the Debian package
+        run: |
+          python3 packaging/linux/package.py deb --helpers target/pinned \
+            --mpv-prefix "$RUNNER_TEMP/oxplay-mpv-0.41.0" --output dist
+      - name: Build and inspect the AppImage and portable tarball
+        run: |
+          python3 packaging/appimage/build.py --helpers target/pinned \
+            --mpv-prefix "$RUNNER_TEMP/oxplay-mpv-0.41.0" --tag "$TAG" --output dist
+      - name: Signed apt repository regression (synthetic key)
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_package_repositories.py'
+          sudo sh packaging/repositories/smoke-deb.sh
+      - name: Collect distribution-labelled packages
+        run: |
+          mkdir release-assets
+          for package in dist/*.deb; do
+            # GitHub replaces ~ in asset names; normalize before checksums.
+            cp "$package" "release-assets/oxplay-$TAG-Linux-ubuntu-24.04-$(basename "$package" | tr '~' '.')"
+          done
+          cp dist/oxplay-*-Linux-X64.AppImage dist/oxplay-*-Linux-X64.AppImage.zsync dist/oxplay-*-Linux-X64.tar.gz release-assets/
+          ls -l release-assets
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: oxplay-linux-ubuntu-24.04
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  native:
+    # Distribution libmpv; built and inspected natively as an unprivileged user.
+    name: ${{ matrix.distribution }} ${{ matrix.format }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distribution: fedora-44
+            image: fedora:44
+            format: rpm
+          - distribution: arch
+            image: archlinux:base
+            format: arch
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: inputs.release == true
+        with:
+          name: release-manifests
+          path: .
+      - name: Install native build tools and distribution libmpv
+        run: sh packaging/linux/install-build-deps.sh
+      - name: Create unprivileged builder
+        run: |
+          useradd --create-home builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+      - name: Build, package and inspect
+        env:
+          FORMAT: ${{ matrix.format }}
+        run: |
+          runuser -u builder -- env HOME=/home/builder FORMAT="$FORMAT" CARGO_TERM_COLOR=always CARGO_BUILD_JOBS=2 bash <<'BUILD'
+            set -eu
+            python3 scripts/fetch_pinned.py rustup-init-linux-x86_64 yt-dlp-linux-x86_64 deno-linux-x86_64 --dest target/pinned
+            target/pinned/rustup-init -y --no-modify-path --profile minimal --default-toolchain none
+            export PATH="$HOME/.cargo/bin:$PATH"
+            rustup toolchain install
+            rustc --version --verbose
+            cargo build --release --locked -p oxplay
+            PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_release_packaging.py'
+            python3 packaging/linux/package.py "$FORMAT" --helpers target/pinned --output dist
+          BUILD
+      - name: Collect distribution-labelled package
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+          TAG: ${{ inputs.tag || 'development' }}
+        run: |
+          mkdir release-assets
+          for package in dist/*.rpm dist/*.pkg.tar.zst; do
+            test -f "$package" || continue
+            cp "$package" "release-assets/oxplay-$TAG-Linux-$DISTRIBUTION-$(basename "$package" | tr '~' '.')"
+          done
+          ls -l release-assets
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: oxplay-linux-${{ matrix.distribution }}
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14

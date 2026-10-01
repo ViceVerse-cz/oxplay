@@ -24,6 +24,30 @@ measured repeats. A restricted native-presenter experiment reduces UI drawing
 but remains unqualified and misses the CPU target.
 See [performance evidence](docs/performance.md).
 
+## Install a release
+
+[GitHub Releases](https://github.com/ViceVerse-cz/oxplay/releases) carry
+**production** releases (`vX.Y.Z`, marked latest) and **nightly** prereleases
+(`vX.Y.Z-nightly.YYYYMMDD.N`), built by CI from the tagged commit. They are
+experimental builds; see [CI and releases](docs/ci-release.md#releases-nightly-and-production-channels).
+Every release bundles pinned yt-dlp and Deno helpers and lists all assets in
+`SHA256SUMS.txt`.
+
+| Platform | Install |
+| --- | --- |
+| macOS (Apple Silicon) | `brew tap ViceVerse-cz/oxplay https://github.com/ViceVerse-cz/oxplay.git && brew install --cask oxplay`, or unzip `oxplay-<tag>-macOS-ARM64.zip` into `/Applications` |
+| Windows (x86_64) | run `oxplay-<tag>-Windows-X64-Setup.exe` (per-user, no admin), or unzip `-Windows-X64.zip` |
+| Ubuntu 24.04 | `sudo apt install ./oxplay-<tag>-Linux-ubuntu-24.04-oxplay_<version>_amd64.deb` |
+| Fedora 44 | `sudo dnf install ./oxplay-<tag>-Linux-fedora-44-oxplay-<version>.x86_64.rpm` |
+| Arch Linux | `sudo pacman -U ./oxplay-<tag>-Linux-arch-oxplay-<version>-x86_64.pkg.tar.zst` |
+| Other Linux (x86_64, glibc ≥ 2.39) | `chmod +x oxplay-<tag>-Linux-X64.AppImage` and run it, or extract `-Linux-X64.tar.gz` and run `./oxplay` |
+
+Unless Developer ID secrets are configured for the release, the macOS app is
+ad-hoc signed only: run `xattr -dr com.apple.quarantine /Applications/Oxplay.app`
+once. Windows and Linux binaries are unsigned. Signed apt/dnf/pacman
+repositories are published to GitHub Pages only once a repository signing key
+is configured ([details](docs/ci-release.md#optional-secrets-and-settings)).
+
 ## Build on the development Mac
 
 Install Rust 1.98.1 (pinned in `rust-toolchain.toml`), Apple's Command Line Tools, and development packages
@@ -159,11 +183,12 @@ and [performance](docs/performance.md) distinguish executed checks from pending 
 Source license: GPL-3.0-or-later. Slint uses its GPL-3.0-only option. Combined binary
 distribution and native dependencies require the audit in [licensing](docs/licensing.md).
 UI icons are unmodified [Lucide assets](crates/app/ui/icons/SOURCE.md), with their
-ISC and retained Feather MIT notices. The current [developer macOS bundle](docs/packaging.md)
-is not a portable, signed release: helper packaging, source association and notices
-remain release work.
+ISC and retained Feather MIT notices. Release [packages](docs/packaging.md) are
+not yet portable-qualified: clean-machine testing, complete native notices and
+corresponding source for bundled libmpv/FFmpeg builds remain release work.
 
-[CI and manual preview releases (source and binaries)](docs/ci-release.md) describe the macOS/Linux
-build matrix and the manual prerelease workflow, which attaches unsigned macOS
-ARM64 and experimental Linux x86_64 builds. Signing, portability and licensing
-gates remain open.
+[CI and releases](docs/ci-release.md) describe the CI matrix and the manual
+nightly/production release workflow, which publishes macOS ARM64, Windows
+x86_64 and Linux x86_64 (deb, rpm, Arch, AppImage, tarball) builds with the
+exact source archive. Signing is optional; portability and licensing gates
+remain open.
