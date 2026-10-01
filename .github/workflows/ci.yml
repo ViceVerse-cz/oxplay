@@ -48,7 +48,8 @@ jobs:
           HOMEBREW_NO_ANALYTICS: '1'
         run: |
           test "$(uname -m)" = arm64
-          brew install pkgconf cmake ffmpeg libass shaderc libarchive uchardet
+          # libplacebo's disabled Vulkan stubs still include the public Vulkan header.
+          brew install pkgconf cmake ffmpeg libass shaderc vulkan-headers libarchive uchardet
           python3 -m venv "$RUNNER_TEMP/native-media-tools"
           "$RUNNER_TEMP/native-media-tools/bin/python" -m pip install meson==1.12.1 ninja==1.13.2
           brew list --versions > "$RUNNER_TEMP/native-packages.txt"

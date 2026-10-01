@@ -24,6 +24,11 @@ the platform header to advertise `OXPLAY_NATIVE_RENDER_ABI 1` before linking.
 Use each builder's `--help` for host toolchain and prefix arguments. Linux and
 Windows builds require their respective hosts; `--plan` only inspects the plan.
 
+The macOS build requires Homebrew `vulkan-headers` alongside its Metal/shader
+dependencies. The pinned libplacebo compiles Vulkan stubs that include the
+public Vulkan header even when its Vulkan backend is disabled; this prerequisite
+does not enable Vulkan rendering or add a Vulkan runtime dependency.
+
 `OXPLAY_NATIVE_MPV_PREFIX` overrides the dependency prefix; the default is
 `artifacts/native-media/<platform>/prefix`. Windows also accepts `MPV_DIR` for
 the native development prefix. Build with `cargo build -p oxplay --release

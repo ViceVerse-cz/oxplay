@@ -1,0 +1,3 @@
+# Native dependency archives use LF. Preserve the audited patch bytes when
+# Windows checks out with core.autocrlf=true; CRLF context cannot match them.
+scripts/native-media/patches/*.patch text eol=lf

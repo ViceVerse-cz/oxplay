@@ -150,7 +150,7 @@ jobs:
           # Runner images ship a stale formula index; the reviewed helper
           # dependency set needs the current yt-dlp formula revision.
           brew update
-          brew install pkgconf yt-dlp cmake ffmpeg libass shaderc libarchive uchardet
+          brew install pkgconf yt-dlp cmake ffmpeg libass shaderc libarchive uchardet vulkan-headers
           python3 -m venv "$RUNNER_TEMP/native-media-tools"
           "$RUNNER_TEMP/native-media-tools/bin/python" -m pip install meson==1.12.1 ninja==1.13.2
           test -x /opt/homebrew/bin/yt-dlp
@@ -281,6 +281,18 @@ jobs:
             "-DUNINSTALL_INCLUDE=$PWD\dist\windows-uninstall.nsh" `
             "-DOUTPUT_FILE=$PWD\release-assets\oxplay-$env:TAG-Windows-X64-Setup.exe" packaging\windows\installer.nsi
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Retain native Mac package build evidence
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-metal-package-build-evidence
+          path: |
+            artifacts/native-media/macos/build-result.json
+            artifacts/native-media/macos/*.log
+            artifacts/native-media/macos/build-*/meson-logs/
+          if-no-files-found: warn
+          retention-days: 14
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

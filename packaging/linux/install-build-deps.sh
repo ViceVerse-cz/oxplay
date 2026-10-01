@@ -26,7 +26,7 @@ case "$ID:${VERSION_ID:-rolling}" in
     dnf install -y --setopt=install_weak_deps=False gcc gcc-c++ make pkgconf-pkg-config \
       curl git ca-certificates tar gzip xz python3 coreutils findutils shadow-utils util-linux \
       meson ninja-build nasm cmake gnutls-devel libass-devel luajit-devel \
-      shaderc-devel vulkan-loader-devel vulkan-headers libva-devel libdrm-devel \
+      libshaderc-devel vulkan-loader-devel vulkan-headers libva-devel libdrm-devel \
       alsa-lib-devel pulseaudio-libs-devel patchelf \
       rpm-build cpio desktop-file-utils file glibc-common \
       fontconfig-devel freetype-devel libxkbcommon-devel libxkbcommon-x11-devel \

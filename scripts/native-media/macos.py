@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -139,12 +140,30 @@ def run_stage(root: Path, name: str, command: list[str], env: dict) -> dict:
     return record
 
 
+def check_vulkan_headers(env: dict) -> dict:
+    """Disabled Vulkan still exposes API stubs compiled against these headers."""
+    command = ["xcrun", "clang", *shlex.split(env.get("CFLAGS", "")),
+               "-fsyntax-only", "-x", "c", "-"]
+    try:
+        result = subprocess.run(command, input="#include <vulkan/vulkan.h>\n", text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                env=env, timeout=10, check=False)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Vulkan header prerequisite check exceeded its 10-second limit") from None
+    if result.returncode:
+        raise RuntimeError("Native Metal build requires Vulkan headers for libplacebo API stubs; "
+                           "install vulkan-headers and ensure its include directory is in CFLAGS")
+    return {"header": "vulkan/vulkan.h", "available": True,
+            "vulkan_backend_enabled": False, "probe": "bounded compiler syntax check; no object or executable"}
+
+
 def build(root: Path, pins: dict, env: dict, jobs: int) -> dict:
     prefix = root / "prefix"
     meson = shutil.which("meson", path=env["PATH"])
     cmake = shutil.which("cmake", path=env["PATH"])
     if not meson or not cmake or not shutil.which("ninja", path=env["PATH"]):
         raise RuntimeError("Meson, CMake and Ninja must be installed or supplied with --tools")
+    prerequisites = {"vulkan_headers": check_vulkan_headers(env)}
     stages = []
     cross = root / "build-spirv-cross"
     stages.append(run_stage(root, "spirv-cross-configure", [cmake, "-S", str(root / "source/spirv-cross"),
@@ -188,6 +207,7 @@ def build(root: Path, pins: dict, env: dict, jobs: int) -> dict:
             if file.is_file() and (file.name.startswith(("LICENSE", "COPYING")) or file.name == "Copyright"):
                 shutil.copyfile(file, destination / file.name)
     return {"schema": 1, "status": "compiled_and_installed", "native_render_abi": 1, "sources": pins,
+            "prerequisites": prerequisites,
             "patches": {patch: digest(SCRIPT / "patches" / patch) for patches in PATCHES.values() for patch in patches},
             "stages": stages, "sdk": env["SDKROOT"], "deployment_target": "12.0",
             "installed_files": {str(p.relative_to(prefix)): digest(p) for p in sorted(prefix.rglob("*"))

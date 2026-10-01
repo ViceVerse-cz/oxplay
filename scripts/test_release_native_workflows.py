@@ -134,6 +134,15 @@ class NativeCapability(unittest.TestCase):
         features = tomllib.loads((ROOT / "crates/app/Cargo.toml").read_text())["features"]
         self.assertIn("native-rendering", features["default"])
 
+    def test_disabled_vulkan_stubs_have_headers_on_clean_macos_runners(self):
+        # libplacebo still compiles vulkan/stubs.c with its Vulkan backend disabled.
+        # The local developer's incidental SDK must not be a hosted prerequisite.
+        for job, name in ((native_job(), "Install native media build dependencies"),
+                          (release_build_job(), "Install native dependencies and bundled helper runtime")):
+            with self.subTest(step=name):
+                body = step(job, name)
+                self.assertRegex(body, r"brew install[^\n]*\bvulkan-headers\b")
+
 
 @unittest.skipIf(os.name == "nt", "Synthetic MSYS2 shell propagation check uses Unix stubs")
 class WindowsNativeRelease(unittest.TestCase):

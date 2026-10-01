@@ -21,7 +21,11 @@ composes with controls, popups, mini-player and the existing same-window PiP.
 ## Building
 
 The build requires Xcode tools/SDK, Python 3.11 or later, Meson, Ninja, CMake,
-pkg-config and the application's existing FFmpeg/libass/system dependencies.
+pkg-config, Vulkan headers, and the application's existing FFmpeg/libass/system
+dependencies. Install `vulkan-headers` with Homebrew: libplacebo's public API
+stub compilation requires its types even when the Vulkan backend is disabled.
+The builder checks header availability with a ten-second compiler syntax probe
+before compiling dependencies and records a successful probe in its manifest.
 No build stage modifies Homebrew or installs into a system prefix.
 
 ```sh

@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -114,6 +115,30 @@ class NativeReleaseContracts(unittest.TestCase):
                 windows_builder, "imported_dlls", return_value=["missing.dll"]):
             with self.assertRaisesRegex(RuntimeError, "Unresolved native Windows DLL"):
                 windows_builder.dll_closure(prefix, dependencies)
+
+    def test_windows_checkout_preserves_audited_patch_bytes(self):
+        repo = self.root / "checkout"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        relative = Path("scripts/native-media/patches/common-mpv-gpu-next.patch")
+        source = ROOT / relative
+        target = repo / relative
+        target.parent.mkdir(parents=True)
+        target.write_bytes(source.read_bytes())
+        (repo / ".gitattributes").write_bytes((ROOT / ".gitattributes").read_bytes())
+        subprocess.run(["git", "-c", "core.autocrlf=true", "add", "."], cwd=repo, check=True)
+        checkout = self.root / "windows-checkout"
+        subprocess.run(["git", "-c", "core.autocrlf=true", "checkout-index", "-a",
+                        "--prefix=" + str(checkout) + os.sep], cwd=repo, check=True)
+        self.assertEqual((checkout / relative).read_bytes(), source.read_bytes())
+        # Negative control: without the explicit attribute Git really does
+        # materialize CRLF on this same checkout path/configuration.
+        (repo / ".gitattributes").unlink()
+        subprocess.run(["git", "-c", "core.autocrlf=true", "add", "."], cwd=repo, check=True)
+        negative = self.root / "windows-negative"
+        subprocess.run(["git", "-c", "core.autocrlf=true", "checkout-index", "-a",
+                        "--prefix=" + str(negative) + os.sep], cwd=repo, check=True)
+        self.assertIn(b"\r\n", (negative / relative).read_bytes())
 
 
 if __name__ == "__main__":
