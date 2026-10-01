@@ -24,6 +24,9 @@ stock libmpv remains available for the explicit OpenGL comparison build.
 The upstream native extensions are experimental. Hardware decoder observations
 alone do not qualify presentation, performance or a release; see
 [native rendering](docs/native-rendering.md) and [performance evidence](docs/performance.md).
+The [2026-10-01 playback follow-up](docs/performance-playback-2026-10-01.md)
+records the subsequent CPU reduction, browser comparison and remaining
+qualification work.
 
 ## Install a release
 

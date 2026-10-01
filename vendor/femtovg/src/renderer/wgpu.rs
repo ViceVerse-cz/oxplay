@@ -67,6 +67,85 @@ const UNIFORM_BYTES: u64 = (UNIFORMARRAY_SIZE * 4 * 4) as u64;
 const UNIFORM_SLOTS_PER_COMMAND: u64 = 2;
 const MIN_UNIFORM_SLOTS: u64 = 64;
 const MIN_VERTEX_BYTES: u64 = 4096;
+const MAX_FLUSH_BIND_GROUPS: usize = 64;
+
+/// Only fold the canonical, full-target clear emitted by Canvas::clear_rect.
+/// Partial clears and later clears retain the original draw ordering. The
+/// shader uses premultiplied color with replacement blending, and leaves the
+/// stencil attachment untouched; the attachment clear must do the same.
+fn leading_clear_color(
+    command: &super::Command,
+    verts: &[Vertex],
+    viewport: [f32; 2],
+    format: wgpu::TextureFormat,
+) -> Option<wgpu::Color> {
+    let super::CommandType::ClearRect { color } = command.cmd_type else {
+        return None;
+    };
+    // Keep unusual formats/color ranges on the existing shader path.
+    if !matches!(
+        format,
+        wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Bgra8Unorm
+    ) || viewport.iter().any(|v| !v.is_finite() || *v <= 0.)
+        || color
+            .to_array()
+            .iter()
+            .any(|v| !v.is_finite() || !(0. ..=1.).contains(v))
+    {
+        return None;
+    }
+    let (start, count) = command.triangles_verts?;
+    if count != 6 {
+        return None;
+    }
+    let vertices = verts.get(start..start.checked_add(count)?)?;
+    let [w, h] = viewport;
+    let expected = [(0., 0.), (w, h), (w, 0.), (0., 0.), (0., h), (w, h)];
+    if !vertices.iter().zip(expected).all(|(v, (x, y))| v.x == x && v.y == y) {
+        return None;
+    }
+    let [r, g, b, a] = color.premultiplied().to_array();
+    Some(wgpu::Color {
+        r: r.into(),
+        g: g.into(),
+        b: b.into(),
+        a: a.into(),
+    })
+}
+
+// This cache is scoped to one render() call: images, sampler flags and the
+// uniform-buffer allocation are fixed while those commands are encoded.
+// Dropping it at flush end avoids retaining decoded video/glyph textures or
+// mistaking an ImageId reused/reallocated between flushes for the old image.
+struct FlushBindingCache<K, V> {
+    entries: Vec<(K, V)>,
+    next_eviction: usize,
+}
+
+impl<K, V> Default for FlushBindingCache<K, V> {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(),
+            next_eviction: 0,
+        }
+    }
+}
+
+impl<K: PartialEq, V: Clone> FlushBindingCache<K, V> {
+    fn get_or_create(&mut self, key: K, create: impl FnOnce() -> V) -> V {
+        if let Some((_, value)) = self.entries.iter().find(|(cached, _)| cached == &key) {
+            return value.clone();
+        }
+        let value = create();
+        if self.entries.len() < MAX_FLUSH_BIND_GROUPS {
+            self.entries.push((key, value.clone()));
+        } else {
+            self.entries[self.next_eviction] = (key, value.clone());
+            self.next_eviction = (self.next_eviction + 1) % MAX_FLUSH_BIND_GROUPS;
+        }
+        value
+    }
+}
 
 const UNIFORM_BUFFER_LABEL: &str = "Fragment Uniform Buffer";
 const UNIFORM_BUFFER_USAGE: wgpu::BufferUsages = wgpu::BufferUsages::UNIFORM.union(wgpu::BufferUsages::COPY_DST);
@@ -671,8 +750,26 @@ impl Renderer for WGPURenderer {
             stencil_buffer.clone(),
             vertex_buffer,
         );
-        // Ensure that we have one initial render pass, in case the first command is not SetRenderTarget
-        render_pass_builder.set_render_target_screen();
+        let mut commands = commands.into_iter().peekable();
+        // An explicit first screen target opens its own pass; avoid a duplicate
+        // screen load/store before it. Keep the implicit pass for image-first
+        // streams, since it also initializes an otherwise untouched output.
+        let explicit_screen = commands.peek().is_some_and(|command| {
+            matches!(
+                command.cmd_type,
+                super::CommandType::SetRenderTarget(RenderTarget::Screen)
+            )
+        });
+        if !explicit_screen {
+            let clear = commands
+                .peek()
+                .and_then(|command| leading_clear_color(command, verts, self.screen_view, output.format));
+            if clear.is_some() {
+                commands.next();
+            }
+            render_pass_builder
+                .set_render_target_screen_with_load(clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear));
+        }
 
         let mut pipeline_and_bindgroup_mapper = CommandToPipelineAndBindGroupMapper::new(
             self.device.clone(),
@@ -688,16 +785,44 @@ impl Renderer for WGPURenderer {
 
         let mut current_render_target = RenderTarget::Screen;
 
-        for command in commands {
+        while let Some(command) = commands.next() {
             match command.cmd_type {
                 super::CommandType::SetRenderTarget(render_target) => {
                     current_render_target = render_target;
                     match render_target {
                         RenderTarget::Screen => {
-                            render_pass_builder.set_render_target_screen();
+                            let clear = commands.peek().and_then(|command| {
+                                leading_clear_color(command, verts, self.screen_view, output.format)
+                            });
+                            if clear.is_some() {
+                                commands.next();
+                            }
+                            render_pass_builder.set_render_target_screen_with_load(
+                                clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear),
+                            );
                         }
                         RenderTarget::Image(image_id) => {
-                            render_pass_builder.set_render_target_image(images, image_id, wgpu::LoadOp::Load);
+                            let clear = images.get(image_id).and_then(|image| {
+                                let Texture::Internal(texture) = &image.texture else {
+                                    return None;
+                                };
+                                commands.peek().and_then(|command| {
+                                    leading_clear_color(
+                                        command,
+                                        verts,
+                                        [texture.width() as f32, texture.height() as f32],
+                                        texture.format(),
+                                    )
+                                })
+                            });
+                            if clear.is_some() {
+                                commands.next();
+                            }
+                            render_pass_builder.set_render_target_image(
+                                images,
+                                image_id,
+                                clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear),
+                            );
                         }
                     }
                 }
@@ -1945,13 +2070,17 @@ impl<'a> RenderPassBuilder<'a> {
     }
 
     fn set_render_target_screen(&mut self) {
+        self.set_render_target_screen_with_load(wgpu::LoadOp::Load);
+    }
+
+    fn set_render_target_screen_with_load(&mut self, load: wgpu::LoadOp<wgpu::Color>) {
         self.texture_view = self.surface_view.clone();
         self.stencil_buffer = Some(self.screen_stencil_buffer.clone());
         self.set_viewport(self.screen_view);
         self.surface_format = self.screen_surface_format;
         self.rendering_to_texture = false;
 
-        self.recreate_render_pass(wgpu::LoadOp::Load);
+        self.recreate_render_pass(load);
     }
 
     fn recreate_render_pass(&mut self, load: wgpu::LoadOp<wgpu::Color>) {
@@ -2013,6 +2142,7 @@ struct CommandToPipelineAndBindGroupMapper {
 
     current_bind_group_state: Option<BindGroupState>,
     current_bind_group: Option<wgpu::BindGroup>,
+    bind_group_cache: FlushBindingCache<BindGroupState, wgpu::BindGroup>,
     bind_group_layout: wgpu::BindGroupLayout,
     pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedResource<wgpu::RenderPipeline>>>>,
     pipeline_layout: wgpu::PipelineLayout,
@@ -2041,6 +2171,7 @@ impl CommandToPipelineAndBindGroupMapper {
             shader_module,
             current_bind_group_state: None,
             current_bind_group: None,
+            bind_group_cache: FlushBindingCache::default(),
             bind_group_layout,
             pipeline_cache,
             pipeline_layout,
@@ -2074,8 +2205,8 @@ impl CommandToPipelineAndBindGroupMapper {
 
         let bind_group_changed = self.current_bind_group_state != Some(bind_group_state.clone());
         if bind_group_changed {
-            self.current_bind_group = bind_group_state
-                .materialize(
+            self.current_bind_group = Some(self.bind_group_cache.get_or_create(bind_group_state.clone(), || {
+                bind_group_state.materialize(
                     &self.device,
                     images,
                     &self.bind_group_layout,
@@ -2083,7 +2214,7 @@ impl CommandToPipelineAndBindGroupMapper {
                     &self.sampler_cache,
                     &self.uniform_buffer,
                 )
-                .into();
+            }));
             self.current_bind_group_state = Some(bind_group_state);
         }
 
@@ -2144,6 +2275,152 @@ fn blend_state(command: &super::Command) -> wgpu::BlendState {
             dst_factor: blend_factor(command.composite_operation.dst_alpha),
             operation: wgpu::BlendOperation::Add,
         },
+    }
+}
+
+#[cfg(test)]
+mod encoding_cache_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    fn clear(color: crate::Color) -> (super::super::Command, Vec<Vertex>) {
+        let mut command = super::super::Command::new(super::super::CommandType::ClearRect { color });
+        command.triangles_verts = Some((0, 6));
+        let verts = [(0., 0.), (64., 32.), (64., 0.), (0., 0.), (0., 32.), (64., 32.)]
+            .map(|(x, y)| Vertex::new(x, y, 0., 0.))
+            .to_vec();
+        (command, verts)
+    }
+
+    #[test]
+    fn attachment_clear_uses_shader_premultiplication_and_replacement_semantics() {
+        let (mut command, verts) = clear(crate::Color::rgbaf(0.8, 0.4, 0.2, 0.5));
+        // Canvas records its blend mode on a clear, but the WGPU clear shader
+        // deliberately uses replacement blending regardless of that mode.
+        command.composite_operation = crate::CompositeOperationState::new(crate::CompositeOperation::Xor);
+        let color = leading_clear_color(&command, &verts, [64., 32.], wgpu::TextureFormat::Rgba8Unorm).unwrap();
+        assert_eq!(
+            color,
+            wgpu::Color {
+                r: 0.4_f32.into(),
+                g: 0.2_f32.into(),
+                b: 0.1_f32.into(),
+                a: 0.5
+            }
+        );
+        let (command, verts) = clear(crate::Color::rgbaf(0.8, 0.4, 0.2, 0.));
+        assert_eq!(
+            leading_clear_color(&command, &verts, [64., 32.], wgpu::TextureFormat::Bgra8Unorm),
+            Some(wgpu::Color::TRANSPARENT)
+        );
+    }
+
+    #[test]
+    fn partial_malformed_and_different_target_clears_keep_the_draw_path() {
+        let (mut command, mut verts) = clear(crate::Color::white());
+        let eligible = |command: &super::super::Command, verts: &[Vertex]| {
+            leading_clear_color(command, verts, [64., 32.], wgpu::TextureFormat::Rgba8Unorm).is_some()
+        };
+        assert!(eligible(&command, &verts));
+        verts[0].x = 1.;
+        assert!(!eligible(&command, &verts));
+        verts[0].x = 0.;
+        assert!(leading_clear_color(&command, &verts, [128., 64.], wgpu::TextureFormat::Rgba8Unorm).is_none());
+        command.triangles_verts = Some((0, 3));
+        assert!(!eligible(&command, &verts));
+        command.triangles_verts = Some((usize::MAX, 6));
+        assert!(!eligible(&command, &verts));
+        command.triangles_verts = Some((0, 6));
+        assert!(!eligible(&command, &verts[..5]));
+        verts[2].x = f32::NAN;
+        assert!(!eligible(&command, &verts));
+    }
+
+    #[test]
+    fn unusual_color_formats_and_nonclear_commands_are_not_folded() {
+        for color in [
+            crate::Color::rgbaf(f32::NAN, 0., 0., 1.),
+            crate::Color::rgbaf(2., 0., 0., 1.),
+        ] {
+            let (command, verts) = clear(color);
+            assert!(leading_clear_color(&command, &verts, [64., 32.], wgpu::TextureFormat::Rgba8Unorm).is_none());
+        }
+        let (mut command, verts) = clear(crate::Color::white());
+        assert!(leading_clear_color(&command, &verts, [64., 32.], wgpu::TextureFormat::Rgba8UnormSrgb).is_none());
+        command.cmd_type = super::super::CommandType::SetRenderTarget(RenderTarget::Screen);
+        assert!(leading_clear_color(&command, &verts, [64., 32.], wgpu::TextureFormat::Rgba8Unorm).is_none());
+    }
+
+    #[test]
+    fn alternating_paint_bindings_reuse_within_one_flush_and_expire_after_it() {
+        let mut canvas = crate::Canvas::new(crate::renderer::Void).unwrap();
+        let first = canvas
+            .create_image_empty(8, 8, crate::PixelFormat::Rgba8, crate::ImageFlags::empty())
+            .unwrap();
+        canvas.delete_image(first);
+        let second = canvas
+            .create_image_empty(8, 8, crate::PixelFormat::Rgba8, crate::ImageFlags::empty())
+            .unwrap();
+        assert_ne!(first, second, "slot reuse must include the image generation");
+        let keys = [
+            BindGroupState {
+                image: None,
+                glyph_texture: GlyphTexture::None,
+            },
+            BindGroupState {
+                image: Some(ImageOrTexture::Image(first)),
+                glyph_texture: GlyphTexture::None,
+            },
+            BindGroupState {
+                image: Some(ImageOrTexture::Image(second)),
+                glyph_texture: GlyphTexture::None,
+            },
+            BindGroupState {
+                image: None,
+                glyph_texture: GlyphTexture::AlphaMask(second),
+            },
+            BindGroupState {
+                image: None,
+                glyph_texture: GlyphTexture::ColorTexture(second),
+            },
+        ];
+        let creations = Cell::new(0);
+        let retained;
+        {
+            let mut cache = FlushBindingCache::default();
+            retained = cache.get_or_create(keys[0].clone(), || Rc::new(0));
+            for _ in 0..50 {
+                for (i, key) in keys.iter().enumerate() {
+                    let value = cache.get_or_create(key.clone(), || {
+                        creations.set(creations.get() + 1);
+                        Rc::new(i)
+                    });
+                    assert_eq!(*value, i);
+                }
+            }
+            assert_eq!(creations.get(), keys.len() - 1);
+        }
+        assert_eq!(
+            Rc::strong_count(&retained),
+            1,
+            "flush must release texture-owning cache entries"
+        );
+        let mut next_flush = FlushBindingCache::default();
+        let replacement = next_flush.get_or_create(keys[0].clone(), || Rc::new(100));
+        assert_eq!(*replacement, 100, "same key after a flush must resolve new resources");
+    }
+
+    #[test]
+    fn binding_cache_is_bounded_without_invalidating_recorded_resources() {
+        let mut cache = FlushBindingCache::default();
+        let recorded = cache.get_or_create(0, || Rc::new(123));
+        for key in 1..MAX_FLUSH_BIND_GROUPS * 4 {
+            cache.get_or_create(key, || Rc::new(key));
+            assert!(cache.entries.len() <= MAX_FLUSH_BIND_GROUPS);
+        }
+        assert_eq!(*recorded, 123);
+        assert_eq!(Rc::strong_count(&recorded), 1);
+        assert_eq!(*cache.get_or_create(0, || Rc::new(456)), 456);
     }
 }
 

@@ -68,6 +68,9 @@ class BuildInputTests(unittest.TestCase):
             "vendor/femtovg/Cargo.toml": b'[package]\nname="femtovg"\n',
             "vendor/femtovg/src/renderer/wgpu.rs": b"// synthetic renderer implementation\n",
             "vendor/femtovg/LICENSE-MIT": b"Synthetic attribution fixture\n",
+            "vendor/slint-femtovg/Cargo.toml": b'[package]\nname="i-slint-renderer-femtovg"\n',
+            "vendor/slint-femtovg/itemrenderer.rs": b"// synthetic rounded image clipping\n",
+            "vendor/slint-femtovg/LICENSE-GPL-3.0": b"Synthetic renderer license fixture\n",
             "scripts/native-media/macos.py": b"# synthetic native build recipe\n",
             "scripts/native-media/macos-sources.json": b'{"sources": {}}\n',
             "scripts/native-media/patches/common.patch": b"Synthetic native patch\n",
@@ -89,12 +92,14 @@ class BuildInputTests(unittest.TestCase):
 
         # A path-dependency edit or applied native patch must invalidate the
         # generic source attestation even when application Rust is unchanged.
-        for name in ("vendor/femtovg/src/renderer/wgpu.rs", "scripts/native-media/patches/common.patch"):
+        for name in ("vendor/femtovg/src/renderer/wgpu.rs", "vendor/slint-femtovg/itemrenderer.rs",
+                     "scripts/native-media/patches/common.patch"):
             (self.root / name).write_bytes(files[name] + b"Synthetic changed bytes\n")
         report = inventory.capture(self.root)
         self.assertFalse(report["inputs_match_commit"])
         states = {item["path"]: item["state"] for item in report["files"]}
         self.assertEqual(states["vendor/femtovg/src/renderer/wgpu.rs"], "modified")
+        self.assertEqual(states["vendor/slint-femtovg/itemrenderer.rs"], "modified")
         self.assertEqual(states["scripts/native-media/patches/common.patch"], "modified")
 
         # Downloaded archives and installed libraries are separately attested

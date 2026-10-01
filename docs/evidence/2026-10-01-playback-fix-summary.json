@@ -1,0 +1,351 @@
+{
+  "schema": 1,
+  "date": "2026-10-01",
+  "scope": "Local Apple M1 macOS Metal performance follow-up; frozen candidate before release version update. Other physical platforms unqualified.",
+  "fixture_1080p60_sha256": "d5bd6130435aad2f07b00ff102c56d04f649c70e479ec762fe58f659b9baaba0",
+  "fixture_1080p30_sha256": "f533b7dad93a3c94478bc8fd12586cbddd4d4e707262f04a70cab558cda8730e",
+  "video_geometry_physical_pixels": [
+    1392,
+    783
+  ],
+  "window_geometry_physical_pixels": [
+    2640,
+    1592
+  ],
+  "ambient_enabled": true,
+  "audio_unmuted": true,
+  "build_identity": {
+    "binary_sha256": "258668f58c7806a2e99b9bf86f811728c201349b8be7ec6cdc85eb022211dd8e",
+    "before": {
+      "file": "source-guard-hal-before.json",
+      "sha256": "07a0f3d3290c9bce99b74256746c25983a4607e70c9bde75b576452c22057709"
+    },
+    "after": {
+      "file": "source-guard-hal-after.json",
+      "sha256": "07a0f3d3290c9bce99b74256746c25983a4607e70c9bde75b576452c22057709"
+    },
+    "source_files_unchanged_during_build": true,
+    "input_file_count": 427,
+    "native_build_result_sha256": "f2cae1f8fca024532efe79d2e7bc2fda7d805121af78365146d095f7a678ffe6"
+  },
+  "measurements": [
+    {
+      "case": "release-baseline-final-60",
+      "raw_measurement_sha256": "7c8eebf94d30490e3c4e3943f6aaf4e22490120aa173a132acde384fa49f0d6c",
+      "sample_count": 60,
+      "warmup_seconds": 10,
+      "cpu_one_core_percent": {
+        "mean": 55.58014307761497,
+        "p95": 62.00180840586316,
+        "peak": 72.18995489252426
+      },
+      "rss_mib": {
+        "mean": 305.1127604166667,
+        "p95": 305.359375,
+        "peak": 305.390625
+      },
+      "physical_footprint_mib": {
+        "mean": 350.5943024953206,
+        "p95": 355.48675537109375,
+        "peak": 358.03360748291016
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 81.09460264352899,
+        "p95": 205.1543395825045,
+        "peak": 282.80594606270495
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "case": "release-candidate-final-60",
+      "raw_measurement_sha256": "fbe8cb19c215bf471e8a456cd4b3e30455cf4a48eaa20b3a94ca0cccee2a4a2b",
+      "sample_count": 60,
+      "warmup_seconds": 10,
+      "cpu_one_core_percent": {
+        "mean": 33.591029072477035,
+        "p95": 37.424877330342085,
+        "peak": 37.99981634756837
+      },
+      "rss_mib": {
+        "mean": 308.9401041666667,
+        "p95": 309.171875,
+        "peak": 309.390625
+      },
+      "physical_footprint_mib": {
+        "mean": 344.41177825927736,
+        "p95": 344.58052825927734,
+        "peak": 351.17427825927734
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.02651853986149,
+        "p95": 65.9557566252935,
+        "peak": 67.83901089807296
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "case": "release-candidate-final-repeat-60",
+      "raw_measurement_sha256": "26758a6c8fd03d2812b463d7fdc2bec64abd98dc7c74dea8e3ba2d619ade8014",
+      "sample_count": 60,
+      "warmup_seconds": 10,
+      "cpu_one_core_percent": {
+        "mean": 33.10326440404306,
+        "p95": 37.000709193556325,
+        "peak": 38.1374890454896
+      },
+      "rss_mib": {
+        "mean": 308.35130208333334,
+        "p95": 308.609375,
+        "peak": 308.765625
+      },
+      "physical_footprint_mib": {
+        "mean": 343.5110427856445,
+        "p95": 343.76807403564453,
+        "peak": 343.92432403564453
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 55.12315276419217,
+        "p95": 66.44462308728068,
+        "peak": 82.857039370889
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "case": "release-baseline-final-30",
+      "raw_measurement_sha256": "26d003845e847277e4ff6c240771c8d7a1bc9c21547ab5d5b888a6703daba2b0",
+      "sample_count": 60,
+      "warmup_seconds": 10,
+      "cpu_one_core_percent": {
+        "mean": 40.811610303998364,
+        "p95": 48.9959394633953,
+        "peak": 50.65407478367955
+      },
+      "rss_mib": {
+        "mean": 313.2859375,
+        "p95": 313.765625,
+        "peak": 313.9375
+      },
+      "physical_footprint_mib": {
+        "mean": 375.39433034261066,
+        "p95": 381.23677825927734,
+        "peak": 388.90865325927734
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 28.378563272674032,
+        "p95": 40.99660240824766,
+        "peak": 103.83915654354384
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    },
+    {
+      "case": "release-candidate-final-30",
+      "raw_measurement_sha256": "26dae36f3212d0cda58ce869464a808b1f5ac3b9e00666c8869ba141c4300ce3",
+      "sample_count": 60,
+      "warmup_seconds": 10,
+      "cpu_one_core_percent": {
+        "mean": 24.355460012739325,
+        "p95": 28.694087541490283,
+        "peak": 30.001380063513615
+      },
+      "rss_mib": {
+        "mean": 316.13098958333336,
+        "p95": 316.515625,
+        "peak": 316.578125
+      },
+      "physical_footprint_mib": {
+        "mean": 363.61366984049477,
+        "p95": 367.5962219238281,
+        "peak": 370.5962219238281
+      },
+      "host_other_cpu_one_core_percent": {
+        "mean": 25.57770427950358,
+        "p95": 39.918350328772206,
+        "peak": 44.709727561679706
+      },
+      "exit_code": 0,
+      "forced_termination": false
+    }
+  ],
+  "chrome_bare_video_1080p60": {
+    "cpu_one_core_percent": {
+      "mean": 20.232752370344887,
+      "p95": 23.626771119297604,
+      "peak": 24.959594584867386
+    },
+    "scope": "Isolated Chrome for Testing 154.0.8037.57 bare local video page, not actual YouTube website; same fixture and displayed video size.",
+    "rss_mib": {
+      "mean": 1028.1315104166667,
+      "p95": 1132.765625,
+      "peak": 1132.84375
+    }
+  },
+  "gpu_pair": {
+    "gpu-baseline-final": {
+      "samples": 30,
+      "thermal_states": [
+        "Nominal"
+      ],
+      "system_gpu_active_residency_percent": {
+        "mean": 72.56750333333333,
+        "min": 70.8088,
+        "max": 74.7813
+      },
+      "system_gpu_estimated_power_mw": {
+        "mean": 3894.1792771476385,
+        "min": 3798.2827525555103,
+        "max": 3960.040655653957
+      },
+      "process_gpu_time_available": false
+    },
+    "gpu-candidate-final": {
+      "samples": 30,
+      "thermal_states": [
+        "Nominal"
+      ],
+      "system_gpu_active_residency_percent": {
+        "mean": 69.33858000000001,
+        "min": 68.70700000000001,
+        "max": 70.1917
+      },
+      "system_gpu_estimated_power_mw": {
+        "mean": 3328.2320120777395,
+        "min": 3241.580131835752,
+        "max": 3406.409059866932
+      },
+      "process_gpu_time_available": false
+    }
+  },
+  "gpu_pair_scope": "Sequential whole-system estimated GPU power/residency, not app GPU utilization or exclusive energy; no per-process GPU time available.",
+  "metal_submissions": {
+    "before_empty_pending_writes": 757,
+    "after_empty_pending_writes": 0,
+    "actual_ca_requests": {
+      "count": 755,
+      "span_seconds": 12.585022708,
+      "rate_hz": 59.912486254053405
+    },
+    "comparison": {
+      "empty_pending_writes_before": 757,
+      "empty_pending_writes_after": 0,
+      "steady_empty_pending_writes_eliminated": true,
+      "actual_ca_rate_before_hz": 59.91559113869847,
+      "actual_ca_rate_after_hz": 59.912486254053405,
+      "actual_ca_rate_delta_hz": -0.003104884645061645,
+      "actual_ca_rate_near_expected": true,
+      "actual_ca_cadence_retained": true,
+      "native_rate_before_hz": 59.76085492818265,
+      "native_rate_after_hz": 59.92006690729981,
+      "scene_rate_before_hz": 59.917187470842755,
+      "scene_rate_after_hz": 59.91441972245266
+    },
+    "scope": "Actual presentations are CA requests matched by command ID, not Present labels. Scene/native classification assumes this observed warm Oxplay workload: unnamed Command Buffer labels with 1-3 encoders are scene; >=4 are native video. These heuristics are not decoded-frame or physical-scanout proof. Rates use (N-1)/(last-first). Counts are not GPU utilization; recording instrumentation affects overhead."
+  },
+  "pacing_30fps": {
+    "baseline_warm_drops": 65.0,
+    "candidate_warm_drops": 39.0,
+    "scope": "Published app also drops at30fps; one matched pair observed fewer drops in candidate. Not drop-free qualification or proof of audible A/V sync."
+  },
+  "pixel_comparison": {
+    "left": "quality-old.png",
+    "right": "quality-final.png",
+    "regions": {
+      "full": {
+        "pixels": 4202880,
+        "changed": 64370,
+        "max_channel_delta_gt2": 72,
+        "max_channel_delta_gt12": 57,
+        "max_channel_delta": 44,
+        "mean_channel_delta": 0.006383836797624486
+      },
+      "video_interior": {
+        "pixels": 987840,
+        "changed": 10463,
+        "max_channel_delta_gt2": 0,
+        "max_channel_delta_gt12": 0,
+        "max_channel_delta": 1,
+        "mean_channel_delta": 0.0026679421768707485
+      },
+      "video_full": {
+        "pixels": 1089936,
+        "changed": 11197,
+        "max_channel_delta_gt2": 72,
+        "max_channel_delta_gt12": 57,
+        "max_channel_delta": 44,
+        "mean_channel_delta": 0.003240786614993908
+      },
+      "header": {
+        "pixels": 253440,
+        "changed": 940,
+        "max_channel_delta_gt2": 0,
+        "max_channel_delta_gt12": 0,
+        "max_channel_delta": 2,
+        "mean_channel_delta": 0.0020488083964646463
+      },
+      "sidebar": {
+        "pixels": 598400,
+        "changed": 3233,
+        "max_channel_delta_gt2": 0,
+        "max_channel_delta_gt12": 0,
+        "max_channel_delta": 1,
+        "mean_channel_delta": 0.003907921122994653
+      },
+      "watch_controls": {
+        "pixels": 300672,
+        "changed": 18143,
+        "max_channel_delta_gt2": 0,
+        "max_channel_delta_gt12": 0,
+        "max_channel_delta": 1,
+        "mean_channel_delta": 0.027037768731375054
+      },
+      "related_viewport": {
+        "pixels": 963200,
+        "changed": 30851,
+        "max_channel_delta_gt2": 0,
+        "max_channel_delta_gt12": 0,
+        "max_channel_delta": 1,
+        "mean_channel_delta": 0.012776681893687707
+      }
+    }
+  },
+  "functional_cases": [
+    {
+      "case": "focus-final-cached",
+      "exit_code": 0
+    },
+    {
+      "case": "focus-final-uncached",
+      "exit_code": 0
+    },
+    {
+      "case": "motion-final",
+      "exit_code": 0
+    },
+    {
+      "case": "pip-final",
+      "exit_code": 0
+    }
+  ],
+  "tests": {
+    "workspace_passed": 676,
+    "workspace_ignored": 7,
+    "slint_cpu_policy_passed": 13,
+    "explicit_metal_import_gpu_passed": 1,
+    "python_passed": 260,
+    "release_python_passed": 45,
+    "strict_workspace_clippy_passed": true,
+    "metal_surface_probe_presentations": 8
+  },
+  "limitations": [
+    "CPU remains above matched browser and25%one-core target at60fps.",
+    "RSS totals can double-count shared pages; temporal VT attribution is not exclusive. Physical footprint is separate and must not be added to RSS.",
+    "Baseline60 host-other activity is higher; prior baseline repeats and final candidate repeats support the observed direction, not a causal estimate for every host.",
+    "30fps pacing drops predate these changes and remain unresolved.",
+    "72rounded-video-edge pixels differ by more than2/255(max44); video interior max1/255, other constant-scene UI regions at most2/255. Compact related cards and focus placement match cache-off captures.",
+    "Local source inventories prove captured inputs stayed unchanged across build; they are not independent reproducible-build attestation.",
+    "No physical Linux/Windows playback or actual YouTube website superiority established."
+  ]
+}

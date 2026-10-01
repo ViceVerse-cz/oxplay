@@ -1,5 +1,10 @@
 # Native rendering performance audit — 2026-10-01
 
+This report preserves its original frozen-build evidence. Subsequent playback
+fixes and measurements are recorded in the
+[2026-10-01 playback follow-up](performance-playback-2026-10-01.md); its later
+results have a separate build and qualification scope.
+
 The native rewrite and this performance audit are complete; the CPU goal is
 not met. The frozen release plays through native Metal on the inspected Apple
 M1/macOS 27 development host, with bounded renderer cache improvements and

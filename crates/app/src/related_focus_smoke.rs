@@ -4,11 +4,57 @@ use crate::{App, UiState};
 use slint::{ComponentHandle, Model};
 use std::{
     cell::{Cell, RefCell},
+    path::{Path, PathBuf},
     rc::Rc,
     time::Duration,
 };
 
 const STAGES: [u64; 16] = [4, 6, 8, 10, 12, 14, 16, 19, 22, 24, 26, 28, 30, 33, 36, 39];
+// Capture settled state before the checkpoint dispatches its next input.
+const CAPTURE_STAGES: [u64; 12] = [8, 10, 12, 14, 16, 19, 22, 24, 26, 30, 36, 39];
+type Captures = Rc<RefCell<Vec<std::thread::JoinHandle<Result<(), &'static str>>>>>;
+
+fn capture_path(base: &Path, seconds: u64) -> Result<PathBuf, &'static str> {
+    let stem = base
+        .file_stem()
+        .ok_or("related snapshot basename unavailable")?;
+    let mut name = stem.to_os_string();
+    name.push(format!("-stage-{seconds:02}-before.png"));
+    Ok(base.with_file_name(name))
+}
+
+fn capture(app: &App, base: &Path, seconds: u64, workers: &Captures) -> Result<(), &'static str> {
+    // Explicit diagnostic readback only; ordinary checks and playback never
+    // call take_snapshot or start image encoding workers.
+    let pixels = app
+        .window()
+        .take_snapshot()
+        .map_err(|_| "related snapshot unavailable")?;
+    let width = pixels.width();
+    let height = pixels.height();
+    let bytes = pixels.as_bytes().to_vec();
+    let path = capture_path(base, seconds)?;
+    eprintln!(
+        "related focus snapshot stage={seconds} phase=before_input width={width} height={height} focused={} parking={} target={} fullscreen={}",
+        app.get_feed_focused_index(),
+        app.get_related_parking_active(),
+        app.get_feed_focus_target(),
+        app.get_fullscreen_active()
+    );
+    workers.borrow_mut().push(std::thread::spawn(move || {
+        let mut file = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(path)
+            .map_err(|_| "related snapshot destination unavailable")?;
+        let image =
+            image::RgbaImage::from_raw(width, height, bytes).ok_or("invalid related snapshot")?;
+        image
+            .write_to(&mut file, image::ImageFormat::Png)
+            .map_err(|_| "related snapshot encoding failed")
+    }));
+    Ok(())
+}
 #[derive(Default)]
 struct Checks {
     counters: Option<(u64, u64, u64)>,
@@ -190,10 +236,12 @@ impl Checks {
 pub struct Smoke {
     completed: Rc<Cell<usize>>,
     failure: Rc<Cell<Option<&'static str>>>,
+    captures: Captures,
+    expected_captures: usize,
     _timers: Vec<slint::Timer>,
 }
 impl Smoke {
-    pub fn start(app: &App, state: &Rc<UiState>) -> Self {
+    pub fn start(app: &App, state: &Rc<UiState>, snapshot: Option<PathBuf>) -> Self {
         // Explicit diagnostic mode seeds both independent surfaces. Thirty
         // synthetic rows exercise off-screen focus beyond the production
         // related-page cap; they contain no provider/account data or URLs.
@@ -238,6 +286,12 @@ impl Smoke {
         let completed = Rc::new(Cell::new(0));
         let failure = Rc::new(Cell::new(None));
         let checks = Rc::new(RefCell::new(Checks::default()));
+        let captures = Captures::default();
+        let expected_captures = if snapshot.is_some() {
+            CAPTURE_STAGES.len()
+        } else {
+            0
+        };
         let mut timers = Vec::new();
         for (index, seconds) in STAGES.into_iter().enumerate() {
             let weak = app.as_weak();
@@ -245,6 +299,8 @@ impl Smoke {
             let completed = completed.clone();
             let failure = failure.clone();
             let checks = checks.clone();
+            let captures = captures.clone();
+            let snapshot = snapshot.clone();
             let timer = slint::Timer::default();
             timer.start(slint::TimerMode::SingleShot, Duration::from_secs(seconds), move || {
                 if failure.get().is_some() { return; }
@@ -252,6 +308,9 @@ impl Smoke {
                     let app = weak.upgrade().ok_or("related diagnostic lost its window")?;
                     let state = state.upgrade().ok_or("related diagnostic lost its core")?;
                     if completed.get() != index { return Err("related diagnostic missed a finite stage"); }
+                    if CAPTURE_STAGES.contains(&seconds) && let Some(base) = snapshot.as_deref() {
+                        capture(&app, base, seconds, &captures)?;
+                    }
                     let result = checks.borrow_mut().step(&app, &state, seconds);
                     eprintln!("related focus stage={seconds} focused={} parking={} target={} serial={} visible={} offset={} fullscreen={} result={:?}", app.get_feed_focused_index(), app.get_related_parking_active(), app.get_feed_focus_target(), app.get_feed_focus_serial(), app.get_related_focused_visible(), app.get_watch_offset(), app.get_fullscreen_active(), result);
                     result
@@ -266,12 +325,30 @@ impl Smoke {
         Self {
             completed,
             failure,
+            captures,
+            expected_captures,
             _timers: timers,
         }
     }
     pub fn finish(self) -> Result<(), &'static str> {
+        let capture_count = self.captures.borrow().len();
+        let mut capture_failure = None;
+        for worker in self.captures.borrow_mut().drain(..) {
+            if let Err(reason) = worker
+                .join()
+                .unwrap_or(Err("related snapshot worker failed"))
+            {
+                capture_failure.get_or_insert(reason);
+            }
+        }
         if let Some(reason) = self.failure.get() {
             return Err(reason);
+        }
+        if let Some(reason) = capture_failure {
+            return Err(reason);
+        }
+        if capture_count != self.expected_captures {
+            return Err("related focus check did not complete every requested snapshot");
         }
         if self.completed.get() == STAGES.len() {
             Ok(())
@@ -290,10 +367,51 @@ mod tests {
                 let smoke = Smoke {
                     completed: Rc::new(Cell::new(count)),
                     failure: Rc::new(Cell::new(failed.then_some("fixture failure"))),
+                    captures: Captures::default(),
+                    expected_captures: 0,
                     _timers: vec![],
                 };
                 assert_eq!(smoke.finish().is_ok(), count == STAGES.len() && !failed);
             }
         }
+    }
+
+    #[test]
+    fn snapshot_names_stay_beside_the_admitted_base_and_stages_are_finite() {
+        let base = Path::new("/new-synthetic-root/focus.png");
+        let mut names = std::collections::HashSet::new();
+        for stage in CAPTURE_STAGES {
+            assert!(STAGES.contains(&stage));
+            let path = capture_path(base, stage).unwrap();
+            assert_eq!(path.parent(), base.parent());
+            assert_eq!(path.extension().unwrap(), "png");
+            assert_ne!(path, base);
+            assert!(names.insert(path));
+        }
+        assert_eq!(names.len(), 12);
+    }
+
+    #[test]
+    fn completed_input_checks_cannot_hide_missing_or_failed_snapshot_outputs() {
+        let complete = || Smoke {
+            completed: Rc::new(Cell::new(STAGES.len())),
+            failure: Rc::new(Cell::new(None)),
+            captures: Captures::default(),
+            expected_captures: 1,
+            _timers: Vec::new(),
+        };
+        assert!(complete().finish().is_err());
+        let failed = complete();
+        failed
+            .captures
+            .borrow_mut()
+            .push(std::thread::spawn(|| Err("synthetic encoding failure")));
+        assert_eq!(failed.finish(), Err("synthetic encoding failure"));
+        let succeeded = complete();
+        succeeded
+            .captures
+            .borrow_mut()
+            .push(std::thread::spawn(|| Ok(())));
+        assert!(succeeded.finish().is_ok());
     }
 }

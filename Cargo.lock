@@ -2316,7 +2316,6 @@ dependencies = [
 [[package]]
 name = "i-slint-renderer-femtovg"
 version = "1.19.0"
-source = "git+https://github.com/slint-ui/slint?rev=cf3b07d4917e6759a63b0c03913a2594ec653414#cf3b07d4917e6759a63b0c03913a2594ec653414"
 dependencies = [
  "const-field-offset",
  "femtovg",
@@ -6084,8 +6083,6 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "30.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58"
 dependencies = [
  "android_system_properties",
  "arrayvec",

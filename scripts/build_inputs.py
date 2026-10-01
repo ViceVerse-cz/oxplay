@@ -23,7 +23,7 @@ MAX_TOTAL = 128 * 1024 * 1024
 MAX_GIT_OUTPUT = 8 * 1024 * 1024
 TOP_LEVEL = {"Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml"}
 CONFIGS = {".cargo/config", ".cargo/config.toml"}
-SOURCE_ROOTS = ("crates", "vendor/femtovg", "scripts/native-media")
+SOURCE_ROOTS = ("crates", "vendor", "scripts/native-media")
 PATHS = [*SOURCE_ROOTS, *sorted(TOP_LEVEL), *sorted(CONFIGS)]
 
 
@@ -218,7 +218,7 @@ def capture(root: Path) -> dict:
             "repository_clean": None, "binary_build_association_verified": False,
             "file_count": len(files), "total_file_bytes": total, "files": files,
             "scope": ["crates/** including Rust, native glue, build scripts and assets",
-                      "vendor/femtovg/** including patched renderer, manifests and licenses",
+                      "vendor/** including patched renderers, manifests and licenses",
                       "scripts/native-media/** including native source pins, patches, build recipes and ABI checks",
                       *sorted(TOP_LEVEL), *sorted(CONFIGS)],
             "limits": ["Untracked ignored files are excluded by git ls-files --exclude-standard; tracked ignored files remain included",

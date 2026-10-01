@@ -1,5 +1,16 @@
 # Performance qualification
 
+The [2026-10-01 playback follow-up](performance-playback-2026-10-01.md) records
+subsequent playback fixes and final local 1080p60 measurements: 33.59% and
+33.10% of one CPU core, versus the old build's 55.58% and Chrome's bare-video
+20.23%. A separate matched pair records about 14.53% lower estimated whole-system
+GPU power, with no per-process GPU attribution. A matched Metal trace confirms
+the targeted redundant submissions disappear while actual Core Animation
+presentation retains approximately 60 Hz. The CPU target remains unmet and
+drop-free 30 fps qualification remains open; matched 30 fps drops also occur in
+the old build.
+Earlier build-specific results below retain their original scope.
+
 The [2026-10-01 native-backend audit](performance-native-2026-10-01.md) records
 the Metal/Vulkan/Direct3D migration, CPU profiling, bounded renderer caches, and
 new CPU/memory comparisons. Its build-specific results supersede no historical

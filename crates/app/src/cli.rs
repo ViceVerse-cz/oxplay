@@ -42,6 +42,7 @@ pub struct Options {
     pub refresh_smoke: bool,
     pub demo_related: bool,
     pub ui_cache: bool,
+    pub no_ui_cache: bool,
     pub search_cache: bool,
     pub related_cache: bool,
     pub stage_progress: bool,
@@ -52,6 +53,12 @@ pub struct Options {
 }
 
 impl Options {
+    /// Keep explicit diagnostic scopes distinct from the normal static UI cache.
+    pub fn cache_chrome_enabled(&self) -> bool {
+        !self.native_video_child
+            && (self.ui_cache || (!self.no_ui_cache && !self.search_cache && !self.related_cache))
+    }
+
     pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Self, &'static str> {
         let mut options = Self::default();
         let mut args = args.into_iter();
@@ -85,7 +92,7 @@ impl Options {
                 "--search-cache" => options.search_cache = true,
                 "--related-cache" => options.related_cache = true,
                 "--stage-progress" => options.stage_progress = true,
-                "--no-ui-cache" => {}
+                "--no-ui-cache" => options.no_ui_cache = true,
                 "--diagnostics" => options.diagnostics = true,
                 "--scoped-media" => options.scoped_media = true,
                 "--native-video-child" => options.native_video_child = true,
@@ -200,7 +207,7 @@ impl Options {
                 _ => return Err("Unknown option or unexpected positional argument; see --help"),
             }
         }
-        if options.ui_cache && seen.contains(std::ffi::OsStr::new("--no-ui-cache")) {
+        if options.ui_cache && options.no_ui_cache {
             return Err("--ui-cache and --no-ui-cache cannot be combined");
         }
         if [
@@ -425,6 +432,10 @@ impl Options {
                 "--demo-related",
                 "--data-root",
                 "--quit-after",
+                "--ui-cache",
+                "--no-ui-cache",
+                "--related-cache",
+                "--snapshot",
             ];
             if !cfg!(unix)
                 || options.local.is_none()
@@ -439,6 +450,11 @@ impl Options {
                         .any(|allowed| key == std::ffi::OsStr::new(allowed))
                 })
                 || options.quit_after.is_some_and(|seconds| seconds != 42)
+                || options.snapshot.as_ref().is_some_and(|path| {
+                    path.parent() != options.data_root.as_deref()
+                        || path.file_name().is_none()
+                        || path.extension().is_none_or(|extension| extension != "png")
+                })
             {
                 return Err(
                     "--related-focus-check requires only the exact local synthetic MP4, --demo-related and NEW absolute --data-root; its watchdog is 42 seconds",
@@ -774,7 +790,7 @@ pub const HELP: &str = "Oxplay experimental native client
   --ui-page PAGE    Diagnostic: browse/library/settings/account/downloads
   --ui-theme THEME  Diagnostic: system/light/dark (not saved)
   --ui-size WxH     Diagnostic logical window size
-  --snapshot PATH   One diagnostic PNG at 15 seconds (not for benchmarks)
+  --snapshot PATH   Diagnostic PNG at 15s; related-focus check writes 12 stage PNGs beside PATH (not for benchmarks)
   --smoke-test      20-second native lifecycle test (requires --local)
   --handoff-audio PATH  30-second local video/audio-only frame-isolation test (requires --local)
   --captions-smoke-test 70-second guest caption/quality test (requires --url)
@@ -796,11 +812,11 @@ pub const HELP: &str = "Oxplay experimental native client
   --recovery-smoke-test  Finite synthetic failure/retry checks (20s; --yt-dlp /usr/bin/false and NEW private --data-root)
   --save-smoke-test  Finite real guest/local Save checks (75s; public --url and NEW private --data-root)
   --demo-related    Labeled static fixture rows (requires --local)
-  --ui-cache        Diagnostic cached-chrome candidate (unqualified)
+  --ui-cache        Explicit static UI cache: header/sidebar, watch actions and related viewport (default)
   --search-cache    Diagnostic cache of only the search input (unqualified)
-  --related-cache   Diagnostic cache of watch-page related cards (unqualified)
+  --related-cache   Diagnostic cache of only the watch-page related viewport (unqualified)
   --stage-progress  Diagnostic cosmetic-clock staging during rendering (unqualified)
-  --no-ui-cache     Force cached chrome off (default)
+  --no-ui-cache     Disable the default static UI cache; explicit related/search scopes remain available
   --scoped-media    Experimental in-process HTTPS transport (unqualified)
   --native-video-child  macOS child-surface diagnostic (requires pinned synthetic --local MP4 and NEW absolute --data-root; no subtitles, accounts, online actions or texture screenshots)
   --native-video-child-smoke-test  Finite 46-second child lifecycle checks; requires --native-video-child and a hardware-decodable local clip of at least 60 seconds
@@ -1103,12 +1119,33 @@ mod tests {
         if cfg!(unix) {
             assert_eq!(parse(&base).unwrap().quit_after, Some(42));
             for extra in [
+                vec!["--ui-cache"],
+                vec!["--no-ui-cache"],
+                vec!["--related-cache"],
+                vec!["--related-cache", "--no-ui-cache"],
+                vec!["--snapshot", "/new-synthetic-root/focus.png"],
+                vec!["--ui-cache", "--snapshot", "/new-synthetic-root/focus.png"],
+            ] {
+                let mut args = base.to_vec();
+                args.extend(extra);
+                let options = parse(&args).unwrap();
+                assert_eq!(options.quit_after, Some(42));
+                assert!(options.finite_diagnostic());
+            }
+            for extra in [
                 vec!["--search", "test"],
                 vec!["--native-video-child"],
                 vec!["--smoke-test"],
                 vec!["--yt-dlp", "/helper"],
                 vec!["--quit-after", "43"],
                 vec!["--quit-after", "41"],
+                vec!["--ui-cache", "--no-ui-cache"],
+                vec!["--search-cache"],
+                vec!["--snapshot", "/outside/focus.png"],
+                vec!["--snapshot", "/new-synthetic-root/../focus.png"],
+                vec!["--snapshot", "/new-synthetic-root/nested/focus.png"],
+                vec!["--snapshot", "/new-synthetic-root/focus.jpg"],
+                vec!["--snapshot", "focus.png"],
             ] {
                 let mut args = base.to_vec();
                 args.extend(extra);
@@ -1126,6 +1163,54 @@ mod tests {
                 "relative"
             ])
             .is_err()
+        );
+    }
+    #[test]
+    fn static_cache_defaults_and_explicit_scopes_preserve_comparison_controls() {
+        let normal = parse(&[]).unwrap();
+        assert!(normal.cache_chrome_enabled());
+        assert!(
+            !normal.ui_cache
+                && !normal.no_ui_cache
+                && !normal.search_cache
+                && !normal.related_cache
+        );
+        assert!(parse(&["--ui-cache"]).unwrap().cache_chrome_enabled());
+        assert!(!parse(&["--no-ui-cache"]).unwrap().cache_chrome_enabled());
+        for flags in [
+            vec!["--search-cache"],
+            vec!["--related-cache"],
+            vec!["--search-cache", "--no-ui-cache"],
+            vec!["--related-cache", "--no-ui-cache"],
+        ] {
+            let scoped = parse(&flags).unwrap();
+            assert!(!scoped.cache_chrome_enabled());
+            assert!(scoped.search_cache || scoped.related_cache);
+        }
+        for flags in [
+            ["--ui-cache", "--no-ui-cache"],
+            ["--no-ui-cache", "--ui-cache"],
+            ["--ui-cache", "--search-cache"],
+            ["--ui-cache", "--related-cache"],
+        ] {
+            assert!(parse(&flags).is_err());
+        }
+        // The native-child diagnostic keeps all normal chrome caches disabled,
+        // even if a caller constructs Options without the CLI's scope checks.
+        assert!(
+            !Options {
+                native_video_child: true,
+                ..Options::default()
+            }
+            .cache_chrome_enabled()
+        );
+        assert!(
+            !Options {
+                native_video_child: true,
+                ui_cache: true,
+                ..Options::default()
+            }
+            .cache_chrome_enabled()
         );
     }
     #[test]

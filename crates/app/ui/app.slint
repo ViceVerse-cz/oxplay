@@ -1082,10 +1082,16 @@ export component App inherits Window {
             height: root.compact-video ? max(1px, watch.visible-height - (root.native-video-child ? 82px : 0px)) : root.theatre-active ? min(self.width * 9 / 16, max(240px, watch.visible-height * 0.82)) : self.width * 9 / 16;
             visible: root.video-visible;
             background: #000000;
-            // One clipping rectangle rounds the picture, its black backing and
-            // every overlay at once. The transport strip below is a sibling, so
-            // it rounds its own bottom corners to match.
-            border-radius: root.video-radius; clip: root.video-radius > 0px;
+            // Visible overlays retain the original group mask. In steady
+            // playback only the image needs clipping, so the renderer can
+            // apply its rounded mask directly without a full video layer.
+            private property <bool> painted-overlay: root.flash-on || video-flash.opacity > 0.001
+                || root.buffering || root.osd-text != ""
+                || (root.mini-player-active && (root.controls-visible || root.paused || root.controls-held))
+                || root.watch-loading || root.watch-load-error != "" || root.video-starting
+                || root.playback-failed || root.show-info;
+            border-radius: root.video-radius;
+            clip: root.video-radius > 0px && self.painted-overlay;
             focus := FocusScope {
                 width: parent.width; height: parent.height;
                 video-touch := TouchArea {
@@ -1117,11 +1123,18 @@ export component App inherits Window {
                     }
                 }
             }
-            Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; visible: root.loaded && !root.watch-loading; }
+            Rectangle {
+                width: parent.width; height: parent.height;
+                background: transparent;
+                border-radius: root.video-radius;
+                clip: root.video-radius > 0px && !video.painted-overlay;
+                visible: root.loaded && !root.watch-loading;
+                Image { width: parent.width; height: parent.height; source: root.video-texture; image-fit: contain; }
+            }
             // Fades and grows out after a user play/pause; invisible at rest.
             // Opacity below 1 on an element with children takes an offscreen
             // layer even at 0, so hide it outright once the fade has finished.
-            Rectangle {
+            video-flash := Rectangle {
                 visible: root.flash-on || self.opacity > 0.001;
                 width: root.compact-video && !root.video-only ? 52px : 68px; height: self.width;
                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
@@ -1237,6 +1250,9 @@ export component App inherits Window {
             x: video.x; y: video.y + video.height + (root.native-video-child ? 86px : 12px);
             width: video.width; height: 108px;
             visible: root.watching && !root.video-only;
+            // One bounded title/channel/action layer. Content, theme, geometry,
+            // hover and focus changes invalidate it through Slint dependencies.
+            cache-rendering-hint: root.cache-chrome;
             background: transparent;
             if !root.video-only: Text { x: 0; y: 0px; height: 54px; width: parent.width; text: root.video-title; visible: !root.watch-loading || root.video-title != ""; wrap: word-wrap; color: Colors.text; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; overflow: elide; }
             if root.watch-loading && root.video-title == "": Rectangle { x: 0px; y: 10px; width: parent.width * 0.72; height: 20px; border-radius: 4px; background: Colors.raised; }
@@ -1313,10 +1329,11 @@ export component App inherits Window {
             height: root.wide-related ? watch.visible-height - root.watch-inset : max(318px, watch.visible-height * 0.65);
             visible: root.watching && !root.video-only;
             horizontal-scrollbar-policy: always-off;
-            // Opt-in experiment: cache each virtualized related card independently.
-            // Thumbnail/model, theme, size, hover and focus changes invalidate its layer.
+            // Opt-in experiment: cache one viewport instead of individual cards.
+            // The ListView's Flickable bounds the layer to its viewport; model,
+            // thumbnail, scroll, theme, geometry, hover and focus changes invalidate it.
+            cache-rendering-hint: root.watch-videos.length > 0 && (root.cache-related || root.cache-chrome);
             for item[index] in root.watch-videos: VideoCard {
-                cache-rendering-hint: root.cache-related;
                 enabled: !root.native-video-child;
                 height: 106px; item: item; compact: true;
                 focus-request: root.watching && !root.video-only && root.feed-focus-surface == 1 && root.feed-focus-target == index ? root.feed-focus-serial : 0;

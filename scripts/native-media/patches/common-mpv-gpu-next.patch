@@ -177,10 +177,20 @@
  
      // map_frame() leaves crop zeroed; set it now to avoid degenerate GLSL.
      // Cast away const — we own the frames through user_data.
-@@ -868,12 +888,17 @@
+@@ -868,12 +888,27 @@
  
      struct pl_render_params rparams = p->pars->params;
      rparams.color_adjustment = &p->pars->color_adjustment;
++    // Match vo_gpu_next's fresh-frame cache policy. libmpv has no paused
++    // field here; VO marks paused frames still and host redraws redraw.
++    // Keep caching for those and repeated frames, but avoid a full-size
++    // linear-light mixer intermediate for ordinary fresh video frames.
++    bool will_redraw = frame && frame->display_synced && frame->num_vsyncs > 1;
++    bool cache_frame = frame &&
++        (will_redraw || frame->still || frame->redraw || frame->repeat);
++    rparams.skip_caching_single_frame = !cache_frame;
++    if (frame && frame->still)
++        rparams.frame_mixer = NULL;
 -    if (!pl_render_image_mix(p->renderer, &mix, &target_frame, &rparams))
 +    bool rendered = pl_render_image_mix(p->renderer, &mix, &target_frame, &rparams);
 +    if (!rendered)
@@ -197,7 +207,7 @@
  }
  
  static void destroy(struct render_backend *ctx)
-@@ -881,9 +906,6 @@
+@@ -881,9 +916,6 @@
      struct priv *p = ctx->priv;
      if (!p)
          return;
@@ -207,7 +217,7 @@
  
      if (p->ctx && p->ctx->gpu) {
          for (int i = 0; i < MAX_OSD_PARTS; i++)
-@@ -902,6 +924,8 @@
+@@ -902,6 +934,8 @@
      if (p->ctx && p->ctx->fns)
          p->ctx->fns->destroy(p->ctx);
  
@@ -216,7 +226,7 @@
      talloc_free(p);
      ctx->priv = NULL;
  }
-@@ -910,6 +934,7 @@
+@@ -910,6 +944,7 @@
      .init           = init,
      .check_format   = check_format,
      .set_parameter  = set_parameter,

@@ -87,6 +87,10 @@ name = "blit_scissor_wgpu"
 path = "tests/blit_scissor_wgpu.rs"
 
 [[test]]
+name = "encoding_cache_wgpu"
+path = "tests/encoding_cache_wgpu.rs"
+
+[[test]]
 name = "color_matrix_wgpu"
 path = "tests/color_matrix_wgpu.rs"
 

@@ -233,7 +233,7 @@ source for the open portability, notice and corresponding-source items.
 The performance audit found low idle CPU usage and lower memory use than a
 minimal Chrome video player, but playback CPU remains above the target.
 An advantage over the YouTube website has not been established. See
-`docs/performance-native-2026-10-01.md` in the source archive for measurements
+`docs/performance-playback-2026-10-01.md` in the source archive for measurements
 and the limits of the comparisons. Linux and Windows hardware playback need
 verification on physical devices.
 

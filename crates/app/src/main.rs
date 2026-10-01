@@ -1029,6 +1029,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let remote_suggestions = !options.finite_diagnostic();
     // Diagnostics never reconnect a developer's remembered account.
     let restore_account = !options.finite_diagnostic();
+    let cache_chrome = options.cache_chrome_enabled();
     let save_smoke_video = if options.save_smoke {
         Some(oxplay_core::VideoId::from_url(
             options
@@ -1189,7 +1190,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     app.set_native_video_child(options.native_video_child);
     app.set_window_borderless(false);
     let window_chrome = window_chrome::bind(&app);
-    app.set_cache_chrome(options.ui_cache);
+    app.set_cache_chrome(cache_chrome);
     app.set_cache_search(options.search_cache);
     app.set_cache_related(options.related_cache);
     let weak = app.as_weak();
@@ -1925,7 +1926,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         timers.push(timer);
     }
     let snapshot_thread = Rc::new(RefCell::new(None));
-    if let Some(path) = options.snapshot {
+    let related_focus_snapshot = options
+        .related_focus_check
+        .then(|| options.snapshot.clone())
+        .flatten();
+    if let Some(path) = options.snapshot.filter(|_| !options.related_focus_check) {
         // Explicit development capture only. Never used in the media path or
         // performance runs: this one-shot operation does read pixels back.
         let weak = app.as_weak();
@@ -2002,6 +2007,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if options.diagnostics {
         for seconds in [5, 10, 25, 70] {
+            // Controls stop polling progress when hidden. Refresh just before
+            // these finite checkpoints so diagnostic playback continuity does
+            // not rely on a position cached before the controls disappeared.
+            let player = state.player.clone();
+            let refresh = Timer::default();
+            refresh.start(
+                TimerMode::SingleShot,
+                Duration::from_millis(seconds * 1000 - 200),
+                move || {
+                    let _ = player.request_progress();
+                },
+            );
+            timers.push(refresh);
             let s = state.clone();
             let weak = app.as_weak();
             let timer = Timer::default();
@@ -2043,7 +2061,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .then(|| library_resource_smoke::Smoke::start(&app, &state));
     let related_focus_diagnostic = options
         .related_focus_check
-        .then(|| related_focus_smoke::Smoke::start(&app, &state));
+        .then(|| related_focus_smoke::Smoke::start(&app, &state, related_focus_snapshot));
     let save_diagnostic =
         save_smoke_video.map(|video| save_smoke::Smoke::start(&app, &state, video));
     let recovery_diagnostic = options

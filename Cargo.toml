@@ -22,3 +22,11 @@ strip = "debuginfo"
 # Published 0.27.0 source plus a bounded WGPU pipeline-cache correction.
 # See vendor/femtovg/OXPLAY-PROVENANCE.md for the original archive checksum.
 femtovg = { path = "vendor/femtovg" }
+# Exact 30.0.1 archive with a Metal-only identical-PRESENT ordering correction.
+# See vendor/wgpu-hal/OXPLAY-PROVENANCE.md for checksum and semantic scope.
+wgpu-hal = { path = "vendor/wgpu-hal" }
+
+[patch."https://github.com/slint-ui/slint"]
+# Same pinned package, with the guarded single-image rounded clip optimization.
+# See vendor/slint-femtovg/OXPLAY-PROVENANCE.md for source and license records.
+i-slint-renderer-femtovg = { path = "vendor/slint-femtovg" }
