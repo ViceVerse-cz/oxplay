@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
+import zipfile
 
 from test_release_packaging import helpers_directory, windows
 
@@ -69,6 +71,38 @@ class NativeWindowsPayload(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
             self.stage()
         self.assertFalse((self.base / 'dist').exists())
+
+    def test_epoch_source_archive_is_preserved_in_zip_and_exact_cleanup(self):
+        archive = self.sources / 'runtime-sources/mingw-w64-spirv-cross-1~1.4.357.0-1.src.tar.zst'
+        archive.parent.mkdir()
+        archive.write_bytes(b'epoch-versioned corresponding source')
+        self.source_records['runtime_sources'] = [{
+            'source_archive': archive.relative_to(self.prefix).as_posix(),
+            'source_archive_sha256': windows.sha256(archive)}]
+        (self.sources / 'sources.json').write_text(json.dumps(self.source_records))
+        staged = self.stage()
+        relative = 'native-media/runtime-sources/' + archive.name
+        include = self.base / 'uninstall.nsh'
+        windows.installer_include(staged, include)
+        name = relative.replace('/', '\\')
+        self.assertIn(f'Delete "$INSTDIR\\{name}"', include.read_text())
+        with zipfile.ZipFile(windows.archive(staged, self.base / 'payload.zip')) as bundle:
+            self.assertEqual(bundle.read(relative), archive.read_bytes())
+
+    def test_installer_rejects_nsis_interpolation_and_quoting(self):
+        staged = self.stage()
+        include = self.base / 'uninstall.nsh'
+        for name in ('$WINDIR.txt', 'quote".txt', 'control\n.txt'):
+            with self.subTest(name=name):
+                path = staged / name
+                # Windows cannot create quote/control filenames. Feed the same
+                # invalid inventory to the generator on every test platform.
+                with mock.patch.object(Path, 'rglob', return_value=[path]), \
+                        mock.patch.object(Path, 'is_file', return_value=True), \
+                        mock.patch.object(Path, 'is_dir', return_value=False):
+                    with self.assertRaisesRegex(ValueError, 'unsupported path'):
+                        windows.installer_include(staged, include)
+                self.assertFalse(include.exists())
 
     def test_stock_or_incomplete_media_is_rejected(self):
         self.evidence['native_render_abi'] = 0

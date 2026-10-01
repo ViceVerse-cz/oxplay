@@ -107,8 +107,11 @@ def installer_include(directory: Path, destination: Path) -> None:
     files = sorted(path.relative_to(directory).as_posix() for path in directory.rglob("*") if path.is_file())
     directories = sorted((path.relative_to(directory).as_posix() for path in directory.rglob("*") if path.is_dir()),
                          key=lambda name: (name.count("/"), name), reverse=True)
-    if any(not re.fullmatch(r"[A-Za-z0-9_./+ -]+", name) or ".." in Path(name).parts for name in files + directories):
-        raise ValueError("Installer inventory contains an unsupported path")
+    for name in files + directories:
+        # MSYS2 uses '~' between the epoch and version of source archives.
+        # Keep NSIS interpolation, quoting and control characters disallowed.
+        if not re.fullmatch(r"[A-Za-z0-9_./+ ~-]+", name) or ".." in Path(name).parts:
+            raise ValueError(f"Installer inventory contains an unsupported path: {name!r}")
     lines = ['; Generated from the exact staged Windows payload.']
     lines += ['  Delete "$INSTDIR\\' + name.replace('/', '\\') + '"' for name in files]
     lines += ['  RMDir "$INSTDIR\\' + name.replace('/', '\\') + '"' for name in directories]
