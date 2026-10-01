@@ -4,8 +4,9 @@
 use crate::presenter::{FrameTarget, PublicationPair, RenderStats};
 use crate::wgpu_ambient::WgpuAmbientSampler;
 use crate::{MediaError, Player, Result, checked, ffi};
+#[cfg(target_os = "macos")]
+use std::ffi::c_void;
 use std::{
-    ffi::c_void,
     sync::{Arc, atomic::Ordering},
     time::Instant,
 };
@@ -467,6 +468,7 @@ impl Drop for NativePresenter {
     }
 }
 
+#[cfg(target_os = "macos")]
 unsafe extern "C" fn native_slot_wake(data: *mut c_void) {
     let wake = unsafe { &*data.cast::<crate::Wake>() };
     wake.due.store(true, Ordering::Release);
